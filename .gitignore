@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.flaskenv
+
+# Migrations (opcional, depende si quieres compartir migraciones)
+migrations/versions/*.pyc
+
+# Logs
+*.log
+
+# Config files (si contienen datos sensibles)
+config/default.py
+config/dev.py
+
+#Configuracion de Alembic
+migrations/
+
+#configuraicon de la base de datos
+settings.py

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ order.order_number }} - Velzia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { "primary": "#f2460d" }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-md mx-auto px-4 py-4">
+            <a href="{{ url_for('orders.index') }}" class="text-gray-600 hover:text-gray-900 inline-flex items-center gap-2 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Volver a Pedidos
+            </a>
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-900">{{ order.order_number }}</h1>
+                <span class="px-3 py-1 rounded-full text-xs font-bold
+                    {% if order.status == 'pending' %}bg-orange-100 text-orange-700
+                    {% elif order.status == 'kitchen' %}bg-blue-100 text-blue-700
+                    {% elif order.status == 'delivered' %}bg-green-100 text-green-700
+                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {% if order.status == 'pending' %}Pendiente
+                    {% elif order.status == 'kitchen' %}En Cocina
+                    {% elif order.status == 'delivered' %}Entregado
+                    {% else %}Cancelado{% endif %}
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-md mx-auto px-4 py-6 space-y-4">
+        
+        <!-- Cliente -->
+        {% if order.customer_name or order.customer_phone %}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 class="text-sm font-bold text-gray-700 mb-3">Cliente</h2>
+            {% if order.customer_name %}
+                <p class="text-gray-900 font-medium">{{ order.customer_name }}</p>
+            {% endif %}
+            {% if order.customer_phone %}
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-gray-600">{{ order.customer_phone }}</p>
+                    <button onclick="contactWhatsApp('{{ order.customer_phone }}', '{{ order.order_number }}')" 
+                            class="bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                        </svg>
+                        WhatsApp
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Items del Pedido -->
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 class="text-sm font-bold text-gray-700 mb-3">Productos</h2>
+            <div class="space-y-3">
+                {% for item in order.items %}
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-900">{{ item.quantity }}x {{ item.product_name }}</p>
+                        {% if item.modifiers_snapshot %}
+                            <p class="text-xs text-gray-500 mt-1">{{ item.modifiers_snapshot }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-600 mt-1">${{ '{:,}'.format(item.product_price) }} c/u</p>
+                    </div>
+                    <p class="font-bold text-gray-900">${{ '{:,}'.format(item.subtotal) }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="border-t border-gray-200 mt-4 pt-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-bold text-gray-900">Total</span>
+                    <span class="text-2xl font-bold text-primary">${{ '{:,}'.format(order.total) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notas -->
+        {% if order.notes %}
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h2 class="text-sm font-bold text-yellow-800 mb-2">Notas</h2>
+            <p class="text-sm text-yellow-900">{{ order.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Acciones -->
+        {% if order.status not in ['delivered', 'cancelled'] %}
+        <div class="space-y-2">
+            {% if order.status == 'pending' %}
+                <button onclick="changeStatus('kitchen')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg">
+                    → Mover a Cocina
+                </button>
+            {% elif order.status == 'kitchen' %}
+                <button onclick="changeStatus('delivered')" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg">
+                    ✓ Marcar como Entregado
+                </button>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('orders.cancel', id=order.id) }}" onsubmit="return confirm('¿Cancelar este pedido?')">
+                <button type="submit" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-3 rounded-lg border border-red-200">
+                    Cancelar Pedido
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function contactWhatsApp(phone, orderNumber) {
+            // Limpiar el teléfono y agregar código de país si no lo tiene
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (!cleanPhone.startsWith('57')) {
+                cleanPhone = '57' + cleanPhone;
+            }
+            
+            const message = encodeURIComponent(`Tu pedido ${orderNumber} está listo 🧾 Gracias por tu compra.`);
+            window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+        }
+
+        async function changeStatus(newStatus) {
+            try {
+                const response = await fetch(`/orders/{{ order.id }}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Error al cambiar estado');
+                }
+                
+                location.href = '{{ url_for("orders.index") }}';
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    </script>
+</body>
+</html>

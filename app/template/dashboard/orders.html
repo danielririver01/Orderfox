@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedidos - Velzia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f2460d",
+              success: "#16a34a",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-gray-50 min-h-screen pb-24">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900">Pedidos de Hoy</h1>
+          <p class="text-xs text-gray-500">
+            {{ (pending|length + kitchen|length + delivered|length) }} pedidos
+          </p>
+        </div>
+        <a
+          href="{{ url_for('dashboard.index') }}"
+          class="text-gray-600 hover:text-gray-900"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <div class="max-w-md mx-auto px-4 py-4 space-y-4">
+      <!-- PENDIENTES -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2
+            class="text-sm font-bold text-orange-600 uppercase tracking-wide flex items-center gap-2"
+          >
+            <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+            Pendientes
+          </h2>
+          <span
+            class="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full"
+            >{{ pending|length }}</span
+          >
+        </div>
+
+        {% if pending %}
+        <div class="space-y-2">
+          {% for order in pending %}
+          <div
+            class="bg-white rounded-lg border-l-4 border-orange-500 shadow-sm p-4"
+            data-order-id="{{ order.id }}"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="font-bold text-gray-900">
+                  {{ order.order_number }}
+                </h3>
+                {% if order.customer_name %}
+                <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
+                {% endif %}
+              </div>
+              <span class="text-lg font-bold text-primary"
+                >${{ '{:,}'.format(order.total) }}</span
+              >
+            </div>
+
+            <div class="flex items-center justify-between mt-3">
+              <span class="text-xs text-gray-500"
+                >{{ order.items|length }} item(s)</span
+              >
+              <div class="flex gap-2">
+                <a
+                  href="{{ url_for('orders.detail', id=order.id) }}"
+                  class="text-xs text-blue-600 hover:underline"
+                  >Ver</a
+                >
+                <button
+                  onclick="changeStatus({{ order.id }}, 'kitchen')"
+                  class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded"
+                >
+                  → A Cocina
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 text-center py-4">
+          No hay pedidos pendientes
+        </p>
+        {% endif %}
+      </section>
+
+      <!-- EN COCINA -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2
+            class="text-sm font-bold text-blue-600 uppercase tracking-wide flex items-center gap-2"
+          >
+            <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+            En Cocina
+          </h2>
+          <span
+            class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full"
+            >{{ kitchen|length }}</span
+          >
+        </div>
+
+        {% if kitchen %}
+        <div class="space-y-2">
+          {% for order in kitchen %}
+          <div
+            class="bg-white rounded-lg border-l-4 border-blue-500 shadow-sm p-4"
+            data-order-id="{{ order.id }}"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="font-bold text-gray-900">
+                  {{ order.order_number }}
+                </h3>
+                {% if order.customer_name %}
+                <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
+                {% endif %}
+              </div>
+              <span class="text-lg font-bold text-primary"
+                >${{ '{:,}'.format(order.total) }}</span
+              >
+            </div>
+
+            <div class="flex items-center justify-between mt-3">
+              <span class="text-xs text-gray-500"
+                >{{ order.items|length }} item(s)</span
+              >
+              <div class="flex gap-2">
+                <a
+                  href="{{ url_for('orders.detail', id=order.id) }}"
+                  class="text-xs text-blue-600 hover:underline"
+                  >Ver</a
+                >
+                <button
+                  onclick="changeStatus({{ order.id }}, 'delivered')"
+                  class="bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded"
+                >
+                  ✓ Entregar
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 text-center py-4">
+          No hay pedidos en cocina
+        </p>
+        {% endif %}
+      </section>
+
+      <!-- ENTREGADOS -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2
+            class="text-sm font-bold text-green-600 uppercase tracking-wide flex items-center gap-2"
+          >
+            <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+            Entregados
+          </h2>
+          <span
+            class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full"
+            >{{ delivered|length }}</span
+          >
+        </div>
+
+        {% if delivered %}
+        <div class="space-y-2 max-h-64 overflow-y-auto">
+          {% for order in delivered %}
+          <div
+            class="bg-white rounded-lg border-l-4 border-green-500 shadow-sm p-4 opacity-75"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-gray-900">
+                  {{ order.order_number }}
+                </h3>
+                {% if order.customer_name %}
+                <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
+                {% endif %}
+              </div>
+              <span class="text-lg font-bold text-gray-600"
+                >${{ '{:,}'.format(order.total) }}</span
+              >
+            </div>
+            <a
+              href="{{ url_for('orders.detail', id=order.id) }}"
+              class="text-xs text-blue-600 hover:underline mt-2 inline-block"
+              >Ver detalle</a
+            >
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 text-center py-4">
+          No hay pedidos entregados hoy
+        </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- FAB -->
+    <a href="{{ url_for('orders.create') }}" class="fixed bottom-20 right-4 bg-primary hover:bg-[#d63a0a] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+    </a>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50 text-sm"
+    >
+      <span id="toast-message"></span>
+    </div>
+
+    <script>
+      async function changeStatus(orderId, newStatus) {
+        try {
+          const response = await fetch(`/orders/${orderId}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Error al cambiar estado");
+          }
+
+          // Recargar página para ver cambios
+          location.reload();
+        } catch (error) {
+          showToast(error.message);
+        }
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        document.getElementById("toast-message").textContent = message;
+        toast.classList.remove("hidden");
+        setTimeout(() => toast.classList.add("hidden"), 3000);
+      }
+    </script>
+  </body>
+</html>
