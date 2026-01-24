@@ -29,12 +29,14 @@
                 <h1 class="text-xl font-bold text-gray-900">{{ order.order_number }}</h1>
                 <span class="px-3 py-1 rounded-full text-xs font-bold
                     {% if order.status == 'pending' %}bg-orange-100 text-orange-700
-                    {% elif order.status == 'kitchen' %}bg-blue-100 text-blue-700
+                    {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-700
                     {% elif order.status == 'delivered' %}bg-green-100 text-green-700
+                    {% elif order.status == 'expired' %}bg-gray-200 text-gray-500
                     {% else %}bg-gray-100 text-gray-700{% endif %}">
                     {% if order.status == 'pending' %}Pendiente
-                    {% elif order.status == 'kitchen' %}En Cocina
+                    {% elif order.status == 'confirmed' %}Confirmado
                     {% elif order.status == 'delivered' %}Entregado
+                    {% elif order.status == 'expired' %}Expirado
                     {% else %}Cancelado{% endif %}
                 </span>
             </div>
@@ -103,10 +105,10 @@
         {% if order.status not in ['delivered', 'cancelled'] %}
         <div class="space-y-2">
             {% if order.status == 'pending' %}
-                <button onclick="changeStatus('kitchen')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg">
-                    → Mover a Cocina
+                <button onclick="changeStatus('confirmed')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg">
+                    → Confirmar Pedido
                 </button>
-            {% elif order.status == 'kitchen' %}
+            {% elif order.status == 'confirmed' %}
                 <button onclick="changeStatus('delivered')" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg">
                     ✓ Marcar como Entregado
                 </button>
@@ -130,7 +132,7 @@
                 cleanPhone = '57' + cleanPhone;
             }
             
-            const message = encodeURIComponent(`Tu pedido ${orderNumber} está listo 🧾 Gracias por tu compra.`);
+            const message = encodeURIComponent(`Tu pedido ${orderNumber} está listo.Gracias por tu compra.`);
             window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
         }
 

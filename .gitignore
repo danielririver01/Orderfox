@@ -52,3 +52,6 @@ migrations/
 
 #configuraicon de la base de datos
 settings.py
+
+#configuracion ersonal
+seed_restaurant.py

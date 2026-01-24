@@ -1,17 +1,20 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, session
 from app.forms import LoginForm, ForgotPasswordForm
 from app.models import User
 
 auth_bp = Blueprint('auth', __name__)
 
+
 @auth_bp.route('/', methods=['GET', 'POST'])
 def login():
+    if 'user_id' in session:
+        return redirect(url_for('dashboard.index'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
-            # Aquí se implementará la sesión posteriormente
-            user.password_hash = None # Seguridad básica, no enviar hash a la vista si no es necesario
+            session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('dashboard.index'))
         else:
             flash('Email o contraseña incorrectos')
@@ -30,6 +33,8 @@ def forgot_password():
 
 @auth_bp.route('/logout')
 def logout():
+    session.clear()
+    flash('Has cerrado sesión correctamente')
     return redirect(url_for('auth.login'))
 
 
