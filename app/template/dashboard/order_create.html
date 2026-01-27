@@ -1,22 +1,7 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo Pedido - Velzia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { "primary": "#f2460d", "success": "#16a34a" }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50 min-h-screen pb-32">
-    
+{% extends 'Common/base.html' %}
+{% block title %}Nuevo Pedido{% endblock %}
+{% block content %}
+<body class="bg-gray-50 min-h-screen pb-32">    
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
             <a href="{{ url_for('orders.index') }}" class="text-gray-600 hover:text-gray-900">
@@ -48,25 +33,40 @@
             </div>
 
             <!-- Selección de Productos -->
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
-                <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Menú</h2>
-                
-                <div class="space-y-4">
-                    {% for product in products %}
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                        <div class="flex-1">
-                            <h3 class="font-medium text-gray-900">{{ product.name }}</h3>
-                            <p class="text-xs text-gray-500">${{ '{:,}'.format(product.price) }}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100">-</button>
-                            <span id="qty-{{ product.id }}" class="w-4 text-center font-bold">0</span>
-                            <button type="button" onclick="updateQty('{{ product.id }}', 1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100">+</button>
-                            <input type="hidden" class="product-qty-input" data-id="{{ product.id }}" data-price="{{ product.price }}" value="0">
-                        </div>
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
+                        Menú
+                    </h2>
+                    <div class="relative flex-1">
+                        <input type="text" 
+                   name="search" 
+                   id="product-search"
+                   class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" 
+                   placeholder="Buscar plato...">
                     </div>
-                    {% endfor %}
                 </div>
+
+                <div class="space-y-4">
+            {% for product in products %}
+            <div class="product-item flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div class="flex-1">
+                <h3 class="product-name font-medium text-gray-900">{{ product.name }}</h3>
+                <p class="text-xs text-gray-500">${{ '{:,}'.format(product.price) }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100">-</button>
+                <span id="qty-{{ product.id }}" class="w-4 text-center font-bold">0</span>
+                <button type="button" onclick="updateQty('{{ product.id }}', 1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100">+</button>
+                <input type="hidden" class="product-qty-input" data-id="{{ product.id }}" data-price="{{ product.price }}" value="0">
+                </div>
+            </div>
+            {% endfor %}
+
+            <div id="no-results-message" class="hidden py-10 text-center">
+                <p class="text-gray-500 font-medium">No encontramos pedidos con ese nombre</p>
+                <p class="text-sm text-gray-400">Prueba con otra palabra clave</p>
+            </div>
             </div>
 
             <!-- Campo oculto para los items en JSON -->
@@ -86,55 +86,5 @@
             </div>
         </form>
     </div>
-
-    <script>
-        const cart = {};
-
-        function updateQty(productId, delta) {
-            const qtySpan = document.getElementById(`qty-${productId}`);
-            let currentQty = parseInt(qtySpan.textContent);
-            currentQty = Math.max(0, currentQty + delta);
-            qtySpan.textContent = currentQty;
-            
-            if (currentQty > 0) {
-                cart[productId] = currentQty;
-            } else {
-                delete cart[productId];
-            }
-            
-            calculateTotal();
-        }
-
-        function calculateTotal() {
-            let total = 0;
-            const inputs = document.querySelectorAll('.product-qty-input');
-            const items = [];
-
-            inputs.forEach(input => {
-                const id = input.dataset.id;
-                const price = parseInt(input.dataset.price);
-                const qty = parseInt(document.getElementById(`qty-${id}`).textContent);
-                
-                if (qty > 0) {
-                    total += price * qty;
-                    items.push({
-                        product_id: parseInt(id),
-                        quantity: qty
-                    });
-                }
-            });
-
-            document.getElementById('order-total').textContent = '$' + total.toLocaleString();
-            document.getElementById('items-json').value = JSON.stringify(items);
-        }
-
-        document.getElementById('order-form').onsubmit = function(e) {
-            const items = JSON.parse(document.getElementById('items-json').value || '[]');
-            if (items.length === 0) {
-                e.preventDefault();
-                alert('Por favor selecciona al menos un producto');
-            }
-        };
-    </script>
-</body>
-</html>
+    <script src="{{ url_for('static', filename='js/order_create.js') }}"></script>
+{% endblock %}

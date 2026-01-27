@@ -1,0 +1,7 @@
+body { font-family: system-ui, 
+    -apple-system, sans-serif;
+ }
+
+.settings-row:active { 
+    background-color:#f3f4f6; 
+}

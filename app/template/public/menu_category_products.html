@@ -3,137 +3,54 @@
 {% block title %}{{ category.name }} - {{ restaurant.name }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    .nav-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-    
-    .btn-back {
-        background: white;
-        border: 1px solid #eee;
-        border-radius: 12px;
-        padding: 0.5rem 1rem;
-        color: var(--text-dark);
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 0.9rem;
-        box-shadow: var(--shadow-sm);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .category-title-view {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: var(--text-dark);
-        margin: 0;
-    }
-
-    /* Product cards en GRID */
-    .product-grid {
-        display: grid;
-        grid-template-columns: 1fr; /* 1 columna en móvil */
-        gap: 1.5rem;
-    }
-    
-    .product-card {
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 1.25rem;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid rgba(0,0,0,0.04);
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .product-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.75rem;
-    }
-    
-    .product-name {
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin: 0;
-    }
-    
-    .product-price {
-        color: var(--primary);
-        font-weight: 800;
-        background: rgba(242, 70, 13, 0.08);
-        padding: 0.2rem 0.6rem;
-        border-radius: 8px;
-    }
-
-    .extras-container {
-        margin-top: 1rem;
-        padding: 0.75rem;
-        background: #fafafa;
-        border-radius: 12px;
-        display: none;
-        font-size: 0.85rem;
-    }
-    
-    .quantity-controls {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-   .btn-qty {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    border: 2px solid #eee;
-    background: white;
-
-    font-weight: 700;
-    font-size: 1.4rem;
-    color: #2c3e50; 
-    line-height: 1;
-}
-
-
-    /* DESKTOP GRID: Aquí es donde se ponen "al lado" */
-    @media (min-width: 768px) {
-        .product-grid {
-            grid-template-columns: repeat(2, 1fr); /* 2 columnas en tablets/PC pequeño */
-        }
-    }
-    
-    @media (min-width: 1024px) {
-        .product-grid {
-            grid-template-columns: repeat(3, 1fr); /* 3 columnas en pantallas grandes */
-        }
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_category_products.css') }}">
 {% endblock %}
 
 {% block header_title %}{{ category.name }}{% endblock %}
 {% block header_subtitle %}{{ category.description or 'Selecciona tus favoritos' }}{% endblock %}
 
 {% block content %}
-<div class="nav-header">
-    <a href="{{ url_for('public.menu', slug=restaurant.slug) }}" class="btn-back">
-        ⬅ Volver
-    </a>
+
+<!-- Sección de búsqueda sticky -->
+<div class="search-section">
+    <div class="nav-header">
+        <a href="{{ url_for('public.menu', slug=restaurant.slug) }}" class="btn-back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Volver
+        </a>
+        
+        <div class="search-container">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input 
+                type="search" 
+                id="productSearch" 
+                placeholder="Buscar en todo el menú..."
+                autocomplete="off"
+            >
+        </div>
+    </div>
 </div>
 
-<div class="product-grid">
+<!-- Mensaje sin resultados -->
+<div class="no-results" id="noResults">
+    <h3>No encontramos resultados</h3>
+    <p>Intenta buscar con otras palabras</p>
+</div>
+<script>window.restaurantSlug = "{{ restaurant.slug }}";</script>
+<!-- Grid de productos -->
+<div class="product-grid" id="productGrid">
     {% for product in products %}
     <article class="product-card" 
              data-id="{{ product.id }}" 
              data-name="{{ product.name }}" 
-             data-price="{{ product.price }}">
+             data-price="{{ product.price }}"
+             data-description="{{ product.description or '' }}"
+             data-keywords="{{ product.name|lower }} {{ product.description|lower if product.description else '' }}">
         <div class="product-header">
             <h3 class="product-name">{{ product.name }}</h3>
             <span class="product-price">${{ "{:,}".format(product.price) }}</span>
@@ -168,6 +85,13 @@
     </article>
     {% endfor %}
 </div>
+
+<script>
+    // Variable global con el slug del restaurante
+    window.restaurantSlug = "{{ restaurant.slug }}";
+</script>
+<script src="{{ url_for('static', filename='js/global-search.js') }}"></script>
+
 {% endblock %}
 
 {% block footer_cart %}
@@ -180,7 +104,7 @@
         <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
             Enviar pedido
         </button>
-        <button onclick="clearCart()" style="flex: 1; background: #fde2e2; border: none; color: #e11d48; border-radius: 14px; padding: 0.5rem; font-weight: 700;">
+        <button onclick="clearCart()" style="flex: 1; background: #fde2e2; border: none; color: #e11d48; border-radius: 14px; padding: 0.5rem; font-weight: 700; cursor: pointer;">
             Cancelar
         </button>
     </div>

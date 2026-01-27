@@ -109,8 +109,6 @@ def create():
         # Actualizar total
         order.total = total
         db.session.commit()
-        
-        flash(f'Pedido {order_number} creado exitosamente', 'success')
         return redirect(url_for('orders.detail', id=order.id))
     
     # GET: Mostrar formulario
@@ -165,5 +163,4 @@ def cancel(id):
     order.status = 'cancelled'
     db.session.commit()
     
-    flash(f'Pedido {order.order_number} cancelado', 'success')
     return redirect(url_for('orders.index'))

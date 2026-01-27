@@ -169,26 +169,29 @@ async function sendWhatsApp() {
         localStorage.setItem('velziaLastOrder', Date.now());
 
         // 3. Preparar mensaje de WhatsApp
-        let message = `Nuevo pedido recibido\n`;
+        // 3. Preparar mensaje de WhatsApp con formato Markdown profesional
+        let message = `*NUEVO PEDIDO RECIBIDO*\n`; // Negrita para el encabezado
+        message += `N° del pedido: \`\`\`${result.order_number}\`\`\`\n`;
+        message += `------------------------------\n`;
 
         for (const id in cart) {
             const item = cart[id];
-            const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
-            const itemUnitTotal = item.price + extrasTotal;
-            const subtotal = itemUnitTotal * item.quantity;
-
-            message += `• ${item.quantity}x ${item.name}\n`;
+            
+            // Usamos "-" para que WhatsApp active el formato de lista con sangría [4]
+            // Usamos "*" para resaltar la cantidad del producto
+            message += `- *${item.quantity}x* ${item.name}\n`;
 
             if (item.extras.length > 0) {
                 const extrasList = item.extras.map(e => e.name).join(', ');
-                message += `   ↳ Extras: ${extrasList}\n`;
+                // Usamos "_" para poner los extras en cursiva y crear jerarquía visual [4]
+                message += `  _↳ Extras: ${extrasList}_\n`;
             }
-
-            message += "\n";
         }
 
-        message += `Total a pagar: $${total.toLocaleString('es-CO')}\n\n`;
-        message += `Gracias por tu pedido`;
+        // Resaltamos el monto final para facilitar el cobro rápido
+        message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n`;
+        message += `------------------------------\n`;
+        message += `_Gracias por tu pedido_`; // Cursiva para el pie de mensaje [4]
 
         // Número dinámico desde backend
         const businessPhone = window.businessPhone;
@@ -203,3 +206,19 @@ async function sendWhatsApp() {
         btn.innerHTML = originalText;
     }
 }
+
+ function showToast(message, type = 'default') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }

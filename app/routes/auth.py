@@ -28,7 +28,7 @@ def forgot_password():
         if user:
             flash('Se han enviado las instrucciones a tu correo.')
         else:
-            flash('No se encontró una cuenta con ese correo.')
+            flash('No pudimos validar la información ingresada. Revisa tus datos e inténtalo de nuevo')
     return render_template('auth/forgot_password.html', form=form)
 
 @auth_bp.route('/logout')
@@ -36,5 +36,3 @@ def logout():
     session.clear()
     flash('Has cerrado sesión correctamente')
     return redirect(url_for('auth.login'))
-
-

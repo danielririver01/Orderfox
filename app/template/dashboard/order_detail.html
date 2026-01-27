@@ -1,20 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ order.order_number }} - Velzia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { "primary": "#f2460d" }
-                }
-            }
-        }
-    </script>
-</head>
+{% extends "Common/base.html" %}
+{% block content %}
+    <title>{{ order.order_number }}</title>
 <body class="bg-gray-50 min-h-screen">
     
     <header class="bg-white border-b border-gray-200">
@@ -68,30 +54,33 @@
         {% endif %}
 
         <!-- Items del Pedido -->
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <h2 class="text-sm font-bold text-gray-700 mb-3">Productos</h2>
-            <div class="space-y-3">
-                {% for item in order.items %}
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-900">{{ item.quantity }}x {{ item.product_name }}</p>
-                        {% if item.modifiers_snapshot %}
-                            <p class="text-xs text-gray-500 mt-1">{{ item.modifiers_snapshot }}</p>
-                        {% endif %}
-                        <p class="text-sm text-gray-600 mt-1">${{ '{:,}'.format(item.product_price) }} c/u</p>
-                    </div>
-                    <p class="font-bold text-gray-900">${{ '{:,}'.format(item.subtotal) }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <div class="border-t border-gray-200 mt-4 pt-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-lg font-bold text-gray-900">Total</span>
-                    <span class="text-2xl font-bold text-primary">${{ '{:,}'.format(order.total) }}</span>
-                </div>
-            </div>
-        </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+  <h2 class="text-sm font-bold text-gray-700 mb-3">Productos</h2>
+  <div class="space-y-3">
+    {% for item in order.items %}
+    <div class="flex justify-between items-start">
+      <div class="flex-1">
+        <p class="font-medium text-gray-900">{{ item.quantity }}x {{ item.product_name }}</p>
+
+        {# crear lista de nombres no vacíos #}
+        {% set extras = [] %}
+        {% if item.modifiers_snapshot %}
+          {% set extras = item.modifiers_snapshot | selectattr('name') | map(attribute='name') | list %}
+        {% endif %}
+
+        {% if extras %}
+          <p class="text-xs text-gray-500 mt-1 italic">↳ Extras: {{ extras | join(', ') }}</p>
+        {% else %}
+          <p class="text-xs text-gray-500 mt-1 italic">↳ Extras: no hay extras que mostrar</p>
+        {% endif %}
+
+        <p class="text-sm text-gray-600 mt-1">${{ '{:,}'.format(item.product_price) }}</p>
+      </div>
+      <p class="font-bold text-gray-900">${{ '{:,}'.format(item.subtotal) }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 
         <!-- Notas -->
         {% if order.notes %}
@@ -121,39 +110,6 @@
             </form>
         </div>
         {% endif %}
-
     </div>
-
-    <script>
-        function contactWhatsApp(phone, orderNumber) {
-            // Limpiar el teléfono y agregar código de país si no lo tiene
-            let cleanPhone = phone.replace(/\D/g, '');
-            if (!cleanPhone.startsWith('57')) {
-                cleanPhone = '57' + cleanPhone;
-            }
-            
-            const message = encodeURIComponent(`Tu pedido ${orderNumber} está listo.Gracias por tu compra.`);
-            window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-        }
-
-        async function changeStatus(newStatus) {
-            try {
-                const response = await fetch(`/orders/{{ order.id }}/status`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
-                });
-                
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Error al cambiar estado');
-                }
-                
-                location.href = '{{ url_for("orders.index") }}';
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-    </script>
-</body>
-</html>
+    <script src="{{ url_for('static', filename='js/order_detail.js') }}"></script>
+{% endblock %}

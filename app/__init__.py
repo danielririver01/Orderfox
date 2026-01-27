@@ -14,6 +14,8 @@ def create_app():
     from .routes.products import products_bp
     from .routes.orders import orders_bp
     from .routes.public import public_bp
+    from .routes.menu import menu_bp
+
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -21,6 +23,7 @@ def create_app():
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(public_bp)
+    app.register_blueprint(menu_bp)
 
     migrate.init_app(app, db)
 

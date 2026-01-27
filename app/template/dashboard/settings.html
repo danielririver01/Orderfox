@@ -1,28 +1,7 @@
-<!DOCTYPE html>
-<html lang="es" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración - Velzia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#f2460d",
-                        "text-main": "#1c110d",
-                        "bg-light": "#f8f6f5",
-                    }
-                },
-            },
-        }
-    </script>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; }
-        .settings-row:active { background-color: #f3f4f6; }
-    </style>
-</head>
+    {% extends 'common/base.html' %}
+    {% block content %}
+    <title>Ajustes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/settings.css') }}">
 <body class="bg-bg-light text-text-main antialiased min-h-screen max-w-md mx-auto relative pb-20">
 
     <!-- Header -->
@@ -94,7 +73,7 @@
                 </a>
 
                 <!-- Generar QR -->
-                <a href="#" class="settings-row flex items-center justify-between p-4 transition-colors">
+                <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="settings-row flex items-center justify-between p-4 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,7 +104,7 @@
                         </div>
                         <div class="flex flex-col">
                             <span class="font-semibold text-sm">Suscripción</span>
-                            <span class="text-[10px] text-green-600 font-bold uppercase">Plan MVP Free</span>
+                            <span class="text-[10px] text-green-600 font-bold uppercase">Plan Gold</span>
                         </div>
                     </div>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -194,5 +173,4 @@
             </a>
         </div>
     </nav>
-</body>
-</html>
+{% endblock %}

@@ -1,22 +1,7 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Velzia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { "primary": "#f2460d" }
-                }
-            }
-        }
-    </script>
-</head>
+{% extends 'Common/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
 <body class="bg-gray-50 min-h-screen">
-    
     <header class="bg-white border-b border-gray-200">
         <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
             <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="text-gray-600 hover:text-gray-900">
@@ -72,6 +57,4 @@
             </div>
         </form>
     </div>
-
-</body>
-</html>
+{% endblock %}
