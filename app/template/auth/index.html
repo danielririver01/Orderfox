@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
 
@@ -43,7 +44,7 @@
                     {% if messages %}
                         <div class="w-full mb-4">
                             {% for message in messages %}
-                                <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
+                                <div class="flash-message bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]">error</span>
                                     {{ message }}
                                 </div>
@@ -103,14 +104,23 @@
             </div>
         </div>
 
+        <!-- Subscription Shortcut -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('auth.plans') }}" class="text-xs font-bold text-primary hover:text-primary-dark transition-colors inline-flex items-center gap-1.5 uppercase tracking-wider underline underline-offset-4 decoration-primary/30">
+                <span class="material-symbols-outlined text-[16px]">verified</span>
+                Ver planes y precios
+            </a>
+        </div>
+
         <div class="mt-8 flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500 font-medium">
-            <a class="hover:text-primary transition-colors" href="#">Ayuda</a>
-            <a class="hover:text-primary transition-colors" href="#">Privacidad</a>
-            <a class="hover:text-primary transition-colors" href="#">Términos</a>
+            <a class="hover:text-primary transition-colors" href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
+            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.privacy') }}">Privacidad</a>
+            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.terms') }}">Términos</a>
         </div>
 
     </main>
 
+    <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='JS/login.js') }}"></script>
 </body>
 </html>

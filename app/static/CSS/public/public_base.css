@@ -127,3 +127,17 @@
 
         .toast.error { border-left-color: #e11d48; }
         .toast.success { border-left-color: #22c55e; }
+
+         ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e8d5ce;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4b5ab;
+        }

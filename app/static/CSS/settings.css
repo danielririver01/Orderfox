@@ -5,3 +5,16 @@ body { font-family: system-ui,
 .settings-row:active { 
     background-color:#f3f4f6; 
 }
+ ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e8d5ce;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4b5ab;
+        }

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Planes de Suscripción</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+</head>
+
+<body class="bg-[#f9f7f6] dark:bg-[#1a110d] font-display antialiased min-h-screen py-10 px-4">
+    
+    <main class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dark transition-colors mb-6 group">
+                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                Regresar al inicio
+            </a>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-[#1c110d] dark:text-white tracking-tight mb-4 leading-tight">
+                Elige el plan que impulsará <br class="hidden md:block"> tu negocio gastronómico
+            </h1>
+            <p class="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+                Soluciones reales, sin letras pequeñas. Escala tu restaurante a tu propio ritmo.
+            </p>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            
+            <!-- Plan Emprendedor -->
+            <div class="bg-white dark:bg-[#2c1a15] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#3e251e] flex flex-col hover:shadow-xl transition-shadow duration-300">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Emprendedor</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Ideal para empezar a vender por delivery hoy mismo.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$30.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo que obtienes:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span>Menú Digital (Link compartible)</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span>Pedidos ilimitados a WhatsApp</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span class="font-semibold text-gray-900 dark:text-gray-100">Hasta 25 productos</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <a href="{{ url_for('auth.register', plan='emprendedor') }}" class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#3e251e] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#4a2d24] transition-colors border border-gray-100 dark:border-transparent">
+                    Iniciar hoy
+                </a>
+            </div>
+
+            <!-- Plan Crecimiento -->
+            <div class="bg-white dark:bg-[#2c1a15] rounded-3xl p-10 shadow-2xl border-4 border-primary relative flex flex-col transform md:-translate-y-4 scale-105 z-10 transition-transform duration-300">
+                <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-6 py-2 rounded-full uppercase tracking-widest">
+                    Más Profesional
+                </div>
+                
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Crecimiento</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Para locales físicos que quieren tráfico desde las mesas.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$40.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest text-[#1c110d] dark:text-white opacity-60">Lo de Emprendedor más:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-primary text-[22px]">qr_code_2</span>
+                            <span class="font-bold text-[#1c110d] dark:text-white">Generación de Código QR</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-primary text-[22px]">format_list_bulleted</span>
+                            <span>Hasta 100 productos</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-primary text-[22px]">pending_actions</span>
+                            <span>Gestión de Estados de Pedido</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-primary text-white font-bold hover:bg-opacity-90 shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+                    Elegir Crecimiento
+                </a>
+            </div>
+
+            <!-- Plan Élite -->
+            <div class="bg-white dark:bg-[#2c1a15] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#3e251e] flex flex-col hover:shadow-xl transition-shadow duration-300">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Élite</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Menús complejos y alta personalización operativa.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$50.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo de Crecimiento más:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">add_task</span>
+                            <span class="font-bold text-purple-600 dark:text-purple-400">Modificadores y Extras</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">all_out</span>
+                            <span>Catálogo de Productos Ilimitados</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">support_agent</span>
+                            <span>Soporte Técnico Prioritario</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <a href="{{ url_for('auth.register', plan='elite') }}" class="w-full py-4 text-center rounded-2xl bg-[#1c110d] text-white font-bold hover:bg-black transition-colors">
+                    Obtener Plan Élite
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Footer Note -->
+        <div class="mt-20 text-center">
+            <p class="text-gray-400 text-sm italic">
+                * Precios en Pesos Colombianos (COP). Activación inmediata tras confirmación.
+            </p>
+        </div>
+
+    </main>
+
+</body>
+</html>

@@ -1,11 +1,15 @@
 from flask import Flask
 from .models import db, migrate
+from flask_mail import Mail
+
+mail = Mail()
 
 
 def create_app():
     app = Flask(__name__, template_folder='template')
     app.config.from_object('settings.Config')
     db.init_app(app)
+    mail.init_app(app)
 
     #Registramos blueprints
     from .routes.auth import auth_bp
@@ -26,6 +30,14 @@ def create_app():
     app.register_blueprint(menu_bp)
 
     migrate.init_app(app, db)
+    
+    # Inyectar variables de soporte globalmente
+    @app.context_processor
+    def inject_support_info():
+        return {
+            'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
+            'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL')
+        }
 
     @app.after_request
     def add_header(response):

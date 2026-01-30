@@ -12,7 +12,10 @@
                 Volver a Pedidos
             </a>
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-gray-900">{{ order.order_number }}</h1>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">{{ order.order_number }}</h1>
+                    <p class="text-xs text-gray-500 font-medium">Realizado el {{ order.created_at.strftime('%d/%m/%y a las %H:%M') }}</p>
+                </div>
                 <span class="px-3 py-1 rounded-full text-xs font-bold
                     {% if order.status == 'pending' %}bg-orange-100 text-orange-700
                     {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-700

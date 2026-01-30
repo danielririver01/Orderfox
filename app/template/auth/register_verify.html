@@ -3,42 +3,35 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Recuperar Contraseña - Velzia</title>
+    <title>{{ 'Verificar Código' if step == 'otp' else 'Registro - Email' }} - Velzia</title>
     <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    
-    <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
-    <!-- Tailwind CSS with Plugins -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    
-    <!-- Tailwind Configuration -->
     <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
-    <!-- Main Container -->
     <main class="w-full max-w-[420px] mx-auto">
-        <!-- Recovery Card -->
         <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
-            <!-- Card Content -->
             <div class="px-8 pt-10 pb-8 flex flex-col items-center">
-                <!-- Brand Icon -->
+                <!-- Icono -->
                 <div class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 dark:bg-primary/20">
-                    <span class="material-symbols-outlined text-primary text-[32px]">lock_reset</span>
+                    <span class="material-symbols-outlined text-primary text-[32px]">
+                        {{ 'verified_user' if step == 'otp' else 'person_add' }}
+                    </span>
                 </div>
                 
                 <!-- Headline -->
                 <div class="text-center mb-8">
                     <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
-                        ¿Olvidaste tu contraseña?
+                        {{ 'Verifica tu email' if step == 'otp' else 'Comienza tu registro' }}
                     </h1>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                        Ingresa tu correo para enviarte las instrucciones
+                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium px-4">
+                        {{ 'Hemos enviado un código de 6 dígitos a ' + session.get('register_email', '') if step == 'otp' else 'Ingresa tu correo profesional para empezar' }}
                     </p>
                 </div>
 
@@ -47,8 +40,8 @@
                     {% if messages %}
                         <div class="w-full mb-4">
                             {% for message in messages %}
-                                <div class="flash-message bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                <div class="flash-message bg-primary/10 border border-primary/20 text-primary-dark px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-start gap-2">
+                                    <span class="material-symbols-outlined text-[16px] mt-0.5">info</span>
                                     {{ message }}
                                 </div>
                             {% endfor %}
@@ -60,31 +53,54 @@
                 <form class="w-full flex flex-col gap-5" method="POST">
                     {{ form.hidden_tag() }}
                     
-                    <!-- Email Input -->
+                    {% if step == 'email' %}
                     <div class="flex flex-col gap-2">
                         <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="email">
                             Correo electrónico
                         </label>
                         <div class="relative">
-                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="tu@restaurante.com") }}
+                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="restaurante@empresa.com") }}
                             <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#9c5e49]">
                                 <span class="material-symbols-outlined text-[20px]">mail</span>
                             </div>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="code">
+                            Código de verificación
+                        </label>
+                        <div class="relative">
+                            {{ form.code(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-2xl font-bold tracking-[0.5em] text-center placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="000000", maxlength="6") }}
+                        </div>
+                        <p class="text-[10px] text-gray-400 text-center mt-1 uppercase font-bold tracking-wider">Ingresa los 6 dígitos</p>
+                    </div>
+                    {% endif %}
 
                     <!-- Submit Button -->
                     <button class="mt-2 w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]" type="submit">
-                        <span>Enviar enlace</span>
-                        <span class="material-symbols-outlined text-[20px]">send</span>
+                        <span>{{ 'Verificar y Continuar' if step == 'otp' else 'Siguiente paso' }}</span>
+                        <span class="material-symbols-outlined text-[20px]">{{ 'login' if step == 'otp' else 'arrow_forward' }}</span>
                     </button>
                 </form>
                 
+                {% if step == 'otp' %}
+                <div class="mt-4 text-center">
+                    <button onclick="window.location.reload()" class="text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto group">
+                        <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-500">refresh</span>
+                        Reenviar código
+                    </button>
+                    <a class="mt-4 text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto" href="{{ url_for('auth.register') }}">
+                        Cambiar correo ({{ session.get('register_email') }})
+                    </a>
+                </div>
+                {% endif %}
+
                 <!-- Footer Links -->
                 <div class="mt-6 text-center">
-                    <a class="text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors flex items-center justify-center gap-2" href="{{ url_for('auth.login') }}">
+                    <a class="text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors flex items-center justify-center gap-2" href="{{ url_for('auth.plans') }}">
                         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                        Volver al inicio de sesión
+                        Volver a planes
                     </a>
                 </div>
             </div>
@@ -93,14 +109,10 @@
             <div class="bg-gray-50 dark:bg-[#221410] border-t border-gray-100 dark:border-[#3e251e] py-4 px-8 flex flex-col gap-3 items-center text-xs text-gray-400 dark:text-gray-500">
                 <div class="flex justify-between w-full items-center">
                     <span>© 2026 Velzia</span>
-                    <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Password%20Velzia" class="hover:text-primary transition-colors flex items-center gap-1">
+                    <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia" class="hover:text-primary transition-colors flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">mail</span>
                         Ayuda
                     </a>
-                </div>
-                <div class="flex gap-4 font-medium">
-                    <a href="{{ url_for('auth.privacy') }}" class="hover:text-primary transition-colors">Privacidad</a>
-                    <a href="{{ url_for('auth.terms') }}" class="hover:text-primary transition-colors">Términos</a>
                 </div>
             </div>
         </div>

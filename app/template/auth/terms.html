@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Términos y Condiciones</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen py-12 px-4 selection:bg-primary/20">
+    
+    <main class="w-full max-w-2xl mx-auto">
+        
+        <div class="mb-8 flex items-center justify-between">
+            <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-primary transition-colors duration-200">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                Volver
+            </a>
+            <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary text-[24px]">gavel</span>
+            </div>
+        </div>
+
+        <article class="bg-white dark:bg-[#2c1a15] rounded-2xl shadow-xl border border-gray-100 dark:border-[#3e251e] overflow-hidden p-8 md:p-12">
+            
+            <header class="mb-10 text-center md:text-left">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-[#1c110d] dark:text-white tracking-tight mb-4">
+                    Términos de Servicio
+                </h1>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">
+                    Condiciones legales de uso - Versión 1.0
+                </p>
+            </header>
+
+            <div class="space-y-8 text-gray-600 dark:text-gray-300 leading-relaxed text-base">
+                
+                <section>
+                    <h2 class="text-lg font-bold text-[#1c110d] dark:text-white flex items-center gap-2 mb-3">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        Aceptación del Servicio
+                    </h2>
+                    <p>
+                        Al registrarse y utilizar los recursos de Velzia, usted acepta estar legalmente vinculado a estos términos. Esta herramienta está diseñada para facilitar la digitalización de negocios gastronómicos a través de herramientas de pedidos eficientes. El uso indebido de este entorno digital resultará en la suspensión inmediata del acceso.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-[#1c110d] dark:text-white flex items-center gap-2 mb-3">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        Responsabilidad del Usuario
+                    </h2>
+                    <p>
+                        El titular de la cuenta es el único responsable de mantener la confidencialidad de sus credenciales. Usted se compromete a proporcionar información verídica sobre su establecimiento y a utilizar los módulos de gestión para fines lícitos y profesionales.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-[#1c110d] dark:text-white flex items-center gap-2 mb-3">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        Disponibilidad y Actualizaciones
+                    </h2>
+                    <p>
+                        Nos esforzamos por mantener una operatividad del 99.9%. Sin embargo, nos reservamos el derecho de realizar mantenimientos programados para mejorar la estabilidad de la plataforma. Este ecosistema está en constante evolución y puede recibir actualizaciones automáticas para optimizar su rendimiento.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-[#1c110d] dark:text-white flex items-center gap-2 mb-3">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        Propiedad Intelectual
+                    </h2>
+                    <p>
+                        Todos los componentes visuales, código de software y metodologías empleadas en esta herramienta son propiedad exclusiva. Queda prohibida la reproducción total o parcial de su arquitectura técnica sin autorización previa.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-[#1c110d] dark:text-white flex items-center gap-2 mb-3">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        Limitación de Responsabilidad
+                    </h2>
+                    <p>
+                        Este sistema proporciona las herramientas tecnológicas para la venta, pero no interviene en las transacciones comerciales finales entre el restaurante y su comensal. No nos hacemos responsables por la calidad de los productos físicos entregados por el usuario de la plataforma.
+                    </p>
+                </section>
+
+            </div>
+
+            <footer class="mt-12 pt-8 border-t border-gray-100 dark:border-[#3e251e] text-center">
+                <p class="text-xs text-gray-400">
+                    Al continuar navegando, usted reafirma su compromiso con estas normas operativas.
+                </p>
+            </footer>
+
+        </article>
+
+    </main>
+
+</body>
+</html>

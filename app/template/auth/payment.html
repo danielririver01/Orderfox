@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Resumen de Pago - velzia</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
+    <main class="w-full max-w-[480px] mx-auto">
+        <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
+            <div class="px-8 pt-10 pb-8">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="w-full mb-6">
+                            {% for message in messages %}
+                                <div class="flash-message bg-primary/10 border border-primary/20 text-primary-dark px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-start gap-2">
+                                    <span class="material-symbols-outlined text-[16px] mt-0.5">info</span>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Header -->
+                <div class="flex flex-col items-center mb-8">
+                    <div class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 dark:bg-primary/20">
+                        <span class="material-symbols-outlined text-primary text-[32px]">shopping_cart_checkout</span>
+                    </div>
+                    <div class="text-center">
+                        <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
+                            Finalizar Activación
+                        </h1>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium px-4">
+                            Estás a un paso de activar <strong>{{ restaurant.name }}</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Detalle del Plan -->
+                <div class="bg-gray-50 dark:bg-[#221410] rounded-xl p-6 mb-8 border border-gray-100 dark:border-[#3e251e]">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Plan Seleccionado</p>
+                            <h3 class="text-lg font-bold text-[#1c110d] dark:text-white">{{ plan_info.name }}</h3>
+                        </div>
+                        <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Mensual</span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
+                            <span>Menú Digital QR Ilimitado</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
+                            <span>Gestión de Pedidos por WhatsApp</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
+                            <span>Panel de Administración Full</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 dark:border-[#3e251e] pt-4 flex justify-between items-center">
+                        <span class="text-[#1c110d] dark:text-white font-semibold">Total a pagar</span>
+                        <span class="text-2xl font-bold text-primary">${{ plan_info.price }}<span class="text-xs text-gray-400 font-normal"> /mes</span></span>
+                    </div>
+                </div>
+
+                <!-- Payment Method Placeholder -->
+                <div class="flex flex-col gap-4">
+                    <p class="text-center text-xs text-gray-400 uppercase font-bold tracking-wider">Paga de forma segura con</p>
+                    
+                    <div class="flex justify-center gap-4 mb-4">
+                        <img src="https://logotipous.com/wp-content/uploads/2021/11/Mercado-Pago-Logo.png" alt="Mercado Pago" class="h-8 object-contain filter grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer">
+                    </div>
+
+                    <a href="{{ checkout_url }}" class="w-full flex items-center justify-center gap-3 bg-[#009EE3] hover:bg-[#0086c3] text-white font-bold h-14 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+                        <span class="material-symbols-outlined text-[24px]">wallet</span>
+                        <span>Pagar con Mercado Pago</span>
+                    </a>
+
+                    <p class="text-[10px] text-center text-gray-400 px-8">
+                        Al pagar, aceptas nuestros <a href="{{ url_for('auth.terms') }}" class="text-primary hover:underline">Términos de Servicio</a> y la renovación automática mensual.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Bottom Decoration -->
+            <div class="bg-gray-50 dark:bg-[#221410] border-t border-gray-100 dark:border-[#3e251e] py-6 px-8 flex flex-col gap-3 items-center text-xs text-gray-400 dark:text-gray-500">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">lock</span>
+                    <span class="font-medium">Pago encriptado y seguro</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
+</body>
+</html>

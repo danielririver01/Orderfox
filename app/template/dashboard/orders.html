@@ -58,9 +58,12 @@
           >
             <div class="flex justify-between items-start mb-2">
               <div>
-                <h3 class="font-bold text-gray-900">
-                  {{ order.order_number }}
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-gray-900">{{ order.order_number }}</h3>
+                  <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">
+                    {{ order.created_at.strftime('%d/%m/%y') }}
+                  </span>
+                </div>
                 {% if order.customer_name %}
                 <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
                 {% endif %}
@@ -122,9 +125,12 @@
           >
             <div class="flex justify-between items-start mb-2">
               <div>
-                <h3 class="font-bold text-gray-900">
-                  {{ order.order_number }}
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-gray-900">{{ order.order_number }}</h3>
+                  <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">
+                    {{ order.created_at.strftime('%d/%m/%y') }}
+                  </span>
+                </div>
                 {% if order.customer_name %}
                 <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
                 {% endif %}
@@ -185,9 +191,12 @@
           >
             <div class="flex justify-between items-start">
               <div>
-                <h3 class="font-bold text-gray-900">
-                  {{ order.order_number }}
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-gray-900">{{ order.order_number }}</h3>
+                  <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">
+                    {{ order.created_at.strftime('%d/%m/%y') }}
+                  </span>
+                </div>
                 {% if order.customer_name %}
                 <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
                 {% endif %}

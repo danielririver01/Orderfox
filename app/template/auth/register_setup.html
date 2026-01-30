@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Configuración de Cuenta - Velzia</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col items-center justify-center p-4 py-12">
+    <main class="w-full max-w-[480px] mx-auto">
+        <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
+            <div class="px-8 pt-10 pb-8">
+                <!-- Header -->
+                <div class="flex flex-col items-center mb-8">
+                    <div class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 dark:bg-primary/20">
+                        <span class="material-symbols-outlined text-primary text-[32px]">assignment_ind</span>
+                    </div>
+                    <div class="text-center">
+                        <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
+                            Configura tu restaurante
+                        </h1>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                            Completa los detalles para activar tu ecosistema digital.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="w-full mb-6">
+                            {% for message in messages %}
+                                <div class="flash-message bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-xs font-bold flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">error</span>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form class="flex flex-col gap-5" method="POST" id="setupForm">
+                    {{ form.hidden_tag() }}
+
+                    <!-- Email (Pre-filled & Disabled) -->
+                    <div class="flex flex-col gap-2 opacity-60">
+                        <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal">
+                            Correo Verificado
+                        </label>
+                        <div class="relative">
+                            <input type="text" value="{{ session.get('register_email') }}" disabled class="w-full rounded-lg border border-[#e8d5ce] bg-[#fcf9f8] text-[#1c110d] px-4 py-3 text-sm font-bold">
+                            <div class="absolute inset-y-0 right-3 flex items-center text-green-500">
+                                <span class="material-symbols-outlined text-[20px]">verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Admin Name -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal" for="admin_name">
+                                Tu Nombre
+                            </label>
+                            {{ form.admin_name(class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="Ej: Juan Pérez") }}
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal" for="phone">
+                                WhatsApp
+                            </label>
+                            {{ form.phone(class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="573...") }}
+                        </div>
+                    </div>
+
+                    <!-- Restaurant Name -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal" for="restaurant_name">
+                            Nombre del Restaurante
+                        </label>
+                        {{ form.restaurant_name(class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="Ej: Pizzería Roma") }}
+                    </div>
+
+                    <hr class="border-gray-100 dark:border-[#3e251e] my-2">
+
+                    <!-- Password -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal" for="password">
+                            Contraseña
+                        </label>
+                        {{ form.password(id="password", class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="••••••••") }}
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="flex flex-col gap-2">
+                        {{ form.confirm_password(id="confirm_password", class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="Repetir contraseña") }}
+                    </div>
+
+                    <!-- Password Checklist -->
+                    <div class="bg-gray-50 dark:bg-[#221410] p-4 rounded-lg space-y-2">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Requisitos de Seguridad</p>
+                        <div id="check-upper" class="flex items-center gap-2 text-xs text-gray-400 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">circle</span>
+                            <span>Primera letra mayúscula</span>
+                        </div>
+                        <div id="check-number" class="flex items-center gap-2 text-xs text-gray-400 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">circle</span>
+                            <span>Incluir números</span>
+                        </div>
+                        <div id="check-match" class="flex items-center gap-2 text-xs text-gray-400 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">circle</span>
+                            <span>Las contraseñas coinciden</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button id="submitBtn" disabled class="mt-4 w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#d63a0a] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold h-12 rounded-lg transition-all duration-200 shadow-sm active:scale-[0.99]" type="submit">
+                        <span>Continuar al Pago</span>
+                        <span class="material-symbols-outlined text-[20px]">payments</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const password = document.getElementById('password');
+        const confirm = document.getElementById('confirm_password');
+        const submitBtn = document.getElementById('submitBtn');
+
+        const checks = {
+            upper: document.getElementById('check-upper'),
+            number: document.getElementById('check-number'),
+            match: document.getElementById('check-match')
+        };
+
+        function validate() {
+            const val = password.value;
+            const valConfirm = confirm.value;
+
+            // Primera letra mayúscula
+            const isUpper = /^[A-Z]/.test(val);
+            // Incluir números
+            const hasNumber = /[0-9]/.test(val);
+            // Coinciden
+            const matches = val === valConfirm && val.length > 0;
+
+            updateUI(checks.upper, isUpper);
+            updateUI(checks.number, hasNumber);
+            updateUI(checks.match, matches);
+
+            submitBtn.disabled = !(isUpper && hasNumber && matches);
+        }
+
+        function updateUI(el, isValid) {
+            const icon = el.querySelector('.material-symbols-outlined');
+            if (isValid) {
+                el.classList.remove('text-gray-400', 'text-red-400');
+                el.classList.add('text-green-500');
+                icon.innerText = 'check_circle';
+            } else {
+                el.classList.remove('text-green-500');
+                el.classList.add('text-gray-400');
+                icon.innerText = 'circle';
+            }
+        }
+
+        password.addEventListener('input', validate);
+        confirm.addEventListener('input', validate);
+    </script>
+    <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
+</body>
+</html>
