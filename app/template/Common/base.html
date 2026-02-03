@@ -14,5 +14,11 @@
 </head>
 <body>
     {% block content %}{% endblock %}
+
+    <!-- Modales Globales -->
+    {% include 'components/modal_delete.html' %}
+    
+    <!-- Scripts Globales -->
+    <script src="{{ url_for('static', filename='JS/modal-delete.js') }}"></script>
 </body>
 </html>

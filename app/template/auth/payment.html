@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Resumen de Pago - velzia</title>
+    <title>Resumen de Pago</title>
     <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -19,18 +19,7 @@
         <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
             <div class="px-8 pt-10 pb-8">
                 <!-- Flash Messages -->
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="w-full mb-6">
-                            {% for message in messages %}
-                                <div class="flash-message bg-primary/10 border border-primary/20 text-primary-dark px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-start gap-2">
-                                    <span class="material-symbols-outlined text-[16px] mt-0.5">info</span>
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                {% include 'components/flash_messages.html' %}
 
                 <!-- Header -->
                 <div class="flex flex-col items-center mb-8">
@@ -80,15 +69,13 @@
 
                 <!-- Payment Method Placeholder -->
                 <div class="flex flex-col gap-4">
-                    <p class="text-center text-xs text-gray-400 uppercase font-bold tracking-wider">Paga de forma segura con</p>
-                    
-                    <div class="flex justify-center gap-4 mb-4">
-                        <img src="https://logotipous.com/wp-content/uploads/2021/11/Mercado-Pago-Logo.png" alt="Mercado Pago" class="h-8 object-contain filter grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer">
-                    </div>
-
                     <a href="{{ checkout_url }}" class="w-full flex items-center justify-center gap-3 bg-[#009EE3] hover:bg-[#0086c3] text-white font-bold h-14 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
                         <span class="material-symbols-outlined text-[24px]">wallet</span>
                         <span>Pagar con Mercado Pago</span>
+                    </a>
+
+                    <a href="{{ url_for('auth.logout') }}" class="w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 transition-colors py-2">
+                        Cancelar registro y salir
                     </a>
 
                     <p class="text-[10px] text-center text-gray-400 px-8">
@@ -104,7 +91,7 @@
                     <span class="font-medium">Pago encriptado y seguro</span>
                 </div>
             </div>
-        </div>
+          
     </main>
     <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
 </body>

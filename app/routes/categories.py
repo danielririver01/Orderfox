@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import CategoryForm
 from app.models import db, Category
 from app.utils.auth import login_required

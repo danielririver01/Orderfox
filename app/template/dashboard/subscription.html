@@ -1,0 +1,374 @@
+{% extends 'common/base.html' %}
+{% block content %}
+<title>Mi Suscripción</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/subscription.css') }}">
+<div class="bg-bg-light text-text-main antialiased min-h-screen max-w-md mx-auto relative pb-20">
+
+    <!-- Header -->
+    <header class="flex items-center gap-4 p-4 mb-2">
+        <a href="{{ url_for('dashboard.settings') }}" class="p-2 hover:bg-white rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </a>
+        <h1 class="text-xl font-bold">Mi Suscripción</h1>
+    </header>
+
+    <!-- Plan Actual Card -->
+    <section class="px-4 mb-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-800">Plan Actual</h2>
+                {% if restaurant.plan_type == 'emprendedor' %}
+                    <span class="plan-badge plan-emprendedor">Emprendedor</span>
+                {% elif restaurant.plan_type == 'crecimiento' %}
+                    <span class="plan-badge plan-crecimiento">Crecimiento</span>
+                {% else %}
+                    <span class="plan-badge plan-elite">Élite</span>
+                {% endif %}
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4">
+                {% if restaurant.plan_type == 'emprendedor' %}
+                    Perfecto para comenzar tu negocio digital
+                {% elif restaurant.plan_type == 'crecimiento' %}
+                    Ideal para negocios en expansión
+                {% else %}
+                    Máximas funcionalidades para tu negocio
+                {% endif %}
+            </p>
+
+            <!-- Características del Plan -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Características Incluidas</h3>
+                
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {% if restaurant.plan_type == 'elite' %}
+                                Productos Ilimitados
+                            {% else %}
+                                Hasta {{ plan_info.max_products }} Productos
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-500">Gestiona tu catálogo</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 {% if plan_info.has_qr %}bg-purple-50 text-purple-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold {% if plan_info.has_qr %}text-gray-800{% else %}text-gray-400{% endif %}">
+                            Código QR
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {% if plan_info.has_qr %}Genera tu código QR{% else %}No disponible en tu plan{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 {% if plan_info.has_modifiers %}bg-green-50 text-green-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold {% if plan_info.has_modifiers %}text-gray-800{% else %}text-gray-400{% endif %}">
+                            Modificadores
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {% if plan_info.has_modifiers %}Personaliza tus productos{% else %}No disponible en tu plan{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 {% if plan_info.has_status_management %}bg-orange-50 text-orange-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold {% if plan_info.has_status_management %}text-gray-800{% else %}text-gray-400{% endif %}">
+                            Gestión de Estado
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {% if plan_info.has_status_management %}Abre/cierra tu tienda{% else %}No disponible en tu plan{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fechas Importantes -->
+    <section class="px-4 mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Fechas Importantes</h3>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            
+            <div class="p-4 border-b border-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">Fecha de Inicio</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ created_date }}</p>
+                    </div>
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-b border-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">Próxima Renovación</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ expiration_date }}</p>
+                    </div>
+                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {% if days_remaining is not none %}
+            <div class="p-4 {% if subscription_status == 'expired' %}bg-red-50{% elif subscription_status == 'expiring_soon' %}bg-yellow-50{% else %}bg-green-50{% endif %}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs {% if subscription_status == 'expired' %}text-red-600{% elif subscription_status == 'expiring_soon' %}text-yellow-600{% else %}text-green-600{% endif %} font-bold uppercase mb-1">
+                            {% if subscription_status == 'expired' %}
+                                Suscripción Expirada
+                            {% elif subscription_status == 'expiring_soon' %}
+                                Por Vencer Pronto
+                            {% else %}
+                                Suscripción Activa
+                            {% endif %}
+                        </p>
+                        <p class="text-sm font-semibold {% if subscription_status == 'expired' %}text-red-800{% elif subscription_status == 'expiring_soon' %}text-yellow-800{% else %}text-green-800{% endif %}">
+                            {% if days_remaining < 0 %}
+                                Expiró hace {{ days_remaining|abs }} días
+                            {% elif days_remaining == 0 %}
+                                Expira hoy
+                            {% elif days_remaining == 1 %}
+                                Expira mañana
+                            {% else %}
+                                {{ days_remaining }} días restantes
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="w-10 h-10 {% if subscription_status == 'expired' %}bg-red-100 text-red-600{% elif subscription_status == 'expiring_soon' %}bg-yellow-100 text-yellow-600{% else %}bg-green-100 text-green-600{% endif %} rounded-lg flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Cambiar Plan -->
+    <section class="px-4 mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Cambiar Plan</h3>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
+            <p class="text-sm text-gray-600 mb-4">Actualiza o cambia tu plan según las necesidades de tu negocio</p>
+            
+            <div class="space-y-3">
+                <!-- Plan Emprendedor -->
+                {% if restaurant.plan_type != 'emprendedor' %}
+                <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="block p-4 rounded-xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-blue-900">Plan Emprendedor</h4>
+                            <p class="text-xs text-blue-700">Hasta 25 productos</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-blue-900">$30.000</p>
+                            <p class="text-xs text-blue-600">/ mes</p>
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="block p-4 rounded-xl border-2 border-blue-400 bg-blue-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-blue-900">Plan Emprendedor</h4>
+                            <p class="text-xs text-blue-700">Hasta 25 productos</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Plan Crecimiento -->
+                {% if restaurant.plan_type != 'crecimiento' %}
+                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:bg-green-100 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-green-900">Plan Crecimiento</h4>
+                            <p class="text-xs text-green-700">Hasta 100 productos + QR</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-green-900">$40.000</p>
+                            <p class="text-xs text-green-600">/ mes</p>
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="block p-4 rounded-xl border-2 border-green-400 bg-green-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-green-900">Plan Crecimiento</h4>
+                            <p class="text-xs text-green-700">Hasta 100 productos + QR</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Plan Élite -->
+                {% if restaurant.plan_type != 'elite' %}
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="block p-4 rounded-xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-orange-900">Plan Élite</h4>
+                            <p class="text-xs text-orange-700">Ilimitado + Modificadores</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-orange-900">$50.000</p>
+                            <p class="text-xs text-orange-600">/ mes</p>
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="block p-4 rounded-xl border-2 border-orange-400 bg-orange-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-orange-900">Plan Élite</h4>
+                            <p class="text-xs text-orange-700">Ilimitado + Modificadores</p>
+                        </div>
+                        <span class="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Acciones -->
+    <section class="px-4 mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Acciones</h3>
+        
+        <!-- Renovar Suscripción -->
+        <a href="{{ url_for('auth.renew') }}" class="block w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Renovar Plan Actual
+        </a>
+
+        <!-- Eliminar Cuenta -->
+        <button id="openAccountDeleteBtn" onclick="openAccountDeleteModal()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Eliminar Cuenta
+        </button>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-[100] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+            <a href="{{ url_for('dashboard.index') }}" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="text-[10px] font-medium mt-0.5">Inicio</span>
+            </a>
+            <a href="{{ url_for('products.index') }}" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span class="text-[10px] font-medium mt-0.5">Productos</span>
+            </a>
+            <a href="{{ url_for('orders.index') }}" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span class="text-[10px] font-medium mt-0.5">Pedidos</span>
+            </a>
+            <a href="{{ url_for('dashboard.settings') }}" class="flex flex-col items-center justify-center w-full h-full text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-[10px] font-medium mt-0.5">Ajustes</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="accountDeleteModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="modal-title">¿Eliminar cuenta permanentemente?</h3>
+                <button onclick="closeAccountDeleteModal()" class="modal-close">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="warning-box">
+                    <p class="font-semibold text-red-800 mb-2">Esta acción es irreversible</p>
+                    <p class="text-sm text-red-700">Se eliminarán permanentemente:</p>
+                    <ul class="text-sm text-red-700 mt-2 space-y-1 list-disc list-inside">
+                        <li>Todos tus productos y categorías</li>
+                        <li>Todos los pedidos y su historial</li>
+                        <li>Todos los usuarios asociados</li>
+                        <li>Tu menú digital y código QR</li>
+                        <li>Toda la información de tu restaurante</li>
+                    </ul>
+                </div>
+
+                <div class="confirmation-checkbox">
+                    <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()">
+                    <label for="confirmAccountDelete">
+                        Entiendo que esta acción es permanente e irreversible
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="closeAccountDeleteModal()" class="btn-secondary">
+                    Cancelar
+                </button>
+                <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="btn-danger">
+                    Eliminar Definitivamente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
+{% endblock %}

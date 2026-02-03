@@ -1,8 +1,10 @@
 from flask import Flask
 from .models import db, migrate
 from flask_mail import Mail
+from flask_apscheduler import APScheduler
 
 mail = Mail()
+scheduler = APScheduler()
 
 
 def create_app():
@@ -10,6 +12,13 @@ def create_app():
     app.config.from_object('settings.Config')
     db.init_app(app)
     mail.init_app(app)
+
+    # Inicializar Scheduler
+    scheduler.init_app(app)
+    scheduler.start()
+
+    from .tasks import init_tasks
+    init_tasks(scheduler)
 
     #Registramos blueprints
     from .routes.auth import auth_bp
@@ -49,6 +58,15 @@ def create_app():
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '-1'
         return response
+
+    # --- Comandos CLI ---
+    @app.cli.command("cleanup-accounts")
+    def cleanup_accounts_command():
+        """Ejecuta manualmente la limpieza de cuentas inactivas."""
+        from .tasks import delete_inactive_accounts
+        print("Iniciando limpieza manual...")
+        delete_inactive_accounts()
+        print("Comando de limpieza finalizado.")
 
     return app
 

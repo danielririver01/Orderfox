@@ -5,6 +5,7 @@ from datetime import datetime, date
 import json
 
 from app.utils.restaurant import get_current_restaurant
+from app.utils.subscription import check_feature_access
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 
@@ -130,6 +131,14 @@ def change_status(id):
     """Cambiar estado del pedido"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
+
+    # Verificar acceso a gestión de estados
+    if not check_feature_access(restaurant, 'has_status_management'):
+         return jsonify({
+            'success': False, 
+            'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite cambiar estados. Actualiza a Crecimiento.'
+        }), 403
+
     order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     
     data = request.get_json()

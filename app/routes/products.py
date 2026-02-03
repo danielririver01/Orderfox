@@ -4,6 +4,7 @@ from app.models import db, Product, Modifier, Category
 from app.utils.auth import login_required
 
 from app.utils.restaurant import get_current_restaurant
+from app.utils.subscription import check_product_limit, check_feature_access
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 
@@ -23,6 +24,13 @@ def create():
     """Crear nuevo producto"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
+    
+    # Verificar límite de productos
+    allowed, message = check_product_limit(restaurant)
+    if not allowed:
+        flash(message, 'warning')
+        return redirect(url_for('products.index'))
+
     form = ProductForm()
     
     # Poblar el SelectField con las categorías del restaurante
@@ -30,7 +38,7 @@ def create():
     form.category_id.choices = [(c.id, c.name) for c in categories]
     
     if not categories:
-        flash('Debes crear al menos una categoría antes de agregar productos', 'warning')
+        flash('Primero crea una categoría para poder agregar productos o activa una categoría existente', 'warning')
         return redirect(url_for('categories.index'))
     
     if form.validate_on_submit():
@@ -133,6 +141,12 @@ def create_modifier(product_id):
     """Crear modificador para un producto"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
+    
+    # Verificar acceso a modificadores (Plan Élite)
+    if not check_feature_access(restaurant, 'has_modifiers'):
+        flash(f'Tu plan {restaurant.plan_type.capitalize()} no incluye Modificadores. Actualiza a Élite.', 'warning')
+        return redirect(url_for('products.modifiers', product_id=product_id))
+
     product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
     form = ModifierForm()
     

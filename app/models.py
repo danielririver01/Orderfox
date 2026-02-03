@@ -12,7 +12,9 @@ class Restaurant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
     whatsapp_phone = db.Column(db.String(20), nullable=False)  # Solo números
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    plan_type = db.Column(db.String(20), default='emprendedor', nullable=False) # emprendedor, crecimiento, elite
+    subscription_expires_at = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
     
     def __repr__(self):

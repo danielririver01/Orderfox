@@ -36,21 +36,10 @@
                 </div>
 
                 <!-- Flash Messages -->
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="w-full mb-4">
-                            {% for message in messages %}
-                                <div class="flash-message bg-primary/10 border border-primary/20 text-primary-dark px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-start gap-2">
-                                    <span class="material-symbols-outlined text-[16px] mt-0.5">info</span>
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                {% include 'components/flash_messages.html' %}
 
                 <!-- Form -->
-                <form class="w-full flex flex-col gap-5" method="POST">
+                <form class="w-full flex flex-col gap-5" method="POST" {% if step == 'otp' %}data-ajax="true"{% endif %}>
                     {{ form.hidden_tag() }}
                     
                     {% if step == 'email' %}
@@ -86,7 +75,7 @@
                 
                 {% if step == 'otp' %}
                 <div class="mt-4 text-center">
-                    <button onclick="window.location.reload()" class="text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto group">
+                    <button type="button" id="resendBtn" onclick="resendOTP()" class="text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto group">
                         <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-500">refresh</span>
                         Reenviar código
                     </button>
@@ -118,5 +107,37 @@
         </div>
     </main>
     <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='JS/auth/ajax_form.js') }}"></script>
+    <script>
+        async function resendOTP() {
+            const btn = document.getElementById('resendBtn');
+            const originalHTML = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Enviando...';
+            
+            try {
+                const response = await fetch("{{ url_for('auth.resend_otp') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showFlash(data.message, 'success');
+                } else {
+                    showFlash(data.message, 'error');
+                }
+            } catch (error) {
+                showFlash('No se pudo reenviar el código.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+    </script>
 </body>
 </html>

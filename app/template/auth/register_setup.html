@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Configuración de Cuenta - Velzia</title>
+    <title>Configuración de Cuenta</title>
     <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -34,18 +34,7 @@
                 </div>
 
                 <!-- Flash Messages -->
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="w-full mb-6">
-                            {% for message in messages %}
-                                <div class="flash-message bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-xs font-bold flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">error</span>
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                {% include 'components/flash_messages.html' %}
 
                 <form class="flex flex-col gap-5" method="POST" id="setupForm">
                     {{ form.hidden_tag() }}

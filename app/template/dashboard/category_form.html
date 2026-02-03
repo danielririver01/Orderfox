@@ -47,14 +47,15 @@
                 {{ form.submit(class="flex-1 bg-primary hover:bg-[#d63a0a] text-white font-medium py-2.5 rounded-lg transition-colors cursor-pointer") }}
             </div>
         </form>
-        <!-- Delete Button (solo en edición) -->
+        <!-- Botón de Eliminar (solo en edición) con Modal -->
         {% if category %}
-        <form method="POST" action="{{ url_for('categories.delete', id=category.id) }}" onsubmit="return confirm('¿Estás seguro de eliminar esta categoría?')" class="mt-4">
-            <button type="submit" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-colors">
+        <form id="deleteCategoryForm" method="POST" action="{{ url_for('categories.delete', id=category.id) }}" class="mt-4">
+            <button type="button"
+                    onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), '¿Estás seguro de que deseas eliminar esta categoría? Se eliminarán también los productos asociados.')"
+                    class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-all active:scale-95">
                 Eliminar Categoría
             </button>
         </form>
         {% endif %}
     </div>
-</body>
-</html>
+{% endblock %}
