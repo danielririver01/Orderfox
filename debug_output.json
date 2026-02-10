@@ -1,0 +1,20 @@
+{
+  "all_restaurants": [
+    "ID: 12, Name: Pa Donde Ensue\u00f1o, Slug: pizzeria-roman"
+  ],
+  "current_session_restaurant_id": null,
+  "current_session_user_id": null,
+  "db_expires_at": "2026-02-02 19:00:29+00:00",
+  "inspected_restaurant_id": 12,
+  "inspected_restaurant_name": "Pa Donde Ensue\u00f1o",
+  "server_now_utc": "2026-02-06 16:32:05.221900+00:00",
+  "sub_status_object": {
+    "can_crud": false,
+    "days_grace_remaining": 7,
+    "days_remaining": -2,
+    "expires_at": "Mon, 02 Feb 2026 19:00:29 GMT",
+    "is_active": false,
+    "message": "Suscripci\u00f3n vencida. Tienes 7 d\u00edas de gracia.",
+    "status": "grace_period"
+  }
+}

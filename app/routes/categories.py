@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import CategoryForm
 from app.models import db, Category
-from app.utils.auth import login_required
+from app.utils.auth import login_required, active_required
 
 from app.utils.restaurant import get_current_restaurant
 
@@ -9,6 +9,7 @@ categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
 
 @categories_bp.route('/')
 @login_required
+@active_required
 def index():
     """Listar todas las categorías del restaurante"""
     restaurant = get_current_restaurant()
@@ -18,6 +19,7 @@ def index():
 
 @categories_bp.route('/create', methods=['GET', 'POST'])
 @login_required
+@active_required
 def create():
     """Crear nueva categoría"""
     restaurant = get_current_restaurant()
@@ -42,6 +44,7 @@ def create():
 
 @categories_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@active_required
 def edit(id):
     """Editar categoría existente"""
     restaurant = get_current_restaurant()
@@ -61,6 +64,7 @@ def edit(id):
 
 @categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
 @login_required
+@active_required
 def toggle(id):
     """Toggle is_active (UI Optimista)"""
     restaurant = get_current_restaurant()
@@ -75,6 +79,7 @@ def toggle(id):
 
 @categories_bp.route('/<int:id>/reorder', methods=['PATCH'])
 @login_required
+@active_required
 def reorder(id):
     """Cambiar orden de la categoría"""
     restaurant = get_current_restaurant()
@@ -93,6 +98,7 @@ def reorder(id):
 
 @categories_bp.route('/<int:id>/delete', methods=['POST', 'DELETE'])
 @login_required
+@active_required
 def delete(id):
     """Eliminar categoría"""
     restaurant = get_current_restaurant()

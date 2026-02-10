@@ -2,6 +2,7 @@
 
 from flask import Blueprint, jsonify
 from app.models import Product, Category, Restaurant
+from app.utils.subscription import is_subscription_active
 
 menu_bp = Blueprint('menu', __name__, url_prefix='/menu')
 
@@ -14,6 +15,10 @@ def search_products(slug):
     try:
         # Obtener restaurante por slug
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
+        
+        # VALIDACIÓN DE SEGURIDAD
+        if not is_subscription_active(restaurant):
+            return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
         
         # Obtener todas las categorías activas del restaurante
         categories = Category.query.filter_by(
@@ -57,6 +62,10 @@ def search_by_query(slug):
     """
     try:
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
+        
+        # VALIDACIÓN DE SEGURIDAD
+        if not is_subscription_active(restaurant):
+            return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
         query = request.args.get('q', '').lower().strip()
         
         if not query:

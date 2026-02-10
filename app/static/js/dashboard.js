@@ -20,13 +20,25 @@
             storeToggle.addEventListener('change', async (e) => {
                 const isOpen = e.target.checked;
                 try {
-                    const response = await fetch("{{ url_for('dashboard.toggle_status') }}", {
+                    // NOTA: Usamos ruta relativa directa porque este es un archivo estático JS
+                    const response = await fetch("/dashboard/toggle-status", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ is_open: isOpen })
                     });
                     
                     const data = await response.json();
+                    
+                    // Manejo específico para Upselling (Plan Básico)
+                    if (response.status === 403 && data.error === 'upgrade_required') {
+                        e.target.checked = !isOpen; // Revertir el switch visualmente
+                        showToast(data.message, 'error'); // Mostrar mensaje de upselling
+                        
+                        // Opcional: Vibración en móvil para feedback
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        return;
+                    }
+
                     if (data.success) {
                         showToast(`Tienda ${isOpen ? 'Abierta' : 'Cerrada'}`, isOpen ? 'success' : 'default');
                     } else {
@@ -34,7 +46,8 @@
                     }
                 } catch (error) {
                     e.target.checked = !isOpen;
-                    showToast('Error al cambiar el estado', 'error');
+                    showToast('No se pudo conectar con el servidor', 'error');
+                    console.error(error);
                 }
             });
         }

@@ -1,25 +1,30 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from app.forms import ProductForm, ModifierForm
 from app.models import db, Product, Modifier, Category
-from app.utils.auth import login_required
+from app.utils.auth import login_required, active_required
 
 from app.utils.restaurant import get_current_restaurant
-from app.utils.subscription import check_product_limit, check_feature_access
+from app.utils.subscription import check_product_limit, check_feature_access, get_plan_limits
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 
 @products_bp.route('/')
 @login_required
+@active_required
 def index():
     """Listar todos los productos del restaurante agrupados por categoría"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     products = Product.query.filter_by(restaurant_id=restaurant.id).order_by(Product.category_id, Product.name).all()
     categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
-    return render_template('dashboard/products.html', products=products, categories=categories)
+    # NUEVO: Obtener límites para la vista
+    plan_limits = get_plan_limits(restaurant.plan_type)
+    current_active_count = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).count()
+    return render_template('dashboard/products.html', products=products, categories=categories, plan_limits=plan_limits, current_active_count=current_active_count)
 
 @products_bp.route('/create', methods=['GET', 'POST'])
 @login_required
+@active_required
 def create():
     """Crear nuevo producto"""
     restaurant = get_current_restaurant()
@@ -65,6 +70,7 @@ def create():
 
 @products_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@active_required
 def edit(id):
     """Editar producto existente"""
     restaurant = get_current_restaurant()
@@ -94,22 +100,53 @@ def edit(id):
     
     return render_template('dashboard/product_form.html', form=form, title='Editar Producto', product=product)
 
-@products_bp.route('/<int:id>/toggle', methods=['PATCH'])
+
+@products_bp.route('/<int:id>/toggle', methods=['PATCH', 'POST'])
 @login_required
+@active_required
 def toggle(id):
-    """Toggle is_active"""
+    """Toggle is_active con validación estricta de límites"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
     
-    data = request.get_json()
-    product.is_active = data.get('is_active', not product.is_active)
+    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not product:
+        return jsonify({'error': 'Producto no encontrado'}), 404
+    
+    # Obtener datos - soportar JSON y form data
+    data = request.get_json(silent=True) or request.form
+    desired_state = data.get('is_active')
+    
+    # Convertir string a boolean si es necesario
+    if isinstance(desired_state, str):
+        desired_state = desired_state.lower() in ('true', '1', 'yes')
+    
+    # Si no se envía estado explícito, invertir el actual
+    if desired_state is None:
+        desired_state = not product.is_active
+
+    # VALIDACIÓN DE LÍMITE: Solo aplicar si estamos intentando ACTIVAR un producto desactivado
+    if desired_state is True and product.is_active is False:
+        allowed, message = check_product_limit(restaurant)
+        if not allowed:
+            return jsonify({
+                'success': False, 
+                'message': message,
+                'is_active': product.is_active
+            }), 400
+
+    # Si el estado es el mismo, no hacer nada
+    if product.is_active == desired_state:
+        return jsonify({'success': True, 'is_active': product.is_active})
+    
+    product.is_active = desired_state
     db.session.commit()
     
     return jsonify({'success': True, 'is_active': product.is_active})
-
 @products_bp.route('/<int:id>/delete', methods=['POST', 'DELETE'])
 @login_required
+@active_required
 def delete(id):
     """Eliminar producto"""
     restaurant = get_current_restaurant()
@@ -126,6 +163,7 @@ def delete(id):
 
 @products_bp.route('/<int:product_id>/modifiers')
 @login_required
+@active_required
 def modifiers(product_id):
     """Listar modificadores de un producto"""
     restaurant = get_current_restaurant()
@@ -133,18 +171,25 @@ def modifiers(product_id):
     product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
     modifiers = Modifier.query.filter_by(product_id=product_id, restaurant_id=restaurant.id).all()
     
-    return render_template('dashboard/product_modifiers.html', product=product, modifiers=modifiers)
+    # Verificar acceso para la UI
+    has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
+    
+    return render_template('dashboard/product_modifiers.html', 
+                         product=product, 
+                         modifiers=modifiers,
+                         has_modifiers_access=has_modifiers_access)
 
 @products_bp.route('/<int:product_id>/modifiers/create', methods=['GET', 'POST'])
 @login_required
+@active_required
 def create_modifier(product_id):
     """Crear modificador para un producto"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    # Verificar acceso a modificadores (Plan Élite)
+    # Security Check: Plan Élite required
     if not check_feature_access(restaurant, 'has_modifiers'):
-        flash(f'Tu plan {restaurant.plan_type.capitalize()} no incluye Modificadores. Actualiza a Élite.', 'warning')
+        flash(f'Tu plan {restaurant.plan_type.capitalize()} no incluye Modificadores. Actualiza a Élite para desbloquear esta función.', 'warning')
         return redirect(url_for('products.modifiers', product_id=product_id))
 
     product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
@@ -167,6 +212,7 @@ def create_modifier(product_id):
 
 @products_bp.route('/modifiers/<int:id>/delete', methods=['POST', 'DELETE'])
 @login_required
+@active_required
 def delete_modifier(id):
     """Eliminar modificador"""
     restaurant = get_current_restaurant()

@@ -1,10 +1,12 @@
-from flask import Flask
+from flask import Flask, render_template
 from .models import db, migrate
 from flask_mail import Mail
 from flask_apscheduler import APScheduler
+from flask_wtf.csrf import CSRFProtect
 
 mail = Mail()
 scheduler = APScheduler()
+csrf = CSRFProtect()
 
 
 def create_app():
@@ -12,6 +14,7 @@ def create_app():
     app.config.from_object('settings.Config')
     db.init_app(app)
     mail.init_app(app)
+    csrf.init_app(app)
 
     # Inicializar Scheduler
     scheduler.init_app(app)
@@ -40,13 +43,23 @@ def create_app():
 
     migrate.init_app(app, db)
     
-    # Inyectar variables de soporte globalmente
-    @app.context_processor
-    def inject_support_info():
-        return {
-            'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
-            'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL')
-        }
+    # Bloqueo global de CRUD para cuentas en periodo de gracia
+    @app.before_request
+    def block_grace_period_crud():
+        from flask import request, flash, redirect, url_for
+        from app.utils.restaurant import get_current_restaurant
+        from app.utils.subscription import can_perform_crud
+        
+        # Solo bloquear métodos de escritura
+        if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+            # Ignorar rutas de auth y pagos para permitir renovar
+            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint):
+                return
+                
+            restaurant = get_current_restaurant()
+            if restaurant and not can_perform_crud(restaurant):
+                flash('Tu suscripción ha vencido. No puedes realizar cambios hasta que renueves tu plan.', 'warning')
+                return redirect(request.referrer or url_for('dashboard.index'))
 
     @app.after_request
     def add_header(response):
@@ -59,6 +72,24 @@ def create_app():
         response.headers['Expires'] = '-1'
         return response
 
+    # Inyectar variables de soporte y suscripción globalmente
+    @app.context_processor
+    def inject_global_data():
+        from app.utils.restaurant import get_current_restaurant
+        from app.utils.subscription import get_subscription_status
+        
+        data = {
+            'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
+            'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL'),
+            'sub_status': None
+        }
+        
+        restaurant = get_current_restaurant()
+        if restaurant:
+            data['sub_status'] = get_subscription_status(restaurant)
+            
+        return data
+
     # --- Comandos CLI ---
     @app.cli.command("cleanup-accounts")
     def cleanup_accounts_command():
@@ -67,6 +98,19 @@ def create_app():
         print("Iniciando limpieza manual...")
         delete_inactive_accounts()
         print("Comando de limpieza finalizado.")
+
+    # Manejadores de errores personalizados
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        return render_template('errors/500.html'), 500
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
 
     return app
 

@@ -61,12 +61,39 @@
                 <input type="hidden" class="product-qty-input" data-id="{{ product.id }}" data-price="{{ product.price }}" value="0">
                 </div>
             </div>
+            {% else %}
+            <!-- Empty State: Sin productos -->
+            <div class="text-center py-12 flex flex-col items-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-1">Menú vacío</h3>
+                <p class="text-sm text-gray-500 max-w-xs mx-auto mb-4">No tienes productos creados aún. Agrega productos para comenzar a tomar pedidos.</p>
+                <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#d63a0a] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Crear Producto
+                </a>
+            </div>
             {% endfor %}
 
             <div id="no-results-message" class="hidden py-10 text-center">
-                <p class="text-gray-500 font-medium">No encontramos pedidos con ese nombre</p>
-                <p class="text-sm text-gray-400">Prueba con otra palabra clave</p>
+                <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <p class="text-gray-500 font-medium">No encontramos productos con ese nombre</p>
+                <p class="text-xs text-gray-400 mt-1">Intenta con otra búsqueda</p>
             </div>
+            </div>
+
+            <!-- Toast Notification Container -->
+            <div id="toast-container" class="fixed top-4 right-4 z-50 pointer-events-none">
+                <!-- Toasts will be injected here via JS -->
             </div>
 
             <!-- Campo oculto para los items en JSON -->

@@ -21,10 +21,17 @@
         
         <!-- Header -->
         <div class="text-center mb-16">
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('auth.logout') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-red-500 hover:text-red-600 transition-colors mb-6 group">
+                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">logout</span>
+                Cerrar sesión y salir
+            </a>
+            {% else %}
             <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dark transition-colors mb-6 group">
                 <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
                 Regresar al inicio
             </a>
+            {% endif %}
             <h1 class="text-4xl md:text-5xl font-extrabold text-[#1c110d] dark:text-white tracking-tight mb-4 leading-tight">
                 Elige el plan que impulsará <br class="hidden md:block"> tu negocio gastronómico
             </h1>
@@ -65,9 +72,15 @@
                     </ul>
                 </div>
 
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#3e251e] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#4a2d24] transition-colors border border-gray-100 dark:border-transparent">
+                    Elegir Emprendedor
+                </a>
+                {% else %}
                 <a href="{{ url_for('auth.register', plan='emprendedor') }}" class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#3e251e] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#4a2d24] transition-colors border border-gray-100 dark:border-transparent">
                     Iniciar hoy
                 </a>
+                {% endif %}
             </div>
 
             <!-- Plan Crecimiento -->
@@ -103,9 +116,15 @@
                     </ul>
                 </div>
 
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-primary text-white font-bold hover:bg-opacity-90 shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+                    Elegir Crecimiento
+                </a>
+                {% else %}
                 <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-primary text-white font-bold hover:bg-opacity-90 shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
                     Elegir Crecimiento
                 </a>
+                {% endif %}
             </div>
 
             <!-- Plan Élite -->
@@ -137,9 +156,15 @@
                     </ul>
                 </div>
 
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="w-full py-4 text-center rounded-2xl bg-[#1c110d] text-white font-bold hover:bg-black transition-colors">
+                    Elegir Élite
+                </a>
+                {% else %}
                 <a href="{{ url_for('auth.register', plan='elite') }}" class="w-full py-4 text-center rounded-2xl bg-[#1c110d] text-white font-bold hover:bg-black transition-colors">
                     Obtener Plan Élite
                 </a>
+                {% endif %}
             </div>
 
         </div>

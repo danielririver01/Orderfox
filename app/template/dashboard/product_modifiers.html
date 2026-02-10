@@ -28,57 +28,109 @@
         {% endif %}
     {% endwith %}
 
-    <div class="max-w-md mx-auto px-4 py-4">
-        <!-- Info Card -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-blue-800">
-                <strong>💡 Tip:</strong> Los extras te permiten aumentar el ticket promedio. Ej: "Doble Carne +$5.000"
-            </p>
+    <div class="premium-lock-container relative min-h-[400px]">
+        <div class="{% if not has_modifiers_access %}premium-blur{% endif %} transition-all duration-300">
+            <div class="max-w-md mx-auto px-4 py-4">
+                <!-- Info Card (Only visible if access granted) -->
+                {% if has_modifiers_access %}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-blue-800">
+                        <strong>💡 Tip:</strong> Los extras te permiten aumentar el ticket promedio. Ej: "Doble Carne +$5.000"
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Modifiers List -->
+                {% if has_modifiers_access %}
+                    {% if modifiers %}
+                        <div class="space-y-3">
+                            {% for modifier in modifiers %}
+                            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">{{ modifier.name }}</h3>
+                                    <p class="text-sm text-primary font-medium mt-1">
+                                        {% if modifier.extra_price == 0 %}
+                                            Gratis
+                                        {% else %}
+                                            +${{ '{:,}'.format(modifier.extra_price) }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <form method="POST" action="{{ url_for('products.delete_modifier', id=modifier.id) }}" class="ml-3">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="button" 
+                                            onclick="openDeleteModal(this.closest('form'), '¿Estás seguro de que deseas eliminar el extra «{{ modifier.name }}»?')"
+                                            class="text-red-500 hover:text-red-700 transition-all active:scale-90 p-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-12">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <p class="text-gray-500 mt-4">No hay extras aún</p>
+                            <p class="text-xs text-gray-400 mt-1">Agrega modificadores para personalizar este producto</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <!-- Dummy List for Blur Effect -->
+                    <div class="space-y-3 opacity-50">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Doble Carne</h3>
+                                <p class="text-sm text-primary font-medium mt-1">+$5,000</p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Adición de Queso</h3>
+                                <p class="text-sm text-primary font-medium mt-1">+$2,000</p>
+                            </div>
+                        </div>
+                         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Sin Cebolla</h3>
+                                <p class="text-sm text-primary font-medium mt-1">Gratis</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Modifiers List -->
-        {% if modifiers %}
-            <div class="space-y-3">
-                {% for modifier in modifiers %}
-                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center justify-between">
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900">{{ modifier.name }}</h3>
-                        <p class="text-sm text-primary font-medium mt-1">
-                            {% if modifier.extra_price == 0 %}
-                                Gratis
-                            {% else %}
-                                +${{ '{:,}'.format(modifier.extra_price) }}
-                            {% endif %}
-                        </p>
-                    </div>
-                    
-                    <form method="POST" action="{{ url_for('products.delete_modifier', id=modifier.id) }}" class="ml-3">
-                        <button type="button" 
-                                onclick="openDeleteModal(this.closest('form'), '¿Estás seguro de que deseas eliminar el extra «{{ modifier.name }}»?')"
-                                class="text-red-500 hover:text-red-700 transition-all active:scale-90 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </form>
+        {% if not has_modifiers_access %}
+        <div class="lock-overlay">
+            <div class="lock-card">
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                 </div>
-                {% endfor %}
+                <h3 class="font-bold text-gray-900 mb-2">Función Plan Élite</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Personaliza productos con extras y modificadores ilimitados.
+                </p>
+                <a href="{{ url_for('dashboard.subscription') }}" class="block w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    Desbloquear Ahora
+                </a>
             </div>
-        {% else %}
-            <div class="text-center py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <p class="text-gray-500 mt-4">No hay extras aún</p>
-                <p class="text-xs text-gray-400 mt-1">Agrega modificadores para personalizar este producto</p>
-            </div>
+        </div>
         {% endif %}
     </div>
 
     <!-- FAB -->
+    {% if has_modifiers_access %}
     <a href="{{ url_for('products.create_modifier', product_id=product.id) }}" class="fixed bottom-20 right-4 bg-primary hover:bg-[#d63a0a] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
     </a>
+    {% endif %}
 {% endblock %}

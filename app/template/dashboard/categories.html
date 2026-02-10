@@ -17,6 +17,26 @@
         </div>
     </header>
 
+    <!-- Search Bar -->
+    <div class="bg-white border-b border-gray-200 sticky top-[65px] z-10 px-4 py-3">
+        <div class="max-w-md mx-auto relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </span>
+            <input type="text" 
+                   id="search-input" 
+                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-all" 
+                   placeholder="Buscar categorías...">
+            <button id="clear-search" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -39,10 +59,12 @@
     <div class="max-w-md mx-auto px-4 py-4 space-y-3">
         {% if categories %}
             {% for category in categories %}
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4" data-category-id="{{ category.id }}">
+            <div class="category-card bg-white rounded-lg border border-gray-200 shadow-sm p-4" 
+                 data-category-id="{{ category.id }}"
+                 data-name="{{ category.name|lower }}">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900">{{ category.name }}</h3>
+                        <h3 class="category-name font-semibold text-gray-900">{{ category.name }}</h3>
                         {% if category.description %}
                             <p class="text-xs text-gray-500 mt-1">{{ category.description }}</p>
                         {% endif %}
@@ -77,6 +99,17 @@
                 <p class="text-xs text-gray-400 mt-1">Crea tu primera categoría para organizar tu menú</p>
             </div>
         {% endif %}
+
+        <!-- No Results Message -->
+        <div id="no-results" class="hidden text-center py-12">
+            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-gray-100 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <p class="text-gray-600 font-medium">No encontramos resultados para tu búsqueda</p>
+            <p class="text-sm text-gray-400 mt-1">Prueba con palabras más generales o revisa la ortografía</p>
+        </div>
     </div>
 
     <!-- FAB (Floating Action Button) -->
@@ -91,5 +124,7 @@
         <span id="toast-message"></span>
     </div>
     
+    <!-- Bottom Navigation -->
+    {% include 'Common/navigation.html' %}
     <script src="{{ url_for('static', filename='js/categories.js') }}"></script>
 {% endblock %}

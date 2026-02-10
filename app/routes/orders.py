@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from app.models import db, Order, OrderItem, Product
-from app.utils.auth import login_required
+from app.utils.auth import login_required, active_required
 from datetime import datetime, date
 import json
 
@@ -36,6 +36,7 @@ def validate_status_transition(current_status, new_status):
 
 @orders_bp.route('/')
 @login_required
+@active_required
 def index():
     """Listar pedidos del día agrupados por estado"""
     restaurant = get_current_restaurant()
@@ -61,6 +62,7 @@ def index():
 
 @orders_bp.route('/create', methods=['GET', 'POST'])
 @login_required
+@active_required
 def create():
     """Crear nuevo pedido (simplificado para MVP)"""
     restaurant = get_current_restaurant()
@@ -118,6 +120,7 @@ def create():
 
 @orders_bp.route('/<int:id>')
 @login_required
+@active_required
 def detail(id):
     """Ver detalle de un pedido"""
     restaurant = get_current_restaurant()
@@ -127,6 +130,7 @@ def detail(id):
 
 @orders_bp.route('/<int:id>/status', methods=['PATCH'])
 @login_required
+@active_required
 def change_status(id):
     """Cambiar estado del pedido"""
     restaurant = get_current_restaurant()
@@ -158,6 +162,7 @@ def change_status(id):
 
 @orders_bp.route('/<int:id>/cancel', methods=['POST'])
 @login_required
+@active_required
 def cancel(id):
     """Cancelar pedido"""
     restaurant = get_current_restaurant()

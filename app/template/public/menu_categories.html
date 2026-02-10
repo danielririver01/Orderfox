@@ -10,39 +10,60 @@
 {% block header_subtitle %}Selecciona una categoría para empezar{% endblock %}
 
 {% block content %}
-<div class="category-grid">
-    {% for category in categories %}
-    <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}" class="category-card">
-        <div class="category-icon">
-            {# Podríamos mapear iconos por nombre en el futuro, por ahora emojis genéricos #}
-            {% if 'hamburguesa' in category.name.lower() %}🍔
-            {% elif 'perro' in category.name.lower() %}🌭
-            {% elif 'bebida' in category.name.lower() or 'jugo' in category.name.lower() or 'gaseosa' in category.name.lower() %}🥤
-            {% elif 'papa' in category.name.lower() %}🍟
-            {% elif 'pizza' in category.name.lower() %}🍕
-            {% elif 'postre' in category.name.lower() %}🍰
-            {% else %}🍽️{% endif %}
+    {# Banner de Cerrado #}
+    {% if not restaurant.is_active %}
+    <div class="store-closed-banner">
+        <h3>😴 Cerrado por ahora</h3>
+        <p>Nuestro menú está disponible para ver, pero no estamos recibiendo pedidos en este momento.</p>
+    </div>
+    {% endif %}
+
+    <div class="category-grid {% if not restaurant.is_active %}dimmed{% endif %}">
+        {% for category in categories %}
+        <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}" class="category-card">
+            <div class="category-icon">
+                {# Podríamos mapear iconos por nombre en el futuro, por ahora emojis genéricos #}
+                {% if 'hamburguesa' in category.name.lower() %}🍔
+                {% elif 'perro' in category.name.lower() %}🌭
+                {% elif 'bebida' in category.name.lower() or 'jugo' in category.name.lower() or 'gaseosa' in category.name.lower() %}🥤
+                {% elif 'papa' in category.name.lower() %}🍟
+                {% elif 'pizza' in category.name.lower() %}🍕
+                {% elif 'postre' in category.name.lower() %}🍰
+                {% else %}🍽️{% endif %}
+            </div>
+            <h3>{{ category.name }}</h3>
+            <span>{{ category.products|length }} productos</span>
+        </a>
+        {% else %}
+        {# Empty State #}
+        <div class="empty-menu-state">
+            <div class="empty-icon">🏗️</div>
+            <h3>¡Estamos preparando algo delicioso!</h3>
+            <p>Disculpa las molestias, estamos actualizando nuestro menú digital.<br>Vuelve pronto para descubrir nuestros nuevos platos.</p>
         </div>
-        <h3>{{ category.name }}</h3>
-        <span>{{ category.products|length }} productos</span>
-    </a>
-    {% endfor %}
-</div>
+        {% endfor %}
+    </div>
 {% endblock %}
 
 {% block footer_cart %}
-<div class="cart-summary" id="cart-summary-placeholder">
-    <div class="cart-info">
-        <div class="cart-label">Total de tu pedido</div>
-        <span class="cart-total" id="cart-total">$0</span>
+    {% if restaurant.is_active %}
+    <div class="cart-summary" id="cart-summary-placeholder">
+        <div class="cart-info">
+            <div class="cart-label">Total de tu pedido</div>
+            <span class="cart-total" id="cart-total">$0</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-send" onclick="sendWhatsApp()">
+                Enviar pedido
+            </button>
+            <button class="btn-clear" onclick="clearCart()">
+                ✖
+            </button>
+        </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-send" onclick="sendWhatsApp()">
-            Enviar pedido
-        </button>
-        <button class="btn-clear" onclick="clearCart()">
-            ✖
-        </button>
+    {% else %}
+    <div class="cart-summary closed">
+        <span>🚫 No se aceptan pedidos en este momento</span>
     </div>
-</div>
+    {% endif %}
 {% endblock %}

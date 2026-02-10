@@ -11,6 +11,7 @@ import unicodedata
 import mercadopago
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -228,8 +229,9 @@ def setup_account():
             name=restaurant_name,
             slug=slug,
             whatsapp_phone=form.phone.data,
-            plan_type=session.get('selected_plan', 'emprendedor'), # Guardar plan seleccionado
-            is_active=False # Inactivo hasta el pago
+            plan_type=session.get('selected_plan', 'emprendedor'),
+            is_active=False,  # Inactivo hasta el pago
+            subscription_expires_at=None  # ← EXPLÍCITO: Sin suscripción hasta pagar
         )
         db.session.add(new_restaurant)
         db.session.flush() # Para obtener el ID
@@ -334,7 +336,7 @@ def payment():
             "pending": "https://changelessly-polygonaceous-emmalee.ngrok-free.dev/payment-callback"
         },
         "auto_return": "approved",
-        "external_reference": str(restaurant_id),
+        "external_reference": f"{restaurant_id}:{selected_plan_key}",
         "payment_methods": {
             "excluded_payment_types": [
                 {"id": "ticket"} # Opcional: excluir efectivo para activación inmediata
@@ -378,23 +380,49 @@ def payment_callback():
             # Extender suscripción
             # Si ya tiene fecha de expiración y aún no ha expirado, extender desde esa fecha
             # Si no tiene o ya expiró, extender desde ahora
-            if restaurant.subscription_expires_at and restaurant.subscription_expires_at > datetime.now():
-                # Renovación: extender desde la fecha actual de expiración
-                restaurant.subscription_expires_at = restaurant.subscription_expires_at + timedelta(days=30)
+            from datetime import timezone
+            now_utc = datetime.now(timezone.utc)
+            if restaurant.subscription_expires_at:
+                expires_at = restaurant.subscription_expires_at
+                if expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+                
+                if expires_at > now_utc:
+                    # Renovación: extender desde la fecha actual de expiración
+                    restaurant.subscription_expires_at = expires_at + timedelta(days=30)
+                else:
+                    # Expirada: establecer desde ahora
+                    restaurant.subscription_expires_at = now_utc + timedelta(days=30)
             else:
-                # Nueva suscripción o expirada: establecer desde ahora
-                restaurant.subscription_expires_at = datetime.now() + timedelta(days=30)
+                # Nueva suscripción: establecer desde ahora
+                restaurant.subscription_expires_at = now_utc + timedelta(days=30)
             
             db.session.commit()
             
             # Verificar si es renovación
             is_renewal = session.get('is_renewal', False)
             
-            # Aplicar cambio de plan si hay uno pendiente (solo después del pago exitoso)
+            # Aplicar cambio de plan desde external_reference (más confiable que la sesión)
+            try:
+                if ':' in external_reference:
+                    _, plan_type = external_reference.split(':', 1)
+                    if plan_type in ['emprendedor', 'crecimiento', 'elite']:
+                        restaurant.plan_type = plan_type
+            except Exception as e:
+                print(f"Error parsing plan from external_reference: {e}")
+            
+            # Respaldo: Aplicar cambio de plan desde sesión si existe
             pending_plan = session.get('pending_plan_change')
             if pending_plan and pending_plan in ['emprendedor', 'crecimiento', 'elite']:
                 restaurant.plan_type = pending_plan
-                db.session.commit()
+            
+            db.session.commit()
+
+            # Aplicar límites del nuevo plan inmediatamente
+            try:
+                sanitize_restaurant_limits(restaurant)
+            except Exception as e:
+                print(f"Error sanitizing limits in callback: {e}")
             
             # Limpiar sesión de registro/renovación
             session.pop('otp', None)
@@ -468,13 +496,44 @@ def webhook():
                     if restaurant:
                         restaurant.is_active = True
                         
-                        # Establecer expiración a 30 días
-                        restaurant.subscription_expires_at = datetime.now() + timedelta(days=30)
-                        
+                        # Actualizar plan desde external_reference
+                        try:
+                            if ':' in external_ref:
+                                _, plan_type = external_ref.split(':', 1)
+                                if plan_type in ['emprendedor', 'crecimiento', 'elite']:
+                                    restaurant.plan_type = plan_type
+                        except Exception as e:
+                            print(f"WEBHOOK: Error parsing plan: {e}")
+
+                        # Extender suscripción (Misma lógica que payment_callback)
+                        from datetime import timezone
+                        now_utc = datetime.now(timezone.utc)
+                        if restaurant.subscription_expires_at:
+                            expires_at = restaurant.subscription_expires_at
+                            if expires_at.tzinfo is None:
+                                expires_at = expires_at.replace(tzinfo=timezone.utc)
+                            
+                            if expires_at > now_utc:
+                                # Renovación: extender desde la fecha actual de expiración
+                                restaurant.subscription_expires_at = expires_at + timedelta(days=30)
+                            else:
+                                # Expirada: establecer desde ahora
+                                restaurant.subscription_expires_at = now_utc + timedelta(days=30)
+                        else:
+                            # Nueva suscripción: establecer desde ahora
+                            restaurant.subscription_expires_at = now_utc + timedelta(days=30)
+
                         db.session.commit()
+
+                        # Aplicar límites del nuevo plan inmediatamente
+                        try:
+                            sanitize_restaurant_limits(restaurant)
+                        except Exception as e:
+                            print(f"Error sanitizing limits in webhook: {e}")
+
                         return "OK", 200
         
-        return "OK", 200  # Responder siempre 200 para que MP deje de enviar
+        return "OK", 200  
     except Exception as e:
         print(f"WEBHOOK ERROR: {e}")
         return "ERROR", 500

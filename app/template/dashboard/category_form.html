@@ -50,6 +50,7 @@
         <!-- Botón de Eliminar (solo en edición) con Modal -->
         {% if category %}
         <form id="deleteCategoryForm" method="POST" action="{{ url_for('categories.delete', id=category.id) }}" class="mt-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button"
                     onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), '¿Estás seguro de que deseas eliminar esta categoría? Se eliminarán también los productos asociados.')"
                     class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-all active:scale-95">

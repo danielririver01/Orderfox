@@ -74,9 +74,16 @@
                         <span>Pagar con Mercado Pago</span>
                     </a>
 
+                    {% if 'user_id' in session %}
+                    <a href="{{ url_for('auth.plans') }}" class="w-full text-center text-sm font-bold text-red-400 hover:text-red-600 transition-colors py-2 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                        volver a planes
+                    </a>
+                    {% else %}
                     <a href="{{ url_for('auth.logout') }}" class="w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 transition-colors py-2">
                         Cancelar registro y salir
                     </a>
+                    {% endif %}
 
                     <p class="text-[10px] text-center text-gray-400 px-8">
                         Al pagar, aceptas nuestros <a href="{{ url_for('auth.terms') }}" class="text-primary hover:underline">Términos de Servicio</a> y la renovación automática mensual.

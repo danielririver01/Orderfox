@@ -2,7 +2,6 @@
 {% block title %}Productos{% endblock %}
 {% block content %}
     
-    <!-- Header -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
             <div>
@@ -17,15 +16,46 @@
         </div>
     </header>
 
-    <!-- Flash Messages -->
+    <div class="bg-white border-b border-gray-200 sticky top-[65px] z-10 px-4 py-3">
+        <div class="max-w-md mx-auto relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </span>
+            <input type="text" 
+                   id="search-input" 
+                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-all" 
+                   placeholder="Buscar productos...">
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto px-4 pt-4">
+        {% if plan_limits.max_products < 1000000 %} {# O el valor que uses para infinito #}
+            <div class="mb-2 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-blue-800 font-semibold">Plan {{ plan_limits.name }}</span>
+                    <span class="text-blue-600">{{ current_active_count }} / {{ plan_limits.max_products }} activos</span>
+                </div>
+                <div class="w-full bg-blue-200 rounded-full h-1.5">
+                    <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-500" 
+                         style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
+                </div>
+                {% if current_active_count >= plan_limits.max_products %}
+                    <p class="text-[10px] text-orange-600 mt-1 font-medium">Límite alcanzado. <a href="{{ url_for('auth.payment') }}" class="underline font-bold">Mejora tu plan</a> para activar más.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div id="flash-container" class="max-w-md mx-auto px-4 pt-4">
+            <div id="flash-container" class="max-w-md mx-auto px-4 pt-2">
                 {% for category, message in messages %}
                     <div class="flash-message bg-{{ 'green' if category == 'success' else 'orange' if category == 'warning' else 'red' }}-50 border border-{{ 'green' if category == 'success' else 'orange' if category == 'warning' else 'red' }}-200 text-{{ 'green' if category == 'success' else 'orange' if category == 'warning' else 'red' }}-700 px-4 py-3 rounded mb-2 text-sm flex justify-between items-center shadow-sm">
                         <span>{{ message }}</span>
-                        <button onclick="this.parentElement.remove()" class="text-{{ 'green' if category == 'success' else 'orange' if category == 'warning' else 'red' }}-400 hover:text-{{ 'green' if category == 'success' else 'orange' if category == 'warning' else 'red' }}-600 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <button onclick="this.parentElement.remove()" class="p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </button>
@@ -35,25 +65,35 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Products List (Grouped by Category) -->
     <div class="max-w-md mx-auto px-4 py-4">
         {% if products %}
             {% set current_category = namespace(id=None) %}
             {% for product in products %}
                 {% if product.category_id != current_category.id %}
                     {% set current_category.id = product.category_id %}
-                    <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wide mt-6 mb-3 first:mt-0">
+                    <h2 class="category-title text-sm font-bold text-gray-500 uppercase tracking-wide mt-6 mb-3 first:mt-0">
                         {{ product.category.name }}
                     </h2>
                 {% endif %}
                 
-                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-3" data-product-id="{{ product.id }}">
-                    <div class="flex items-start justify-between gap-3">
+                {# Lógica de bloqueo por plan #}
+                {% set is_limit_reached = current_active_count >= plan_limits.max_products %}
+                {% set is_blocked = not product.is_active and is_limit_reached %}
+
+                <div class="product-card bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-3 relative" 
+                     data-product-id="{{ product.id }}"
+                     data-name="{{ product.name|lower }}"
+                     data-category="{{ product.category.name|lower }}">
+                    
+                    <div class="flex items-start justify-between gap-3 {{ 'opacity-60' if is_blocked else '' }}">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2">
                                 <h3 class="font-semibold text-gray-900 truncate">{{ product.name }}</h3>
                                 {% if product.modifiers %}
-                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">+{{ product.modifiers|length }}</span>
+                                    <span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">+{{ product.modifiers|length }} EXTRAS</span>
+                                {% endif %}
+                                {% if is_blocked %}
+                                    <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold">BLOQUEADO</span>
                                 {% endif %}
                             </div>
                             {% if product.description %}
@@ -63,23 +103,35 @@
                         </div>
                         
                         <div class="flex flex-col items-end gap-2">
-                            <!-- Toggle Switch -->
-                            <label class="relative inline-flex items-center cursor-pointer">
+                            <label class="relative inline-flex items-center cursor-pointer group">
                                 <input type="checkbox" 
-                                       class="sr-only peer" 
+                                       class="sr-only peer product-toggle" 
                                        {% if product.is_active %}checked{% endif %}
+                                       {% if is_blocked %}disabled{% endif %}
                                        onchange="toggleProduct({{ product.id }}, this.checked)">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success"></div>
+                                
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
+                                            peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                            after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                            after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                            after:h-5 after:w-5 after:transition-all 
+                                            peer-checked:bg-success
+                                            {{ 'cursor-not-allowed peer-checked:bg-gray-400' if is_blocked else '' }}"></div>
+
+                                {% if is_blocked %}
+                                    <div class="absolute right-0 bottom-8 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg hidden group-hover:block z-50 text-center">
+                                        Límite de plan alcanzado.<br>Mejora tu plan para activar este producto.
+                                    </div>
+                                {% endif %}
                             </label>
                             
-                            <!-- Action Buttons -->
-                            <div class="flex gap-2">
-                                <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="text-blue-500 hover:text-blue-700" title="Extras">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
+                            <div class="flex gap-3 mt-1">
+                                <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="text-gray-400 hover:text-blue-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                                     </svg>
                                 </a>
-                                <a href="{{ url_for('products.edit', id=product.id) }}" class="text-gray-400 hover:text-primary">
+                                <a href="{{ url_for('products.edit', id=product.id) }}" class="text-gray-400 hover:text-primary transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                     </svg>
@@ -91,25 +143,24 @@
             {% endfor %}
         {% else %}
             <div class="text-center py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <p class="text-gray-500 mt-4">No hay productos aún</p>
-                <p class="text-xs text-gray-400 mt-1">Crea tu primer producto para empezar a vender</p>
+                <p class="text-gray-500">No hay productos aún</p>
             </div>
         {% endif %}
+
+        <div id="no-results" class="hidden text-center py-12">
+            <p class="text-gray-600 font-medium">No hay resultados</p>
+        </div>
     </div>
 
-    <!-- FAB -->
-    <a href="{{ url_for('products.create') }}" class="fixed bottom-20 right-4 bg-primary hover:bg-[#d63a0a] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20">
+    <a href="{{ url_for('products.create') }}" class="fixed bottom-20 right-4 bg-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg active:scale-95 transition-all z-20">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
     </a>
 
-    <!-- Toast -->
     <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50 text-sm">
         <span id="toast-message"></span>
     </div>
+
     <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 {% endblock %}

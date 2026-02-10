@@ -1,9 +1,39 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
 migrate = Migrate()
+
+class AwareDateTime(db.TypeDecorator):
+    """
+    Asegura que los objetos datetime sean siempre UTC-aware al leer,
+    y se guarden correctamente en UTC al escribir.
+    """
+    impl = db.DateTime(timezone=True)
+    cache_ok = True
+    
+    def process_bind_param(self, value, dialect):
+        """
+        Al guardar en DB: Convierte aware a UTC naive (para MySQL)
+        """
+        if value is not None:
+            if value.tzinfo is None:
+                # Si es naive, asumimos que ya está en UTC
+                return value
+            else:
+                # Si es aware, convertir a UTC y remover tzinfo
+                return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+    
+    def process_result_value(self, value, dialect):
+        """
+        Al leer de DB: Convierte naive a UTC aware
+        """
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 class Restaurant(db.Model):
     __tablename__ = 'restaurants'
@@ -11,14 +41,42 @@ class Restaurant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
-    whatsapp_phone = db.Column(db.String(20), nullable=False)  # Solo números
-    plan_type = db.Column(db.String(20), default='emprendedor', nullable=False) # emprendedor, crecimiento, elite
-    subscription_expires_at = db.Column(db.DateTime, nullable=True)
+    whatsapp_phone = db.Column(db.String(20), nullable=False)
+    plan_type = db.Column(db.String(20), default='emprendedor', nullable=False)
+    
+    # CAMBIO: Usar AwareDateTime para asegurar que siempre sea UTC-aware en Python
+    subscription_expires_at = db.Column(
+        AwareDateTime,  # ← CAMBIO AQUÍ
+        nullable=True
+    )
+    
     is_active = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    is_open = db.Column(db.Boolean, default=True, nullable=False)  # ← NUEVO: Estado del negocio (abierto/cerrado)
+    created_at = db.Column(AwareDateTime, default=db.func.now())
     
     def __repr__(self):
         return f'<Restaurant {self.name}>'
+
+    @property
+    def is_subscription_active(self):
+        """
+        Verifica si la suscripción está activa
+        Retorna True si: 
+        - Tiene fecha de expiración Y
+        - Esa fecha es mayor a la fecha actual (UTC)
+        """
+        if not self.subscription_expires_at:
+            return False
+        
+        # Asegurar que la fecha de expiración sea aware (UTC)
+        expires_at = self.subscription_expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        # Comparar con la fecha actual (UTC)
+        now_utc = datetime.now(timezone.utc)
+        
+        return expires_at > now_utc
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -29,7 +87,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     
     # Relación con Restaurant
-    restaurant = db.relationship('Restaurant', backref=db.backref('users', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('users', lazy=True, cascade='all, delete-orphan'))
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -49,11 +107,12 @@ class Category(db.Model):
     description = db.Column(db.Text)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
+                          onupdate=lambda: datetime.now(timezone.utc))
     
     # Relación con Restaurant
-    restaurant = db.relationship('Restaurant', backref=db.backref('categories', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('categories', lazy=True, cascade='all, delete-orphan'))
     
     def __repr__(self):
         return f'<Category {self.name}>'
@@ -68,11 +127,12 @@ class Product(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Integer, nullable=False)  # En pesos colombianos
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
+                          onupdate=lambda: datetime.now(timezone.utc))
     
     # Relaciones
-    restaurant = db.relationship('Restaurant', backref=db.backref('products', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('products', lazy=True, cascade='all, delete-orphan'))
     category = db.relationship('Category', backref=db.backref('products', lazy=True))
     
     def __repr__(self):
@@ -87,10 +147,12 @@ class Modifier(db.Model):
     name = db.Column(db.String(50), nullable=False)
     extra_price = db.Column(db.Integer, default=0, nullable=False)  # $0 o positivo
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
+                          onupdate=lambda: datetime.now(timezone.utc))
     
     # Relaciones
-    restaurant = db.relationship('Restaurant', backref=db.backref('modifiers', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('modifiers', lazy=True, cascade='all, delete-orphan'))
     product = db.relationship('Product', backref=db.backref('modifiers', lazy=True, cascade='all, delete-orphan'))
     
     def __repr__(self):
@@ -107,11 +169,12 @@ class Order(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)  # pending, confirmed, delivered, cancelled, expired
     total = db.Column(db.Integer, nullable=False)  # Total en pesos
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
+                          onupdate=lambda: datetime.now(timezone.utc))
     
     # Relación con Restaurant
-    restaurant = db.relationship('Restaurant', backref=db.backref('orders', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('orders', lazy=True, cascade='all, delete-orphan'))
     
     def __repr__(self):
         return f'<Order {self.order_number}>'
@@ -130,7 +193,7 @@ class OrderItem(db.Model):
     
     # Relación con Order
     order = db.relationship('Order', backref=db.backref('items', lazy=True, cascade='all, delete-orphan'))
-    restaurant = db.relationship('Restaurant', backref=db.backref('order_items', lazy=True))
+    restaurant = db.relationship('Restaurant', backref=db.backref('order_items', lazy=True, cascade='all, delete-orphan'))
     
     def __repr__(self):
         return f'<OrderItem {self.product_name} x{self.quantity}>'

@@ -13,3 +13,34 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// CSRF Protected Fetch Wrapper
+// This ensures all fetch requests automatically include the CSRF token
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+if (csrfToken) {
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+        let [resource, config] = args;
+        
+        // Ensure config object exists
+        config = config || {};
+        
+        // Normalize headers to be an object (fetch headers can be Headers object or array)
+        if (!config.headers) {
+            config.headers = {};
+        }
+
+        // Add CSRF token to non-GET requests
+        if (config.method && config.method.toUpperCase() !== 'GET') {
+            if (config.headers instanceof Headers) {
+                config.headers.append('X-CSRFToken', csrfToken);
+            } else if (Array.isArray(config.headers)) {
+                config.headers.push(['X-CSRFToken', csrfToken]);
+            } else {
+                config.headers['X-CSRFToken'] = csrfToken;
+    }
+        }
+
+        return originalFetch(resource, config);
+    };
+}

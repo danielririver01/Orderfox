@@ -72,6 +72,7 @@
         <!-- Botón de Eliminar con Modal -->
         {% if product %}
         <form id="deleteProductForm" method="POST" action="{{ url_for('products.delete', id=product.id) }}" class="mt-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button" 
                     onclick="openDeleteModal(document.getElementById('deleteProductForm'), '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')"
                     class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-all active:scale-95">
