@@ -55,3 +55,6 @@ settings.py
 
 #configuracion ersonal
 seed_restaurant.py
+
+#paquetes de node.js
+node_modules/

@@ -68,7 +68,8 @@
                     <input type="checkbox" class="extra-checkbox" 
                            data-name="{{ modifier.name }}" 
                            data-price="{{ modifier.extra_price }}"
-                           onchange="updateExtra({{ product.id }})">
+                           onchange="updateExtra({{ product.id }})"
+                           {% if ordering_disabled %}disabled{% endif %}>
                     <span>{{ modifier.name }}</span>
                 </div>
                 <b>+${{ "{:,}".format(modifier.extra_price) }}</b>
@@ -77,11 +78,17 @@
         </div>
         {% endif %}
 
+        {% if not ordering_disabled %}
         <div class="quantity-controls">
             <button class="btn-qty" onclick="updateQty({{ product.id }}, -1)">-</button>
             <span class="qty-display" id="qty-{{ product.id }}">0</span>
             <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)">+</button>
         </div>
+        {% else %}
+        <div class="text-sm text-gray-400 font-medium mt-4">
+            Solo lectura
+        </div>
+        {% endif %}
     </article>
     {% endfor %}
 </div>
@@ -95,18 +102,20 @@
 {% endblock %}
 
 {% block footer_cart %}
-<div class="cart-summary">
-    <div class="cart-info">
-        <div class="cart-label">Total de tu pedido</div>
-        <span class="cart-total" id="cart-total">$0</span>
+    {% if not ordering_disabled %}
+    <div class="cart-summary">
+        <div class="cart-info">
+            <div class="cart-label">Total de tu pedido</div>
+            <span class="cart-total" id="cart-total">$0</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
+                Enviar pedido
+            </button>
+            <button onclick="clearCart()" style="flex: 1; background: #fde2e2; border: none; color: #e11d48; border-radius: 14px; padding: 0.5rem; font-weight: 700; cursor: pointer;">
+                Cancelar
+            </button>
+        </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
-            Enviar pedido
-        </button>
-        <button onclick="clearCart()" style="flex: 1; background: #fde2e2; border: none; color: #e11d48; border-radius: 14px; padding: 0.5rem; font-weight: 700; cursor: pointer;">
-            Cancelar
-        </button>
-    </div>
-</div>
+    {% endif %}
 {% endblock %}

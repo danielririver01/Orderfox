@@ -31,6 +31,60 @@
     <div class="pointer-events-none fixed inset-0 z-40 bg-white/5 backdrop-blur-[0.5px]"></div>
     {% endif %}
 
+    {% if sub_status and sub_status.plan == 'trial' %}
+        {% if sub_status.is_active %}
+            {% if sub_status.days_remaining > 3 %}
+            <!-- Modo Discreto (Días 1-7) -->
+            <div class="bg-gray-50 border-b border-gray-200 text-gray-600 py-1.5 px-4 sticky top-0 z-50">
+                <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-xs font-medium">
+                        <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>
+                            Plan actual: <strong>Prueba Gratuita</strong> ({{ sub_status.days_remaining }} días restantes)
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Modo Urgente (Últimos 3 días) -->
+            <div class="bg-indigo-600 text-white py-2 px-4 sticky top-0 z-50 shadow-md">
+                <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-sm font-medium">
+                        <span class="material-symbols-outlined text-[20px]">timer</span>
+                        <span>
+                            Tu prueba está por finalizar. 
+                            {% if sub_status.days_remaining > 1 %}
+                                Te quedan <strong>{{ sub_status.days_remaining }} días</strong>.
+                            {% elif sub_status.days_remaining == 1 %}
+                                ¡Te queda <strong>1 día</strong>!
+                            {% else %}
+                                Expira hoy.
+                            {% endif %}
+                        </span>
+                    </div>
+                    <a href="{{ url_for('auth.plans') }}" class="text-xs bg-white text-indigo-600 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors font-bold whitespace-nowrap shadow-sm">
+                        Suscribirme ahora
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        {% elif sub_status.status == 'expired' %}
+        <div class="bg-red-600 text-white py-2 px-4 sticky top-0 z-50 shadow-md">
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-sm font-medium">
+                    <span class="material-symbols-outlined text-[20px]">block</span>
+                    <span>
+                        <strong>Tu periodo de prueba ha finalizado.</strong> Suscríbete para reactivar pedidos y ediciones.
+                    </span>
+                </div>
+                <a href="{{ url_for('auth.plans') }}" class="text-xs bg-white text-red-600 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors font-bold whitespace-nowrap shadow-sm">
+                    Ver Planes
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
     {% block content %}{% endblock %}
 
     <!-- Modales Globales -->

@@ -31,6 +31,7 @@ def create_app():
     from .routes.orders import orders_bp
     from .routes.public import public_bp
     from .routes.menu import menu_bp
+    from .routes.tables import tables_bp
 
     
     app.register_blueprint(auth_bp)
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(orders_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(menu_bp)
+    app.register_blueprint(tables_bp)
 
     migrate.init_app(app, db)
     
@@ -52,14 +54,16 @@ def create_app():
         
         # Solo bloquear métodos de escritura
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-            # Ignorar rutas de auth y pagos para permitir renovar
-            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint):
+            # Ignorar rutas de auth, pagos y públicas (menú digital)
+            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint):
                 return
                 
             restaurant = get_current_restaurant()
             if restaurant and not can_perform_crud(restaurant):
                 flash('Tu suscripción ha vencido. No puedes realizar cambios hasta que renueves tu plan.', 'warning')
                 return redirect(request.referrer or url_for('dashboard.index'))
+
+
 
     @app.after_request
     def add_header(response):

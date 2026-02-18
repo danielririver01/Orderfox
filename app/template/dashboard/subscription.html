@@ -23,6 +23,8 @@
                     <span class="plan-badge plan-emprendedor">Emprendedor</span>
                 {% elif restaurant.plan_type == 'crecimiento' %}
                     <span class="plan-badge plan-crecimiento">Crecimiento</span>
+                {% elif restaurant.plan_type == 'trial' %}
+                    <span class="plan-badge bg-indigo-100 text-indigo-700 border-indigo-200">Prueba Premium</span>
                 {% else %}
                     <span class="plan-badge plan-elite">Élite</span>
                 {% endif %}
@@ -33,6 +35,8 @@
                     Perfecto para comenzar tu negocio digital
                 {% elif restaurant.plan_type == 'crecimiento' %}
                     Ideal para negocios en expansión
+                {% elif restaurant.plan_type == 'trial' %}
+                    Disfruta de todas las funcionalidades sin límites
                 {% else %}
                     Máximas funcionalidades para tu negocio
                 {% endif %}
@@ -50,7 +54,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-gray-800">
-                            {% if restaurant.plan_type == 'elite' %}
+                            {% if restaurant.plan_type == 'elite' or restaurant.plan_type == 'trial' %}
                                 Productos Ilimitados
                             {% else %}
                                 Hasta {{ plan_info.max_products }} Productos
@@ -68,10 +72,10 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold {% if plan_info.has_qr %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Código QR
+                            Menú Digital Inteligente
                         </p>
                         <p class="text-xs text-gray-500">
-                            {% if plan_info.has_qr %}Genera tu código QR{% else %}No disponible en tu plan{% endif %}
+                            {% if plan_info.has_qr %}Presencia digital profesional{% else %}No disponible en tu plan{% endif %}
                         </p>
                     </div>
                 </div>
@@ -84,10 +88,10 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold {% if plan_info.has_modifiers %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Modificadores
+                            Personalización Avanzada
                         </p>
                         <p class="text-xs text-gray-500">
-                            {% if plan_info.has_modifiers %}Personaliza tus productos{% else %}No disponible en tu plan{% endif %}
+                            {% if plan_info.has_modifiers %}Menú adaptable y dinámico{% else %}No disponible en tu plan{% endif %}
                         </p>
                     </div>
                 </div>
@@ -100,10 +104,27 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold {% if plan_info.has_status_management %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Gestión de Estado
+                            Control Operativo
                         </p>
                         <p class="text-xs text-gray-500">
-                            {% if plan_info.has_status_management %}Abre/cierra tu tienda{% else %}No disponible en tu plan{% endif %}
+                            {% if plan_info.has_status_management %}Gestión en tiempo real{% else %}No disponible en tu plan{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- QR por Mesas -->
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 {% if plan_info.has_table_qr %}bg-teal-50 text-teal-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold {% if plan_info.has_table_qr %}text-gray-800{% else %}text-gray-400{% endif %}">
+                            Mesas digitales con QR
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {% if plan_info.has_table_qr %}Pedidos automatizados con QR{% else %}No disponible en tu plan{% endif %}
                         </p>
                     </div>
                 </div>

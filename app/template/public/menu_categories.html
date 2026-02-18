@@ -16,9 +16,14 @@
         <h3>😴 Cerrado por ahora</h3>
         <p>Nuestro menú está disponible para ver, pero no estamos recibiendo pedidos en este momento.</p>
     </div>
+    {% elif ordering_disabled %}
+    <div class="store-closed-banner">
+        <h3>Pedidos desactivados</h3>
+        <p>Los pedidos están temporalmente pausados. Puedes explorar nuestro menú, pero no recibir órdenes por ahora.</p>
+    </div>
     {% endif %}
 
-    <div class="category-grid {% if not restaurant.is_active %}dimmed{% endif %}">
+    <div class="category-grid {% if not restaurant.is_active or ordering_disabled %}dimmed{% endif %}">
         {% for category in categories %}
         <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}" class="category-card">
             <div class="category-icon">
@@ -46,7 +51,7 @@
 {% endblock %}
 
 {% block footer_cart %}
-    {% if restaurant.is_active %}
+    {% if restaurant.is_active and not ordering_disabled %}
     <div class="cart-summary" id="cart-summary-placeholder">
         <div class="cart-info">
             <div class="cart-label">Total de tu pedido</div>

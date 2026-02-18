@@ -52,6 +52,7 @@ class Restaurant(db.Model):
     
     is_active = db.Column(db.Boolean, default=False, nullable=False)
     is_open = db.Column(db.Boolean, default=True, nullable=False)  # ← NUEVO: Estado del negocio (abierto/cerrado)
+    has_used_trial = db.Column(db.Boolean, default=False, nullable=False)  # ← NUEVO: Control de abuso por negocio
     created_at = db.Column(AwareDateTime, default=db.func.now())
     
     def __repr__(self):
@@ -158,11 +159,28 @@ class Modifier(db.Model):
     def __repr__(self):
         return f'<Modifier {self.name}>'
 
+class Table(db.Model):
+    __tablename__ = 'tables'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    name = db.Column(db.String(50), nullable=False) # Ej: "Mesa 1", "Barra 2"
+    qr_code = db.Column(db.String(255), nullable=True) # Opcional: Para guardar URL o hash único si se requiere
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relación con Restaurant
+    restaurant = db.relationship('Restaurant', backref=db.backref('tables', lazy=True, cascade='all, delete-orphan'))
+    
+    def __repr__(self):
+        return f'<Table {self.name}>'
+
 class Order(db.Model):
     __tablename__ = 'orders'
     
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    table_id = db.Column(db.Integer, db.ForeignKey('tables.id', ondelete='SET NULL'), nullable=True) # Nuevo
     order_number = db.Column(db.String(20), nullable=False)  # ORD-001
     customer_name = db.Column(db.String(100))
     customer_phone = db.Column(db.String(20))
@@ -173,8 +191,9 @@ class Order(db.Model):
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
                           onupdate=lambda: datetime.now(timezone.utc))
     
-    # Relación con Restaurant
+    # Relación con Restaurant y Table
     restaurant = db.relationship('Restaurant', backref=db.backref('orders', lazy=True, cascade='all, delete-orphan'))
+    table = db.relationship('Table', backref=db.backref('orders', lazy=True)) # Sin cascade delete para preservar historial
     
     def __repr__(self):
         return f'<Order {self.order_number}>'

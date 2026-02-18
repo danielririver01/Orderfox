@@ -14,7 +14,14 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-bold text-gray-900">{{ order.order_number }}</h1>
-                    <p class="text-xs text-gray-500 font-medium">Realizado el {{ order.created_at.strftime('%d/%m/%y a las %H:%M') }}</p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                        <span>{{ order.created_at.strftime('%d/%m/%y a las %H:%M') }}</span>
+                        {% if order.table %}
+                        <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md border border-purple-200">
+                            📍 {{ order.table.name }}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
                 <span class="px-3 py-1 rounded-full text-xs font-bold
                     {% if order.status == 'pending' %}bg-orange-100 text-orange-700

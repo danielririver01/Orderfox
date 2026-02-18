@@ -112,8 +112,13 @@
 
                     <!-- Submit Button -->
                     <button id="submitBtn" disabled class="mt-4 w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#d63a0a] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold h-12 rounded-lg transition-all duration-200 shadow-sm active:scale-[0.99]" type="submit">
+                        {% if plan == 'trial' %}
+                        <span>Comenzar Prueba Gratis</span>
+                        <span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+                        {% else %}
                         <span>Continuar al Pago</span>
                         <span class="material-symbols-outlined text-[20px]">payments</span>
+                        {% endif %}
                     </button>
                 </form>
             </div>

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_mail import Message
 from app import mail, db
 from app.forms import LoginForm, ForgotPasswordForm
@@ -10,7 +10,7 @@ import re
 import unicodedata
 import mercadopago
 from flask import current_app
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
@@ -87,13 +87,22 @@ def forgot_password():
 def reset_password(token):
     s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
-        # Validar token (max_age=1200 segundos = 20 minutos)
-        email = s.loads(token, salt='recover-key', max_age=1200)
+        # Validar token (max_age=3600 segundos = 1 hora)
+        email = s.loads(token, salt='recover-key', max_age=3600)
     except SignatureExpired:
-        flash('El enlace ha expirado. Por favor solicita uno nuevo.')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'El enlace ha expirado. Por favor solicita uno nuevo.'})
+        flash('El enlace ha expirado. Por favor solicita uno nuevo.', 'error')
         return redirect(url_for('auth.forgot_password'))
-    except Exception:
-        flash('El enlace no es válido.')
+    except BadSignature:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'El enlace no es válido.'})
+        flash('El enlace no es válido.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    except Exception as e:
+        print(f"Error en reset_password: {e}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Ocurrió un error inesperado.'})
         return redirect(url_for('auth.forgot_password'))
     
     # Si es GET, mostrar formulario
@@ -102,18 +111,31 @@ def reset_password(token):
     
     # Si es POST, actualizar contraseña
     password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
     
+    if password != confirm_password:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Las contraseñas no coinciden.'})
+        flash('Las contraseñas no coinciden.', 'error')
+        return render_template('auth/reset_password.html')
+
     user = User.query.filter_by(email=email).first()
     if user and password:
         user.set_password(password)
         db.session.commit()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'redirect': url_for('auth.login'), 'message': '¡Contraseña actualizada! Redirigiendo...'})
+            return jsonify({
+                'success': True, 
+                'redirect': url_for('auth.login'), 
+                'message': '¡Contraseña actualizada exitosamente! Redirigiendo...'
+            })
 
         flash('¡Contraseña actualizada! Ya puedes iniciar sesión.')
         return redirect(url_for('auth.login'))
         
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'message': 'No se pudo actualizar la contraseña.'})
     return render_template('auth/reset_password.html')
 
 @auth_bp.route('/privacy')
@@ -139,19 +161,34 @@ def register():
     form = RegisterEmailForm()
     if form.validate_on_submit():
         email = form.email.data
-        # Generar código OTP (6 dígitos)
-        import random
-        otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-        session['otp'] = otp
-        session['register_email'] = email
         
-        # Enviar correo real vía Gmail
-        if send_otp_email(email, otp):
-            print(f"DEBUG: OTP enviado a {email}: {otp}")
-            flash(f'Hemos enviado un código de verificación a {email}.')
+        # 1. Verificar si el usuario ya existe (Enumeration Protection)
+        user_exists = User.query.filter_by(email=email).first()
+        
+        if user_exists:
+            # Enviar correo de "Ya tienes una cuenta" en lugar de OTP
+            try:
+                msg = Message('Ya eres parte de Velzia', recipients=[email])
+                login_url = url_for('auth.login', _external=True)
+                msg.html = render_template('email/account_exists.html', login_url=login_url)
+                msg.body = f"Ya tienes una cuenta activa en Velzia. Puedes iniciar sesión aquí: {login_url}"
+                mail.send(msg)
+            except Exception as e:
+                 print(f"Error enviando correo de cuenta existente: {e}")
         else:
-            flash('Error al enviar el correo de verificación. Por favor intente más tarde.')
+            # Generar código OTP (6 dígitos) para usuario nuevo
+            import random
+            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+            session['otp'] = otp
+            session['register_email'] = email
+            
+            # Enviar correo real vía Gmail
+            if not send_otp_email(email, otp):
+                flash('Error al enviar el correo de verificación. Por favor intente más tarde.')
+                return render_template('auth/register_verify.html', form=form, step='email')
 
+        # Respuesta UNIFICADA: Independientemente de si existe o no
+        flash('Si el correo ingresado es correcto, recibirás instrucciones para continuar.')
         return redirect(url_for('auth.verify_otp'))
     return render_template('auth/register_verify.html', form=form, step='email')
 
@@ -206,12 +243,22 @@ def setup_account():
     email = session.get('register_email')
 
     if form.validate_on_submit():
-        # Validar si el usuario ya existe
+        # Validar si el usuario ya existe (Doble check de seguridad)
         if User.query.filter_by(email=email).first():
-            flash('Este correo ya está registrado.')
             return redirect(url_for('auth.login'))
 
-        # Crear Restaurante (Inactivo hasta el pago)
+        # Validar abuso de Trial por Teléfono (Tenant Check)
+        # Buscamos SI YA EXISTE algún restaurante con este teléfono que haya quemado el trial
+        past_trial_usage = Restaurant.query.filter_by(whatsapp_phone=form.phone.data, has_used_trial=True).first()
+        
+        selected_plan = session.get('selected_plan', 'emprendedor')
+        is_trial = selected_plan == 'trial'
+
+        if is_trial and past_trial_usage:
+            flash('Este número ya disfrutó de una prueba gratuita. Por favor elige un plan pago para tu nueva sucursal.', 'warning')
+            return render_template('auth/register_setup.html', form=form, plan=selected_plan)
+
+        # Crear Restaurante (Activo por 10 días de prueba)
         restaurant_name = form.restaurant_name.data
         # Generar slug simple
         slug = unicodedata.normalize('NFKD', restaurant_name).encode('ascii', 'ignore').decode('ascii')
@@ -225,13 +272,37 @@ def setup_account():
             slug = f"{base_slug}-{counter}"
             counter += 1
 
+        # Calcular fecha de expiración (10 días de prueba)
+        # Solo si el plan es 'trial' se activa de inmediato
+        selected_plan = session.get('selected_plan', 'emprendedor')
+        
+        is_trial = selected_plan == 'trial'
+        
+        if is_trial:
+            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=10)
+            is_active_val = True
+            expires_at_val = trial_expires_at
+            plan_type_val = 'trial'
+            has_used_trial_val = True # Marcar trial como "quemado" para este tenant
+        else:
+            is_active_val = False
+            expires_at_val = None
+            plan_type_val = selected_plan
+            # Si paga directo, ¿cuenta como haber usado trial? Estratégicamente NO, 
+            # para dejarle la puerta abierta a un trial futuro si hace otra empresa? 
+            # NO, mejor asumir que si ya es cliente, ya entró al ecosistema. 
+            # Pero sigamos la lógica estricta: has_used_trial = is_trial.
+            has_used_trial_val = False # Solo quemamos el cartucho si realmente toma el trial
+
         new_restaurant = Restaurant(
             name=restaurant_name,
             slug=slug,
             whatsapp_phone=form.phone.data,
-            plan_type=session.get('selected_plan', 'emprendedor'),
-            is_active=False,  # Inactivo hasta el pago
-            subscription_expires_at=None  # ← EXPLÍCITO: Sin suscripción hasta pagar
+            plan_type=plan_type_val,
+            is_active=is_active_val,
+            subscription_expires_at=expires_at_val,
+            is_open=True,
+            has_used_trial=has_used_trial_val # ← Guardamos el rastro 
         )
         db.session.add(new_restaurant)
         db.session.flush() # Para obtener el ID
@@ -247,15 +318,33 @@ def setup_account():
         
         try:
             db.session.commit()
-            session['pending_restaurant_id'] = new_restaurant.id
-            session['setup_done'] = True
-            return redirect(url_for('auth.payment'))
+            
+            if is_trial:
+                # Caso TRIAL: Auto-login y Dashboard
+                session['user_id'] = new_user.id
+                session['username'] = new_user.username
+                session['setup_done'] = True
+                
+                # Limpiar sesión
+                session.pop('otp', None)
+                session.pop('register_email', None)
+                session.pop('otp_verified', None)
+                session.pop('pending_restaurant_id', None)
+                
+                flash('¡Registro exitoso! Disfruta de tus 10 días de prueba gratuita.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                # Caso PAGO: Redirigir a payment
+                session['pending_restaurant_id'] = new_restaurant.id
+                session['setup_done'] = True
+                return redirect(url_for('auth.payment'))
+
         except Exception as e:
             db.session.rollback()
             flash('Error al crear la cuenta. Inténtalo de nuevo.')
             print(f"Error en setup_account: {e}")
 
-    return render_template('auth/register_setup.html', form=form)
+    return render_template('auth/register_setup.html', form=form, plan=session.get('selected_plan'))
 
 @auth_bp.route('/renew', methods=['GET'])
 def renew():

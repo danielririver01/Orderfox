@@ -117,11 +117,15 @@
             btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Enviando...';
             
             try {
+                // Obtener el token CSRF del formulario
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
                 const response = await fetch("{{ url_for('auth.resend_otp') }}", {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     }
                 });
                 

@@ -26,8 +26,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                         </svg>
                     </div>
-                    <h2 class="text-2xl font-bold text-text-main mb-2">{{ restaurant.name }}</h2>
-                    <p class="text-sm text-text-muted">Comparte este código QR con tus clientes</p>
+                    {% if is_table_qr %}
+                        <h2 class="text-2xl font-bold text-text-main mb-2">Mesa: {{ table_name }}</h2>
+                        <p class="text-sm text-text-muted">Código QR exclusivo para esta mesa</p>
+                    {% else %}
+                        <h2 class="text-2xl font-bold text-text-main mb-2">{{ restaurant.name }}</h2>
+                        <p class="text-sm text-text-muted">Comparte este código QR con tus clientes</p>
+                    {% endif %}
                 </div>
 
                 <!-- QR Code Display -->
@@ -36,7 +41,7 @@
                         <img 
                             id="qrImage" 
                             src="{{ qr_image_url }}" 
-                            alt="Código QR {{ restaurant.name }}"
+                            alt="Código QR"
                             class="w-64 h-64 rounded-lg shadow-lg"
                         >
                     </div>
@@ -76,17 +81,28 @@
                 <!-- Action Buttons -->
                 <div class="space-y-3">
                     <!-- Download Button -->
-                    <button 
-                        onclick="descargarQR()"
-                        class="w-full bg-primary hover:bg-[#d63a0a] text-white font-semibold py-3.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Descargar Código QR
-                    </button>
+                    {% if is_table_qr %}
+                        <a href="{{ url_for('tables.download_qr', id=request.view_args.get('id')) }}" 
+                           class="w-full bg-primary hover:bg-[#d63a0a] text-white font-semibold py-3.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Descargar Código QR
+                        </a>
+                    {% else %}
+                        <button 
+                            onclick="descargarQR()"
+                            class="w-full bg-primary hover:bg-[#d63a0a] text-white font-semibold py-3.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Descargar Código QR
+                        </button>
+                    {% endif %}
 
-                    <!-- Share Button -->
+                    <!-- Share Button (Solo si no es mesa por ahora, o implementar para mesa) -->
+                    {% if not is_table_qr %}
                     <button 
                         onclick="compartirQR()"
                         class="w-full bg-success hover:bg-green-700 text-white font-semibold py-3.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
@@ -96,6 +112,7 @@
                         </svg>
                         Compartir por WhatsApp
                     </button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -137,9 +154,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
                 </div>
-                <h3 class="font-bold text-gray-900 mb-2">Código QR Personalizado</h3>
+                <h3 class="font-bold text-gray-900 mb-2">
+                    {% if is_table_qr %}
+                        Código QR de Mesas Premium
+                    {% else %}
+                        Código QR Personalizado
+                    {% endif %}
+                </h3>
                 <p class="text-sm text-gray-600 mb-4">
-                    Obtén tu QR profesional y compártelo fácilmente con tus clientes.
+                    {% if is_table_qr %}
+                        Obtén códigos QR únicos por mesa gestionando pedidos individualmente. Actualiza al plan Crecimiento.
+                    {% else %}
+                        Obtén tu QR profesional y compártelo fácilmente con tus clientes.
+                    {% endif %}
                 </p>
                 <a href="{{ url_for('dashboard.subscription') }}" class="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all">
                     Actualizar Plan
@@ -158,7 +185,7 @@
             <p class="text-sm font-medium text-gray-900" id="toast-message"></p>
         </div>
     </div>
-
+    
     <script>
         // Variables globales para el archivo JS externo
         const MENU_URL = "{{ menu_url }}";

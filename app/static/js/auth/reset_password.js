@@ -9,22 +9,24 @@ const checks = {
 };
 
 function validate() {
-            const val = password.value;
-            const valConfirm = confirm.value;
+    const val = password.value;
+    const valConfirm = confirm.value;
 
-            // Primera letra mayúscula
-            const isUpper = /^[A-Z]/.test(val);
-            // Incluir números
-            const hasNumber = /[0-9]/.test(val);
-            // Coinciden
-            const matches = val === valConfirm && val.length > 0;
+    // Al menos una mayúscula (en cualquier posición)
+    const hasUpper = /[A-Z]/.test(val);
+    // Incluir números
+    const hasNumber = /[0-9]/.test(val);
+    // Longitud mínima 8
+    const isLongEnough = val.length >= 8;
+    // Coinciden
+    const matches = val === valConfirm && val.length > 0;
 
-            updateUI(checks.upper, isUpper);
-            updateUI(checks.number, hasNumber);
-            updateUI(checks.match, matches);
+    updateUI(checks.upper, hasUpper);
+    updateUI(checks.number, hasNumber);
+    updateUI(checks.match, matches && isLongEnough);
 
-            submitBtn.disabled = !(isUpper && hasNumber && matches);
-        }
+    submitBtn.disabled = !(hasUpper && hasNumber && matches && isLongEnough);
+}
 
         function updateUI(el, isValid) {
             const icon = el.querySelector('.material-symbols-outlined');

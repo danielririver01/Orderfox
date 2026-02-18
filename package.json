@@ -1,0 +1,28 @@
+{
+  "name": "velzia-sass-con-whatsapp",
+  "version": "1.0.0",
+  "description": "Motor ligero de pedidos para negocios locales.\r Optimizado para conexión móvil y flujo por WhatsApp.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielririver01/Orderfox.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danielririver01/Orderfox/issues"
+  },
+  "homepage": "https://github.com/danielririver01/Orderfox#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
+  }
+}

@@ -1,13 +1,13 @@
-from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for
-from app.models import db, Category, Product, Order, OrderItem, Restaurant
+from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
+from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table
 from datetime import datetime, date, timedelta
-from app.utils.subscription import is_subscription_active
+from app.utils.subscription import is_subscription_active, check_feature_access
 import json
 
 public_bp = Blueprint('public', __name__)
 
 def generate_order_number(restaurant_id):
-    # ... (contenido existente omitido para brevedad)
+    count = Order.query.filter_by(restaurant_id=restaurant_id).count()
     return f"ORD-{count + 1:03d}"
 
 @public_bp.route('/menu/<string:slug>')
@@ -18,18 +18,32 @@ def menu(slug=None):
         restaurant = Restaurant.query.first()
         if not restaurant:
             abort(404)
-        return redirect(url_for('public.menu', slug=restaurant.slug))
+        return redirect(url_for('public.menu', slug=restaurant.slug, **request.args))
     
     restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
+
+    table_id = request.args.get('table')
+    if table_id:
+        has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
+
+        if has_table_qr_access:
+            table = Table.query.filter_by(id=table_id, restaurant_id=restaurant.id).first()
+            if table and table.is_active:
+                session['table_id'] = table.id
+                session['restaurant_id'] = restaurant.id # Por seguridad
+            else:
+                session.pop('table_id', None)
+        else:
+            session.pop('table_id', None)
     
-    # VALIDACIÓN DE SEGURIDAD: Verificar si la cuenta está activa y la suscripción vigente
-    if not (restaurant.is_active and is_subscription_active(restaurant)):
-        return render_template('public/subscription_expired.html', restaurant=restaurant)
+    # Lógica de "Solo Lectura" para menú público
+    # Si la suscripción expiró, SE MUESTRA EL MENÚ pero se desactivan los pedidos
+    is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
+    ordering_disabled = not is_active_sub
     
-    # Notificar si la tienda está cerrada pero permitir ver el menú
-    store_open = restaurant.is_open
+    # Si está desactivado, forzamos store_open a False visualmente o lo manejamos con ordering_disabled
+    store_open = restaurant.is_open and is_active_sub
     
-    # Obtener solo categorías con productos activos
     categories = Category.query.join(Product).filter(
         Category.restaurant_id == restaurant.id,
         Category.is_active == True,
@@ -39,15 +53,18 @@ def menu(slug=None):
     return render_template('public/menu_categories.html', 
                          categories=categories,
                          restaurant=restaurant,
-                         store_open=store_open)
+                         store_open=store_open,
+                         ordering_disabled=ordering_disabled)
 
 @public_bp.route('/menu/<string:slug>/categoria/<int:category_id>')
 def category_products(slug, category_id):
     restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
     
     # VALIDACIÓN DE SEGURIDAD
-    if not (restaurant.is_active and is_subscription_active(restaurant)):
-        return render_template('public/subscription_expired.html', restaurant=restaurant)
+    # VALIDACIÓN DE SEGURIDAD (Permitir ver, pero no pedir - manejado en frontend)
+    # Si la suscripción expiró, aún permitimos ver productos
+    # if not (restaurant.is_active and is_subscription_active(restaurant)):
+    #    return render_template('public/subscription_expired.html', restaurant=restaurant)
 
     category = Category.query.filter_by(id=category_id, restaurant_id=restaurant.id).first_or_404()
     # ...
@@ -59,10 +76,15 @@ def category_products(slug, category_id):
         is_active=True
     ).all()
     
+    # Lógica de "Solo Lectura"
+    is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
+    ordering_disabled = not is_active_sub
+
     return render_template('public/menu_category_products.html',
                          restaurant=restaurant,
                          category=category,
-                         products=products)
+                         products=products,
+                         ordering_disabled=ordering_disabled)
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():
@@ -70,27 +92,23 @@ def create_order():
     if not data or 'cart' not in data:
         return jsonify({'success': False, 'error': 'Carrito vacío'}), 400
 
-    # Obtener el restaurante (por ahora el primero para el API simpler)
-    # En el futuro, el frontend podría enviar el restaurant_id en el JSON
     restaurant = Restaurant.query.filter_by(id=data.get('restaurant_id', 1)).first()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    # 0. Validar si la tienda está abierta
     if not restaurant.is_open:
         return jsonify({
             'success': False, 
             'error': '⏰ Estamos cerrados en este momento. ¡Vuelve pronto!'
         }), 403
     
-    # 0.1 Validar si la cuenta está activa (suspensión administrativa)
-    if not restaurant.is_active:
+    # Validación estricta de suscripción (Backend)
+    if not (restaurant.is_active and is_subscription_active(restaurant)):
         return jsonify({
             'success': False, 
-            'error': '❌ Servicio temporalmente no disponible.'
+            'error': 'Pedidos temporalmente desactivados.'
         }), 403
 
-    # 1. Limpieza Lazy: Expirar pedidos pendientes antiguos (>30 min)
     expiration_limit = datetime.now() - timedelta(minutes=30)
     Order.query.filter(
         Order.restaurant_id == restaurant.id,
@@ -99,7 +117,6 @@ def create_order():
     ).update({Order.status: 'expired'})
     db.session.commit()
 
-    # 2. Anti-spam: Verificar último pedido de esta IP (<90 seg)
     client_ip = request.remote_addr
     rate_limit = datetime.now() - timedelta(seconds=90)
     recent_order = Order.query.filter(
@@ -116,19 +133,18 @@ def create_order():
 
     order_number = generate_order_number(restaurant.id)
     
-    # Crear la orden principal
     order = Order(
         restaurant_id=restaurant.id,
         order_number=order_number,
         status='pending',
         total=data.get('total', 0),
         customer_name='Cliente Web',
-        notes=f'Pedido realizado desde el menú digital.'
+        notes=f'Pedido realizado desde el menú digital.',
+        table_id=session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
     )
     db.session.add(order)
     db.session.flush()
 
-    # Procesar items del carrito
     cart = data['cart']
     for product_id, item in cart.items():
         extras_total = sum(e['price'] for e in item.get('extras', []))
@@ -150,5 +166,6 @@ def create_order():
     return jsonify({
         'success': True, 
         'order_number': order_number,
-        'order_id': order.id
+        'order_id': order.id,
+        'table_name': order.table.name if order.table else None
     })

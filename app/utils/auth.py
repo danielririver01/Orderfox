@@ -70,4 +70,33 @@ def active_required(f):
         return f(*args, **kwargs)
     
     return decorated_function
+
+def feature_required(feature_name):
+    """
+    Decorador para verificar acceso a características específicas del plan.
+    Debe usarse después de @login_required y @active_required.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            restaurant = get_current_restaurant()
+            
+            if not restaurant:
+                return jsonify({'error': 'Restaurante no encontrado'}), 404
+                
+            if not check_feature_access(restaurant, feature_name):
+                # Si es una petición AJAX/API
+                if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({
+                        'error': 'Plan insuficiente',
+                        'message': f'Tu plan actual no incluye la función: {feature_name}'
+                    }), 403
+                
+                # Para peticiones normales de navegación
+                flash(f'Actualiza tu plan para acceder a esta función.', 'warning')
+                return redirect(url_for('dashboard.subscription'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
     

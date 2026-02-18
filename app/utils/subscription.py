@@ -4,7 +4,8 @@ from app.models import db, Product
 PLAN_LIMITS = {
     'emprendedor': {
         'max_products': 25,
-        'has_qr': False,
+        'has_qr': True,        # AHORA: Todos tienen QR de Restaurante
+        'has_table_qr': False, # NUEVO: QR de Mesas (bloqueado)
         'has_modifiers': False,
         'has_status_management': False,
         'name': 'Emprendedor'
@@ -12,6 +13,7 @@ PLAN_LIMITS = {
     'crecimiento': {
         'max_products': 100,
         'has_qr': True,
+        'has_table_qr': True,  # NUEVO: QR de Mesas (permitido)
         'has_modifiers': False,
         'has_status_management': True,
         'name': 'Crecimiento'
@@ -19,9 +21,18 @@ PLAN_LIMITS = {
     'elite': {
         'max_products': float('inf'),
         'has_qr': True,
+        'has_table_qr': True,
         'has_modifiers': True,
         'has_status_management': True,
         'name': 'Élite'
+    },
+    'trial': {
+        'max_products': float('inf'),
+        'has_qr': True,
+        'has_table_qr': True,  # Acceso total en prueba
+        'has_modifiers': True,
+        'has_status_management': True,
+        'name': 'Prueba Gratuita Premium'
     }
 }
 
@@ -109,7 +120,8 @@ def get_subscription_status(restaurant):
             'message': 'Restaurante no encontrado',
             'can_crud': False,
             'badge_class': 'bg-gray-100 text-gray-600',
-            'badge_text': 'No encontrado'
+            'badge_text': 'No encontrado',
+            'plan': None
         }
     
     # 2. CUENTA SUSPENDIDA ADMINISTRATIVAMENTE
@@ -120,7 +132,8 @@ def get_subscription_status(restaurant):
             'message': 'Cuenta suspendida administrativamente',
             'can_crud': False,
             'badge_class': 'bg-red-100 text-red-600',
-            'badge_text': 'Suspendida'
+            'badge_text': 'Suspendida',
+            'plan': restaurant.plan_type
         }
     
     # 3. SIN SUSCRIPCIÓN (Nunca ha pagado)
@@ -131,7 +144,8 @@ def get_subscription_status(restaurant):
             'message': 'No tienes una suscripción activa',
             'can_crud': False,
             'badge_class': 'bg-yellow-100 text-yellow-600',
-            'badge_text': 'Sin suscripción'
+            'badge_text': 'Sin suscripción',
+            'plan': restaurant.plan_type
         }
     
     expires_at = restaurant.subscription_expires_at
@@ -168,7 +182,8 @@ def get_subscription_status(restaurant):
                 'can_crud': True,
                 'message': f'⚠️ Tu suscripción expira en {days_remaining} día{"s" if days_remaining != 1 else ""}. Renueva pronto.',
                 'badge_class': 'bg-yellow-100 text-yellow-700',
-                'badge_text': 'Por expirar'
+                'badge_text': 'Por expirar',
+                'plan': restaurant.plan_type
             }
         
         # Subcaso: Activa normal
@@ -179,9 +194,10 @@ def get_subscription_status(restaurant):
             'expires_at': expires_at,
             'formatted_expiration': formatted_expiration,
             'can_crud': True,
-            'message': f'✅ Suscripción activa. {days_remaining} día{"s" if days_remaining != 1 else ""} restante{"s" if days_remaining != 1 else ""}.',
+            'message': f'Suscripción activa. {days_remaining} día{"s" if days_remaining != 1 else ""} restante{"s" if days_remaining != 1 else ""}.',
             'badge_class': 'bg-green-100 text-green-700',
-            'badge_text': 'Activa'
+            'badge_text': 'Activa',
+            'plan': restaurant.plan_type
         }
     
     from datetime import timedelta
@@ -203,7 +219,8 @@ def get_subscription_status(restaurant):
             'can_crud': False,
             'message': f'⚠️ Suscripción vencida. Tienes {days_grace_remaining} día{"s" if days_grace_remaining != 1 else ""} de gracia para renovar.',
             'badge_class': 'bg-orange-100 text-orange-700',
-            'badge_text': 'Periodo de gracia'
+            'badge_text': 'Periodo de gracia',
+            'plan': restaurant.plan_type
         }
     
     # CASO C: EXPIRADA DEFINITIVAMENTE
@@ -219,7 +236,8 @@ def get_subscription_status(restaurant):
         'can_crud': False,
         'message': f'Suscripción expirada hace {days_since_expiration} día{"s" if days_since_expiration != 1 else ""}. Renueva para continuar.',
         'badge_class': 'bg-red-100 text-red-700',
-        'badge_text': 'Expirada'
+        'badge_text': 'Expirada',
+        'plan': restaurant.plan_type
     }
 
 def can_perform_crud(restaurant):

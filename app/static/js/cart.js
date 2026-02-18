@@ -151,9 +151,13 @@ async function sendWhatsApp() {
         }
 
         // 2. Registrar en base de datos
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         const response = await fetch('/menu/api/order', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ 
                 cart, 
                 total,
@@ -161,7 +165,14 @@ async function sendWhatsApp() {
             })
         });
 
-        const result = await response.json();
+        const text = await response.text();
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            console.error("Server Response:", text);
+            throw new Error("Respuesta inválida del servidor. Ver consola.");
+        }
         
         if (!result.success) throw new Error(result.error);
 
@@ -172,6 +183,11 @@ async function sendWhatsApp() {
         // 3. Preparar mensaje de WhatsApp con formato Markdown profesional
         let message = `*NUEVO PEDIDO RECIBIDO*\n`; // Negrita para el encabezado
         message += `N° del pedido: \`\`\`${result.order_number}\`\`\`\n`;
+        
+        if (result.table_name) {
+             message += `📍 *Mesa:* ${result.table_name}\n`;
+        }
+        
         message += `------------------------------\n`;
 
         for (const id in cart) {

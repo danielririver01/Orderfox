@@ -138,15 +138,14 @@ def menu_qr(slug):
     if not restaurant: abort(404)
     
     # Verificar acceso a QR para UI
-    has_qr_access = check_feature_access(restaurant, 'has_qr')
+    # AHORA: Todos los planes tienen acceso al QR del restaurante
+    has_qr_access = True 
     
-    # Generar URL completa del menú
     # Generar URL completa del menú usando BASE_URL
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
     menu_url = f"{base_url}/menu/{slug}"
     
-    # Generar URL de la imagen QR (funcionará para mostrarla visualmente, 
-    # pero la descarga estará protegida)
+    # Generar URL de la imagen QR
     qr_image_url = url_for('dashboard.menu_qr_image', slug=slug)
     
     return render_template('dashboard/qr_page.html', 
@@ -154,18 +153,17 @@ def menu_qr(slug):
                          menu_url=menu_url,
                          qr_image_url=qr_image_url,
                          slug=slug,
-                         has_qr_access=has_qr_access)
+                         has_qr_access=has_qr_access,
+                         is_table_qr=False) # Explicito: No es mesa
 
 @dashboard_bp.route('/menu/<slug>/qr_image.png')
 def menu_qr_image(slug):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    if check_feature_access(restaurant, 'has_qr'):
-        base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-        menu_url = f"{base_url}/menu/{slug}"
-    else:
-        menu_url = "https://velzia.com/upgrade?utm_source=qr_lock" 
+    # QR de restaurante siempre visible
+    base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
+    menu_url = f"{base_url}/menu/{slug}"
     
     qr = qrcode.QRCode(
         version=1,
