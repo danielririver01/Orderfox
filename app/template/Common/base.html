@@ -4,93 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Velzia{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{{ url_for('static', filename='JS/tailwind.app.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
-    <!-- Preconnect for Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
 </head>
 <body>
-    {% if sub_status and sub_status.status == 'grace_period' %}
-    <div class="bg-amber-50 border-b border-amber-200 py-2 px-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2 text-amber-800 text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                <span>Tu membresía ha vencido. Te quedan <strong>{{ sub_status.days_grace_remaining }} días</strong> antes de la desactivación de tu cuenta e información.</span>
+    {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
+    <div class="sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center
+                    {% if sub_status.status == 'expiring_soon_neutral' %}
+                        bg-slate-100 text-slate-600
+                    {% elif sub_status.status == 'expiring_soon_warning' %}
+                        bg-amber-100 text-amber-600
+                    {% else %}
+                        bg-red-100 text-red-600
+                    {% endif %}
+                ">
+                    <span class="material-symbols-outlined text-[20px]">schedule</span>
+                </div>
+
+                <p class="text-sm font-medium text-slate-700">
+                    {{ sub_status.message }}
+                </p>
             </div>
-            <a href="{{ url_for('dashboard.subscription') }}" class="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors font-semibold whitespace-nowrap">
-                Renovar Ahora
+
+            <a href="{{ url_for('dashboard.subscription') }}"
+               class="text-sm font-semibold px-4 py-2 rounded-xl
+               {% if sub_status.status == 'expiring_soon_neutral' %}
+                    text-indigo-600 hover:bg-indigo-50
+               {% elif sub_status.status == 'expiring_soon_warning' %}
+                    text-amber-600 hover:bg-amber-50
+               {% else %}
+                    text-red-600 hover:bg-red-50
+               {% endif %}
+               transition-all">
+                Renovar
             </a>
         </div>
     </div>
-    <div class="pointer-events-none fixed inset-0 z-40 bg-white/5 backdrop-blur-[0.5px]"></div>
-    {% endif %}
+    {% endif %} 
+    
+    {% if sub_status.status == 'grace_period' %}
+    <div class="sticky top-0 z-50 bg-red-50 border-b border-red-200">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">error</span>
+                </div>
 
-    {% if sub_status and sub_status.plan == 'trial' %}
-        {% if sub_status.is_active %}
-            {% if sub_status.days_remaining > 3 %}
-            <!-- Modo Discreto (Días 1-7) -->
-            <div class="bg-gray-50 border-b border-gray-200 text-gray-600 py-1.5 px-4 sticky top-0 z-50">
-                <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 text-xs font-medium">
-                        <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
-                        <span>
-                            Plan actual: <strong>Prueba Gratuita</strong> ({{ sub_status.days_remaining }} días restantes)
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <!-- Modo Urgente (Últimos 3 días) -->
-            <div class="bg-indigo-600 text-white py-2 px-4 sticky top-0 z-50 shadow-md">
-                <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 text-sm font-medium">
-                        <span class="material-symbols-outlined text-[20px]">timer</span>
-                        <span>
-                            Tu prueba está por finalizar. 
-                            {% if sub_status.days_remaining > 1 %}
-                                Te quedan <strong>{{ sub_status.days_remaining }} días</strong>.
-                            {% elif sub_status.days_remaining == 1 %}
-                                ¡Te queda <strong>1 día</strong>!
-                            {% else %}
-                                Expira hoy.
-                            {% endif %}
-                        </span>
-                    </div>
-                    <a href="{{ url_for('auth.plans') }}" class="text-xs bg-white text-indigo-600 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors font-bold whitespace-nowrap shadow-sm">
-                        Suscribirme ahora
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-        {% elif sub_status.status == 'expired' %}
-        <div class="bg-red-600 text-white py-2 px-4 sticky top-0 z-50 shadow-md">
-            <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2 text-sm font-medium">
-                    <span class="material-symbols-outlined text-[20px]">block</span>
-                    <span>
-                        <strong>Tu periodo de prueba ha finalizado.</strong> Suscríbete para reactivar pedidos y ediciones.
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-red-700">
+                        Suscripción vencida
+                    </span>
+                    <span class="text-xs text-red-600">
+                        Te quedan {{ sub_status.days_grace_remaining }} días antes de desactivar tu menú.
                     </span>
                 </div>
-                <a href="{{ url_for('auth.plans') }}" class="text-xs bg-white text-red-600 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors font-bold whitespace-nowrap shadow-sm">
-                    Ver Planes
+            </div>
+
+            <a href="{{ url_for('dashboard.subscription') }}"
+               class="bg-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-red-700 transition">
+                Reactivar
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if sub_status.status == 'expired' %}
+    <div class="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800">
+        <div class="max-w-3xl mx-auto px-6 py-10 text-center flex flex-col gap-5">
+            
+            <div class="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-red-500 text-[36px]">lock</span>
+            </div>
+
+            <h2 class="text-2xl font-bold tracking-tight">
+                Tu menú está temporalmente inactivo
+            </h2>
+
+            <p class="text-sm text-slate-400">
+                Reactiva tu suscripción para que tus clientes vuelvan a realizar pedidos.
+            </p>
+
+            <div class="flex gap-3 justify-center pt-4">
+                <a href="{{ url_for('auth.plans') }}"
+                   class="bg-white text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition">
+                    Reactivar ahora
+                </a>
+
+                <a href="mailto:soporte@tuemail.com"
+                   class="border border-slate-600 px-6 py-3 rounded-xl text-sm hover:bg-slate-800 transition">
+                    Contactar soporte
                 </a>
             </div>
         </div>
-        {% endif %}
+    </div>
     {% endif %}
 
     {% block content %}{% endblock %}
 
-    <!-- Modales Globales -->
     {% include 'components/modal_delete.html' %}
     
-    <!-- Scripts Globales -->
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
 </body>

@@ -15,7 +15,9 @@
     </header>
     <!-- Form -->
     <div class="max-w-md mx-auto px-4 py-6">
-        <form method="POST" class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
+        <form method="POST" 
+              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.value='Guardando...'; b.innerHTML='Guardando...';" 
+              class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
             {{ form.hidden_tag() }}
 
             <!-- Nombre -->
@@ -52,8 +54,8 @@
         <form id="deleteCategoryForm" method="POST" action="{{ url_for('categories.delete', id=category.id) }}" class="mt-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button"
-                    onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), '¿Estás seguro de que deseas eliminar esta categoría? Se eliminarán también los productos asociados.')"
-                    class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-all active:scale-95">
+                    onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), 'Se eliminarán también todos los productos asociados a esta categoría de forma permanente.', '¿Eliminar «{{ category.name }}»?')"
+                    class="w-full bg-white hover:bg-red-50 text-red-600 font-bold py-3 rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all active:scale-95">
                 Eliminar Categoría
             </button>
         </form>

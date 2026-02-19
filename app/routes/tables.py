@@ -72,14 +72,11 @@ def qr(id):
     restaurant = get_current_restaurant()
     table = Table.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     
-    # Verificar acceso a QR de MESA
     has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
     
-    # Generar URL completa del menú con mesa
     base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
     menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
     
-    # Generar URL de la imagen QR (para visualización)
     qr_image_url = url_for('tables.qr_image', id=table.id)
     
     return render_template('dashboard/qr_page.html', 
@@ -104,7 +101,6 @@ def qr_image(id):
     restaurant = get_current_restaurant()
     table = Table.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     
-    # Verificar permisos (aquí es manual porque queremos devolver imagen difuminada, no error 403)
     has_access = check_feature_access(restaurant, 'has_table_qr')
     
     base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
@@ -114,11 +110,9 @@ def qr_image(id):
     qr.add_data(menu_url)
     qr.make(fit=True)
     
-    # Convertir a imagen PIL para manipulación
     img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
     
     if not has_access:
-        # Aplicar blur severo en el servidor para inutilizar el QR
         img = img.filter(ImageFilter.GaussianBlur(radius=8))
     
     buffer = BytesIO()

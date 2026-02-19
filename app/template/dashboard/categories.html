@@ -38,22 +38,9 @@
     </div>
 
     <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div id="flash-container" class="max-w-md mx-auto px-4 pt-4">
-                {% for category, message in messages %}
-                    <div class="flash-message bg-{{ 'green' if category == 'success' else 'red' }}-50 border border-{{ 'green' if category == 'success' else 'red' }}-200 text-{{ 'green' if category == 'success' else 'red' }}-700 px-4 py-3 rounded mb-2 text-sm flex justify-between items-center shadow-sm">
-                        <span>{{ message }}</span>
-                        <button onclick="this.parentElement.remove()" class="text-{{ 'green' if category == 'success' else 'red' }}-400 hover:text-{{ 'green' if category == 'success' else 'red' }}-600 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    <div class="max-w-md mx-auto px-4 pt-4">
+        {% include 'components/flash_messages.html' %}
+    </div>
 
     <!-- Categories List -->
     <div class="max-w-md mx-auto px-4 py-4 space-y-3">
@@ -63,10 +50,16 @@
                  data-category-id="{{ category.id }}"
                  data-name="{{ category.name|lower }}">
                 <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <h3 class="category-name font-semibold text-gray-900">{{ category.name }}</h3>
+                    <div class="flex-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <h3 class="category-name font-black text-gray-900 tracking-tight text-base">{{ category.name }}</h3>
+                            <span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-600 border border-emerald-100/50">
+                                <span class="w-1 h-1 rounded-full bg-emerald-500 {% if category.is_active %}animate-pulse{% else %}scale-0{% endif %}"></span>
+                                {{ 'Activa' if category.is_active else 'Inactiva' }}
+                            </span>
+                        </div>
                         {% if category.description %}
-                            <p class="text-xs text-gray-500 mt-1">{{ category.description }}</p>
+                            <p class="text-[11px] text-gray-400 font-medium line-clamp-1 italic">“{{ category.description }}”</p>
                         {% endif %}
                     </div>
                     
@@ -80,8 +73,8 @@
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success"></div>
                         </label>
                         
-                        <!-- Edit Button -->
-                        <a href="{{ url_for('categories.edit', id=category.id) }}" class="text-gray-400 hover:text-primary">
+                        <!-- Edit Button: Compact Design -->
+                        <a href="{{ url_for('categories.edit', id=category.id) }}" class="p-1.5 text-gray-400 hover:text-primary hover:bg-orange-50 rounded-lg transition-all active:scale-90" title="Editar Categoría">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>

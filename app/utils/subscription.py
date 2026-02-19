@@ -4,8 +4,8 @@ from app.models import db, Product
 PLAN_LIMITS = {
     'emprendedor': {
         'max_products': 25,
-        'has_qr': True,        # AHORA: Todos tienen QR de Restaurante
-        'has_table_qr': False, # NUEVO: QR de Mesas (bloqueado)
+        'has_qr': True,
+        'has_table_qr': False,
         'has_modifiers': False,
         'has_status_management': False,
         'name': 'Emprendedor'
@@ -13,7 +13,7 @@ PLAN_LIMITS = {
     'crecimiento': {
         'max_products': 100,
         'has_qr': True,
-        'has_table_qr': True,  # NUEVO: QR de Mesas (permitido)
+        'has_table_qr': True,
         'has_modifiers': False,
         'has_status_management': True,
         'name': 'Crecimiento'
@@ -29,7 +29,7 @@ PLAN_LIMITS = {
     'trial': {
         'max_products': float('inf'),
         'has_qr': True,
-        'has_table_qr': True,  # Acceso total en prueba
+        'has_table_qr': True,
         'has_modifiers': True,
         'has_status_management': True,
         'name': 'Prueba Gratuita Premium'
@@ -56,7 +56,6 @@ def is_subscription_active(restaurant, include_grace_period=False):
     if not restaurant.subscription_expires_at:
         return False
     
-    # CRÍTICO: Asegurar que la fecha sea UTC-aware
     expires_at = restaurant.subscription_expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
@@ -66,8 +65,6 @@ def is_subscription_active(restaurant, include_grace_period=False):
     
     if expires_at > now:
         return True
-        
-    # Caso 2: Periodo de gracia (si se solicita)
     if include_grace_period:
         from datetime import timedelta
         grace_end = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
@@ -92,18 +89,15 @@ def check_product_limit(restaurant):
     if not restaurant:
         return False, "Restaurante no encontrado"
     
-    # Verificar que la suscripción esté activa
     if not is_subscription_active(restaurant):
         return False, "Tu suscripción ha expirado. Renueva tu plan para continuar."
     
     limits = get_plan_limits(restaurant.plan_type)
     max_products = limits['max_products']
     
-    # Si es infinito, siempre permitir
     if max_products == float('inf'):
         return True, "Productos ilimitados"
 
-    # Contar SOLO productos activos, no todos
     current_active_count = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).count()
     
     if current_active_count >= max_products:
@@ -124,7 +118,6 @@ def get_subscription_status(restaurant):
             'plan': None
         }
     
-    # 2. CUENTA SUSPENDIDA ADMINISTRATIVAMENTE
     if not restaurant.is_active:
         return {
             'is_active': False,
@@ -136,7 +129,6 @@ def get_subscription_status(restaurant):
             'plan': restaurant.plan_type
         }
     
-    # 3. SIN SUSCRIPCIÓN (Nunca ha pagado)
     if not restaurant.subscription_expires_at:
         return {
             'is_active': False,
@@ -154,12 +146,9 @@ def get_subscription_status(restaurant):
     
     now = datetime.now(timezone.utc)
     
-    # 6. CALCULAR DELTA TEMPORAL
     delta = expires_at - now
     total_seconds = delta.total_seconds()
     
-    # Calcular días restantes (redondeo hacia arriba para UX positiva)
-    # Ejemplo: Si quedan 0.5 días, mostrar "1 día restante"
     days_remaining = int(total_seconds / 86400)
     if total_seconds % 86400 > 0 and total_seconds > 0:
         days_remaining += 1
@@ -172,21 +161,46 @@ def get_subscription_status(restaurant):
     formatted_expiration = f"{expires_at.day} de {meses_es[expires_at.month]} de {expires_at.year}"
     
     if total_seconds > 0:
-        if days_remaining <= 7:
+        if 5 <= days_remaining <= 7:
             return {
                 'is_active': True,
-                'status': 'expiring_soon',
+                'status': 'expiring_soon_neutral',
                 'days_remaining': days_remaining,
                 'expires_at': expires_at,
                 'formatted_expiration': formatted_expiration,
                 'can_crud': True,
-                'message': f'⚠️ Tu suscripción expira en {days_remaining} día{"s" if days_remaining != 1 else ""}. Renueva pronto.',
-                'badge_class': 'bg-yellow-100 text-yellow-700',
-                'badge_text': 'Por expirar',
+                'message': f'Tu acceso a Pedidos Digitales vence en {days_remaining} días. Mantén el control de tu negocio.',
+                'badge_class': 'bg-gray-100 text-gray-700',
+                'badge_text': 'Vence pronto',
+                'plan': restaurant.plan_type
+            }
+        elif 2 <= days_remaining <= 4:
+            return {
+                'is_active': True,
+                'status': 'expiring_soon_warning',
+                'days_remaining': days_remaining,
+                'expires_at': expires_at,
+                'formatted_expiration': formatted_expiration,
+                'can_crud': True,
+                'message': f'Evita interrupciones en tu menú digital. Tu suscripción vence en {days_remaining} días.',
+                'badge_class': 'bg-indigo-100 text-indigo-700',
+                'badge_text': 'Renovar pronto',
+                'plan': restaurant.plan_type
+            }
+        elif days_remaining == 1:
+            return {
+                'is_active': True,
+                'status': 'expiring_soon_urgent',
+                'days_remaining': days_remaining,
+                'expires_at': expires_at,
+                'formatted_expiration': formatted_expiration,
+                'can_crud': True,
+                'message': '¡Tu menú digital dejará de recibir pedidos mañana! Renueva ahora para evitar el bloqueo.',
+                'badge_class': 'bg-orange-100 text-orange-700',
+                'badge_text': 'Vence mañana',
                 'plan': restaurant.plan_type
             }
         
-        # Subcaso: Activa normal
         return {
             'is_active': True,
             'status': 'active',
@@ -212,7 +226,7 @@ def get_subscription_status(restaurant):
         return {
             'is_active': False,
             'status': 'grace_period',
-            'days_remaining': days_remaining,  # Será negativo
+            'days_remaining': days_remaining,
             'days_grace_remaining': days_grace_remaining,
             'expires_at': expires_at,
             'formatted_expiration': formatted_expiration,
@@ -223,13 +237,12 @@ def get_subscription_status(restaurant):
             'plan': restaurant.plan_type
         }
     
-    # CASO C: EXPIRADA DEFINITIVAMENTE
     days_since_expiration = abs(days_remaining)
     
     return {
         'is_active': False,
         'status': 'expired',
-        'days_remaining': days_remaining,  # Negativo
+        'days_remaining': days_remaining,
         'days_since_expiration': days_since_expiration,
         'expires_at': expires_at,
         'formatted_expiration': formatted_expiration,
@@ -252,19 +265,13 @@ def can_perform_crud(restaurant):
 def sanitize_restaurant_limits(restaurant):
     """
     Aplica forzosamente los límites del plan actual al restaurante.
-    Útil después de un downgrade o cambio de plan.
     """
     if not restaurant:
         return
 
     limits = get_plan_limits(restaurant.plan_type)
     
-    # --- 1. SANEAMIENTO DE PRODUCTOS ---
-    max_products = limits['max_products']
-    
     if max_products != float('inf'):
-        # Obtener todos los productos activos ordenados por creación (o ID) ascendente
-        # Queremos mantener los más viejos y desactivar los nuevos excedentes
         active_products = Product.query.filter_by(
             restaurant_id=restaurant.id, 
             is_active=True
@@ -273,10 +280,8 @@ def sanitize_restaurant_limits(restaurant):
         current_count = len(active_products)
         
         if current_count > max_products:
-            # Calcular cuántos sobran
             excess_count = current_count - max_products
             
-            # Seleccionar los últimos 'excess_count' productos para desactivar
             products_to_deactivate = active_products[-excess_count:]
             
             for prod in products_to_deactivate:
@@ -284,9 +289,7 @@ def sanitize_restaurant_limits(restaurant):
             
             print(f"SANEAMIENTO: Desactivados {len(products_to_deactivate)} productos por límite de plan.")
 
-    # --- 2. SANEAMIENTO DE ESTADO DE TIENDA ---
     if not limits.get('has_status_management', False):
-        # Si el plan no permite gestionar estado, la tienda debe estar siempre ABIERTA por defecto
         if not restaurant.is_open:
             restaurant.is_open = True
             print("SANEAMIENTO: Restaurante forzado a ABIERTO por restricción de plan.")

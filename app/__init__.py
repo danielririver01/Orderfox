@@ -16,14 +16,12 @@ def create_app():
     mail.init_app(app)
     csrf.init_app(app)
 
-    # Inicializar Scheduler
     scheduler.init_app(app)
     scheduler.start()
 
     from .tasks import init_tasks
     init_tasks(scheduler)
 
-    #Registramos blueprints
     from .routes.auth import auth_bp
     from .routes.dashboard import dashboard_bp
     from .routes.categories import categories_bp
@@ -45,16 +43,13 @@ def create_app():
 
     migrate.init_app(app, db)
     
-    # Bloqueo global de CRUD para cuentas en periodo de gracia
     @app.before_request
     def block_grace_period_crud():
         from flask import request, flash, redirect, url_for
         from app.utils.restaurant import get_current_restaurant
         from app.utils.subscription import can_perform_crud
         
-        # Solo bloquear métodos de escritura
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-            # Ignorar rutas de auth, pagos y públicas (menú digital)
             if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint):
                 return
                 

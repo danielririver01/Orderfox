@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from app import db
 from app.utils.restaurant import get_current_restaurant
-from app.utils.subscription import is_subscription_active
+from app.utils.subscription import is_subscription_active, check_feature_access
 
 logger = logging.getLogger(__name__)
 

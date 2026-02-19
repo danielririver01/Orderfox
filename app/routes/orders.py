@@ -14,7 +14,6 @@ def generate_order_number(restaurant_id):
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
     
-    # Contar pedidos de hoy
     count = Order.query.filter(
         Order.restaurant_id == restaurant_id,
         Order.created_at >= today_start
@@ -44,13 +43,11 @@ def index():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
     
-    # Obtener pedidos de hoy
     orders = Order.query.filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start
     ).order_by(Order.created_at.desc()).all()
     
-    # Agrupar por estado
     pending = [o for o in orders if o.status == 'pending']
     confirmed = [o for o in orders if o.status == 'confirmed']
     delivered = [o for o in orders if o.status == 'delivered']
@@ -70,23 +67,20 @@ def create():
     if request.method == 'POST':
         data = request.form
         
-        # Generar número de orden
         order_number = generate_order_number(restaurant.id)
         
-        # Crear orden
         order = Order(
             restaurant_id=restaurant.id,
             order_number=order_number,
             customer_name=data.get('customer_name'),
             customer_phone=data.get('customer_phone'),
             notes=data.get('notes'),
-            total=0,  # Se calculará después
+            total=0,
             status='pending'
         )
         db.session.add(order)
-        db.session.flush()  # Para obtener el ID
+        db.session.flush()
         
-        # Agregar items (simplificado - en producción vendría del carrito)
         items_data = json.loads(data.get('items', '[]'))
         total = 0
         
@@ -109,12 +103,10 @@ def create():
             db.session.add(order_item)
             total += subtotal
         
-        # Actualizar total
         order.total = total
         db.session.commit()
         return redirect(url_for('orders.detail', id=order.id))
     
-    # GET: Mostrar formulario
     products = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     return render_template('dashboard/order_create.html', products=products)
 
@@ -136,7 +128,6 @@ def change_status(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
 
-    # Verificar acceso a gestión de estados
     if not check_feature_access(restaurant, 'has_status_management'):
          return jsonify({
             'success': False, 
@@ -148,7 +139,6 @@ def change_status(id):
     data = request.get_json()
     new_status = data.get('status')
     
-    # Validar transición
     if not validate_status_transition(order.status, new_status):
         return jsonify({
             'success': False, 
@@ -169,7 +159,6 @@ def cancel(id):
     if not restaurant: abort(404)
     order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     
-    # Validar que se pueda cancelar
     if order.status in ['delivered', 'cancelled']:
         flash('No se puede cancelar un pedido entregado o ya cancelado', 'error')
         return redirect(url_for('orders.detail', id=id))

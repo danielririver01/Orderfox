@@ -17,11 +17,9 @@ def delete_inactive_accounts():
 
 def _perform_cleanup():
     try:
-        # Definir el umbral: cuentas creadas hace más de 24 horas
         cutoff_time = datetime.now() - timedelta(hours=24)
         print(f"[{datetime.now()}] Checking cleanup... Cutoff: {cutoff_time}")
         
-        # Buscar restaurantes inactivos creados antes del umbral
         inactive_restaurants = Restaurant.query.filter(
             Restaurant.is_active == False,
             Restaurant.created_at < cutoff_time

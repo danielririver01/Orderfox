@@ -34,6 +34,10 @@
         window.businessPhone = "{{ restaurant.whatsapp_phone }}";
         window.restaurantId = {{ restaurant.id }};
         window.restaurantSlug = "{{ restaurant.slug }}";
+        // Verdad absoluta desde el servidor para disponibilidad de pedidos
+        window.menuAvailable = {% if restaurant.is_active and not ordering_disabled %}true{% else %}false{% endif %};
+        // Llave única para aislamiento de carrito (Multi-tenant)
+        window.CART_KEY = `velziaCart_${window.restaurantId}`;
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/cart.js') }}"></script>

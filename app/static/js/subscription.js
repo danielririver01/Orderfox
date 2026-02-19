@@ -5,7 +5,7 @@ function openAccountDeleteModal() {
     const modal = document.getElementById('accountDeleteModal');
     
     if (modal) {
-        modal.classList.add('active');
+        modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     } else {
         console.error('ERROR: No se encontró el elemento con id="accountDeleteModal"');
@@ -16,7 +16,7 @@ function openAccountDeleteModal() {
 function closeAccountDeleteModal() {
     const modal = document.getElementById('accountDeleteModal');
     if (modal) {
-        modal.classList.remove('active');
+        modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
         
         // Resetear checkbox

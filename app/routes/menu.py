@@ -13,24 +13,20 @@ def search_products(slug):
     Retorna TODOS los productos activos del restaurante con su categoría
     """
     try:
-        # Obtener restaurante por slug
+
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
         
-        # VALIDACIÓN DE SEGURIDAD
         if not is_subscription_active(restaurant):
             return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
         
-        # Obtener todas las categorías activas del restaurante
         categories = Category.query.filter_by(
             restaurant_id=restaurant.id,
             is_active=True
         ).all()
         
-        # Construir lista de todos los productos
         products_list = []
         
         for category in categories:
-            # Obtener productos activos de cada categoría
             products = Product.query.filter_by(
                 category_id=category.id,
                 is_active=True
@@ -63,15 +59,14 @@ def search_by_query(slug):
     try:
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
         
-        # VALIDACIÓN DE SEGURIDAD
         if not is_subscription_active(restaurant):
             return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
+        
         query = request.args.get('q', '').lower().strip()
         
         if not query:
             return jsonify({'success': True,'products': [],'query': query})
         
-        # Buscar productos que coincidan
         categories = Category.query.filter_by(
             restaurant_id=restaurant.id,
             is_active=True
@@ -86,7 +81,6 @@ def search_by_query(slug):
             ).all()
             
             for product in products:
-                # Buscar en nombre, descripción y nombre de categoría
                 searchable_text = f"{product.name} {product.description or ''} {category.name}".lower()
                 
                 if query in searchable_text:

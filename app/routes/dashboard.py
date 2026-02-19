@@ -38,17 +38,9 @@ def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    # En desarrollo esto devuelve localhost:5000, en producción devuelve el dominio real.
-    # Si el usuario quiere forzar un dominio específico en producción, se puede configurar aquí.
     menu_url = url_for('public.menu', slug=restaurant.slug, _external=True)
-    
-    # Reemplazo de seguridad para dominios específicos si _external no es suficiente
-    # if not request.host.startswith('127.0.0.1') and not request.host.startswith('localhost'):
-    #     menu_url = menu_url.replace(request.host, 'velzi.xyz') # Ejemplo de dominio real
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
-    
-    # Obtener conteos por estado para hoy
     stats = db.session.query(
         Order.status, 
         func.count(Order.id)
@@ -56,14 +48,10 @@ def index():
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start
     ).group_by(Order.status).all()
-    
-    # Convertir a diccionario
     counts = {s: c for s, c in stats}
     pending_count = counts.get('pending', 0)
     confirmed_count = counts.get('confirmed', 0)
     delivered_count = counts.get('delivered', 0)
-    
-    # Calcular ventas totales hoy (solo pedidos no cancelados)
     total_sales = db.session.query(func.sum(Order.total)).filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start,
@@ -117,11 +105,7 @@ def settings():
     if not restaurant: abort(404)
     
     user = User.query.get(session.get('user_id'))
-    
-    # Fuente única de verdad para el estado de suscripción
     sub_status = get_subscription_status(restaurant)
-    
-    # Verificar acceso a características
     has_qr = check_feature_access(restaurant, 'has_qr')
     
     return render_template('dashboard/settings.html', 
@@ -137,15 +121,9 @@ def menu_qr(slug):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    # Verificar acceso a QR para UI
-    # AHORA: Todos los planes tienen acceso al QR del restaurante
-    has_qr_access = True 
-    
-    # Generar URL completa del menú usando BASE_URL
+    has_qr_access = True
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
     menu_url = f"{base_url}/menu/{slug}"
-    
-    # Generar URL de la imagen QR
     qr_image_url = url_for('dashboard.menu_qr_image', slug=slug)
     
     return render_template('dashboard/qr_page.html', 
@@ -154,7 +132,7 @@ def menu_qr(slug):
                          qr_image_url=qr_image_url,
                          slug=slug,
                          has_qr_access=has_qr_access,
-                         is_table_qr=False) # Explicito: No es mesa
+                         is_table_qr=False)
 
 @dashboard_bp.route('/menu/<slug>/qr_image.png')
 def menu_qr_image(slug):
@@ -219,8 +197,7 @@ def menu_qr_download(slug):
         mime_type = 'image/jpeg'
     
     buf.seek(0)
-    # Generar nombre de archivo amigable basado en el nombre actual del restaurante
-    # (No solo el slug inmutable de la URL)
+    # Generar nombre de archivo amigable basado en el nombre del restaurante
     def slugify(text):
         text = str(text)
         text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
@@ -237,10 +214,7 @@ def menu_qr_download(slug):
 @active_required
 def subscription():
     """
-    Vista de gestión de suscripción.
-    
-    REGLA DE ORO: Este endpoint NO calcula nada.
-    Solo consume get_subscription_status() y pasa los datos al template.
+    Vista de gestión de suscripción. Consume get_subscription_status() centralizadamente.
     """
     restaurant = get_current_restaurant()
     if not restaurant:
@@ -248,7 +222,7 @@ def subscription():
     
     user = User.query.get(session.get('user_id'))
     
-    # FUENTE ÚNICA DE VERDAD: Obtener estado completo desde subscription.py
+    user = User.query.get(session.get('user_id'))
     sub_status = get_subscription_status(restaurant)
     
     # Límites del plan actual
@@ -257,7 +231,6 @@ def subscription():
     # Fecha de creación del restaurante (formateada)
     created_date = "No disponible"
     if restaurant.created_at:
-        # Si restaurant.created_at también es AwareDateTime, esto funcionará
         dt = restaurant.created_at
         meses_es = {
             1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
@@ -266,7 +239,6 @@ def subscription():
         }
         created_date = f"{dt.day} de {meses_es[dt.month]} de {dt.year}"
     
-    # IMPORTANTE: No calculamos expiration_date aquí
     # Ya está en sub_status['formatted_expiration']
     
     return render_template(
@@ -287,7 +259,6 @@ def delete_account():
         return jsonify({'success': False, 'message': 'Restaurante no encontrado'}), 404
     
     try:
-        # Eliminar el restaurante (cascade eliminará todos los datos relacionados)
         db.session.delete(restaurant)
         db.session.commit()
         
@@ -317,7 +288,6 @@ def profile():
             return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
         
         try:
-            # Validar si el nombre del negocio ya existe en otro restaurante
             existing_restaurant = Restaurant.query.filter(
                 Restaurant.name == restaurant_name, 
                 Restaurant.id != restaurant.id
@@ -327,18 +297,9 @@ def profile():
                 flash('Este nombre de negocio ya está en uso. Por favor, elige otro.', 'error')
                 return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
 
-            existing_user = User.query.filter(
-                User.username == username, 
-                User.id != user.id
-            ).first()
-            
-            if existing_user:
-                flash('Este nombre de usuario ya está en uso. Por favor, elige otro.', 'error')
-                return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
-
             restaurant.name = restaurant_name
             restaurant.whatsapp_phone = whatsapp_phone
-            user.username = username
+            user.username = username.strip() if username else user.username
             
             db.session.commit()
             flash('¡Perfil actualizado correctamente!', 'success')

@@ -6,12 +6,20 @@ let formToSubmit = null;
 
 /**
  * Abre el modal de eliminación y prepara el formulario para enviar
- * @param {HTMLFormElement} form - El formulario que se debe enviar al confirmar
+ * @param {HTMLFormElement} form - El formulario que se debe enviar
  * @param {string} message - Mensaje personalizado (opcional)
+ * @param {string} title - Título personalizado (opcional, ej: Eliminar "Producto")
  */
-function openDeleteModal(form, message = null) {
+function openDeleteModal(form, message = null, title = null) {
     const modal = document.getElementById('deleteModal');
+    const titleEl = document.getElementById('modal-title');
     const messageEl = document.getElementById('modal-message');
+    
+    if (title) {
+        titleEl.textContent = title;
+    } else {
+        titleEl.textContent = 'Confirmar eliminación';
+    }
     
     if (message) {
         messageEl.textContent = message;
@@ -21,7 +29,7 @@ function openDeleteModal(form, message = null) {
     
     formToSubmit = form;
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevenir scroll
+    document.body.style.overflow = 'hidden';
 }
 
 /**

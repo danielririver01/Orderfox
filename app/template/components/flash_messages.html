@@ -10,9 +10,9 @@
                     'info': {'bg': 'bg-blue-50', 'border': 'border-blue-200', 'text': 'text-blue-600', 'icon': 'info'}
                 }.get(category, {'bg': 'bg-blue-50', 'border': 'border-blue-200', 'text': 'text-blue-600', 'icon': 'info'}) %}
                 
-                <div class="flash-message {{ style.bg }} border {{ style.border }} {{ style.text }} px-4 py-3 rounded-lg text-xs font-bold flex items-start gap-2 mb-2 animate-fade-in-down">
-                    <span class="material-symbols-outlined text-[18px] mt-0.5">{{ style.icon }}</span>
-                    <span>{{ message }}</span>
+                <div class="flash-message {{ style.bg }} border {{ style.border }} {{ style.text }} px-4 py-3.5 rounded-xl text-[13px] font-semibold flex items-center gap-3 mb-3 animate-fade-in-down shadow-sm">
+                    <span class="material-symbols-outlined text-[20px] shrink-0 translate-y-[0.5px]">{{ style.icon }}</span>
+                    <span class="leading-tight">{{ message }}</span>
                 </div>
             {% endfor %}
         </div>

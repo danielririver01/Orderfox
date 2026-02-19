@@ -14,7 +14,9 @@
     </header>
 
     <div class="max-w-md mx-auto px-4 py-6">
-        <form method="POST" class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
+        <form method="POST" 
+              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.value='Guardando...'; b.innerHTML='Guardando...';" 
+              class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
             {{ form.hidden_tag() }}
             
             <!-- Nombre -->
@@ -74,8 +76,8 @@
         <form id="deleteProductForm" method="POST" action="{{ url_for('products.delete', id=product.id) }}" class="mt-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button" 
-                    onclick="openDeleteModal(document.getElementById('deleteProductForm'), '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')"
-                    class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg border border-red-200 transition-all active:scale-95">
+                    onclick="openDeleteModal(document.getElementById('deleteProductForm'), 'Este producto se eliminará permanentemente del menú y no podrá ser ordenado por los clientes.', '¿Eliminar «{{ product.name }}»?')"
+                    class="w-full bg-white hover:bg-red-50 text-red-600 font-bold py-3 rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all active:scale-95">
                 Eliminar Producto
             </button>
         </form>

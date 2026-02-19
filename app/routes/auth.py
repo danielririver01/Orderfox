@@ -14,14 +14,12 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
-
 def send_otp_email(email, otp):
-    """Utilidad para enviar el correo de verificación OTP"""
     try:
         msg = Message('Código de Verificación - Velzia',
                       recipients=[email])
         msg.html = render_template('email/otp.html', otp=otp)
-        msg.body = f'Tu código de verificación para Velzia es: {otp}' # Fallback text
+        msg.body = f'Tu código de verificación para Velzia es: {otp}'
         mail.send(msg)
         return True
     except Exception as e:
@@ -40,12 +38,11 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             
-            # Verificar si el restaurante está activo
-            if user.restaurant and not user.restaurant.is_active:
-                session['pending_restaurant_id'] = user.restaurant.id
-                session['setup_done'] = True # Permitir acceso a la ruta de pago
-                flash('Tu suscripción está pendiente de pago.', 'info')
-                return redirect(url_for('auth.payment'))
+        if user.restaurant and not user.restaurant.is_active:
+            session['pending_restaurant_id'] = user.restaurant.id
+            session['setup_done'] = True
+            flash('Tu suscripción está pendiente de pago.', 'info')
+            return redirect(url_for('auth.payment'))
                 
             return redirect(url_for('dashboard.index'))
         else:
@@ -62,10 +59,6 @@ def forgot_password():
             s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
             token = s.dumps(user.email, salt='recover-key')
             
-            # Crear URL de recuperación
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            
-            # Enviar correo
             try:
                 msg = Message('Restablecer Contraseña - Velzia', recipients=[user.email])
                 msg.html = render_template('email/reset_password.html', reset_url=reset_url)
@@ -87,7 +80,6 @@ def forgot_password():
 def reset_password(token):
     s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
-        # Validar token (max_age=3600 segundos = 1 hora)
         email = s.loads(token, salt='recover-key', max_age=3600)
     except SignatureExpired:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -105,11 +97,9 @@ def reset_password(token):
             return jsonify({'success': False, 'message': 'Ocurrió un error inesperado.'})
         return redirect(url_for('auth.forgot_password'))
     
-    # Si es GET, mostrar formulario
     if request.method == 'GET':
         return render_template('auth/reset_password.html')
     
-    # Si es POST, actualizar contraseña
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
     
@@ -152,7 +142,6 @@ def plans():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # Capturar plan si viene de la página de planes
     plan = request.args.get('plan')
     if plan:
         session['selected_plan'] = plan
@@ -162,11 +151,9 @@ def register():
     if form.validate_on_submit():
         email = form.email.data
         
-        # 1. Verificar si el usuario ya existe (Enumeration Protection)
         user_exists = User.query.filter_by(email=email).first()
         
         if user_exists:
-            # Enviar correo de "Ya tienes una cuenta" en lugar de OTP
             try:
                 msg = Message('Ya eres parte de Velzia', recipients=[email])
                 login_url = url_for('auth.login', _external=True)
@@ -176,13 +163,11 @@ def register():
             except Exception as e:
                  print(f"Error enviando correo de cuenta existente: {e}")
         else:
-            # Generar código OTP (6 dígitos) para usuario nuevo
             import random
             otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
             session['otp'] = otp
             session['register_email'] = email
             
-            # Enviar correo real vía Gmail
             if not send_otp_email(email, otp):
                 flash('Error al enviar el correo de verificación. Por favor intente más tarde.')
                 return render_template('auth/register_verify.html', form=form, step='email')
@@ -200,7 +185,6 @@ def verify_otp():
     
     form = RegisterVerifyForm()
     if form.validate_on_submit():
-        # Limpiar y normalizar códigos
         submitted_code = str(form.code.data).strip()
         session_code = str(session.get('otp')).strip()
         
@@ -224,7 +208,6 @@ def resend_otp():
     if not email:
         return jsonify({'success': False, 'message': 'Sesión expirada. Por favor regístrate de nuevo.'})
     
-    # Generar nuevo OTP
     otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
     session['otp'] = otp
     
@@ -243,12 +226,10 @@ def setup_account():
     email = session.get('register_email')
 
     if form.validate_on_submit():
-        # Validar si el usuario ya existe (Doble check de seguridad)
         if User.query.filter_by(email=email).first():
             return redirect(url_for('auth.login'))
 
         # Validar abuso de Trial por Teléfono (Tenant Check)
-        # Buscamos SI YA EXISTE algún restaurante con este teléfono que haya quemado el trial
         past_trial_usage = Restaurant.query.filter_by(whatsapp_phone=form.phone.data, has_used_trial=True).first()
         
         selected_plan = session.get('selected_plan', 'emprendedor')
@@ -258,24 +239,18 @@ def setup_account():
             flash('Este número ya disfrutó de una prueba gratuita. Por favor elige un plan pago para tu nueva sucursal.', 'warning')
             return render_template('auth/register_setup.html', form=form, plan=selected_plan)
 
-        # Crear Restaurante (Activo por 10 días de prueba)
         restaurant_name = form.restaurant_name.data
-        # Generar slug simple
         slug = unicodedata.normalize('NFKD', restaurant_name).encode('ascii', 'ignore').decode('ascii')
         slug = re.sub(r'[^\w\s-]', '', slug).strip().lower()
         slug = re.sub(r'[-\s]+', '-', slug)
         
-        # Asegurar slug único
         base_slug = slug
         counter = 1
         while Restaurant.query.filter_by(slug=slug).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
 
-        # Calcular fecha de expiración (10 días de prueba)
-        # Solo si el plan es 'trial' se activa de inmediato
         selected_plan = session.get('selected_plan', 'emprendedor')
-        
         is_trial = selected_plan == 'trial'
         
         if is_trial:
@@ -283,16 +258,7 @@ def setup_account():
             is_active_val = True
             expires_at_val = trial_expires_at
             plan_type_val = 'trial'
-            has_used_trial_val = True # Marcar trial como "quemado" para este tenant
-        else:
-            is_active_val = False
-            expires_at_val = None
-            plan_type_val = selected_plan
-            # Si paga directo, ¿cuenta como haber usado trial? Estratégicamente NO, 
-            # para dejarle la puerta abierta a un trial futuro si hace otra empresa? 
-            # NO, mejor asumir que si ya es cliente, ya entró al ecosistema. 
-            # Pero sigamos la lógica estricta: has_used_trial = is_trial.
-            has_used_trial_val = False # Solo quemamos el cartucho si realmente toma el trial
+            has_used_trial_val = False
 
         new_restaurant = Restaurant(
             name=restaurant_name,
@@ -302,14 +268,13 @@ def setup_account():
             is_active=is_active_val,
             subscription_expires_at=expires_at_val,
             is_open=True,
-            has_used_trial=has_used_trial_val # ← Guardamos el rastro 
+            has_used_trial=has_used_trial_val
         )
         db.session.add(new_restaurant)
-        db.session.flush() # Para obtener el ID
+        db.session.flush()
 
-        # Crear Usuario Administrador
         new_user = User(
-            username=form.admin_name.data,
+            username=form.admin_name.data.strip() if form.admin_name.data else "",
             email=email,
             restaurant_id=new_restaurant.id
         )
@@ -325,11 +290,7 @@ def setup_account():
                 session['username'] = new_user.username
                 session['setup_done'] = True
                 
-                # Limpiar sesión
-                session.pop('otp', None)
-                session.pop('register_email', None)
-                session.pop('otp_verified', None)
-                session.pop('pending_restaurant_id', None)
+
                 
                 flash('¡Registro exitoso! Disfruta de tus 10 días de prueba gratuita.', 'success')
                 return redirect(url_for('dashboard.index'))
@@ -352,12 +313,10 @@ def renew():
     Ruta de renovación para usuarios ya autenticados.
     Permite ir directo al pago sin pasar por registro y verificación.
     """
-    # Verificar que el usuario esté autenticado
     if 'user_id' not in session:
         flash('Debes iniciar sesión para renovar tu suscripción.')
         return redirect(url_for('auth.login'))
     
-    # Obtener el usuario y su restaurante
     user = User.query.get(session['user_id'])
     if not user or not user.restaurant:
         flash('No se encontró información de tu cuenta.')
@@ -365,21 +324,17 @@ def renew():
     
     restaurant = user.restaurant
     
-    # Capturar plan si viene como parámetro (para cambio de plan)
     plan = request.args.get('plan')
     if plan and plan in ['emprendedor', 'crecimiento', 'elite']:
-        # IMPORTANTE: Solo guardar en sesión, NO actualizar en DB hasta que se complete el pago
         session['selected_plan'] = plan
-        session['pending_plan_change'] = plan  # Flag para indicar cambio de plan pendiente
+        session['pending_plan_change'] = plan
     else:
-        # Usar el plan actual del restaurante (renovación sin cambio)
         session['selected_plan'] = restaurant.plan_type
         session['pending_plan_change'] = None
     
-    # Configurar sesión para el flujo de pago
     session['pending_restaurant_id'] = restaurant.id
     session['setup_done'] = True
-    session['is_renewal'] = True  # Flag para identificar que es renovación
+    session['is_renewal'] = True
     
     return redirect(url_for('auth.payment'))
 
@@ -404,10 +359,7 @@ def payment():
     selected_plan_key = session.get('selected_plan', 'crecimiento')
     plan_info = plans_data.get(selected_plan_key, plans_data['crecimiento'])
 
-    # Integración con Mercado Pago
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
-    
-    # Limpiar precio para MP (debe ser float/int)
     price_val = float(plan_info['price'].replace('.', ''))
 
     preference_data = {
@@ -438,7 +390,6 @@ def payment():
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response["response"]
         
-        # Debug response
         if "init_point" not in preference:
             print(f"MP ERROR RAW: {preference_response}")
         
@@ -463,10 +414,7 @@ def payment_callback():
     if status in ['approved', 'pending']:
         restaurant = Restaurant.query.get(restaurant_id)
         if restaurant:
-            # Activar restaurante
             restaurant.is_active = True
-            
-            # Extender suscripción
             # Si ya tiene fecha de expiración y aún no ha expirado, extender desde esa fecha
             # Si no tiene o ya expiró, extender desde ahora
             from datetime import timezone
@@ -480,15 +428,11 @@ def payment_callback():
                     # Renovación: extender desde la fecha actual de expiración
                     restaurant.subscription_expires_at = expires_at + timedelta(days=30)
                 else:
-                    # Expirada: establecer desde ahora
                     restaurant.subscription_expires_at = now_utc + timedelta(days=30)
             else:
-                # Nueva suscripción: establecer desde ahora
                 restaurant.subscription_expires_at = now_utc + timedelta(days=30)
             
             db.session.commit()
-            
-            # Verificar si es renovación
             is_renewal = session.get('is_renewal', False)
             
             # Aplicar cambio de plan desde external_reference (más confiable que la sesión)
@@ -500,20 +444,14 @@ def payment_callback():
             except Exception as e:
                 print(f"Error parsing plan from external_reference: {e}")
             
-            # Respaldo: Aplicar cambio de plan desde sesión si existe
             pending_plan = session.get('pending_plan_change')
             if pending_plan and pending_plan in ['emprendedor', 'crecimiento', 'elite']:
                 restaurant.plan_type = pending_plan
             
             db.session.commit()
 
-            # Aplicar límites del nuevo plan inmediatamente
-            try:
-                sanitize_restaurant_limits(restaurant)
-            except Exception as e:
-                print(f"Error sanitizing limits in callback: {e}")
+            sanitize_restaurant_limits(restaurant)
             
-            # Limpiar sesión de registro/renovación
             session.pop('otp', None)
             session.pop('register_email', None)
             session.pop('otp_verified', None)
@@ -525,10 +463,8 @@ def payment_callback():
             
             if status == 'approved':
                 if is_renewal:
-                    flash('¡Pago exitoso! Tu suscripción ha sido renovada.')
                     return redirect(url_for('dashboard.subscription'))
                 else:
-                    flash('¡Pago exitoso! Tu cuenta ha sido activada.')
                     return redirect(url_for('auth.login'))
             else:
                 flash('Tu pago está pendiente de aprobación. Hemos activado tu acceso temporalmente.')

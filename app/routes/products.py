@@ -17,7 +17,6 @@ def index():
     if not restaurant: abort(404)
     products = Product.query.filter_by(restaurant_id=restaurant.id).order_by(Product.category_id, Product.name).all()
     categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
-    # NUEVO: Obtener límites para la vista
     plan_limits = get_plan_limits(restaurant.plan_type)
     current_active_count = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).count()
     return render_template('dashboard/products.html', products=products, categories=categories, plan_limits=plan_limits, current_active_count=current_active_count)
@@ -30,7 +29,6 @@ def create():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    # Verificar límite de productos
     allowed, message = check_product_limit(restaurant)
     if not allowed:
         flash(message, 'warning')
@@ -38,7 +36,6 @@ def create():
 
     form = ProductForm()
     
-    # Poblar el SelectField con las categorías del restaurante
     categories = Category.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     form.category_id.choices = [(c.id, c.name) for c in categories]
     
@@ -78,7 +75,6 @@ def edit(id):
     product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     form = ProductForm(obj=product)
     
-    # Poblar el SelectField
     categories = Category.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     form.category_id.choices = [(c.id, c.name) for c in categories]
     
@@ -114,19 +110,15 @@ def toggle(id):
     if not product:
         return jsonify({'error': 'Producto no encontrado'}), 404
     
-    # Obtener datos - soportar JSON y form data
     data = request.get_json(silent=True) or request.form
     desired_state = data.get('is_active')
     
-    # Convertir string a boolean si es necesario
     if isinstance(desired_state, str):
         desired_state = desired_state.lower() in ('true', '1', 'yes')
     
-    # Si no se envía estado explícito, invertir el actual
     if desired_state is None:
         desired_state = not product.is_active
 
-    # VALIDACIÓN DE LÍMITE: Solo aplicar si estamos intentando ACTIVAR un producto desactivado
     if desired_state is True and product.is_active is False:
         allowed, message = check_product_limit(restaurant)
         if not allowed:
@@ -136,7 +128,6 @@ def toggle(id):
                 'is_active': product.is_active
             }), 400
 
-    # Si el estado es el mismo, no hacer nada
     if product.is_active == desired_state:
         return jsonify({'success': True, 'is_active': product.is_active})
     
@@ -171,7 +162,6 @@ def modifiers(product_id):
     product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
     modifiers = Modifier.query.filter_by(product_id=product_id, restaurant_id=restaurant.id).all()
     
-    # Verificar acceso para la UI
     has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
     
     return render_template('dashboard/product_modifiers.html', 

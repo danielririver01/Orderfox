@@ -43,16 +43,10 @@ class Restaurant(db.Model):
     slug = db.Column(db.String(50), unique=True, nullable=False)
     whatsapp_phone = db.Column(db.String(20), nullable=False)
     plan_type = db.Column(db.String(20), default='emprendedor', nullable=False)
-    
-    # CAMBIO: Usar AwareDateTime para asegurar que siempre sea UTC-aware en Python
-    subscription_expires_at = db.Column(
-        AwareDateTime,  # ← CAMBIO AQUÍ
-        nullable=True
-    )
-    
+    subscription_expires_at = db.Column(AwareDateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=False, nullable=False)
-    is_open = db.Column(db.Boolean, default=True, nullable=False)  # ← NUEVO: Estado del negocio (abierto/cerrado)
-    has_used_trial = db.Column(db.Boolean, default=False, nullable=False)  # ← NUEVO: Control de abuso por negocio
+    is_open = db.Column(db.Boolean, default=True, nullable=False)
+    has_used_trial = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(AwareDateTime, default=db.func.now())
     
     def __repr__(self):
@@ -82,8 +76,8 @@ class Restaurant(db.Model):
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=True) # Opcional para admin global, pero útil para MVP
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=True)
+    username = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     
@@ -164,8 +158,8 @@ class Table(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
-    name = db.Column(db.String(50), nullable=False) # Ej: "Mesa 1", "Barra 2"
-    qr_code = db.Column(db.String(255), nullable=True) # Opcional: Para guardar URL o hash único si se requiere
+    name = db.Column(db.String(50), nullable=False)
+    qr_code = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     
@@ -180,12 +174,12 @@ class Order(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
-    table_id = db.Column(db.Integer, db.ForeignKey('tables.id', ondelete='SET NULL'), nullable=True) # Nuevo
-    order_number = db.Column(db.String(20), nullable=False)  # ORD-001
+    table_id = db.Column(db.Integer, db.ForeignKey('tables.id', ondelete='SET NULL'), nullable=True)
+    order_number = db.Column(db.String(20), nullable=False)
     customer_name = db.Column(db.String(100))
     customer_phone = db.Column(db.String(20))
-    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, confirmed, delivered, cancelled, expired
-    total = db.Column(db.Integer, nullable=False)  # Total en pesos
+    status = db.Column(db.String(20), default='pending', nullable=False)
+    total = db.Column(db.Integer, nullable=False)
     notes = db.Column(db.Text)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
@@ -203,11 +197,11 @@ class OrderItem(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id', ondelete='CASCADE'), nullable=False)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=True) # Opcional para denormalización
-    product_name = db.Column(db.String(100), nullable=False)  # Snapshot
-    product_price = db.Column(db.Integer, nullable=False)     # Snapshot
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    product_price = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
-    modifiers_snapshot = db.Column(db.Text)  # JSON con modificadores
+    modifiers_snapshot = db.Column(db.Text)
     subtotal = db.Column(db.Integer, nullable=False)
     
     # Relación con Order

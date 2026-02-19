@@ -28,7 +28,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Gestión de Mesas</h1>
       </div>
       <button
-        {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').showModal()"{% else %}disabled{% endif %}
+        {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
         class="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
       >
         + Nueva Mesa
@@ -38,14 +38,7 @@
 </header>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %} {% for category, message in messages %}
-  <div
-    class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}"
-  >
-    {{ message }}
-  </div>
-  {% endfor %} {% endif %} {% endwith %}
+  {% include 'components/flash_messages.html' %}
 
   <div class="premium-lock-container min-h-[400px]">
     <div
@@ -57,57 +50,37 @@
         <div
           class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6 relative group"
         >
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-lg font-bold text-gray-900">{{ table.name }}</h3>
-              <p class="text-xs text-gray-500">ID: {{ table.id }}</p>
-            </div>
-            <div
-              class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium"
-            >
-              Activa
+          <div class="flex justify-between items-start mb-6">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-black text-gray-900 tracking-tight">{{ table.name }}</h3>
+                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-600 border border-emerald-100/50">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Activa
+                </span>
+              </div>
+              <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">ID: {{ table.id }}</p>
             </div>
           </div>
 
-          <div class="flex gap-2 mt-4">
+          <div class="flex items-center gap-2 pt-4 border-t border-gray-50">
             <a
               href="{{ url_for('tables.qr', id=table.id) }}"
-              class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 rounded-lg text-center border border-gray-200 transition-colors flex items-center justify-center gap-2"
+              class="flex-1 bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-xl text-center shadow-md shadow-orange-100 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM6 6h2v2H6V6zm0 12h2v2H6v-2zm12-12h2v2h-2V6z"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Descargar QR
             </a>
 
             <button
-              onclick="openDeleteModal('{{ table.id }}', '{{ table.name }}')"
-              class="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg border border-red-200 transition-colors"
+              onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=hidden name=csrf_token value={{ csrf_token() }}>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?')"
+              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-100 hover:border-red-100 rounded-xl transition-all active:scale-90 group"
+              title="Eliminar Mesa"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
           </div>
@@ -139,15 +112,7 @@
           Crea tu primera mesa para generar su código QR.
         </p>
         <button
-          {%
-          if
-          has_table_qr_access
-          %}onclick="document.getElementById('createTableModal').showModal()"
-          {%
-          else
-          %}disabled{%
-          endif
-          %}
+          {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
           class="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
         >
           Crear Primera Mesa
@@ -194,133 +159,56 @@
   </div>
 </main>
 
-<!-- Create Table Modal -->
-<dialog
-  id="createTableModal"
-  class="modal rounded-xl shadow-xl p-0 backdrop:bg-black/50"
->
-  <div class="bg-white w-full max-w-md p-6">
-    <h3 class="text-lg font-bold mb-4">Nueva Mesa</h3>
-    <form action="{{ url_for('tables.create') }}" method="POST">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >Nombre de la Mesa</label
-        >
-        <input
-          type="text"
-          name="name"
-          placeholder="Ej: Mesa 1, Barra, Terraza"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          required
-        />
-      </div>
-      <div class="flex justify-end gap-3 mt-6">
-        <button
-          type="button"
-          onclick="document.getElementById('createTableModal').close()"
-          class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-bold shadow-md"
-        >
-          Guardar Mesa
-        </button>
-      </div>
-    </form>
-  </div>
-</dialog>
+<!-- Create Table Modal: Premium & Centered -->
+<div id="createTableModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-slate-900/60 transition-opacity" aria-hidden="true" onclick="document.getElementById('createTableModal').classList.add('hidden')"></div>
 
-<!-- Delete Confirmation Modal -->
-<dialog
-  id="deleteTableModal"
-  class="modal rounded-xl shadow-xl p-0 backdrop:bg-black/50"
->
-  <div class="bg-white w-full max-w-md p-6">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="bg-red-100 p-3 rounded-full">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-red-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold text-gray-900">Eliminar Mesa</h3>
-        <p class="text-sm text-gray-500">Esta acción no se puede deshacer</p>
-      </div>
+    <!-- Content -->
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100">
+                <div class="bg-white px-6 pt-8 pb-6 sm:px-10 sm:pt-10">
+                    <h3 class="text-xl font-black text-gray-900 tracking-tight leading-tight mb-6">Nueva Mesa</h3>
+                    
+                    <form action="{{ url_for('tables.create') }}" method="POST" onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('button[type=submit]'); b.disabled=true; b.innerHTML='Guardando...';">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Nombre de la Mesa</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    placeholder="Ej: Mesa 1, Barra, Terraza"
+                                    class="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-medium"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-row-reverse gap-3 mt-8">
+                            <button
+                                type="submit"
+                                class="flex-1 bg-primary hover:bg-primary-dark text-white rounded-2xl px-6 py-3 font-bold shadow-lg shadow-orange-200 transition-all active:scale-95"
+                            >
+                                Guardar Mesa
+                            </button>
+                            <button
+                                type="button"
+                                onclick="document.getElementById('createTableModal').classList.add('hidden')"
+                                class="flex-1 px-6 py-3 bg-white text-gray-600 border border-gray-200 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <p class="text-gray-700 mb-6">
-      ¿Estás seguro de que deseas eliminar la mesa
-      <strong id="deleteTableName"></strong>?
-    </p>
-
-    <form id="deleteTableForm" method="POST">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="flex justify-end gap-3">
-        <button
-          type="button"
-          onclick="document.getElementById('deleteTableModal').close()"
-          class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold shadow-md"
-        >
-          Eliminar Mesa
-        </button>
-      </div>
-    </form>
-  </div>
-</dialog>
+</div>
 
 <script>
-  function openDeleteModal(tableId, tableName) {
-    const modal = document.getElementById("deleteTableModal");
-    const form = document.getElementById("deleteTableForm");
-    const nameElement = document.getElementById("deleteTableName");
-
-    // Actualizar el nombre de la mesa en el modal
-    nameElement.textContent = tableName;
-
-    // Actualizar la acción del formulario
-    form.action = `/tables/delete/${tableId}`;
-
-    // Mostrar el modal
-    modal.showModal();
-  }
-
-  // Cerrar modal al hacer clic fuera de él
-  document
-    .getElementById("deleteTableModal")
-    ?.addEventListener("click", function (e) {
-      if (e.target === this) {
-        this.close();
-      }
-    });
-
-  document
-    .getElementById("createTableModal")
-    ?.addEventListener("click", function (e) {
-      if (e.target === this) {
-        this.close();
-      }
-    });
 </script>
 
 {% endblock %}

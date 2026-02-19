@@ -300,51 +300,71 @@
     <!-- Bottom Navigation -->
     {% include 'Common/navigation.html' %}
 
-    <!-- Modal de Confirmación de Eliminación -->
-    <div id="accountDeleteModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-icon-danger">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 class="modal-title">¿Eliminar cuenta permanentemente?</h3>
-                <button onclick="closeAccountDeleteModal()" class="modal-close">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+    <!-- Modal de Confirmación de Eliminación Premium -->
+    <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Overlay: Fondo oscuro profundo -->
+        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closeAccountDeleteModal()"></div>
 
-            <div class="modal-body">
-                <div class="warning-box">
-                    <p class="font-semibold text-red-800 mb-2">Esta acción es irreversible</p>
-                    <p class="text-sm text-red-700">Se eliminarán permanentemente:</p>
-                    <ul class="text-sm text-red-700 mt-2 space-y-1 list-disc list-inside">
-                        <li>Todos tus productos y categorías</li>
-                        <li>Todos los pedidos y su historial</li>
-                        <li>Todos los usuarios asociados</li>
-                        <li>Tu menú digital y código QR</li>
-                        <li>Toda la información de tu restaurante</li>
-                    </ul>
+        <!-- Contenido del Modal -->
+        <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden rounded-[2.5rem] bg-white text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 flex flex-col max-h-[90vh]">
+                
+                <div class="bg-white px-8 pt-10 pb-6 flex-shrink-0">
+                    <div class="flex flex-col items-center text-center">
+                        <!-- Icono: Peligro Vibrante -->
+                        <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6">
+                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-tight" id="modal-title">
+                            ¿Eliminar cuenta permanentemente?
+                        </h3>
+                    </div>
                 </div>
 
-                <div class="confirmation-checkbox">
-                    <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()">
-                    <label for="confirmAccountDelete">
-                        Entiendo que esta acción es permanente e irreversible
+                <!-- Body: Scrollable only if needed, but optimized to avoid it -->
+                <div class="px-8 pb-8 overflow-y-auto">
+                    <div class="bg-red-50/50 border-2 border-red-100 rounded-[1.5rem] p-6 mb-6">
+                        <p class="font-black text-red-600 text-sm mb-3 uppercase tracking-wider">Esta acción es irreversible</p>
+                        <p class="text-sm text-red-800/80 font-medium mb-3">Se eliminarán de forma definitiva:</p>
+                        <ul class="text-sm text-red-800/70 space-y-2 font-bold italic">
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-1">•</span>
+                                Productos y categorías
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-1">•</span>
+                                Historial de pedidos
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-1">•</span>
+                                Menú digital y códigos QR
+                            </li>
+                        </ul>
+                    </div>
+
+                    <label class="flex items-start gap-4 p-5 bg-gray-50 rounded-3xl border border-gray-100 transition-all hover:bg-gray-100/50 cursor-pointer group">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()" class="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-600 cursor-pointer">
+                        </div>
+                        <span class="text-sm font-bold text-gray-700 leading-tight cursor-pointer select-none">
+                            Entiendo que esta acción es permanente e irreversible
+                        </span>
                     </label>
                 </div>
-            </div>
 
-            <div class="modal-footer">
-                <button onclick="closeAccountDeleteModal()" class="btn-secondary">
-                    Cancelar
-                </button>
-                <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="btn-danger">
-                    Eliminar Definitivamente
-                </button>
+                <!-- Footer: Acciones Nítidas -->
+                <div class="bg-gray-50/50 px-8 py-8 flex flex-col gap-3 border-t border-gray-100 flex-shrink-0">
+                    <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 disabled:cursor-not-allowed">
+                        Eliminar Definitivamente
+                    </button>
+                    <button onclick="closeAccountDeleteModal()" class="w-full bg-white hover:bg-gray-100 text-gray-700 font-bold py-3 rounded-2xl transition-all active:scale-95">
+                        Cancelar
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>

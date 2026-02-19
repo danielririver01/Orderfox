@@ -16,11 +16,53 @@ function copiarURL() {
     });
 }
 
-function compartirQR() {
-    const mensaje = `¡Mira mi nuevo menú digital!\n\nEscanea este código QR o visita:\n${MENU_URL}\n\n¡Haz tu pedido fácil y rápido! 📱`;
-    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
-    
+async function compartirQR() {
+    const titulo = "¡Mira mi nuevo menú digital!";
+    const texto = `¡Hola! 👋 Mira mi nuevo menú digital.\n\nEscanea este código QR o visita directamente el link:\n${MENU_URL}\n\n¡Haz tu pedido fácil y rápido! 📱`;
+    const qrImg = document.getElementById('qrImage');
+
+    // 1. Intentar compartir como archivo (Web Share API - Móvil)
+    if (navigator.canShare && qrImg && qrImg.src) {
+        try {
+            const response = await fetch(qrImg.src);
+            const blob = await response.blob();
+            const file = new File([blob], `qr-${RESTAURANT_SLUG}.png`, { type: 'image/png' });
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: titulo,
+                    text: texto
+                });
+                mostrarToast('Compartiendo menú...');
+                return;
+            }
+        } catch (error) {
+            console.error('Error al preparar archivos para compartir:', error);
+        }
+    }
+
+    // 2. Fallback: Solo texto (Escritorio o navegadores no compatibles)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: titulo,
+                text: texto
+            });
+            mostrarToast('Abriendo opciones para compartir...');
+            return;
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error al compartir texto:', error);
+            } else {
+                return; // El usuario canceló
+            }
+        }
+    }
+
+    // 3. Fallback final: WhatsApp Directo (Escritorio Legacy)
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    window.open(whatsappUrl, '_blank');
     mostrarToast('Abriendo WhatsApp...');
 }
 

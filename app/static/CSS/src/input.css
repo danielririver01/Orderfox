@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@source "../../template/**/*.html";
+@source "../../static/JS/**/*.js";
+
+@theme {
+  --color-primary: #f2460d;
+  --color-success: #16a34a;
+  --color-text-main: #1c110d;
+  --color-text-muted: #6b7280;
+  --color-bg-light: #f8f6f5;
+  --font-sans: "system-ui", "sans-serif";
+}
+
+@import "../dashboard.css";

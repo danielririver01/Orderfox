@@ -60,16 +60,8 @@ def menu(slug=None):
 def category_products(slug, category_id):
     restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
     
-    # VALIDACIÓN DE SEGURIDAD
-    # VALIDACIÓN DE SEGURIDAD (Permitir ver, pero no pedir - manejado en frontend)
-    # Si la suscripción expiró, aún permitimos ver productos
-    # if not (restaurant.is_active and is_subscription_active(restaurant)):
-    #    return render_template('public/subscription_expired.html', restaurant=restaurant)
-
     category = Category.query.filter_by(id=category_id, restaurant_id=restaurant.id).first_or_404()
-    # ...
     
-    # Solo productos activos de esta categoría
     products = Product.query.filter_by(
         category_id=category_id,
         restaurant_id=restaurant.id,
