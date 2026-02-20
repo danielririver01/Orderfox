@@ -29,7 +29,7 @@ def create_app():
     limiter.init_app(app)
     
     # Servir archivos estáticos en producción con WhiteNoise
-    WhiteNoise(app, autorefresh=True)
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root='app/static/')
 
     scheduler.init_app(app)
     scheduler.start()
