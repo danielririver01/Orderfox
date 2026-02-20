@@ -10,8 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
     <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
 </head>
 
@@ -167,11 +168,11 @@
                 </div>
 
                 {% if 'user_id' in session %}
-                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-primary text-white font-bold hover:bg-opacity-90 shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
                     Elegir Crecimiento
                 </a>
                 {% else %}
-                <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-primary text-white font-bold hover:bg-opacity-90 shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+                <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
                     Elegir Crecimiento
                 </a>
                 {% endif %}
