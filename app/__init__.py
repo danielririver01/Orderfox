@@ -31,7 +31,7 @@ def create_app():
     
     # Servir archivos estáticos en producción con WhiteNoise
     static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static')
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
 
     scheduler.init_app(app)
     scheduler.start()
