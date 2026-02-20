@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template
 from .models import db, migrate
 from flask_mail import Mail
@@ -29,7 +30,8 @@ def create_app():
     limiter.init_app(app)
     
     # Servir archivos estáticos en producción con WhiteNoise
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root='app/static/')
+    static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static')
 
     scheduler.init_app(app)
     scheduler.start()
@@ -80,10 +82,14 @@ def create_app():
         """
         Inyectar cabeceras para prevenir que el navegador cachee páginas protegidas.
         Esto evita que el botón 'Atrás' funcione después del logout.
+        No aplicar a archivos estáticos (CSS, JS, imágenes).
         """
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '-1'
+        from flask import request
+        # Excluir archivos estáticos del no-cache para que WhiteNoise funcione
+        if not request.path.startswith('/static'):
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '-1'
         return response
 
     # Inyectar variables de soporte y suscripción globalmente
