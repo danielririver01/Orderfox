@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
 from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from app.utils.subscription import is_subscription_active, check_feature_access
+from app.utils.rate_limiter import OrderRateLimiter
 import json
 
 public_bp = Blueprint('public', __name__)
@@ -101,7 +102,7 @@ def create_order():
             'error': 'Pedidos temporalmente desactivados.'
         }), 403
 
-    expiration_limit = datetime.now() - timedelta(minutes=30)
+    expiration_limit = datetime.now(timezone.utc) - timedelta(minutes=30)
     Order.query.filter(
         Order.restaurant_id == restaurant.id,
         Order.status == 'pending',
@@ -110,17 +111,16 @@ def create_order():
     db.session.commit()
 
     client_ip = request.remote_addr
-    rate_limit = datetime.now() - timedelta(seconds=90)
-    recent_order = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.notes.like(f"%IP:{client_ip}%"),
-        Order.created_at > rate_limit
-    ).first()
-
-    if recent_order:
+    
+    should_block, error_message, wait_time = OrderRateLimiter.should_block_request(
+        restaurant.id, client_ip
+    )
+    
+    if should_block:
         return jsonify({
-            'success': False, 
-            'error': '¿Olvidaste algo? Espera unos segundos para enviar un nuevo pedido 🧃'
+            'success': False,
+            'error': error_message,
+            'retry_after': wait_time
         }), 429
 
     order_number = generate_order_number(restaurant.id)
@@ -136,6 +136,8 @@ def create_order():
     )
     db.session.add(order)
     db.session.flush()
+    
+    OrderRateLimiter.log_order_attempt(restaurant.id, order, client_ip)
 
     cart = data['cart']
     for product_id, item in cart.items():

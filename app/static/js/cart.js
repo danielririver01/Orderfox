@@ -161,16 +161,6 @@ function updateDisplay() {
 async function sendWhatsApp() {
     if (Object.keys(cart).length === 0) return;
 
-    const lastOrderTime = localStorage.getItem('velziaLastOrder');
-    const now = Date.now();
-    const waitTime = 90 * 1000;
-
-    if (lastOrderTime && (now - lastOrderTime < waitTime)) {
-        const remaining = Math.ceil((waitTime - (now - lastOrderTime)) / 1000);
-        showToast(`¿Olvidaste algo? Espera ${remaining} seg para enviar otro pedido`, 'info');
-        return;
-    }
-
     const btn = document.querySelector('.btn-send');
     const originalText = btn ? btn.innerHTML : '';
     
@@ -209,9 +199,16 @@ async function sendWhatsApp() {
             throw new Error("Respuesta inválida del servidor");
         }
         
-        if (!result.success) throw new Error(result.error);
-
-        localStorage.setItem('velziaLastOrder', Date.now());
+        if (!result.success) {
+            const errorMsg = result.error;
+            const retryAfter = result.retry_after;
+            if (retryAfter) {
+                showToast(`${errorMsg} (${retryAfter}s)`, 'warning');
+            } else {
+                throw new Error(errorMsg);
+            }
+            return;
+        }
 
         let message = `*NUEVO PEDIDO RECIBIDO*\n`;
         message += `N° del pedido: \`\`\`${result.order_number}\`\`\`\n`;
@@ -235,9 +232,7 @@ async function sendWhatsApp() {
         const url = `https://wa.me/${businessPhone}?text=${encodeURIComponent(message)}`;
 
         window.open(url, '_blank');
-        
-        // --- KEY FIX: Clear cart AFTER opening WhatsApp ---
-        clearCart(true); // silent = true
+        clearCart(true);
         
     } catch (error) {
         showToast('Error al registrar el pedido: ' + error.message, 'error');
