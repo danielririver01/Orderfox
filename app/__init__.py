@@ -17,14 +17,6 @@ limiter = Limiter(
 
 
 def create_app():
-    import os
-    import sys
-    
-    # Agregar el directorio raíz al path para importar settings
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if root_dir not in sys.path:
-        sys.path.insert(0, root_dir)
-    
     app = Flask(__name__, template_folder='template')
     app.config.from_object('settings.Config')
     db.init_app(app)
