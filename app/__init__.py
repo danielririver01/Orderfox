@@ -5,6 +5,7 @@ from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from whitenoise import WhiteNoise
 
 mail = Mail()
 scheduler = APScheduler()
@@ -17,12 +18,18 @@ limiter = Limiter(
 
 
 def create_app():
-    app = Flask(__name__, template_folder='template')
+    app = Flask(__name__, 
+                template_folder='template',
+                static_folder='static',
+                static_url_path='/static')
     app.config.from_object('settings.Config')
     db.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    
+    # Servir archivos estáticos en producción con WhiteNoise
+    WhiteNoise(app, autorefresh=True)
 
     scheduler.init_app(app)
     scheduler.start()
