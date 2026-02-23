@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const formData = new FormData(form);
-                const response = await fetch(form.action, {
+                const response = await fetch(form.action || window.location.href, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -28,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Accept': 'application/json'
                     }
                 });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Server error:', text);
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('El servidor no devolvió un JSON válido.');
+                }
 
                 const data = await response.json();
 

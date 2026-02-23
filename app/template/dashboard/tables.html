@@ -1,157 +1,87 @@
 {% extends 'Common/base.html' %} {% block title %}Mesas - Velzia{% endblock %}
 {% block content %}
 
-<header class="bg-white border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-    <div class="flex justify-between items-center">
-      <div class="flex items-center gap-4">
-        <button
-          onclick="window.history.back()"
-          class="text-gray-600 hover:text-gray-900 transition-colors p-2 hover:bg-gray-100 rounded-lg"
-          title="Volver atrás"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-        </button>
-        <h1 class="text-2xl font-bold text-gray-900">Gestión de Mesas</h1>
-      </div>
-      <button
-        {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
-        class="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
-      >
-        + Nueva Mesa
-      </button>
+<header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Mesas</h1>
     </div>
+    <button
+      {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
+      class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 {% if not has_table_qr_access %}opacity-50 cursor-not-allowed grayscale{% endif %}"
+    >
+      <span class="material-symbols-outlined text-[20px]">add</span>
+      Nueva Mesa
+    </button>
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="max-w-7xl mx-auto px-4 py-8">
   {% include 'components/flash_messages.html' %}
 
-  <div class="premium-lock-container min-h-[400px]">
-    <div
-      class="{% if not has_table_qr_access %}premium-blur{% endif %} transition-all duration-300"
-    >
+  <div class="premium-lock-container min-h-[400px] relative">
+    <div class="{% if not has_table_qr_access %}blur-sm grayscale opacity-40 pointer-events-none{% endif %} transition-all duration-500">
       {% if tables %}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for table in tables %}
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6 relative group"
-        >
+        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm hover:shadow-md transition-all p-6 relative group">
           <div class="flex justify-between items-start mb-6">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
-                <h3 class="text-lg font-black text-gray-900 tracking-tight">{{ table.name }}</h3>
-                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-600 border border-emerald-100/50">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">{{ table.name }}</h3>
+                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
                   Activa
                 </span>
               </div>
-              <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">ID: {{ table.id }}</p>
+              <p class="text-[10px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 pt-4 border-t border-gray-50">
-            <a
-              href="{{ url_for('tables.qr', id=table.id) }}"
-              class="flex-1 bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-xl text-center shadow-md shadow-orange-100 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Descargar QR
+          <div class="flex items-center gap-3 pt-5 border-t border-gray-50 dark:border-[#262626]">
+            <a href="{{ url_for('tables.qr', id=table.id) }}" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 px-4 rounded-xl text-center shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+              <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+              QR CODE
             </a>
 
             <button
               onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=hidden name=csrf_token value={{ csrf_token() }}>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?')"
-              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-100 hover:border-red-100 rounded-xl transition-all active:scale-90 group"
+              class="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
               title="Eliminar Mesa"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <span class="material-symbols-outlined text-[22px]">delete</span>
             </button>
           </div>
         </div>
         {% endfor %}
       </div>
       {% else %}
-      <div
-        class="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-16 w-16 mx-auto text-gray-300 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-        <h3 class="text-lg font-medium text-gray-900">
-          No tienes mesas creadas
-        </h3>
-        <p class="text-gray-500 mt-1 mb-6">
-          Crea tu primera mesa para generar su código QR.
-        </p>
+      <div class="text-center py-24 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
+        <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[64px] mb-6">table_restaurant</span>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mesas</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">Crea tu primera mesa para generar su código QR y permitir pedidos digitales.</p>
         <button
           {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
-          class="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
+          class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
         >
-          Crear Primera Mesa
+          CREAR PRIMERA MESA
         </button>
       </div>
       {% endif %}
     </div>
 
     {% if not has_table_qr_access %}
-    <div class="lock-overlay">
-      <div class="lock-card">
-        <div
-          class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-indigo-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
+    <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
+      <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
+        <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <span class="material-symbols-outlined text-[#f2460d] text-[32px]">verified</span>
         </div>
-        <h3 class="font-bold text-gray-900 mb-2">Función Plan Crecimiento</h3>
-        <p class="text-sm text-gray-600 mb-4">
-          Organiza tu restaurante con códigos QR por mesa para pedidos
-          automáticos.
+        <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Plan Crecimiento</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+          Organiza tu restaurante con códigos QR por mesa para pedidos automáticos y mayor eficiencia.
         </p>
-        <a
-          href="{{ url_for('dashboard.subscription') }}"
-          class="block w-full bg-gradient-to-r from-indigo-500 to-primary text-white font-bold py-2 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all text-center"
-        >
-          Mejorar mi Plan
+        <a href="{{ url_for('auth.payment') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
+          MEJORAR MI PLAN
         </a>
       </div>
     </div>
@@ -159,46 +89,35 @@
   </div>
 </main>
 
-<!-- Create Table Modal: Premium & Centered -->
-<div id="createTableModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <!-- Overlay -->
-    <div class="fixed inset-0 bg-slate-900/60 transition-opacity" aria-hidden="true" onclick="document.getElementById('createTableModal').classList.add('hidden')"></div>
-
-    <!-- Content -->
+<div id="createTableModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="document.getElementById('createTableModal').classList.add('hidden')"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100">
-                <div class="bg-white px-6 pt-8 pb-6 sm:px-10 sm:pt-10">
-                    <h3 class="text-xl font-black text-gray-900 tracking-tight leading-tight mb-6">Nueva Mesa</h3>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#141414] text-left shadow-2xl transition-all sm:w-full sm:max-w-md border border-gray-100 dark:border-[#262626]">
+                <div class="px-6 py-8 sm:px-10">
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-tight mb-8">Nueva Mesa</h3>
                     
                     <form action="{{ url_for('tables.create') }}" method="POST" onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('button[type=submit]'); b.disabled=true; b.innerHTML='Guardando...';">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <div class="space-y-4">
+                        <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Nombre de la Mesa</label>
+                                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-3 ml-1">NOMBRE DE LA MESA</label>
                                 <input
                                     type="text"
                                     name="name"
-                                    placeholder="Ej: Mesa 1, Barra, Terraza"
-                                    class="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-medium"
+                                    placeholder="Ej: Mesa 1, Terraza..."
+                                    class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white"
                                     required
                                 />
                             </div>
                         </div>
                         
-                        <div class="flex flex-row-reverse gap-3 mt-8">
-                            <button
-                                type="submit"
-                                class="flex-1 bg-primary hover:bg-primary-dark text-white rounded-2xl px-6 py-3 font-bold shadow-lg shadow-orange-200 transition-all active:scale-95"
-                            >
-                                Guardar Mesa
-                            </button>
-                            <button
-                                type="button"
-                                onclick="document.getElementById('createTableModal').classList.add('hidden')"
-                                class="flex-1 px-6 py-3 bg-white text-gray-600 border border-gray-200 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95"
-                            >
+                        <div class="flex gap-3 mt-10">
+                            <button type="button" onclick="document.getElementById('createTableModal').classList.add('hidden')" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-600 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
                                 Cancelar
+                            </button>
+                            <button type="submit" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 transition-all active:scale-95">
+                                Guardar
                             </button>
                         </div>
                     </form>

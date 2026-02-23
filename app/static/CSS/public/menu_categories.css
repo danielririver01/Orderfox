@@ -1,3 +1,41 @@
+    :root {
+     --banner-text-strong: #dc2626;
+    --icon-bg: rgba(242, 70, 13, 0.05);
+    --btn-clear-bg: #fde2e2;
+    --btn-clear-text: #e11d48;
+    --card-bg: #ffffff;
+    --primary: #f2460d;
+    --text-dark: #111827;
+    --text-muted: #6b7280;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --banner-bg: #fff4f4;
+    --banner-border: #fee2e2;
+    --banner-text: #991b1b;
+    --empty-bg: #ffffff;
+    --cart-bg: #f3f4f6;
+    --cart-text: #6b7280;
+}
+
+[data-theme="dark"] {
+    --banner-text-strong: #dc2626;
+    --icon-bg: rgba(242, 70, 13, 0.05);
+    --btn-clear-bg: #fde2e2;
+    --btn-clear-text: #e11d48;
+    --card-bg: #1f2937;
+    --primary: #f97316;
+    --text-dark: #f9fafb;
+    --text-muted: #9ca3af;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+    --banner-bg: #2d1b1b;
+    --banner-border: #7f1d1d;
+    --banner-text: #fca5a5;
+    --empty-bg: #374151;
+    --cart-bg: #1f2937;
+  --cart-text: #d1d5db;
+}
+
     .category-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -29,7 +67,7 @@
     
     .category-icon {
         font-size: 2.5rem;
-        background: rgba(242, 70, 13, 0.05);
+        background: var(--icon-bg);
         width: 70px;
         height: 70px;
         display: flex;
@@ -53,9 +91,9 @@
     }
 
     .btn-clear {
-        background: #fde2e2;
+        background: var(--btn-clear-bg);
         border: none;
-        color: #e11d48;
+        color: var(--btn-clear-text);
         border-radius: 14px;
         padding: 0.5rem;
         font-weight: 700;
@@ -70,9 +108,9 @@
 
     /* Estados Especiales */
     .store-closed-banner {
-        background: #fff4f4;
-        border: 1px solid #fee2e2;
-        color: #991b1b;
+        background: var(--banner-bg);
+        border: 1px solid var(--banner-border);
+        color: var(--banner-text-strong);
         padding: 1rem;
         border-radius: 16px;
         margin-bottom: 1.5rem;
@@ -83,7 +121,7 @@
 
     .store-closed-banner h3 {
         margin: 0 0 0.25rem 0;
-        color: #dc2626;
+        color: var(--banner-text-strong);
         font-size: 1.1rem;
     }
 
@@ -97,7 +135,7 @@
         text-align: center;
         padding: 4rem 1rem;
         color: var(--text-muted);
-        background: white;
+        background: var(--empty-bg);
         border-radius: 24px;
         border: 2px dashed rgba(0,0,0,0.05);
     }
@@ -116,8 +154,8 @@
 
     .cart-summary.closed {
         justify-content: center;
-        background: #f3f4f6;
-        color: #6b7280;
+        background: var(--cart-bg);
+        color: var(--cart-text);
         font-weight: 600;
         padding: 1.5rem;
     }

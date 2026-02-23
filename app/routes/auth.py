@@ -23,7 +23,6 @@ def send_otp_email(email, otp):
         mail.send(msg)
         return True
     except Exception as e:
-        print(f"ERROR enviando correo: {e}")
         return False
 
 
@@ -38,11 +37,10 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             
-        if user.restaurant and not user.restaurant.is_active:
-            session['pending_restaurant_id'] = user.restaurant.id
-            session['setup_done'] = True
-            flash('Tu suscripción está pendiente de pago.', 'info')
-            return redirect(url_for('auth.payment'))
+            if user.restaurant and not user.restaurant.is_active:
+                session['pending_restaurant_id'] = user.restaurant.id
+                flash('Tu suscripción está pendiente de pago.', 'info')
+                return redirect(url_for('auth.payment'))
                 
             return redirect(url_for('dashboard.index'))
         else:
@@ -58,18 +56,19 @@ def forgot_password():
             # Generar token seguro (expira en 20 mins)
             s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
             token = s.dumps(user.email, salt='recover-key')
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
             
             try:
                 msg = Message('Restablecer Contraseña - Velzia', recipients=[user.email])
                 msg.html = render_template('email/reset_password.html', reset_url=reset_url)
                 msg.body = f'Para restablecer tu contraseña, visita: {reset_url}'
                 mail.send(msg)
-                flash('Te hemos enviado un correo con las instrucciones.')
+                flash('Te hemos enviado un correo con las instrucciones.', 'success')
+                return redirect(url_for('auth.login'))
             except Exception as e:
-                print(f"ERROR MAIL: {e}")
-                flash('Hubo un error al enviar el correo. Inténtalo más tarde.')
+                flash('Hubo un error al enviar el correo. Inténtalo más tarde.', 'error')
         else:
-            flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.')
+            flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'info')
         
         # PRG Pattern: Redirigir siempre después de un POST para evitar reenvío
         return redirect(url_for('auth.forgot_password'))
@@ -104,9 +103,18 @@ def reset_password(token):
     confirm_password = request.form.get('confirm_password')
     
     if password != confirm_password:
+        msg = 'Las contraseñas no coinciden.'
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'Las contraseñas no coinciden.'})
-        flash('Las contraseñas no coinciden.', 'error')
+            return jsonify({'success': False, 'message': msg})
+        flash(msg, 'error')
+        return render_template('auth/reset_password.html')
+
+    # Validaciones de complejidad adicionales
+    if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
+        msg = 'La contraseña no cumple con los requisitos de seguridad (mín. 8 caracteres, una mayúscula y un número).'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': msg})
+        flash(msg, 'error')
         return render_template('auth/reset_password.html')
 
     user = User.query.filter_by(email=email).first()
@@ -288,7 +296,8 @@ def setup_account():
                 # Caso TRIAL: Auto-login y Dashboard
                 session['user_id'] = new_user.id
                 session['username'] = new_user.username
-                session['setup_done'] = True
+                
+                
                 
 
                 
@@ -297,7 +306,6 @@ def setup_account():
             else:
                 # Caso PAGO: Redirigir a payment
                 session['pending_restaurant_id'] = new_restaurant.id
-                session['setup_done'] = True
                 return redirect(url_for('auth.payment'))
 
         except Exception as e:
@@ -333,17 +341,16 @@ def renew():
         session['pending_plan_change'] = None
     
     session['pending_restaurant_id'] = restaurant.id
-    session['setup_done'] = True
     session['is_renewal'] = True
     
     return redirect(url_for('auth.payment'))
 
 @auth_bp.route('/payment', methods=['GET', 'POST'])
 def payment():
-    if not session.get('setup_done'):
-        return redirect(url_for('auth.register'))
-    
     restaurant_id = session.get('pending_restaurant_id')
+    
+    if not restaurant_id:
+        return redirect(url_for('auth.register'))
     restaurant = Restaurant.query.get(restaurant_id)
     
     if not restaurant:
@@ -455,7 +462,6 @@ def payment_callback():
             session.pop('otp', None)
             session.pop('register_email', None)
             session.pop('otp_verified', None)
-            session.pop('setup_done', None)
             session.pop('pending_restaurant_id', None)
             session.pop('selected_plan', None)
             session.pop('is_renewal', None)

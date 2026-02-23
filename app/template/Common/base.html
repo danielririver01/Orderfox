@@ -10,26 +10,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    
+    <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
+    <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
-<body>
+<body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
-    <div class="sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-slate-200">
-        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div id="status-banner" class="fixed top-0 w-full z-[1000] backdrop-blur-md bg-white/70 dark:bg-[#0a0a0a]/70 border-b border-slate-200 dark:border-[#262626] pointer-events-none transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between pointer-events-auto">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center
                     {% if sub_status.status == 'expiring_soon_neutral' %}
-                        bg-slate-100 text-slate-600
+                        bg-slate-100 dark:bg-[#262626] text-slate-600 dark:text-slate-400
                     {% elif sub_status.status == 'expiring_soon_warning' %}
-                        bg-amber-100 text-amber-600
+                        bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400
                     {% else %}
-                        bg-red-100 text-red-600
+                        bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400
                     {% endif %}
                 ">
                     <span class="material-symbols-outlined text-[20px]">schedule</span>
                 </div>
 
-                <p class="text-sm font-medium text-slate-700">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {{ sub_status.message }}
                 </p>
             </div>
@@ -37,11 +42,11 @@
             <a href="{{ url_for('dashboard.subscription') }}"
                class="text-sm font-semibold px-4 py-2 rounded-xl
                {% if sub_status.status == 'expiring_soon_neutral' %}
-                    text-indigo-600 hover:bg-indigo-50
+                    text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
                {% elif sub_status.status == 'expiring_soon_warning' %}
-                    text-amber-600 hover:bg-amber-50
+                    text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20
                {% else %}
-                    text-red-600 hover:bg-red-50
+                    text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20
                {% endif %}
                transition-all">
                 Renovar
@@ -51,8 +56,8 @@
     {% endif %} 
     
     {% if sub_status.status == 'grace_period' %}
-    <div class="sticky top-0 z-50 bg-red-50 border-b border-red-200">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div id="status-banner" class="fixed top-0 w-full z-[1000] bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900/50 pointer-events-none transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between pointer-events-auto">
             
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
@@ -110,10 +115,61 @@
 
     {% block content %}{% endblock %}
 
-    {% include 'components/modal_delete.html' %}
+    <!-- Modal de Eliminación -->
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#141414] rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 dark:border-[#262626] overflow-hidden">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100 dark:border-[#262626]">
+                <h3 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
+                    Confirmar eliminación
+                </h3>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6">
+                <div id="modal-message" class="text-sm text-gray-600 dark:text-gray-400">
+                    ¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-6 bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#262626] flex gap-3">
+                <button onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333333] text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all active:scale-95">
+                    Cancelar
+                </button>
+                <button id="confirmDeleteBtn" 
+                        class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all active:scale-95">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
     
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
+    <script>
+        // Sistema de Banner Fijo y Padding Dinámico
+        document.addEventListener('DOMContentLoaded', function() {
+            const banner = document.getElementById('status-banner');
+            if (banner) {
+                const adjustPadding = () => {
+                    const height = banner.offsetHeight;
+                    document.body.style.paddingTop = `${height + 20}px`;
+                };
+                
+                // Ajuste inicial
+                adjustPadding();
+                
+                // Ajuste en resize
+                window.addEventListener('resize', adjustPadding);
+                
+                // Observer para cambios de contenido
+                const observer = new ResizeObserver(adjustPadding);
+                observer.observe(banner);
+            }
+        });
+    </script>
 </body>
 
 </html>

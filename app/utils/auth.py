@@ -12,8 +12,12 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
+            logger.info(f"Acceso denegado: user_id no en sesión. Ruta: {request.path}")
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'error': 'Por favor, inicia sesión para acceder a esta página.'}), 401
+                return jsonify({
+                    'error': 'unauthorized',
+                    'message': 'Por favor, inicia sesión para acceder.'
+                }), 401
             flash('Por favor, inicia sesión para acceder a esta página.', 'warning')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)

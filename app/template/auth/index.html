@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html>
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -12,23 +12,22 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
 </head>
 
-<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-background-light dark:bg-[#0a0a0a] font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
     
     <main class="w-full max-w-[420px] mx-auto">
         
-        <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
+        <div class="w-full bg-white dark:bg-[#141414] rounded-xl shadow-lg border border-gray-100 dark:border-[#262626] overflow-hidden">
             
             <div class="px-8 pt-10 pb-8 flex flex-col items-center">
                 
-                <div class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 dark:bg-primary/20">
-                    <span class="material-symbols-outlined text-primary text-[32px]">lunch_dining</span>
+                <div class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
+                    <span class="material-symbols-outlined text-[#f2460d] text-[32px]">lunch_dining</span>
                 </div>
 
                 <div class="text-center mb-8">
@@ -50,7 +49,7 @@
                             Correo electrónico
                         </label>
                         <div class="relative">
-                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="tu@restaurante.com") }}
+                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="tu@restaurante.com") }}
                             <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#9c5e49]">
                                 <span class="material-symbols-outlined text-[20px]">mail</span>
                             </div>
@@ -64,14 +63,14 @@
                             </label>
                         </div>
                         <div class="relative">
-                            {{ form.password(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#4a2e26] bg-[#fcf9f8] dark:bg-[#221410] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="••••••••") }}
+                            {{ form.password(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="••••••••") }}
                             <div class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-[#9c5e49] hover:text-primary transition-colors" id="toggle-password">
                                 <span class="material-symbols-outlined text-[20px]">visibility_off</span>
                             </div>
                         </div>
                     </div>
 
-                    <button class="mt-2 w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]" type="submit">
+                    <button class="mt-2 w-full flex items-center justify-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]" type="submit">
                         <span>Ingresar</span>
                         <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
                     </button>
@@ -84,7 +83,7 @@
                 </div>
             </div>
 
-            <div class="bg-gray-50 dark:bg-[#221410] border-t border-gray-100 dark:border-[#3e251e] py-4 px-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
+            <div class="bg-gray-50 dark:bg-[#0f0f0f] border-t border-gray-100 dark:border-[#262626] py-4 px-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
                 <span>© 2026 Velzia</span>
                 <span class="flex items-center gap-1">
                     <span class="material-symbols-outlined text-[14px]">lock</span>
@@ -95,7 +94,7 @@
 
         <!-- Subscription Shortcut -->
         <div class="mt-8 text-center">
-            <a href="{{ url_for('auth.plans') }}" class="text-xs font-bold text-primary hover:text-primary-dark transition-colors inline-flex items-center gap-1.5 uppercase tracking-wider underline underline-offset-4 decoration-primary/30">
+            <a href="{{ url_for('auth.plans') }}" class="text-xs font-bold text-[#f2460d] hover:text-primary-dark transition-colors inline-flex items-center gap-1.5 uppercase tracking-wider underline underline-offset-4 decoration-primary/30">
                 <span class="material-symbols-outlined text-[16px]">verified</span>
                 Ver planes y precios
             </a>
@@ -109,7 +108,7 @@
 
     </main>
 
-    <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='JS/login.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

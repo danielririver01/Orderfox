@@ -12,12 +12,12 @@ async function toggleCategory(id, newState) {
         if (!response.ok) throw new Error('Error al actualizar');
         
     } catch (error) {
-        // Rollback: revertir el toggle
         const checkbox = document.querySelector(`[data-category-id="${id}"] input[type="checkbox"]`);
         if (checkbox) checkbox.checked = !newState;
         showToast('Error de conexión. Intenta de nuevo.');
     }
 }
+
 
 function showToast(message) {
     const toast = document.getElementById('toast');

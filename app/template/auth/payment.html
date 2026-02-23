@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -11,95 +11,111 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="{{ url_for('static', filename='JS/tailwind.login.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
-    <main class="w-full max-w-[480px] mx-auto">
-        <div class="w-full bg-white dark:bg-[#2c1a15] rounded-xl shadow-lg border border-gray-100 dark:border-[#3e251e] overflow-hidden">
-            <div class="px-8 pt-10 pb-8">
+<body class="bg-background-light dark:bg-[#0a0a0a] font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
+    <main class="w-full max-w-[480px] mx-auto transition-all duration-500">
+        <div class="w-full bg-white dark:bg-[#141414] rounded-[2.5rem] shadow-2xl shadow-black/5 dark:shadow-black/20 border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
+            <div class="px-8 pt-12 pb-10">
                 <!-- Flash Messages -->
-                {% include 'components/flash_messages.html' %}
+                <div class="mb-6">
+                    {% include 'components/flash_messages.html' %}
+                </div>
 
                 <!-- Header -->
-                <div class="flex flex-col items-center mb-8">
-                    <div class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 dark:bg-primary/20">
-                        <span class="material-symbols-outlined text-primary text-[32px]">shopping_cart_checkout</span>
+                <div class="flex flex-col items-center mb-10">
+                    <div class="mb-6 flex items-center justify-center h-20 w-20 rounded-[2rem] bg-orange-50 dark:bg-orange-500/10 text-primary shadow-inner">
+                        <span class="material-symbols-outlined text-[40px] font-light">account_balance_wallet</span>
                     </div>
                     <div class="text-center">
-                        <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
-                            Finalizar Activación
+                        <h1 class="text-gray-900 dark:text-white text-3xl font-black tracking-tight mb-3">
+                            Activa tu Plan
                         </h1>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium px-4">
-                            Estás a un paso de activar <strong>{{ restaurant.name }}</strong>.
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium px-4 leading-relaxed">
+                            Impulsa tu negocio <strong>{{ restaurant.name }}</strong> con todas nuestras herramientas premium.
                         </p>
                     </div>
                 </div>
 
                 <!-- Detalle del Plan -->
-                <div class="bg-gray-50 dark:bg-[#221410] rounded-xl p-6 mb-8 border border-gray-100 dark:border-[#3e251e]">
-                    <div class="flex justify-between items-start mb-4">
+                <div class="bg-gray-50 dark:bg-[#0a0a0a] rounded-3xl p-8 mb-10 border border-gray-100 dark:border-[#262626] transition-colors">
+                    <div class="flex justify-between items-start mb-6">
                         <div>
-                            <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Plan Seleccionado</p>
-                            <h3 class="text-lg font-bold text-[#1c110d] dark:text-white">{{ plan_info.name }}</h3>
+                            <p class="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-2">Suscripción Mensual</p>
+                            <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ plan_info.name }}</h3>
                         </div>
-                        <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase">Mensual</span>
+                        <div class="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
+                            Best Value
+                        </div>
                     </div>
                     
-                    <div class="space-y-3 mb-6">
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
-                            <span>Menú Digital QR Ilimitado</span>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[20px] text-emerald-500">check_circle</span>
+                            <span class="font-medium">Menú Digital QR Ilimitado</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
-                            <span>Gestión de Pedidos por WhatsApp</span>
+                        <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[20px] text-emerald-500">check_circle</span>
+                            <span class="font-medium">Pedidos por WhatsApp</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span class="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
-                            <span>Panel de Administración Full</span>
+                        <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span class="material-symbols-outlined text-[20px] text-emerald-500">check_circle</span>
+                            <span class="font-medium">Panel Administrativo 24/7</span>
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-200 dark:border-[#3e251e] pt-4 flex justify-between items-center">
-                        <span class="text-[#1c110d] dark:text-white font-semibold">Total a pagar</span>
-                        <span class="text-2xl font-bold text-primary">${{ plan_info.price }}<span class="text-xs text-gray-400 font-normal"> /mes</span></span>
+                    <div class="border-t border-gray-200 dark:border-[#262626] pt-6 flex justify-between items-center">
+                        <span class="text-gray-500 dark:text-gray-400 font-black text-[10px] uppercase tracking-widest">Total hoy</span>
+                        <div class="text-right">
+                            <span class="text-3xl font-black text-primary tracking-tighter">${{ plan_info.price }}</span>
+                            <span class="text-[10px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-widest ml-1">/ mes</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Payment Method Placeholder -->
-                <div class="flex flex-col gap-4">
-                    <a href="{{ checkout_url }}" class="w-full flex items-center justify-center gap-3 bg-[#009EE3] hover:bg-[#0086c3] text-white font-bold h-14 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
-                        <span class="material-symbols-outlined text-[24px]">wallet</span>
-                        <span>Pagar con Mercado Pago</span>
+                <!-- Payment Methods -->
+                <div class="space-y-6">
+                    <a href="{{ checkout_url }}" class="w-full flex items-center justify-center gap-4 bg-[#009EE3] hover:bg-[#0086c3] text-white font-black h-16 rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs">
+                        <span class="material-symbols-outlined text-[24px]">payments</span>
+                        Pagar con Mercado Pago
                     </a>
 
-                    {% if 'user_id' in session %}
-                    <a href="{{ url_for('auth.plans') }}" class="w-full text-center text-sm font-bold text-red-400 hover:text-red-600 transition-colors py-2 flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">logout</span>
-                        volver a planes
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('auth.logout') }}" class="w-full text-center text-sm font-bold text-gray-400 hover:text-red-500 transition-colors py-2">
-                        Cancelar registro y salir
-                    </a>
-                    {% endif %}
+                    <div class="flex flex-col items-center gap-3">
+                        {% if 'user_id' in session %}
+                        <a href="{{ url_for('auth.plans') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                            Cambiar plan seleccionado
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.logout') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest">
+                            Cancelar y salir del registro
+                        </a>
+                        {% endif %}
+                    </div>
 
-                    <p class="text-[10px] text-center text-gray-400 px-8">
-                        Al pagar, aceptas nuestros <a href="{{ url_for('auth.terms') }}" class="text-primary hover:underline">Términos de Servicio</a> y la renovación automática mensual.
+                    <p class="text-[9px] text-center text-gray-300 dark:text-gray-600 leading-relaxed font-medium">
+                        Al completar el pago, confirmas que aceptas nuestros <a href="{{ url_for('auth.terms') }}" class="text-primary hover:underline font-bold">Términos de Servicio</a>. La suscripción se renueva automáticamente cada mes.
                     </p>
                 </div>
             </div>
             
             <!-- Bottom Decoration -->
-            <div class="bg-gray-50 dark:bg-[#221410] border-t border-gray-100 dark:border-[#3e251e] py-6 px-8 flex flex-col gap-3 items-center text-xs text-gray-400 dark:text-gray-500">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[16px]">lock</span>
-                    <span class="font-medium">Pago encriptado y seguro</span>
+            <div class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#262626] py-8 px-8 flex flex-col items-center gap-4 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex -space-x-2">
+                    </div>
+                    <div class="h-4 w-px bg-gray-200 dark:bg-[#262626]"></div>
+                    <div class="flex items-center gap-2 text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        <span class="material-symbols-outlined text-[16px] text-emerald-500">lock_outline</span>
+                        Pago 100% Seguro
+                    </div>
                 </div>
             </div>
+        </div>
+    </main>
           
     </main>
-    <script src="{{ url_for('static', filename='JS/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 </body>
 </html>

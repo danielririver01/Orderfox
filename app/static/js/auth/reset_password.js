@@ -5,6 +5,7 @@ const submitBtn = document.getElementById('submitBtn');
 const checks = {
     upper: document.getElementById('check-upper'),
     number: document.getElementById('check-number'),
+    length: document.getElementById('check-length'),
     match: document.getElementById('check-match')
 };
 
@@ -12,20 +13,17 @@ function validate() {
     const val = password.value;
     const valConfirm = confirm.value;
 
-    // Al menos una mayúscula (en cualquier posición)
     const hasUpper = /[A-Z]/.test(val);
-    // Incluir números
     const hasNumber = /[0-9]/.test(val);
-    // Longitud mínima 8
     const isLongEnough = val.length >= 8;
-    // Coinciden
     const matches = val === valConfirm && val.length > 0;
 
     updateUI(checks.upper, hasUpper);
     updateUI(checks.number, hasNumber);
-    updateUI(checks.match, matches && isLongEnough);
+    updateUI(checks.length, isLongEnough);
+    updateUI(checks.match, matches);
 
-    submitBtn.disabled = !(hasUpper && hasNumber && matches && isLongEnough);
+    submitBtn.disabled = !(hasUpper && hasNumber && isLongEnough && matches);
 }
 
         function updateUI(el, isValid) {

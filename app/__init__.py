@@ -1,6 +1,6 @@
 import os
-from flask import Flask, render_template
-from .models import db, migrate
+from flask import Flask, render_template, session
+from .models import db, migrate,User
 from flask_mail import Mail
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
@@ -97,12 +97,26 @@ def create_app():
     def inject_global_data():
         from app.utils.restaurant import get_current_restaurant
         from app.utils.subscription import get_subscription_status
+        from flask import session
         
         data = {
             'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
             'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL'),
-            'sub_status': None
+            'sub_status': None,
+            'user': None,
+            'is_admin': False
         }
+        
+        # Inyectar usuario si está en sesión
+        try:
+            if 'user_id' in session:
+                user = User.query.get(session['user_id'])
+                if user:
+                    data['user'] = user
+                    # Un usuario es admin si tiene un restaurante asociado
+                    data['is_admin'] = user.restaurant is not None
+        except Exception as e:
+            pass
         
         restaurant = get_current_restaurant()
         if restaurant:
@@ -122,15 +136,42 @@ def create_app():
     # Manejadores de errores personalizados
     @app.errorhandler(404)
     def page_not_found(e):
-        return render_template('errors/404.html'), 404
+        user = None
+        is_admin = False
+        try:
+            if 'user_id' in session:
+                user = User.query.get(session['user_id'])
+                if user:
+                    is_admin = user.restaurant is not None
+        except Exception:
+            pass
+        return render_template('errors/404.html', user=user, is_admin=is_admin), 404
 
     @app.errorhandler(500)
     def internal_server_error(e):
-        return render_template('errors/500.html'), 500
+        user = None
+        is_admin = False
+        try:
+            if 'user_id' in session:
+                user = User.query.get(session['user_id'])
+                if user:
+                    is_admin = user.restaurant is not None
+        except Exception:
+            pass
+        return render_template('errors/500.html', user=user, is_admin=is_admin), 500
 
     @app.errorhandler(403)
     def forbidden(e):
-        return render_template('errors/403.html'), 403
+        user = None
+        is_admin = False
+        try:
+            if 'user_id' in session:
+                user = User.query.get(session['user_id'])
+                if user:
+                    is_admin = user.restaurant is not None
+        except Exception:
+            pass
+        return render_template('errors/403.html', user=user, is_admin=is_admin), 403
 
     return app
 

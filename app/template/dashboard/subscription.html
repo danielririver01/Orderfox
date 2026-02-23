@@ -2,129 +2,100 @@
 {% block content %}
 <title>Mi Suscripción</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/subscription.css') }}">
-<div class="bg-bg-light text-text-main antialiased min-h-screen max-w-md mx-auto relative pb-20">
-
     <!-- Header -->
     <header class="flex items-center gap-4 p-4 mb-2">
-        <a href="{{ url_for('dashboard.settings') }}" class="p-2 hover:bg-white rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+        <a href="{{ url_for('dashboard.settings') }}" class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600">
+            <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <h1 class="text-xl font-bold">Mi Suscripción</h1>
+        <h1 class="text-xl font-bold dark:text-white">Mi Suscripción</h1>
     </header>
 
     <!-- Plan Actual Card -->
-    <section class="px-4 mb-6">
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-gray-800">Plan Actual</h2>
+    <section class="px-4 mb-8">
+        <div class="bg-white dark:bg-[#141414] p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan Actual</h2>
                 {% if restaurant.plan_type == 'emprendedor' %}
-                    <span class="plan-badge plan-emprendedor">Emprendedor</span>
+                    <span class="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-lg border border-blue-100 dark:border-blue-500/20 uppercase tracking-widest">Emprendedor</span>
                 {% elif restaurant.plan_type == 'crecimiento' %}
-                    <span class="plan-badge plan-crecimiento">Crecimiento</span>
+                    <span class="px-3 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-[9px] font-black rounded-lg border border-green-100 dark:border-green-500/20 uppercase tracking-widest">Crecimiento</span>
                 {% elif restaurant.plan_type == 'trial' %}
-                    <span class="plan-badge bg-indigo-100 text-indigo-700 border-indigo-200">Prueba Premium</span>
+                    <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black rounded-lg border border-indigo-100 dark:border-indigo-500/20 uppercase tracking-widest">Prueba Premium</span>
                 {% else %}
-                    <span class="plan-badge plan-elite">Élite</span>
+                    <span class="px-3 py-1 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[9px] font-black rounded-lg border border-orange-100 dark:border-orange-500/20 uppercase tracking-widest">Élite</span>
                 {% endif %}
             </div>
             
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
                 {% if restaurant.plan_type == 'emprendedor' %}
-                    Perfecto para comenzar tu negocio digital
+                    Perfecto para comenzar tu negocio digital con funciones esenciales.
                 {% elif restaurant.plan_type == 'crecimiento' %}
-                    Ideal para negocios en expansión
+                    Ideal para negocios en expansión que buscan automatizar su operación.
                 {% elif restaurant.plan_type == 'trial' %}
-                    Disfruta de todas las funcionalidades sin límites
+                    Disfruta de todas las funcionalidades sin límites durante tu periodo de prueba.
                 {% else %}
-                    Máximas funcionalidades para tu negocio
+                    Máximas funcionalidades y soporte prioritario para tu negocio.
                 {% endif %}
             </p>
 
             <!-- Características del Plan -->
-            <div class="space-y-3">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Características Incluidas</h3>
+            <div class="space-y-4">
+                <h3 class="text-[9px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4">Lo que incluye tu plan</h3>
                 
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-gray-800">
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">
                             {% if restaurant.plan_type == 'elite' or restaurant.plan_type == 'trial' %}
                                 Productos Ilimitados
                             {% else %}
                                 Hasta {{ plan_info.max_products }} Productos
                             {% endif %}
                         </p>
-                        <p class="text-xs text-gray-500">Gestiona tu catálogo</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium">Gestiona tu catálogo completo</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 {% if plan_info.has_qr %}bg-purple-50 text-purple-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                        </svg>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 {% if plan_info.has_qr %}bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-500{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold {% if plan_info.has_qr %}text-gray-800{% else %}text-gray-400{% endif %}">
+                        <p class="text-sm font-bold {% if plan_info.has_qr %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
                             Menú Digital Inteligente
                         </p>
-                        <p class="text-xs text-gray-500">
-                            {% if plan_info.has_qr %}Presencia digital profesional{% else %}No disponible en tu plan{% endif %}
+                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                            {% if plan_info.has_qr %}Presencia digital profesional para tu negocio{% else %}No disponible en tu plan actual{% endif %}
                         </p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 {% if plan_info.has_modifiers %}bg-green-50 text-green-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                        </svg>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 {% if plan_info.has_modifiers %}bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">tune</span>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold {% if plan_info.has_modifiers %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Personalización Avanzada
+                        <p class="text-sm font-bold {% if plan_info.has_modifiers %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                            Personalización (Adicionales)
                         </p>
-                        <p class="text-xs text-gray-500">
-                            {% if plan_info.has_modifiers %}Menú adaptable y dinámico{% else %}No disponible en tu plan{% endif %}
+                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                            {% if plan_info.has_modifiers %}Opciones y extras para tus productos{% else %}No disponible en tu plan actual{% endif %}
                         </p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 {% if plan_info.has_status_management %}bg-orange-50 text-orange-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 {% if plan_info.has_status_management %}bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">event_available</span>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold {% if plan_info.has_status_management %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Control Operativo
+                        <p class="text-sm font-bold {% if plan_info.has_status_management %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                            Control del Local
                         </p>
-                        <p class="text-xs text-gray-500">
-                            {% if plan_info.has_status_management %}Gestión en tiempo real{% else %}No disponible en tu plan{% endif %}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- QR por Mesas -->
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 {% if plan_info.has_table_qr %}bg-teal-50 text-teal-600{% else %}bg-gray-50 text-gray-400{% endif %} rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold {% if plan_info.has_table_qr %}text-gray-800{% else %}text-gray-400{% endif %}">
-                            Mesas digitales con QR
-                        </p>
-                        <p class="text-xs text-gray-500">
-                            {% if plan_info.has_table_qr %}Pedidos automatizados con QR{% else %}No disponible en tu plan{% endif %}
+                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                            {% if plan_info.has_status_management %}Gestiona apertura y cierre en tiempo real{% else %}No disponible en tu plan actual{% endif %}
                         </p>
                     </div>
                 </div>
@@ -132,56 +103,50 @@
         </div>
     </section>
 
-    <!-- Fechas Importantes -->
-    <section class="px-4 mb-6">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Fechas Importantes</h3>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Estado y Fechas -->
+    <section class="px-4 mb-8">
+        <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y Facturación</h3>
+        <div class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
             
-            <div class="p-4 border-b border-gray-50">
+            <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs text-gray-500 mb-1">Miembro desde</p>
-                        <p class="text-sm font-semibold text-gray-800">{{ created_date }}</p>
+                        <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">Miembro desde</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">{{ created_date }}</p>
                     </div>
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">calendar_today</span>
                     </div>
                 </div>
             </div>
 
-            <div class="p-4 border-b border-gray-50">
+            <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs text-gray-500 mb-1">Próxima Renovación</p>
-                        <p class="text-sm font-semibold text-gray-800">
+                        <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">Vencimiento</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">
                             {{ sub_status.formatted_expiration if sub_status.formatted_expiration else 'No disponible' }}
                         </p>
                     </div>
-                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
+                    <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">history</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Estado de Suscripción -->
-            <div class="p-4 {{ sub_status.badge_class }}">
+            <!-- Badge de Estado Dinámico -->
+            <div class="p-5 {{ sub_status.badge_class }} dark:bg-opacity-20">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold uppercase mb-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest mb-1.5">
                             {{ sub_status.badge_text }}
                         </p>
-                        <p class="text-sm font-semibold">
+                        <p class="text-sm font-bold">
                             {{ sub_status.message }}
                         </p>
                     </div>
-                    <div class="w-10 h-10 bg-white/30 rounded-lg flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    <div class="w-10 h-10 bg-white/30 dark:bg-black/20 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">verified</span>
                     </div>
                 </div>
             </div>
@@ -189,182 +154,98 @@
     </section>
 
     <!-- Cambiar Plan -->
-    <section class="px-4 mb-6">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Cambiar Plan</h3>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
-            <p class="text-sm text-gray-600 mb-4">Actualiza o cambia tu plan según las necesidades de tu negocio</p>
+    <section class="px-4 mb-10">
+        <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un nuevo plan</h3>
+        <div class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
             
-            <div class="space-y-3">
-                <!-- Plan Emprendedor -->
-                {% if restaurant.plan_type != 'emprendedor' %}
-                <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="block p-4 rounded-xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-all">
+            {% for plan_key, plan in [
+                ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos', 'price': '$30.000', 'color': 'blue'}),
+                ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR', 'price': '$40.000', 'color': 'green'}),
+                ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores', 'price': '$50.000', 'color': 'orange'})
+            ] %}
+                {% set is_current = restaurant.plan_type == plan_key %}
+                {% if not is_current %}
+                <a href="{{ url_for('auth.renew', plan=plan_key) }}" class="block p-5 rounded-2xl bg-{{ plan.color }}-50/50 dark:bg-{{ plan.color }}-500/5 border border-{{ plan.color }}-100/50 dark:border-{{ plan.color }}-500/10 hover:scale-[1.02] transition-all active:scale-95 group">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h4 class="font-bold text-blue-900">Plan Emprendedor</h4>
-                            <p class="text-xs text-blue-700">Hasta 25 productos</p>
+                            <h4 class="font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400 tracking-tight">{{ plan.title }}</h4>
+                            <p class="text-[10px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{ plan.desc }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-lg font-bold text-blue-900">$30.000</p>
-                            <p class="text-xs text-blue-600">/ mes</p>
+                            <p class="text-lg font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400">{{ plan.price }}</p>
+                            <p class="text-[9px] text-{{ plan.color }}-600/60 dark:text-{{ plan.color }}-400/40 font-black uppercase tracking-widest">/ mes</p>
                         </div>
                     </div>
                 </a>
                 {% else %}
-                <div class="block p-4 rounded-xl border-2 border-blue-400 bg-blue-100">
+                <div class="block p-5 rounded-2xl bg-{{ plan.color }}-500 dark:bg-{{ plan.color }}-600 border border-{{ plan.color }}-400 shadow-lg shadow-{{ plan.color }}-500/20">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h4 class="font-bold text-blue-900">Plan Emprendedor</h4>
-                            <p class="text-xs text-blue-700">Hasta 25 productos</p>
+                            <h4 class="font-black text-white tracking-tight">{{ plan.title }}</h4>
+                            <p class="text-[10px] text-white/70 font-medium">{{ plan.desc }}</p>
                         </div>
-                        <span class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
+                        <div class="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
+                            <span class="material-symbols-outlined text-white text-[14px]">check_circle</span>
+                            <span class="text-[9px] font-black text-white uppercase tracking-widest">ACTUAL</span>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
-
-                <!-- Plan Crecimiento -->
-                {% if restaurant.plan_type != 'crecimiento' %}
-                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:bg-green-100 transition-all">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-green-900">Plan Crecimiento</h4>
-                            <p class="text-xs text-green-700">Hasta 100 productos + QR</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-lg font-bold text-green-900">$40.000</p>
-                            <p class="text-xs text-green-600">/ mes</p>
-                        </div>
-                    </div>
-                </a>
-                {% else %}
-                <div class="block p-4 rounded-xl border-2 border-green-400 bg-green-100">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-green-900">Plan Crecimiento</h4>
-                            <p class="text-xs text-green-700">Hasta 100 productos + QR</p>
-                        </div>
-                        <span class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Plan Élite -->
-                {% if restaurant.plan_type != 'elite' %}
-                <a href="{{ url_for('auth.renew', plan='elite') }}" class="block p-4 rounded-xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 transition-all">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-orange-900">Plan Élite</h4>
-                            <p class="text-xs text-orange-700">Ilimitado + Modificadores</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-lg font-bold text-orange-900">$50.000</p>
-                            <p class="text-xs text-orange-600">/ mes</p>
-                        </div>
-                    </div>
-                </a>
-                {% else %}
-                <div class="block p-4 rounded-xl border-2 border-orange-400 bg-orange-100">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-orange-900">Plan Élite</h4>
-                            <p class="text-xs text-orange-700">Ilimitado + Modificadores</p>
-                        </div>
-                        <span class="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-full">Plan Actual</span>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
+            {% endfor %}
         </div>
     </section>
 
-    <!-- Acciones -->
-    <section class="px-4 mb-6">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Acciones</h3>
-        
-        <!-- Renovar Suscripción -->
-        <a href="{{ url_for('auth.renew') }}" class="block w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Renovar Plan Actual
+    <!-- Acciones Finales -->
+    <section class="px-4 mb-12">
+        <a href="{{ url_for('auth.renew') }}" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4.5 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs mb-6">
+            <span class="material-symbols-outlined">refresh</span>
+            Renovar mi Plan
         </a>
 
-        <!-- Eliminar Cuenta -->
-        <button id="openAccountDeleteBtn" onclick="openAccountDeleteModal()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+        <button onclick="openAccountDeleteModal()" class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 text-xs">
+            <span class="material-symbols-outlined text-[18px]">delete_forever</span>
             Eliminar Cuenta
         </button>
+        <p class="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-8 font-bold uppercase tracking-[0.3em]">Velzia v2.0</p>
     </section>
 
     <!-- Bottom Navigation -->
     {% include 'Common/navigation.html' %}
 
-    <!-- Modal de Confirmación de Eliminación Premium -->
-    <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <!-- Overlay: Fondo oscuro profundo -->
-        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closeAccountDeleteModal()"></div>
-
-        <!-- Contenido del Modal -->
-        <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4 text-center">
-            <div class="relative transform overflow-hidden rounded-[2.5rem] bg-white text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 flex flex-col max-h-[90vh]">
-                
-                <div class="bg-white px-8 pt-10 pb-6 flex-shrink-0">
-                    <div class="flex flex-col items-center text-center">
-                        <!-- Icono: Peligro Vibrante -->
-                        <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6">
-                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        </div>
-                        
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-tight" id="modal-title">
-                            ¿Eliminar cuenta permanentemente?
-                        </h3>
+    <!-- Modal de Confirmación -->
+    <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountDeleteModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4">
+            <div class="relative transform overflow-hidden rounded-[2.5rem] bg-white dark:bg-[#141414] text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 dark:border-[#262626] flex flex-col">
+                <div class="p-8">
+                    <div class="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[32px]">warning</span>
                     </div>
-                </div>
-
-                <!-- Body: Scrollable only if needed, but optimized to avoid it -->
-                <div class="px-8 pb-8 overflow-y-auto">
-                    <div class="bg-red-50/50 border-2 border-red-100 rounded-[1.5rem] p-6 mb-6">
-                        <p class="font-black text-red-600 text-sm mb-3 uppercase tracking-wider">Esta acción es irreversible</p>
-                        <p class="text-sm text-red-800/80 font-medium mb-3">Se eliminarán de forma definitiva:</p>
-                        <ul class="text-sm text-red-800/70 space-y-2 font-bold italic">
-                            <li class="flex items-start gap-2">
-                                <span class="text-red-400 mt-1">•</span>
-                                Productos y categorías
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-red-400 mt-1">•</span>
-                                Historial de pedidos
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-red-400 mt-1">•</span>
-                                Menú digital y códigos QR
-                            </li>
+                    <h3 class="text-xl font-black text-gray-900 dark:text-white text-center tracking-tight mb-4">¿Eliminar permanentemente?</h3>
+                    
+                    <div class="bg-red-50/50 dark:bg-red-500/5 rounded-2xl p-5 mb-6 border border-red-100 dark:border-red-500/10">
+                        <p class="text-xs text-red-800 dark:text-red-400 font-bold mb-3 uppercase tracking-wider">Perderás definitivamente:</p>
+                        <ul class="text-[11px] text-red-700/70 dark:text-red-400/70 space-y-2 font-medium">
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Todos tus productos y categorías</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Historial de pedidos y estadísticas</li>
+                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Tu menú digital y códigos QR</li>
                         </ul>
                     </div>
 
-                    <label class="flex items-start gap-4 p-5 bg-gray-50 rounded-3xl border border-gray-100 transition-all hover:bg-gray-100/50 cursor-pointer group">
-                        <div class="flex items-center h-5">
-                            <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()" class="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-600 cursor-pointer">
-                        </div>
-                        <span class="text-sm font-bold text-gray-700 leading-tight cursor-pointer select-none">
-                            Entiendo que esta acción es permanente e irreversible
-                        </span>
+                    <label class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] cursor-pointer group mb-8">
+                        <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()" class="w-5 h-5 rounded-lg border-gray-300 dark:border-gray-700 text-red-600 focus:ring-red-600 bg-white dark:bg-[#141414]">
+                        <span class="text-[11px] font-bold text-gray-700 dark:text-gray-400 leading-tight">Entiendo que esta acción es irreversible</span>
                     </label>
-                </div>
 
-                <!-- Footer: Acciones Nítidas -->
-                <div class="bg-gray-50/50 px-8 py-8 flex flex-col gap-3 border-t border-gray-100 flex-shrink-0">
-                    <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 disabled:cursor-not-allowed">
-                        Eliminar Definitivamente
-                    </button>
-                    <button onclick="closeAccountDeleteModal()" class="w-full bg-white hover:bg-gray-100 text-gray-700 font-bold py-3 rounded-2xl transition-all active:scale-95">
-                        Cancelar
-                    </button>
+                    <div class="flex flex-col gap-3">
+                        <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
+                            ELIMINAR DEFINITIVAMENTE
+                        </button>
+                        <button onclick="closeAccountDeleteModal()" class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
+                            CANCELAR
+                        </button>
+                    </div>
                 </div>
-
             </div>
         </div>
     </div>

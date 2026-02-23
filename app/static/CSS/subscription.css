@@ -1,6 +1,6 @@
 /* Estilos para la vista de suscripción */
 
-/* Plan Badges */
+/* Plan Badges (Mantenidos para compatibilidad, aunque se prefiere Tailwind) */
 .plan-badge {
   padding: 6px 14px;
   border-radius: 12px;
@@ -13,62 +13,52 @@
 .plan-emprendedor {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .plan-crecimiento {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .plan-elite {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
-
 
 /* Premium Lock & Blur System */
 .premium-lock-container {
-    position: relative;
-    overflow: hidden;
+  position: relative;
+  overflow: hidden;
 }
 
 .premium-blur {
-    filter: blur(4px);
-    opacity: 0.7;
-    pointer-events: none;
-    user-select: none;
+  filter: blur(8px);
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  transition: all 0.4s ease;
 }
 
-.lock-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(1px);
-}
-
-.lock-card {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    text-align: center;
-    max-width: 90%;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* El lock-overlay ahora se maneja principalmente con Tailwind en el template, 
+   pero mantenemos la animación aquí */
+.lock-card-animation {
+  animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes bounceIn {
-    0% { transform: scale(0.8); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Optimizaciones para móviles */
+@media (max-width: 640px) {
+  .premium-blur {
+    filter: blur(5px);
+  }
 }

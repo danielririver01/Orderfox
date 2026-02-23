@@ -2,42 +2,38 @@
     {% block content %}
     <title>Ajustes</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/settings.css') }}">
-<body class="bg-bg-light text-text-main antialiased min-h-screen max-w-md mx-auto relative pb-20">
-
     <!-- Header -->
     <header class="flex items-center gap-4 p-4 mb-2">
-        <a href="{{ url_for('dashboard.index') }}" class="p-2 hover:bg-white rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+        <a href="{{ url_for('dashboard.index') }}" class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600 dark:text-gray-400">
+            <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <h1 class="text-xl font-bold">Ajustes</h1>
+        <h1 class="text-xl font-bold dark:text-white">Ajustes</h1>
     </header>
 
-    <!-- Perfil Card (Xiaomi Style) -->
-    <section class="px-4 mb-6">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-md">
+    <!-- Perfil Card -->
+    <section class="px-4 mb-8">
+        <div class="bg-white dark:bg-[#141414] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] flex items-center gap-5">
+            <div class="w-16 h-16 bg-[#f2460d] rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-orange-500/20">
                 {{ restaurant.name[0] | upper }}
             </div>
-            <div>
-                <h2 class="text-lg font-extrabold leading-tight">{{ restaurant.name }}</h2>
-                <p class="text-sm text-gray-500 font-medium">{{ user.email }}</p>
-                <div class="mt-1 flex items-center gap-1.5">
+            <div class="flex-1">
+                <h2 class="text-lg font-black text-gray-900 dark:text-white leading-tight tracking-tight">{{ restaurant.name }}</h2>
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mt-0.5">{{ user.email }}</p>
+                <div class="mt-2 flex items-center gap-1.5">
                     {% if sub_status %}
                         {% if sub_status.status == 'active' %}
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-green-600">Cuenta Activa</span>
+                            <span class="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-green-600 dark:text-green-400">Cuenta Activa</span>
                         {% elif sub_status.status == 'grace_period' %}
                             <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Periodo de Gracia</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Periodo de Gracia</span>
                         {% else %}
                             <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-red-600">Cuenta Suspendida</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Cuenta Suspendida</span>
                         {% endif %}
                     {% else %}
-                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Estado Desconocido</span>
+                        <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-gray-500">Estado Desconocido</span>
                     {% endif %}
                 </div>
             </div>
@@ -45,132 +41,80 @@
     </section>
 
     <!-- Opciones de Configuración -->
-    <main class="space-y-6">
+    <main class="space-y-8">
         
         <!-- Grupo 1: Negocio -->
         <div class="px-4">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Tu Negocio</h3>
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Tu Negocio</h3>
+            <div class="bg-white dark:bg-[#141414] rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden">
                 
                 <!-- Editar Perfil -->
-                <a href="{{ url_for('dashboard.profile') }}" class="settings-row flex items-center justify-between p-4 border-b border-gray-50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                <a href="{{ url_for('dashboard.profile') }}" class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">store</span>
                         </div>
-                        <span class="font-semibold text-sm">Editar perfil</span>
+                        <span class="font-bold text-sm dark:text-white">Editar perfil</span>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
                 </a>
 
-                <!-- Datos del Negocio -->
-                  <!--Para una proxima actualizacion de la plataforma, se podra editar los datos del local-->
-                <!-- <a href="#" class="settings-row flex items-center justify-between p-4 border-b border-gray-50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-sm">Datos del local</span>
-                            <span class="text-[10px] text-gray-400">Teléfono, dirección, horariros</span>
-                        </div>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
- -->
                 <!-- Generar QR -->
-                <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="settings-row flex items-center justify-between p-4 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                            </svg>
+                <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
                         </div>
-                        <span class="font-semibold text-sm">Generar código QR</span>
+                        <span class="font-bold text-sm dark:text-white">Código QR de tu Menú</span>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
                 </a>
             </div>
         </div>
 
         <!-- Grupo 2: Sistema -->
         <div class="px-4">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Sistema</h3>
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Sistema y Soporte</h3>
+            <div class="bg-white dark:bg-[#141414] rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden">
                 
                 <!-- Suscripción -->
-                <a href="{{ url_for('dashboard.subscription') }}" class="settings-row flex items-center justify-between p-4 border-b border-gray-50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
+                <a href="{{ url_for('dashboard.subscription') }}" class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">loyalty</span>
                         </div>
                         
                         <div class="flex flex-col">
-                            <span class="font-semibold text-sm">Suscripción</span>
-                            <span class="text-[10px] text-green-600 font-bold uppercase">Plan {{ restaurant.plan_type|capitalize }}</span>
+                            <span class="font-bold text-sm dark:text-white">Suscripción</span>
+                            <span class="text-[9px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest">Plan {{ restaurant.plan_type|capitalize }}</span>
                         </div>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
                 </a>
-                <!-- WhatsApp Dashboard -->
-                <div class="p-4 flex items-center justify-between bg-gray-50/50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-sm">Notificaciones WhatsApp</span>
-                            <span class="text-[10px] text-gray-400">Próximamente</span>
-                        </div>
-                    </div>
-                    <div class="w-10 h-5 bg-gray-200 rounded-full relative">
-                        <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-all"></div>
-                    </div>
-                </div>
+
                 <!-- Contactanos -->
-                <a href="https://wa.me/{{ SUPPORT_PHONE }}?text=Hola,%20necesito%20ayuda%20con%20Velzia" target="_blank" class="settings-row flex items-center justify-between p-4 border-b border-gray-50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                <a href="https://wa.me/{{ SUPPORT_PHONE }}?text=Hola,%20necesito%20ayuda%20con%20Velzia" target="_blank" class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">headset_mic</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="font-semibold text-sm">Contactanos</span>
-                            <span class="text-[10px] text-gray-400">Escríbenos por WhatsApp</span>
+                            <span class="font-bold text-sm dark:text-white">Contactanos</span>
+                            <span class="text-[10px] text-gray-600 dark:text-gray-500 font-medium">Soporte por WhatsApp</span>
                         </div>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
                 </a>
             </div>
         </div>
 
         <!-- Logout -->
-        <div class="px-4 mt-8">
-            <a href="{{ url_for('auth.logout') }}" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+        <div class="px-4 mt-12 mb-8">
+            <a href="{{ url_for('auth.logout') }}" class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-black py-4.5 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 uppercase tracking-widest text-xs">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
                 Cerrar Sesión
             </a>
+            <p class="text-center text-[10px] text-gray-600 dark:text-gray-600 mt-6 font-bold uppercase tracking-[0.3em]">Velzia v2.0</p>
         </div>
 
     </main>

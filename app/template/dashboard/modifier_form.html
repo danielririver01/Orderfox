@@ -1,59 +1,71 @@
 {% extends 'Common/base.html' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<body class="bg-gray-50 min-h-screen">
-    <header class="bg-white border-b border-gray-200">
+
+    <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
         <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
-            <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="text-gray-600 hover:text-gray-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
+            <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
+                <span class="material-symbols-outlined">arrow_back</span>
             </a>
             <div>
-                <h1 class="text-xl font-bold text-gray-900">{{ title }}</h1>
-                <p class="text-xs text-gray-500">{{ product.name }}</p>
+                <h1 class="text-xl font-bold dark:text-white">{{ title }}</h1>
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">{{ product.name }}</p>
             </div>
         </div>
     </header>
 
-    <div class="max-w-md mx-auto px-4 py-6">
-        <form method="POST" class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
+    <div class="max-w-md mx-auto px-4 py-8">
+        <form method="POST" 
+              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.innerHTML='Guardando...';" 
+              class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm p-8 space-y-8 transition-colors">
             {{ form.hidden_tag() }}
             
-            <!-- Nombre -->
-            <div>
-                {{ form.name.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
-                {{ form.name(class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary", placeholder="Ej: Doble Carne") }}
-                {% if form.name.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ form.name.errors[0] }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Precio Extra -->
-            <div>
-                {{ form.extra_price.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
-                <div class="relative">
-                    <span class="absolute left-3 top-2.5 text-gray-500">$</span>
-                    {{ form.extra_price(class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary", placeholder="5000", type="number", min="0") }}
+            <div class="space-y-6">
+                <!-- Nombre -->
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL EXTRA</label>
+                    {{ form.name(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white", placeholder="Ej: Doble Carne") }}
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.name.errors[0] }}</p>
+                    {% endif %}
                 </div>
-                {% if form.extra_price.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ form.extra_price.errors[0] }}</p>
-                {% endif %}
-                <p class="text-xs text-gray-500 mt-1">Usa 0 para extras gratis (Ej: "Sin cebolla")</p>
-            </div>
 
-            <!-- Activo -->
-            <div class="flex items-center gap-2">
-                {{ form.is_active(class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary") }}
-                {{ form.is_active.label(class="text-sm text-gray-700") }}
+                <!-- Precio Extra -->
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">PRECIO ADICIONAL</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                        {{ form.extra_price(class="w-full pl-10 pr-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-black text-gray-900 dark:text-white", placeholder="5000", type="number", min="0") }}
+                    </div>
+                    {% if form.extra_price.errors %}
+                        <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.extra_price.errors[0] }}</p>
+                    {% endif %}
+                    <p class="text-[9px] text-gray-400 dark:text-gray-500 mt-2 font-medium italic ml-1">Usa 0 para extras gratis (Ej: "Sin cebolla")</p>
+                </div>
+
+                <!-- Activo -->
+                <div class="flex items-center gap-3 px-1">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        {{ form.is_active(class="sr-only peer") }}
+                        <div class="w-11 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
+                                    peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                    after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                    after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
+                                    after:h-5 after:w-5 after:transition-all 
+                                    peer-checked:bg-emerald-500 peer-checked:shadow-[0_0_15px_rgba(16,185,129,0.4)] shadow-inner"></div>
+                    </label>
+                    <span class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">EXTRA DISPONIBLE</span>
+                </div>
             </div>
 
             <!-- Botones -->
             <div class="flex gap-3 pt-4">
-                <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg text-center">
+                <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="flex-1 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all text-center">
                     Cancelar
                 </a>
-                {{ form.submit(class="flex-1 bg-primary hover:bg-[#d63a0a] text-white font-medium py-2.5 rounded-lg cursor-pointer") }}
+                <button type="submit" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                    Guardar
+                </button>
             </div>
         </form>
     </div>

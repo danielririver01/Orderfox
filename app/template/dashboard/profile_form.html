@@ -2,121 +2,82 @@
 {% block content %}
 <title>Mi Perfil</title>
 
-<!-- Estilos específicos para la página de perfil -->
-<style>
-    .profile-card {
-        background: white;
-        border-radius: 20px;
-        border: 1px solid #f1f1f1;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-    .input-group label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #9ca3af;
-        margin-bottom: 0.5rem;
-        margin-left: 0.25rem;
-    }
-    .input-readonly {
-        background-color: #f9fafb;
-        border: 1px solid #e5e7eb;
-        color: #6b7280;
-        cursor: not-allowed;
-    }
-    .blocked-notice {
-        background: #fdf2f2;
-        border: 1px solid #fde2e2;
-        color: #991b1b;
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        display: flex;
-        gap: 0.75rem;
-        align-items: flex-start;
-    }
-</style>
-
-<body class="bg-bg-light text-text-main antialiased min-h-screen max-w-md mx-auto relative pb-20">
-
     <!-- Header -->
-    <header class="flex items-center gap-4 p-4 mb-2">
-        <a href="{{ url_for('dashboard.settings') }}" class="p-2 hover:bg-white rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </a>
-        <h1 class="text-xl font-bold">Mi Perfil</h1>
+    <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
+        <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
+            <a href="{{ url_for('dashboard.settings') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white transition-all">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <h1 class="text-xl font-bold dark:text-white">Mi Perfil</h1>
+        </div>
     </header>
 
-    <main class="px-4">
-        
-        <div class="mb-4">
+    <main class="max-w-md mx-auto px-4 py-8">
+        <div class="mb-6">
             {% include 'components/flash_messages.html' %}
         </div>
 
-        <form action="{{ url_for('dashboard.profile') }}" method="POST" class="profile-card p-6 space-y-6 mb-6">
+        <form action="{{ url_for('dashboard.profile') }}" method="POST" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-8 shadow-sm transition-colors space-y-8">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-            <div class="flex flex-col items-center mb-4">
-                <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg mb-3">
+            <div class="flex flex-col items-center">
+                <div class="w-24 h-24 bg-[#f2460d] text-white rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-2xl shadow-orange-500/20 mb-6 transition-transform hover:scale-105 active:scale-95 cursor-default">
                     {{ restaurant.name[:1] | upper }}
                 </div>
-                <span class="text-xs font-bold text-primary uppercase tracking-widest">ID de Soporte: #{{ restaurant.id + 1000 }}</span>
+                <div class="px-4 py-1.5 bg-orange-50 dark:bg-orange-500/10 rounded-full border border-orange-100 dark:border-orange-500/20">
+                    <span class="text-[9px] font-black text-[#f2460d] uppercase tracking-[0.25em]">ID DE CLIENTE: #{{ restaurant.id + 1000 }}</span>
+                </div>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-6">
                 <!-- Nombre del Negocio -->
-                <div class="input-group">
-                    <label>Nombre del Negocio</label>
-                    <input type="text" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" required>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL ESTABLECIMIENTO</label>
+                    <input type="text" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
                 </div>
 
                 <!-- WhatsApp -->
-                <div class="input-group">
-                    <label>WhatsApp / Teléfono</label>
-                    <input type="text" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" required>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">WHATSAPP DE PEDIDOS</label>
+                    <input type="text" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
                 </div>
 
-                <hr class="border-gray-100 my-4">
+                <div class="py-2">
+                    <div class="h-px bg-gray-100 dark:bg-[#262626] w-full"></div>
+                </div>
 
                 <!-- Usuario -->
-                <div class="input-group">
-                    <label>Nombre de Usuario</label>
-                    <input type="text" name="username" value="{{ user.username }}" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" required>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DE USUARIO</label>
+                    <input type="text" name="username" value="{{ user.username }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
                 </div>
 
                 <!-- Email -->
-                <div class="input-group">
-                    <label>Correo Electrónico</label>
-                    <div class="relative">
-                        <input type="email" value="{{ user.email }}" class="w-full px-4 py-3 rounded-xl input-readonly pr-10" readonly>
-                        <div class="absolute right-3 top-3.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO DE ACCESO</label>
+                    <div class="relative group">
+                        <input type="email" value="{{ user.email }}" class="w-full px-5 py-4 bg-gray-100 dark:bg-[#0a0a0a]/50 text-gray-500 dark:text-gray-600 rounded-2xl border border-gray-200 dark:border-[#262626] cursor-not-allowed font-medium outline-none" readonly>
+                        <div class="absolute right-5 top-4.5 text-gray-300 dark:text-gray-700">
+                            <span class="material-symbols-outlined text-[20px]">lock_person</span>
                         </div>
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-2 ml-1 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        El cambio de correo estará disponible en futuras versiones por seguridad.
+                    <p class="text-[9px] text-gray-600 dark:text-gray-500 mt-4 ml-1 flex items-start gap-2 font-bold uppercase tracking-widest italic opacity-70">
+                        <span class="material-symbols-outlined text-[14px]">verified_user</span>
+                        Protección de identidad activa
                     </p>
                 </div>
             </div>
 
-            <div class="pt-4">
-                <button type="submit" class="w-full bg-primary hover:bg-[#d63a0a] text-white font-bold py-4 rounded-2xl shadow-md active:scale-95 transition-all">
-                    Guardar Cambios
+            <div class="pt-6">
+                <button type="submit" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4.5 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">
+                    Actualizar Perfil
                 </button>
-                <p class="text-[10px] text-center text-gray-400 mt-3 italic">
-                    Para cambios de correo, contacta al soporte técnico.
-                </p>
             </div>
         </form>
+
+        <p class="text-[9px] text-center text-gray-300 dark:text-gray-700 mt-10 font-black uppercase tracking-[0.3em] cursor-default">
+            VELZIA CLOUD SYSTEM v{{ restaurant.id + 2000 }}
+        </p>
 
     </main>
 

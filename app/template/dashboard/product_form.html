@@ -2,82 +2,90 @@
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
     
-    <header class="bg-white border-b border-gray-200">
+    <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
         <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
-            <a href="{{ url_for('products.index') }}" class="text-gray-600 hover:text-gray-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
+            <a href="{{ url_for('products.index') }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
+                <span class="material-symbols-outlined">arrow_back</span>
             </a>
-            <h1 class="text-xl font-bold text-gray-900">{{ title }}</h1>
+            <h1 class="text-xl font-bold dark:text-white">{{ title }}</h1>
         </div>
     </header>
 
-    <div class="max-w-md mx-auto px-4 py-6">
+    <div class="max-w-md mx-auto px-4 py-8">
         <form method="POST" 
-              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.value='Guardando...'; b.innerHTML='Guardando...';" 
-              class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
+              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.innerHTML='Guardando...';" 
+              class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm p-8 space-y-6 transition-colors">
             {{ form.hidden_tag() }}
             
             <!-- Nombre -->
             <div>
-                {{ form.name.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
-                {{ form.name(class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary", placeholder="Ej: Hamburguesa Clásica") }}
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL PRODUCTO</label>
+                {{ form.name(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white", placeholder="Ej: Hamburguesa Clásica") }}
                 {% if form.name.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ form.name.errors[0] }}</p>
+                    <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.name.errors[0] }}</p>
                 {% endif %}
             </div>
 
             <!-- Categoría -->
             <div>
-                {{ form.category_id.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
-                {{ form.category_id(class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base") }}
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CATEGORÍA</label>
+                {{ form.category_id(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white text-base") }}
                 {% if form.category_id.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ form.category_id.errors[0] }}</p>
+                    <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.category_id.errors[0] }}</p>
                 {% endif %}
             </div>
 
             <!-- Precio -->
             <div>
-                {{ form.price.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">PRECIO DE VENTA</label>
                 <div class="relative">
-                    <span class="absolute left-3 top-2.5 text-gray-500">$</span>
-                    {{ form.price(class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary", placeholder="15000", type="number", min="1") }}
+                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                    {{ form.price(class="w-full pl-10 pr-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-black text-gray-900 dark:text-white", placeholder="15000", type="number", min="1") }}
                 </div>
                 {% if form.price.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ form.price.errors[0] }}</p>
+                    <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.price.errors[0] }}</p>
                 {% endif %}
-                <p class="text-xs text-gray-500 mt-1">Ingresa el precio sin puntos ni comas</p>
+                <p class="text-[9px] text-gray-500 dark:text-gray-500 mt-2 font-medium italic ml-1">* Ingresa el precio sin puntos ni comas</p>
             </div>
 
             <!-- Descripción -->
             <div>
-                {{ form.description.label(class="block text-sm font-semibold text-gray-700 mb-2") }}
-                {{ form.description(class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary", rows="3", placeholder="Descripción opcional") }}
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN (OPCIONAL)</label>
+                {{ form.description(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-gray-700 dark:text-gray-300", rows="3", placeholder="Describe los ingredientes o detalles...") }}
             </div>
 
             <!-- Activo -->
-            <div class="flex items-center gap-2">
-                {{ form.is_active(class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary") }}
-                {{ form.is_active.label(class="text-sm text-gray-700") }}
+            <div class="flex items-center gap-3 px-1">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    {{ form.is_active(class="sr-only peer") }}
+                    <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
+                                peer-checked:after:translate-x-6 peer-checked:after:border-white 
+                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
+                                after:h-5 after:w-5 after:transition-all 
+                                peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner"></div>
+                </label>
+                <span class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">PRODUCTO DISPONIBLE</span>
             </div>
 
             <!-- Botones -->
             <div class="flex gap-3 pt-4">
-                <a href="{{ url_for('products.index') }}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg text-center">
+                <a href="{{ url_for('products.index') }}" class="flex-1 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all text-center">
                     Cancelar
                 </a>
-                {{ form.submit(class="flex-1 bg-primary hover:bg-[#d63a0a] text-white font-medium py-2.5 rounded-lg cursor-pointer") }}
+                <button type="submit" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                    Guardar
+                </button>
             </div>
         </form>
 
         <!-- Botón de Eliminar con Modal -->
         {% if product %}
-        <form id="deleteProductForm" method="POST" action="{{ url_for('products.delete', id=product.id) }}" class="mt-4">
+        <form id="deleteProductForm" method="POST" action="{{ url_for('products.delete', id=product.id) }}" class="mt-6">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button" 
                     onclick="openDeleteModal(document.getElementById('deleteProductForm'), 'Este producto se eliminará permanentemente del menú y no podrá ser ordenado por los clientes.', '¿Eliminar «{{ product.name }}»?')"
-                    class="w-full bg-white hover:bg-red-50 text-red-600 font-bold py-3 rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all active:scale-95">
+                    class="w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4.5 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
                 Eliminar Producto
             </button>
         </form>
