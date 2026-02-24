@@ -120,7 +120,11 @@ def create_app():
         
         restaurant = get_current_restaurant()
         if restaurant:
-            data['sub_status'] = get_subscription_status(restaurant)
+            try:
+                data['sub_status'] = get_subscription_status(restaurant)
+            except Exception as e:
+                app.logger.error(f"Error fetching subscription status in context processor: {e}")
+                data['sub_status'] = None
             
         return data
 

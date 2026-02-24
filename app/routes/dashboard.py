@@ -29,6 +29,10 @@ from app.utils.subscription import (
 import re
 import unicodedata
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 @dashboard_bp.route('/')
@@ -101,18 +105,50 @@ def productos():
 @login_required
 @active_required
 def settings():
-    restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    
-    user = User.query.get(session.get('user_id'))
-    sub_status = get_subscription_status(restaurant)
-    has_qr = check_feature_access(restaurant, 'has_qr')
-    
-    return render_template('dashboard/settings.html', 
-                         restaurant=restaurant, 
-                         user=user, 
-                         has_qr=has_qr,
-                         sub_status=sub_status)
+    try:
+        restaurant = get_current_restaurant()
+        if not restaurant: 
+            logger.warning("Settings accessed without active restaurant session")
+            abort(404)
+        
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        if not user:
+            logger.error(f"Settings accessed by invalid user_id: {user_id}")
+            session.clear()
+            flash("Sesión inválida. Por favor inicia sesión nuevamente.", "error")
+            return redirect(url_for('auth.login'))
+            
+        # Robust data fetching
+        try:
+            sub_status = get_subscription_status(restaurant)
+        except Exception as e:
+            logger.error(f"Error getting subscription status for restaurant {restaurant.id}: {e}")
+            sub_status = None
+            
+        try:
+            has_qr = check_feature_access(restaurant, 'has_qr')
+        except Exception as e:
+            logger.error(f"Error checking feature access for restaurant {restaurant.id}: {e}")
+            has_qr = False
+        
+        # Ensure SUPPORT_PHONE is available even if context processor fails
+        support_phone = current_app.config.get('SUPPORT_PHONE')
+        if not support_phone:
+            logger.warning("SUPPORT_PHONE environment variable missing in settings route")
+            support_phone = "" 
+
+        return render_template('dashboard/settings.html', 
+                             restaurant=restaurant, 
+                             user=user, 
+                             has_qr=has_qr,
+                             sub_status=sub_status,
+                             SUPPORT_PHONE=support_phone)
+                             
+    except Exception as e:
+        logger.exception("Unexpected error in settings route")
+        abort(500)
 
 @dashboard_bp.route('/menu/<slug>/qr')
 @login_required

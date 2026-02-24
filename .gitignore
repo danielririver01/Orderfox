@@ -55,3 +55,6 @@ seed_restaurant.py
 
 #paquetes de node.js
 node_modules/
+
+#archivos de test
+testing_500.py
