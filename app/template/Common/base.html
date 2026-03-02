@@ -17,7 +17,8 @@
     <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
-<body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen">
+
+<body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen pb-24">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
     <div id="status-banner" class="relative w-full z-40 bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#262626] transition-transform duration-300">
         <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -144,8 +145,7 @@
                 </button>
             </div>
         </div>
-    </div>
-    
+    </div>     
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     <!-- Sistema base scripts -->

@@ -36,7 +36,11 @@
                 </div>
 
                 <!-- Flash Messages -->
-                {% include 'components/flash_messages.html' %}
+                    {% if get_flashed_messages() %}
+                        <div class="max-w-md mx-auto px-4 pt-4">
+                    {% include 'components/flash_messages.html' %}
+                    </div>
+                    {% endif %}
 
                 <!-- Form -->
                 <form class="w-full flex flex-col gap-5" method="POST" {% if step == 'otp' %}data-ajax="true"{% endif %}>

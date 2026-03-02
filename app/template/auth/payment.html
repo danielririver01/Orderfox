@@ -19,9 +19,11 @@
         <div class="w-full bg-white dark:bg-[#141414] rounded-[2.5rem] shadow-2xl shadow-black/5 dark:shadow-black/20 border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
             <div class="px-8 pt-12 pb-10">
                 <!-- Flash Messages -->
-                <div class="mb-6">
+                {% if get_flashed_messages() %}
+                    <div class="max-w-md mx-auto px-4 pt-4">
                     {% include 'components/flash_messages.html' %}
-                </div>
+                    </div>
+                    {% endif %}
 
                 <!-- Header -->
                 <div class="flex flex-col items-center mb-10">

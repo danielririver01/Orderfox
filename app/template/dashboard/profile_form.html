@@ -14,7 +14,11 @@
 
     <main class="max-w-md mx-auto px-4 py-8">
         <div class="mb-6">
-            {% include 'components/flash_messages.html' %}
+                    {% if get_flashed_messages() %}
+                        <div class="max-w-md mx-auto px-4 pt-4">
+                    {% include 'components/flash_messages.html' %}
+                    </div>
+                    {% endif %}
         </div>
 
         <form action="{{ url_for('dashboard.profile') }}" method="POST" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-8 shadow-sm transition-colors space-y-8">

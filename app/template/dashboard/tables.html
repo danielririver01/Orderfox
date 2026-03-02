@@ -17,8 +17,12 @@
 </header>
 
 <main class="max-w-7xl mx-auto px-4 py-8">
-  {% include 'components/flash_messages.html' %}
-
+                    {% if get_flashed_messages() %}
+                        <div class="max-w-md mx-auto px-4 pt-4">
+                    {% include 'components/flash_messages.html' %}
+                    </div>
+                    {% endif %}
+                
   <div class="premium-lock-container min-h-[400px] relative">
     <div class="{% if not has_table_qr_access %}blur-sm grayscale opacity-40 pointer-events-none{% endif %} transition-all duration-500">
       {% if tables %}

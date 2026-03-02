@@ -34,7 +34,16 @@
                 </div>
 
                 <!-- Flash Messages -->
-                {% include 'components/flash_messages.html' %}
+                {% if get_flashed_messages() %}
+                    <div class="max-w-md mx-auto px-4 pt-4">
+                    {% for message in get_flashed_messages() %}
+                        <div class="bg-red-50 dark:bg-[#333333] text-red-600 dark:text-red-400 px-4 py-3 rounded-md mb-4 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[24px] mr-2">error</span>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    </div>
+                    {% endif %}
 
                 <form class="flex flex-col gap-5" method="POST" id="setupForm">
                     {{ form.hidden_tag() }}

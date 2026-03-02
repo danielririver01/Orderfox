@@ -25,11 +25,12 @@
         </div>
     </div>
 
-    <div class="max-w-md mx-auto px-4 pt-4">
-        {% include 'components/flash_messages.html' %}
+   {% if get_flashed_messages() %}
+        <div class="max-w-md mx-auto px-4 pt-4">
+     {% include 'components/flash_messages.html' %}
     </div>
-
-    <div class="max-w-md mx-auto px-4 py-6 space-y-4">
+    {% endif %}
+   <div class="max-w-md mx-auto px-4 py-6 pb-24 space-y-4">
         {% if categories %}
             {% for category in categories %}
             <div class="category-card bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] shadow-sm p-5 transition-all active:scale-[0.99]" 
