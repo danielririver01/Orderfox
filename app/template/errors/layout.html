@@ -23,12 +23,12 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 text-dark flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-50 dark:bg-[#0a0a0a] text-dark dark:text-gray-100 flex items-center justify-center min-h-screen p-4 transition-colors duration-300">
     <div class="max-w-lg w-full text-center">
         {% block content %}{% endblock %}
         
-        <div class="mt-8 pt-8 border-t border-gray-200">
-            <p class="text-xs text-gray-400">
+        <div class="mt-8 pt-8 border-t border-gray-200 dark:border-[#262626] transition-colors duration-300">
+            <p class="text-xs text-gray-400 dark:text-gray-500">
                 &copy; {{ now.year if now else 2026 }} Velzia. Todos los derechos reservados.
             </p>
         </div>

@@ -1,75 +1,119 @@
-{% extends 'Common/base.html' %}
-{% block title %}{{ title }}{% endblock %}
-{% block content %}
-    <!-- Header -->
-    <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
-        <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
-            <a href="{{ url_for('categories.index') }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
-                <span class="material-symbols-outlined">arrow_back</span>
-            </a>
-            <h1 class="text-xl font-bold dark:text-white">{{ title }}</h1>
-        </div>
-    </header>
+{% extends 'Common/base.html' %} {% block title %}{{ title }}{% endblock %} {%
+block content %}
+<!-- Header -->
+<header
+  class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors"
+>
+  <div class="max-w-md mx-auto px-4 py-4 flex items-center gap-3">
+    <a
+      href="{{ url_for('categories.index') }}"
+      class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"
+    >
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1 class="text-xl font-bold dark:text-white">{{ title }}</h1>
+  </div>
+</header>
 
-    <!-- Form -->
-    <div class="max-w-md mx-auto px-4 py-8">
-        <form method="POST" 
-              onsubmit="if(this.submitted) return false; this.submitted=true; let b=this.querySelector('input[type=submit], button[type=submit]'); b.disabled=true; b.innerHTML='Guardando...';" 
-              class="bg-white dark:bg-[#141414] rounded-[2rem] border border-gray-100 dark:border-[#262626] shadow-sm p-8 space-y-8 transition-colors">
-            {{ form.hidden_tag() }}
+<!-- Form -->
+<div class="max-w-md mx-auto px-4 py-8">
+  <form
+    method="POST"
+    onsubmit="
+      if (this.submitted) return false;
+      this.submitted = true;
+      let b = this.querySelector('input[type=submit], button[type=submit]');
+      b.disabled = true;
+      b.innerHTML = 'Guardando...';
+    "
+    class="bg-white dark:bg-[#141414] rounded-[2rem] border border-gray-100 dark:border-[#262626] shadow-sm p-8 space-y-8 transition-colors"
+  >
+    {{ form.hidden_tag() }}
 
-            <div class="space-y-6">
-                <!-- Nombre -->
-                <div>
-                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DE LA CATEGORÍA</label>
-                    {{ form.name(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white", placeholder="Ej: Hamburguesas") }}
-                    {% if form.name.errors %}
-                        <p class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">{{ form.name.errors[0] }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Descripción -->
-                <div>
-                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN (OPCIONAL)</label>
-                    {{ form.description(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-gray-700 dark:text-gray-300", rows="3", placeholder="Breve detalle de la categoría...") }}
-                </div>
-                
-                <!-- Activa -->
-                <div class="flex items-center gap-3 px-1">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        {{ form.is_active(class="sr-only peer") }}
-                        <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
-                                    peer-checked:after:translate-x-6 peer-checked:after:border-white 
-                                    after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                                    after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
-                                    after:h-5 after:w-5 after:transition-all 
-                                    peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner"></div>
-                    </label>
-                    <span class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">CATEGORÍA VISIBLE</span>
-                </div>
-            </div>
-
-            <!-- Botones -->
-            <div class="flex gap-3 pt-4">
-                <a href="{{ url_for('categories.index') }}" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all text-center">
-                    Cancelar
-                </a>
-                <button type="submit" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
-                    Guardar
-                </button>
-            </div>
-        </form>
-
-        <!-- Botón de Eliminar (solo en edición) -->
-        {% if category %}
-        <form id="deleteCategoryForm" method="POST" action="{{ url_for('categories.delete', id=category.id) }}" class="mt-6">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="button"
-                    onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), 'Se eliminarán también todos los productos asociados a esta categoría de forma permanente.', '¿Eliminar «{{ category.name }}»?')"
-                    class="w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4.5 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
-                Eliminar Categoría
-            </button>
-        </form>
+    <div class="space-y-6">
+      <!-- Nombre -->
+      <div>
+        <label
+          class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1"
+          >NOMBRE DE LA CATEGORÍA</label
+        >
+        {{ form.name(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border
+        border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2
+        focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none
+        transition-all font-bold text-gray-900 dark:text-white",
+        placeholder="Ej: Hamburguesas") }} {% if form.name.errors %}
+        <p
+          class="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1"
+        >
+          {{ form.name.errors[0] }}
+        </p>
         {% endif %}
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label
+          class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1"
+          >DESCRIPCIÓN (OPCIONAL)</label
+        >
+        {{ form.description(class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a]
+        border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2
+        focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none
+        transition-all font-medium text-gray-700 dark:text-gray-300", rows="3",
+        placeholder="Breve detalle de la categoría...") }}
+      </div>
+
+      <!-- Activa -->
+      <div class="flex items-center gap-3 px-1">
+        <label
+          class="relative inline-flex items-center cursor-pointer flex-shrink-0" style="flex-shrink: 0; min-width: 48px;"
+        >
+          {{ form.is_active(class="sr-only peer") }}
+          <div
+            class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner" style="flex-shrink: 0; min-width: 48px;"
+          ></div>
+        </label>
+        <span
+          class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest"
+          >CATEGORÍA VISIBLE</span
+        >
+      </div>
     </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 pt-4">
+      <a
+        href="{{ url_for('categories.index') }}"
+        class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all text-center"
+      >
+        Cancelar
+      </a>
+      <button
+        type="submit"
+        class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+      >
+        Guardar
+      </button>
+    </div>
+  </form>
+
+  <!-- Botón de Eliminar (solo en edición) -->
+  {% if category %}
+  <form
+    id="deleteCategoryForm"
+    method="POST"
+    action="{{ url_for('categories.delete', id=category.id) }}"
+    class="mt-6"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button
+      type="button"
+      onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), 'Se eliminarán también todos los productos asociados a esta categoría de forma permanente.', '¿Eliminar «{{ category.name }}»?')"
+      class="w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]"
+    >
+      Eliminar Categoría
+    </button>
+  </form>
+  {% endif %}
+</div>
 {% endblock %}

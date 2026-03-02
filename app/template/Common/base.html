@@ -19,8 +19,8 @@
 </head>
 <body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
-    <div id="status-banner" class="fixed top-0 w-full z-[1000] backdrop-blur-md bg-white/70 dark:bg-[#0a0a0a]/70 border-b border-slate-200 dark:border-[#262626] pointer-events-none transition-transform duration-300">
-        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between pointer-events-auto">
+    <div id="status-banner" class="relative w-full z-40 bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#262626] transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center
                     {% if sub_status.status == 'expiring_soon_neutral' %}
@@ -56,8 +56,8 @@
     {% endif %} 
     
     {% if sub_status.status == 'grace_period' %}
-    <div id="status-banner" class="fixed top-0 w-full z-[1000] bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900/50 pointer-events-none transition-transform duration-300">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between pointer-events-auto">
+    <div id="status-banner" class="relative w-full z-40 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900/50 transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
@@ -148,28 +148,7 @@
     
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
-    <script>
-        // Sistema de Banner Fijo y Padding Dinámico
-        document.addEventListener('DOMContentLoaded', function() {
-            const banner = document.getElementById('status-banner');
-            if (banner) {
-                const adjustPadding = () => {
-                    const height = banner.offsetHeight;
-                    document.body.style.paddingTop = `${height + 20}px`;
-                };
-                
-                // Ajuste inicial
-                adjustPadding();
-                
-                // Ajuste en resize
-                window.addEventListener('resize', adjustPadding);
-                
-                // Observer para cambios de contenido
-                const observer = new ResizeObserver(adjustPadding);
-                observer.observe(banner);
-            }
-        });
-    </script>
+    <!-- Sistema base scripts -->
 </body>
 
 </html>

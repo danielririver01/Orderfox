@@ -17,7 +17,8 @@
     --cart-text: #6b7280;
 }
 
-[data-theme="dark"] {
+@media (prefers-color-scheme: dark) {
+  :root {
     --banner-text-strong: #dc2626;
     --icon-bg: rgba(242, 70, 13, 0.05);
     --btn-clear-bg: #fde2e2;
@@ -31,9 +32,10 @@
     --banner-bg: #2d1b1b;
     --banner-border: #7f1d1d;
     --banner-text: #fca5a5;
-    --empty-bg: #374151;
+    --empty-bg: #141414; /* Más oscuro para que se funda bien y sea elegante */
     --cart-bg: #1f2937;
-  --cart-text: #d1d5db;
+    --cart-text: #d1d5db;
+  }
 }
 
     .category-grid {
@@ -135,9 +137,9 @@
         text-align: center;
         padding: 4rem 1rem;
         color: var(--text-muted);
-        background: var(--empty-bg);
+        background: transparent; /* Eliminamos el fondo blanco/gris que desentona */
         border-radius: 24px;
-        border: 2px dashed rgba(0,0,0,0.05);
+        border: 2px dashed rgba(128, 128, 128, 0.2); /* Borde sutil adaptable a ambos modos */
     }
 
     .empty-icon {
