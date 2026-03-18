@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Velzia</title>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+</head>
+
+<body class="bg-background-light dark:bg-[#0a0a0a] font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
+    
+    <main class="w-full max-w-[420px] mx-auto">
+        
+        <div class="w-full bg-white dark:bg-[#141414] rounded-xl shadow-lg border border-gray-100 dark:border-[#262626] overflow-hidden">
+            
+            <div class="px-8 pt-10 pb-8 flex flex-col items-center">
+                
+                <div class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
+                    <span class="material-symbols-outlined text-[#f2460d] text-[32px]">lunch_dining</span>
+                </div>
+
+                <div class="text-center mb-8">
+                    <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
+                        Acceder al Dashboard
+                    </h1>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                        Bienvenido de nuevo
+                    </p>
+                </div>
+
+                {% if get_flashed_messages() %}
+                    <div class="max-w-md mx-auto px-4 pt-4">
+                    {% include 'components/flash_messages.html' %}
+                    </div>
+                    {% endif %}
+
+                <form class="w-full flex flex-col gap-5" method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="email">
+                            Correo electrónico
+                        </label>
+                        <div class="relative">
+                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="tu@restaurante.com") }}
+                            <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#9c5e49]">
+                                <span class="material-symbols-outlined text-[20px]">mail</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="password">
+                                Contraseña
+                            </label>
+                        </div>
+                        <div class="relative">
+                            {{ form.password(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="••••••••") }}
+                            <div class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-[#9c5e49] hover:text-primary transition-colors" id="toggle-password">
+                                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="mt-2 w-full flex items-center justify-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]" type="submit">
+                        <span>Ingresar</span>
+                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <a class="text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors" href="{{ url_for('auth.forgot_password') }}">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-[#0f0f0f] border-t border-gray-100 dark:border-[#262626] py-4 px-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
+                <span>© 2026 Velzia</span>
+                <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">lock</span>
+                    Seguro
+                </span>
+            </div>
+        </div>
+
+        <!-- Subscription Shortcut -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('auth.plans') }}" class="text-xs font-bold text-[#f2460d] hover:text-primary-dark transition-colors inline-flex items-center gap-1.5 uppercase tracking-wider underline underline-offset-4 decoration-primary/30">
+                <span class="material-symbols-outlined text-[16px]">verified</span>
+                Ver planes y precios
+            </a>
+        </div>
+
+        <div class="mt-8 flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500 font-medium">
+            <a class="hover:text-primary transition-colors" href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
+            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.privacy') }}">Privacidad</a>
+            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.terms') }}">Términos</a>
+        </div>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

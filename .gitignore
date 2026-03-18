@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.flaskenv
+
+# Migrations (opcional, depende si quieres compartir migraciones)
+migrations/versions/*.pyc
+
+# Logs
+*.log
+
+# Config files (si contienen datos sensibles)
+config/default.py
+config/dev.py
+
+#Configuracion de Alembic
+migrations/
+
+#configuracion ersonal
+seed_restaurant.py
+
+#paquetes de node.js
+node_modules/
+
+#archivos de test
+testing_500.py
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Playwright
+tests/test-results/
+tests/test-results-ui/
+tests/playwright-report/
+tests/blob-report/
+tests/playwright/.cache/
+tests/playwright/.auth/

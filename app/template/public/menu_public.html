@@ -1,0 +1,78 @@
+{% extends "public_base.html" %}
+
+{% block title %}Menú - {{ restaurant.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_public.css') }}">
+{% endblock %}
+
+{% block content %}
+{% for category in categories %}
+    <section class="category-section">
+        <h2 class="category-title">{{ category.name }}</h2>
+        {% if category.description %}
+            <p class="category-description">{{ category.description }}</p>
+        {% endif %}
+        
+        <div class="product-grid">
+            {% for product in category.products if product.is_active %}
+                <article class="product-card" 
+                         data-id="{{ product.id }}" 
+                         data-name="{{ product.name }}" 
+                         data-price="{{ product.price }}">
+                    <div class="product-header">
+                        <h3 class="product-name">{{ product.name }}</h3>
+                        <span class="product-price">${{ "{:,}".format(product.price) }}</span>
+                    </div>
+                    {% if product.description %}
+                        <p class="product-description">{{ product.description }}</p>
+                    {% else %}
+                        <p class="product-description">Preparado con ingredientes frescos y el toque artesanal que nos distingue.</p>
+                    {% endif %}
+                    
+                    <span class="fresh-badge">✓ Hecho al momento</span>
+                    
+                    {% if product.modifiers %}
+                    <div class="extras-container" id="extras-{{ product.id }}">
+                        <span class="extras-title">Personaliza tu pedido:</span>
+                        {% for modifier in product.modifiers if modifier.is_active %}
+                        <label class="extra-item">
+                            <div class="extra-info">
+                                <input type="checkbox" 
+                                       class="extra-checkbox"
+                                       data-product-id="{{ product.id }}"
+                                       data-name="{{ modifier.name }}" 
+                                       data-price="{{ modifier.extra_price }}"
+                                       onchange="updateExtra({{ product.id }})">
+                                <span>{{ modifier.name }}</span>
+                            </div>
+                            <span class="extra-price">+${{ "{:,}".format(modifier.extra_price) }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="quantity-controls">
+                        <button class="btn-qty btn-minus" onclick="updateQty({{ product.id }}, -1)">-</button>
+                        <span class="qty-display" id="qty-{{ product.id }}">0</span>
+                        <button class="btn-qty btn-plus" onclick="updateQty({{ product.id }}, 1)">+</button>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+{% endfor %}
+{% endblock %}
+
+{% block footer_cart %}
+<style src="{{ url_for('static', filename='CSS/public/menu_public.css') }}"></style>
+<div class="cart-summary">
+    <div class="cart-info">
+        <div class="cart-label">Total de tu pedido</div>
+        <span class="cart-total" id="cart-total">$0</span>
+    </div>
+    <button class="btn-send" onclick="sendWhatsApp()">
+        <span></span> Enviar por WhatsApp
+    </button>
+</div>
+{% endblock %}

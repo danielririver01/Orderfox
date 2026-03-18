@@ -1,0 +1,124 @@
+    {% extends 'common/base.html' %}
+    {% block content %}
+    <title>Ajustes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/settings.css') }}">
+    <!-- Header -->
+    <header class="flex items-center gap-4 p-4 mb-2">
+        <a href="{{ url_for('dashboard.index') }}" class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600 dark:text-gray-400">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <h1 class="text-xl font-bold dark:text-white">Ajustes</h1>
+    </header>
+
+    <!-- Perfil Card -->
+    <section class="px-4 mb-8">
+        <div class="bg-white dark:bg-[#141414] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] flex items-center gap-5">
+            <div class="w-16 h-16 bg-[#f2460d] rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-orange-500/20">
+                {{ restaurant.name[0] | upper }}
+            </div>
+            <div class="flex-1">
+                <h2 class="text-lg font-black text-gray-900 dark:text-white leading-tight tracking-tight">{{ restaurant.name }}</h2>
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mt-0.5">{{ user.email }}</p>
+                <div class="mt-2 flex items-center gap-1.5">
+                    {% if sub_status %}
+                        {% if sub_status.status == 'active' %}
+                            <span class="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-green-600 dark:text-green-400">Cuenta Activa</span>
+                        {% elif sub_status.status == 'grace_period' %}
+                            <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Periodo de Gracia</span>
+                        {% else %}
+                            <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Cuenta Suspendida</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-gray-500">Estado Desconocido</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Opciones de Configuración -->
+    <main class="space-y-8">
+        
+        <!-- Grupo 1: Negocio -->
+        <div class="px-4">
+            <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Tu Negocio</h3>
+            <div class="bg-white dark:bg-[#141414] rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden">
+                
+                <!-- Editar Perfil -->
+                <a href="{{ url_for('dashboard.profile') }}" class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">store</span>
+                        </div>
+                        <span class="font-bold text-sm dark:text-white">Editar perfil</span>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+                </a>
+
+                <!-- Generar QR -->
+                <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+                        </div>
+                        <span class="font-bold text-sm dark:text-white">Código QR de tu Menú</span>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Grupo 2: Sistema -->
+        <div class="px-4">
+            <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Sistema y Soporte</h3>
+            <div class="bg-white dark:bg-[#141414] rounded-3xl shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden">
+                
+                <!-- Suscripción -->
+                <a href="{{ url_for('dashboard.subscription') }}" class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">loyalty</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="font-bold text-sm dark:text-white">Suscripción</span>
+                            <span class="text-[9px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest">Plan {{ restaurant.plan_type|capitalize }}</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+                </a>
+
+                <!-- Contactanos -->
+                <a href="https://wa.me/{{ SUPPORT_PHONE }}?text=Hola,%20necesito%20ayuda%20con%20Velzia" target="_blank" class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">headset_mic</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-sm dark:text-white">Contactanos</span>
+                            <span class="text-[10px] text-gray-600 dark:text-gray-500 font-medium">Soporte por WhatsApp</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="px-4 mt-12 mb-8">
+            <a href="{{ url_for('auth.logout') }}" class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 uppercase tracking-widest text-xs">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+                Cerrar Sesión
+            </a>
+            <p class="text-center text-[10px] text-gray-600 dark:text-gray-600 mt-6 font-bold uppercase tracking-[0.3em]">Velzia v2.0</p>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    {% include 'Common/navigation.html' %}
+{% endblock %}

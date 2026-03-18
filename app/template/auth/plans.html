@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Planes de Suscripción</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
+
+    <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+</head>
+
+<body class="bg-[#f9f7f6] dark:bg-[#0a0a0a] font-display antialiased min-h-screen py-10 px-4">
+    
+    <main class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <div class="mb-12">
+            <div class="flex justify-between items-center mb-8">
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('dashboard.index') }}" class="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors group">
+                    <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    Volver al Dashboard
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors group">
+                    <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    Volver
+                </a>
+                {% endif %}
+                
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.logout') }}" class="text-xs font-bold text-red-400 hover:text-red-500 transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">logout</span>
+                    Salir
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-[#1c110d] dark:text-white tracking-tight mb-4 leading-tight">
+                    Elige el plan que impulsará <br class="hidden md:block"> tu negocio gastronómico
+                </h1>
+                <p class="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+                    Soluciones reales, sin letras pequeñas. Escala tu restaurante a tu propio ritmo.
+                </p>
+            </div>
+        </div>
+        
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-stretch">
+            
+            {% if not (session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial') %}
+            <!-- Plan Prueba - Diseño Profesional -->
+            <div class="bg-white dark:bg-[#141414] rounded-3xl p-8 shadow-sm border border-gray-200 dark:border-[#262626] flex flex-col hover:border-gray-300 dark:hover:border-[#404040] transition-all duration-300 relative group">
+                <div class="absolute top-4 right-4 bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                    Sin compromiso
+                </div>
+                <div class="mb-6 mt-2">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Empieza hoy · 10 días incluidos</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Prueba todas las funciones sin tarjeta.</p>
+                    <div class="flex flex-col">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-5xl font-extrabold text-[#1c110d] dark:text-white">$0</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-indigo-500 mt-1 uppercase tracking-tight">Luego $50.000 / mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 mb-8 flex-1 border-t border-gray-100 dark:border-[#262626] pt-6">
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-gray-400 text-[18px]">check_circle</span>
+                            <span class="font-medium text-gray-900 dark:text-white">Mesas digitales con QR inteligente</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-indigo-500 text-[18px]">check_circle</span>
+                            <span>Control Operativo Total</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-gray-400 text-[18px]">check_circle</span>
+                            <span>Soporte Técnico Premium</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if 'user_id' in session %}
+                    <button disabled class="w-full py-3 text-center rounded-xl bg-gray-50 dark:bg-[#262626] text-gray-400 dark:text-gray-500 font-bold cursor-not-allowed text-sm">
+                        Solo nuevos usuarios
+                    </button>
+                {% else %}
+                <a href="{{ url_for('auth.register', plan='trial') }}" class="w-full py-4 text-center rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none active:scale-[0.98] text-sm">
+                    Comenzar prueba gratis
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Plan Emprendedor -->
+            <div class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#262626] flex flex-col hover:shadow-xl transition-shadow duration-300">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Emprendedor</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Ideal para empezar a vender por delivery hoy mismo.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$30.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo que obtienes:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span>Menú Digital (Link compartible)</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span>Pedidos ilimitados a WhatsApp</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">qr_code_2</span>
+                            <span>Menú Digital Inteligente</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                            <span class="font-semibold text-gray-900 dark:text-gray-100">Catálogo: 25 Productos Activos</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#262626] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition-colors border border-gray-100 dark:border-transparent">
+                    Elegir Emprendedor
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.register', plan='emprendedor') }}" class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#262626] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition-colors border border-gray-100 dark:border-transparent">
+                    Iniciar hoy
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Plan Crecimiento - EL MÁS VENDIDO -->
+            <div class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-2xl border-4 border-[#f2460d] relative flex flex-col transform md:-translate-y-4 scale-105 z-20 transition-all duration-300 group">
+                <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#f2460d] text-white text-[11px] font-bold px-8 py-2.5 rounded-full uppercase tracking-widest shadow-lg">
+                    Más Popular
+                </div>
+                
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Crecimiento</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Para locales físicos que quieren tráfico desde las mesas.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$40.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest text-[#1c110d] dark:text-white opacity-60">Lo de Emprendedor más:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-[#f2460d] text-[22px]">qr_code_scanner</span>
+                            <span class="font-bold text-[#1c110d] dark:text-white">Mesas digitales con QR inteligente</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-[#f2460d] text-[22px]">format_list_bulleted</span>
+                            <span>Catálogo: 100 Productos Activos</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-[#f2460d] text-[22px]">pending_actions</span>
+                            <span>Control Operativo en Tiempo Real</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
+                    Elegir Crecimiento
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
+                    Elegir Crecimiento
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Plan Élite -->
+            <div class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#262626] flex flex-col hover:shadow-xl transition-shadow duration-300">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Élite</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Menús complejos y alta personalización operativa.</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$50.000</span>
+                        <span class="text-gray-500 font-medium">/mes</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-10 flex-1">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo de Crecimiento más:</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">add_task</span>
+                            <span class="font-bold text-purple-600 dark:text-purple-400">Personalización Avanzada de Menú</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">all_out</span>
+                            <span>Catálogo e Inventario Ilimitado</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">qr_code_scanner</span>
+                            <span class="font-bold text-purple-600 dark:text-purple-400">Mesas digitales con QR inteligente</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
+                            <span class="material-symbols-outlined text-purple-500 text-[20px]">support_agent</span>
+                            <span>Soporte Técnico Prioritario</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="w-full py-4 text-center rounded-2xl bg-[#0a0a0a] text-white font-bold hover:bg-black transition-colors">
+                    Elegir Élite
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.register', plan='elite') }}" class="w-full py-4 text-center rounded-2xl bg-[#0a0a0a] text-white font-bold hover:bg-black transition-colors">
+                    Obtener Plan Élite
+                </a>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Footer Note -->
+        <div class="mt-20 text-center">
+            <p class="text-gray-400 text-sm italic">
+                * Precios en Pesos Colombianos (COP). Activación inmediata tras confirmación.
+            </p>
+        </div>
+
+    </main>
+
+</body>
+</html>

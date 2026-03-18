@@ -1,0 +1,6 @@
+// Copia de seguridad de cart.js antes de cambios estructurales
+let cart = JSON.parse(localStorage.getItem('velziaCart')) || {};
+
+function updateQty(id, delta) { ... }
+function clearCart() { ... }
+// ... rest of the file

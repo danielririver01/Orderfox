@@ -1,0 +1,20 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container w-full mb-6">
+            {% for category, message in messages %}
+                {% set style = {
+                    'success': {'bg': 'bg-green-50', 'border': 'border-green-200', 'text': 'text-green-600', 'icon': 'check_circle'},
+                    'error': {'bg': 'bg-red-50', 'border': 'border-red-200', 'text': 'text-red-600', 'icon': 'error'},
+                    'danger': {'bg': 'bg-red-50', 'border': 'border-red-200', 'text': 'text-red-600', 'icon': 'error'},
+                    'warning': {'bg': 'bg-orange-50', 'border': 'border-orange-200', 'text': 'text-orange-600', 'icon': 'warning'},
+                    'info': {'bg': 'bg-blue-50', 'border': 'border-blue-200', 'text': 'text-blue-600', 'icon': 'info'}
+                }.get(category, {'bg': 'bg-blue-50', 'border': 'border-blue-200', 'text': 'text-blue-600', 'icon': 'info'}) %}
+                
+                <div class="flash-message {{ style.bg }} border {{ style.border }} {{ style.text }} px-4 py-3.5 rounded-xl text-[13px] font-semibold flex items-center gap-3 mb-3 animate-fade-in-down shadow-sm">
+                    <span class="material-symbols-outlined text-[20px] shrink-0 translate-y-[0.5px]">{{ style.icon }}</span>
+                    <span class="leading-tight">{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
