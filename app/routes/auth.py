@@ -285,6 +285,11 @@ def setup_account():
             expires_at_val = trial_expires_at
             plan_type_val = 'trial'
             has_used_trial_val = False
+        else:
+            is_active_val = False
+            expires_at_val = None
+            plan_type_val = selected_plan
+            has_used_trial_val = False
 
         new_restaurant = Restaurant(
             name=restaurant_name,

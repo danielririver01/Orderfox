@@ -105,6 +105,10 @@
                     <!-- Password Checklist -->
                     <div class="bg-gray-50 dark:bg-[#0f0f0f] p-4 rounded-lg space-y-2">
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Requisitos de Seguridad</p>
+                        <div id="check-length" class="flex items-center gap-2 text-xs text-gray-400 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">circle</span>
+                            <span>Mínimo 8 caracteres</span>
+                        </div>
                         <div id="check-upper" class="flex items-center gap-2 text-xs text-gray-400 transition-colors">
                             <span class="material-symbols-outlined text-[16px]">circle</span>
                             <span>Primera letra mayúscula</span>
@@ -147,6 +151,7 @@
         const submitBtn = document.getElementById('submitBtn');
 
         const checks = {
+            length: document.getElementById('check-length'),
             upper: document.getElementById('check-upper'),
             number: document.getElementById('check-number'),
             match: document.getElementById('check-match')
@@ -156,6 +161,8 @@
             const val = password.value;
             const valConfirm = confirm.value;
 
+            // Mínimo 8 caracteres
+            const isLength = val.length >= 8;
             // Primera letra mayúscula
             const isUpper = /^[A-Z]/.test(val);
             // Incluir números
@@ -163,11 +170,12 @@
             // Coinciden
             const matches = val === valConfirm && val.length > 0;
 
+            updateUI(checks.length, isLength);
             updateUI(checks.upper, isUpper);
             updateUI(checks.number, hasNumber);
             updateUI(checks.match, matches);
 
-            submitBtn.disabled = !(isUpper && hasNumber && matches);
+            submitBtn.disabled = !(isLength && isUpper && hasNumber && matches);
         }
 
         function updateUI(el, isValid) {

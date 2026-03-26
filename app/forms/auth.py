@@ -1,6 +1,15 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+
+def password_complexity_check(form, field):
+    password = field.data
+    if not password:
+        return
+    if not password[0].isupper():
+        raise ValidationError('La contraseña debe empezar con una letra mayúscula.')
+    if not any(char.isdigit() for char in password):
+        raise ValidationError('La contraseña debe incluir al menos un número.')
 
 class LoginForm(FlaskForm):
     email = StringField('Email',  validators=[DataRequired()])
@@ -23,6 +32,13 @@ class RegisterSetupForm(FlaskForm):
     admin_name = StringField('Nombre del Administrador', validators=[DataRequired()])
     restaurant_name = StringField('Nombre del Restaurante', validators=[DataRequired()])
     phone = StringField('Teléfono', validators=[DataRequired()])
-    password = PasswordField('Contraseña', validators=[DataRequired()])
-    confirm_password = PasswordField('Confirmar Contraseña', validators=[DataRequired()])
+    password = PasswordField('Contraseña', validators=[
+        DataRequired(),
+        Length(min=8, message='La contraseña debe tener al menos 8 caracteres.'),
+        password_complexity_check
+    ])
+    confirm_password = PasswordField('Confirmar Contraseña', validators=[
+        DataRequired(),
+        EqualTo('password', message='Las contraseñas deben coincidir.')
+    ])
     submit = SubmitField('Finalizar y Pagar')

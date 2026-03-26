@@ -2,254 +2,308 @@
 {% block content %}
 <title>Mi Suscripción</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/subscription.css') }}">
-    <!-- Header -->
-    <header class="flex items-center gap-4 p-4 mb-2">
-        <a href="{{ url_for('dashboard.settings') }}" class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600">
-            <span class="material-symbols-outlined">arrow_back</span>
-        </a>
-        <h1 class="text-xl font-bold dark:text-white">Mi Suscripción</h1>
-    </header>
+<!-- Header -->
+<header class="flex items-center gap-4 p-4 mb-2">
+    <a href="{{ url_for('dashboard.settings') }}"
+        class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600">
+        <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <h1 class="text-xl font-bold dark:text-white">Mi Suscripción</h1>
+</header>
 
-    <!-- Plan Actual Card -->
-    <section class="px-4 mb-8">
-        <div class="bg-white dark:bg-[#141414] p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan Actual</h2>
-                {% if restaurant.plan_type == 'emprendedor' %}
-                    <span class="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-lg border border-blue-100 dark:border-blue-500/20 uppercase tracking-widest">Emprendedor</span>
-                {% elif restaurant.plan_type == 'crecimiento' %}
-                    <span class="px-3 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-[9px] font-black rounded-lg border border-green-100 dark:border-green-500/20 uppercase tracking-widest">Crecimiento</span>
-                {% elif restaurant.plan_type == 'trial' %}
-                    <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black rounded-lg border border-indigo-100 dark:border-indigo-500/20 uppercase tracking-widest">Prueba Premium</span>
-                {% else %}
-                    <span class="px-3 py-1 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[9px] font-black rounded-lg border border-orange-100 dark:border-orange-500/20 uppercase tracking-widest">Élite</span>
-                {% endif %}
-            </div>
-            
-            <p class="text-sm text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
-                {% if restaurant.plan_type == 'emprendedor' %}
-                    Perfecto para comenzar tu negocio digital con funciones esenciales.
-                {% elif restaurant.plan_type == 'crecimiento' %}
-                    Ideal para negocios en expansión que buscan automatizar su operación.
-                {% elif restaurant.plan_type == 'trial' %}
-                    Disfruta de todas las funcionalidades sin límites durante tu periodo de prueba.
-                {% else %}
-                    Máximas funcionalidades y soporte prioritario para tu negocio.
-                {% endif %}
-            </p>
-
-            <!-- Características del Plan -->
-            <div class="space-y-4">
-                <h3 class="text-[9px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4">Lo que incluye tu plan</h3>
-                
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">
-                            {% if restaurant.plan_type == 'elite' or restaurant.plan_type == 'trial' %}
-                                Productos Ilimitados
-                            {% else %}
-                                Hasta {{ plan_info.max_products }} Productos
-                            {% endif %}
-                        </p>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium">Gestiona tu catálogo completo</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 {% if plan_info.has_qr %}bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-500{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold {% if plan_info.has_qr %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
-                            Menú Digital Inteligente
-                        </p>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
-                            {% if plan_info.has_qr %}Presencia digital profesional para tu negocio{% else %}No disponible en tu plan actual{% endif %}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 {% if plan_info.has_modifiers %}bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-[20px]">tune</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold {% if plan_info.has_modifiers %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
-                            Personalización (Adicionales)
-                        </p>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
-                            {% if plan_info.has_modifiers %}Opciones y extras para tus productos{% else %}No disponible en tu plan actual{% endif %}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 {% if plan_info.has_status_management %}bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-[20px]">event_available</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold {% if plan_info.has_status_management %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
-                            Control del Local
-                        </p>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
-                            {% if plan_info.has_status_management %}Gestiona apertura y cierre en tiempo real{% else %}No disponible en tu plan actual{% endif %}
-                        </p>
-                    </div>
-                </div>
-            </div>
+<!-- Plan Actual Card -->
+<section class="px-4 mb-8">
+    <div
+        class="bg-white dark:bg-[#141414] p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan
+                Actual</h2>
+            {% if restaurant.plan_type == 'emprendedor' %}
+            <span
+                class="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-lg border border-blue-100 dark:border-blue-500/20 uppercase tracking-widest">Emprendedor</span>
+            {% elif restaurant.plan_type == 'crecimiento' %}
+            <span
+                class="px-3 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-[9px] font-black rounded-lg border border-green-100 dark:border-green-500/20 uppercase tracking-widest">Crecimiento</span>
+            {% elif restaurant.plan_type == 'trial' %}
+            <span
+                class="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black rounded-lg border border-indigo-100 dark:border-indigo-500/20 uppercase tracking-widest">Prueba
+                Premium</span>
+            {% else %}
+            <span
+                class="px-3 py-1 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[9px] font-black rounded-lg border border-orange-100 dark:border-orange-500/20 uppercase tracking-widest">Élite</span>
+            {% endif %}
         </div>
-    </section>
 
-    <!-- Estado y Fechas -->
-    <section class="px-4 mb-8">
-        <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y Facturación</h3>
-        <div class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
-            
-            <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">Miembro desde</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">{{ created_date }}</p>
-                    </div>
-                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[20px]">calendar_today</span>
-                    </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
+            {% if restaurant.plan_type == 'emprendedor' %}
+            Perfecto para comenzar tu negocio digital con funciones esenciales.
+            {% elif restaurant.plan_type == 'crecimiento' %}
+            Ideal para negocios en expansión que buscan automatizar su operación.
+            {% elif restaurant.plan_type == 'trial' %}
+            Disfruta de todas las funcionalidades sin límites durante tu periodo de prueba.
+            {% else %}
+            Máximas funcionalidades y soporte prioritario para tu negocio.
+            {% endif %}
+        </p>
+
+        <!-- Características del Plan -->
+        <div class="space-y-4">
+            <h3 class="text-[9px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4">Lo que
+                incluye tu plan</h3>
+
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-800 dark:text-white">
+                        {% if restaurant.plan_type == 'elite' or restaurant.plan_type == 'trial' %}
+                        Productos Ilimitados
+                        {% else %}
+                        Hasta {{ plan_info.max_products }} Productos
+                        {% endif %}
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium">Gestiona tu catálogo completo
+                    </p>
                 </div>
             </div>
 
-            <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">Vencimiento</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">
-                            {{ sub_status.formatted_expiration if sub_status.formatted_expiration else 'No disponible' }}
-                        </p>
-                    </div>
-                    <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[20px]">history</span>
-                    </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 {% if plan_info.has_qr %}bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-500{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+                </div>
+                <div>
+                    <p
+                        class="text-sm font-bold {% if plan_info.has_qr %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                        Menú Digital Inteligente
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                        {% if plan_info.has_qr %}Presencia digital profesional para tu negocio{% else %}No disponible en
+                        tu plan actual{% endif %}
+                    </p>
                 </div>
             </div>
 
-            <!-- Badge de Estado Dinámico -->
-            <div class="p-5 {{ sub_status.badge_class }} dark:bg-opacity-20">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[10px] font-black uppercase tracking-widest mb-1.5">
-                            {{ sub_status.badge_text }}
-                        </p>
-                        <p class="text-sm font-bold">
-                            {{ sub_status.message }}
-                        </p>
-                    </div>
-                    <div class="w-10 h-10 bg-white/30 dark:bg-black/20 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[20px]">verified</span>
-                    </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 {% if plan_info.has_modifiers %}bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">tune</span>
+                </div>
+                <div>
+                    <p
+                        class="text-sm font-bold {% if plan_info.has_modifiers %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                        Personalización (Adicionales)
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                        {% if plan_info.has_modifiers %}Opciones y extras para tus productos{% else %}No disponible en
+                        tu plan actual{% endif %}
+                    </p>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Cambiar Plan -->
-    <section class="px-4 mb-10">
-        <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un nuevo plan</h3>
-        <div class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
-            
-            {% for plan_key, plan in [
-                ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos', 'price': '$30.000', 'color': 'blue'}),
-                ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR', 'price': '$40.000', 'color': 'green'}),
-                ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores', 'price': '$50.000', 'color': 'orange'})
-            ] %}
-                {% set is_current = restaurant.plan_type == plan_key %}
-                {% if not is_current %}
-                <a href="{{ url_for('auth.renew', plan=plan_key) }}" class="block p-5 rounded-2xl bg-{{ plan.color }}-50/50 dark:bg-{{ plan.color }}-500/5 border border-{{ plan.color }}-100/50 dark:border-{{ plan.color }}-500/10 hover:scale-[1.02] transition-all active:scale-95 group">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400 tracking-tight">{{ plan.title }}</h4>
-                            <p class="text-[10px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{ plan.desc }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-lg font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400">{{ plan.price }}</p>
-                            <p class="text-[9px] text-{{ plan.color }}-600/60 dark:text-{{ plan.color }}-400/40 font-black uppercase tracking-widest">/ mes</p>
-                        </div>
-                    </div>
-                </a>
-                {% else %}
-                <div class="block p-5 rounded-2xl bg-{{ plan.color }}-500 dark:bg-{{ plan.color }}-600 border border-{{ plan.color }}-400 shadow-lg shadow-{{ plan.color }}-500/20">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-black text-white tracking-tight">{{ plan.title }}</h4>
-                            <p class="text-[10px] text-white/70 font-medium">{{ plan.desc }}</p>
-                        </div>
-                        <div class="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
-                            <span class="material-symbols-outlined text-white text-[14px]">check_circle</span>
-                            <span class="text-[9px] font-black text-white uppercase tracking-widest">ACTUAL</span>
-                        </div>
-                    </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 {% if plan_info.has_status_management %}bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400{% else %}bg-gray-50 dark:bg-gray-800 text-gray-400{% endif %} rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">event_available</span>
                 </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-    </section>
-
-    <!-- Acciones Finales -->
-    <section class="px-4 mb-12">
-        <a href="{{ url_for('auth.renew') }}" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs mb-6">
-            <span class="material-symbols-outlined">refresh</span>
-            Renovar mi Plan
-        </a>
-
-        <button onclick="openAccountDeleteModal()" class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 text-xs">
-            <span class="material-symbols-outlined text-[18px]">delete_forever</span>
-            Eliminar Cuenta
-        </button>
-        <p class="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-8 font-bold uppercase tracking-[0.3em]">Velzia v2.0</p>
-    </section>
-
-    <!-- Bottom Navigation -->
-    {% include 'Common/navigation.html' %}
-
-    <!-- Modal de Confirmación -->
-    <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountDeleteModal()"></div>
-        <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4">
-            <div class="relative transform overflow-hidden rounded-[2.5rem] bg-white dark:bg-[#141414] text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 dark:border-[#262626] flex flex-col">
-                <div class="p-8">
-                    <div class="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[32px]">warning</span>
-                    </div>
-                    <h3 class="text-xl font-black text-gray-900 dark:text-white text-center tracking-tight mb-4">¿Eliminar permanentemente?</h3>
-                    
-                    <div class="bg-red-50/50 dark:bg-red-500/5 rounded-2xl p-5 mb-6 border border-red-100 dark:border-red-500/10">
-                        <p class="text-xs text-red-800 dark:text-red-400 font-bold mb-3 uppercase tracking-wider">Perderás definitivamente:</p>
-                        <ul class="text-[11px] text-red-700/70 dark:text-red-400/70 space-y-2 font-medium">
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Todos tus productos y categorías</li>
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Historial de pedidos y estadísticas</li>
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Tu menú digital y códigos QR</li>
-                        </ul>
-                    </div>
-
-                    <label class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] cursor-pointer group mb-8">
-                        <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()" class="w-5 h-5 rounded-lg border-gray-300 dark:border-gray-700 text-red-600 focus:ring-red-600 bg-white dark:bg-[#141414]">
-                        <span class="text-[11px] font-bold text-gray-700 dark:text-gray-400 leading-tight">Entiendo que esta acción es irreversible</span>
-                    </label>
-
-                    <div class="flex flex-col gap-3">
-                        <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
-                            ELIMINAR DEFINITIVAMENTE
-                        </button>
-                        <button onclick="closeAccountDeleteModal()" class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
-                            CANCELAR
-                        </button>
-                    </div>
+                <div>
+                    <p
+                        class="text-sm font-bold {% if plan_info.has_status_management %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                        Control del Local
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                        {% if plan_info.has_status_management %}Gestiona apertura y cierre en tiempo real{% else %}No
+                        disponible en tu plan actual{% endif %}
+                    </p>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
+<!-- Estado y Fechas -->
+<section class="px-4 mb-8">
+    <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y
+        Facturación</h3>
+    <div
+        class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
+
+        <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
+                        Miembro desde</p>
+                    <p class="text-sm font-bold text-gray-800 dark:text-white">{{ created_date }}</p>
+                </div>
+                <div
+                    class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">calendar_today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
+                        Vencimiento</p>
+                    <p class="text-sm font-bold text-gray-800 dark:text-white">
+                        {{ sub_status.formatted_expiration if sub_status.formatted_expiration else 'No disponible' }}
+                    </p>
+                </div>
+                <div
+                    class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">history</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Badge de Estado Dinámico -->
+        <div class="p-5 {{ sub_status.badge_class }} dark:bg-opacity-20">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest mb-1.5">
+                        {{ sub_status.badge_text }}
+                    </p>
+                    <p class="text-sm font-bold">
+                        {{ sub_status.message }}
+                    </p>
+                </div>
+                <div class="w-10 h-10 bg-white/30 dark:bg-black/20 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">verified</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
+</section>
+
+<!-- Cambiar Plan -->
+<section class="px-4 mb-10">
+    <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un
+        nuevo plan</h3>
+    <div
+        class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
+
+        {% for plan_key, plan in [
+        ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos', 'price': '$30.000', 'color':
+        'blue'}),
+        ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR', 'price': '$40.000', 'color':
+        'green'}),
+        ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores', 'price': '$50.000', 'color': 'orange'})
+        ] %}
+        {% set is_current = restaurant.plan_type == plan_key %}
+        {% if not is_current %}
+        <a href="{{ url_for('auth.renew', plan=plan_key) }}"
+            class="block p-5 rounded-2xl bg-{{ plan.color }}-50/50 dark:bg-{{ plan.color }}-500/5 border border-{{ plan.color }}-100/50 dark:border-{{ plan.color }}-500/10 hover:scale-[1.02] transition-all active:scale-95 group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400 tracking-tight">{{
+                        plan.title }}</h4>
+                    <p class="text-[10px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{
+                        plan.desc }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400">{{ plan.price
+                        }}</p>
+                    <p
+                        class="text-[9px] text-{{ plan.color }}-600/60 dark:text-{{ plan.color }}-400/40 font-black uppercase tracking-widest">
+                        / mes</p>
+                </div>
+            </div>
+        </a>
+        {% else %}
+        <div
+            class="block p-5 rounded-2xl bg-{{ plan.color }}-500 dark:bg-{{ plan.color }}-600 border border-{{ plan.color }}-400 shadow-lg shadow-{{ plan.color }}-500/20">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-black text-white tracking-tight">{{ plan.title }}</h4>
+                    <p class="text-[10px] text-white/70 font-medium">{{ plan.desc }}</p>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
+                    <span class="material-symbols-outlined text-white text-[14px]">check_circle</span>
+                    <span class="text-[9px] font-black text-white uppercase tracking-widest">ACTUAL</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Acciones Finales -->
+<section class="px-4 mb-12">
+    <a href="{{ url_for('auth.renew') }}"
+        class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs mb-6">
+        <span class="material-symbols-outlined">refresh</span>
+        Renovar mi Plan
+    </a>
+
+    <button onclick="openAccountDeleteModal()"
+        class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 text-xs">
+        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+        Eliminar Cuenta
+    </button>
+    <p class="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-8 font-bold uppercase tracking-[0.3em]">Velzia
+        v1.0</p>
+</section>
+
+<!-- Bottom Navigation -->
+{% include 'Common/navigation.html' %}
+
+<!-- Modal de Confirmación -->
+<div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountDeleteModal()">
+    </div>
+    <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4">
+        <div
+            class="relative transform overflow-hidden rounded-[2.5rem] bg-white dark:bg-[#141414] text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 dark:border-[#262626] flex flex-col">
+            <div class="p-8">
+                <div
+                    class="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[32px]">warning</span>
+                </div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white text-center tracking-tight mb-4">¿Eliminar
+                    permanentemente?</h3>
+
+                <div
+                    class="bg-red-50/50 dark:bg-red-500/5 rounded-2xl p-5 mb-6 border border-red-100 dark:border-red-500/10">
+                    <p class="text-xs text-red-800 dark:text-red-400 font-bold mb-3 uppercase tracking-wider">Perderás
+                        definitivamente:</p>
+                    <ul class="text-[11px] text-red-700/70 dark:text-red-400/70 space-y-2 font-medium">
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Todos
+                            tus productos y categorías</li>
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span>
+                            Historial de pedidos y estadísticas</li>
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Tu
+                            menú digital y códigos QR</li>
+                    </ul>
+                </div>
+
+                <label
+                    class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] cursor-pointer group mb-8">
+                    <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()"
+                        class="w-5 h-5 rounded-lg border-gray-300 dark:border-gray-700 text-red-600 focus:ring-red-600 bg-white dark:bg-[#141414]">
+                    <span class="text-[11px] font-bold text-gray-700 dark:text-gray-400 leading-tight">Entiendo que esta
+                        acción es irreversible</span>
+                </label>
+
+                <div class="flex flex-col gap-3">
+                    <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
+                        ELIMINAR DEFINITIVAMENTE
+                    </button>
+                    <button onclick="closeAccountDeleteModal()"
+                        class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
+                        CANCELAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+<script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
 {% endblock %}
