@@ -59,7 +59,7 @@ def index():
     total_sales = db.session.query(func.sum(Order.total)).filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start,
-        Order.status != 'cancelled'
+        Order.status.in_(['confirmed', 'delivered'])
     ).scalar() or 0
      
     return render_template('dashboard/index.html', 
@@ -94,6 +94,42 @@ def toggle_status():
     db.session.commit()
     
     return jsonify({'success': True, 'is_open': restaurant.is_open})
+
+@dashboard_bp.route('/api/check-orders')
+@login_required
+@active_required
+def api_check_orders():
+    """
+    Endpoint ligero para el polling de nuevos pedidos (JS polling cada 15s).
+    Devuelve: { new_orders: bool, last_id: int, pending_count: int }
+    Usa dos queries simples — compatible con MariaDB/MySQL (sin FILTER clause).
+    """
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+
+    base_filter = (
+        Order.restaurant_id == restaurant.id,
+        Order.created_at >= today_start
+    )
+
+    # Query 1: ID del pedido más reciente del día
+    last_id = db.session.query(func.max(Order.id)).filter(*base_filter).scalar() or 0
+
+    # Query 2: Conteo de pedidos pendientes del día
+    pending_count = Order.query.filter(
+        *base_filter,
+        Order.status == 'pending'
+    ).count()
+
+    return jsonify({
+        'last_id': last_id,
+        'pending_count': pending_count,
+        'new_orders': pending_count > 0
+    })
 
 @dashboard_bp.route('/Productos')
 @login_required

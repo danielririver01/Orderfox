@@ -1,337 +1,443 @@
 /* Categorías con estilo premium */
-    .category-section {
-        margin-bottom: 4rem;
-    }
-    
-    .category-title {
-        font-size: 1.45rem;
-        font-weight: 900;
-        color: var(--text-dark);
-        margin-bottom: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        position: sticky;
-        top: 0;
-        background: var(--bg-light);
-        backdrop-filter: blur(12px);
-        padding: 1.25rem 0;
-        z-index: 10;
-        transition: background-color 0.4s ease, color 0.4s ease;
-    }
-    
-    .category-title::before {
-        content: '';
-        width: 5px;
-        height: 32px;
-        background: var(--primary);
-        border-radius: 3px;
-    }
-    
-    .category-description {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-bottom: 2rem;
-        line-height: 1.6;
-        padding-bottom: 0.5rem;
-        font-weight: 500;
-    }
-    
-    /* Product cards con diseño premium */
-    .product-grid {
-        display: grid;
-        gap: 1.5rem;
-    }
-    
-    .product-card {
-        background: var(--card-bg);
-        border-radius: 28px;
-        padding: 1.5rem;
-        box-shadow: var(--shadow-sm);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 1px solid var(--border-color);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .product-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 6px;
-        background: linear-gradient(90deg, var(--primary) 0%, transparent 100%);
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    
-    .product-card:hover {
-        transform: translateY(-6px);
-        box-shadow: var(--shadow-md);
-    }
-    
-    .product-card:hover::before {
-        opacity: 0.8;
-    }
-    
-    .product-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-        gap: 1.25rem;
-    }
-    
-    .product-name {
-        font-weight: 800;
-        font-size: 1.25rem;
-        color: var(--text-dark);
-        margin: 0;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-    }
-    
-    .product-price {
-        font-weight: 900;
-        font-size: 1.25rem;
-        color: var(--primary);
-        white-space: nowrap;
-        background: rgba(242, 70, 13, 0.1);
-        padding: 0.45rem 1rem;
-        border-radius: 14px;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-    }
-    
-    .product-description {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        line-height: 1.6;
-        margin-bottom: 1.25rem;
-    }
-    
-    /* Controles de cantidad mejorados */
-    .quantity-controls {
-        display: flex;
-        align-items: center;
-        gap: 1.25rem;
-        margin-top: 1.5rem;
-    }
-    
+.category-section {
+    margin-bottom: 4rem;
+}
+
+.category-title {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: var(--text-dark);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg-light);
+    backdrop-filter: blur(12px);
+    padding: 1.25rem 0;
+    z-index: 10;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.category-title::before {
+    content: '';
+    width: 5px;
+    height: 32px;
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.category-description {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    padding-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Product cards con diseño premium */
+.product-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.product-card {
+    background: var(--card-bg);
+    border-radius: 28px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.product-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+}
+
+.product-card:hover::before {
+    opacity: 0.8;
+}
+
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1.25rem;
+}
+
+.product-name {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--text-dark);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.product-price {
+    font-weight: 900;
+    font-size: 1.25rem;
+    color: var(--primary);
+    white-space: nowrap;
+    background: rgba(242, 70, 13, 0.1);
+    padding: 0.45rem 1rem;
+    border-radius: 14px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.product-description {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+}
+
+/* Controles de cantidad mejorados */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.btn-qty {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-light);
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    user-select: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+@media (prefers-color-scheme: dark) {
     .btn-qty {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-light);
-        cursor: pointer;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-dark);
-        user-select: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: var(--shadow-sm);
+        border-color: rgba(242, 70, 13, 0.2);
+        background: #1a1a1a;
+    }
+}
+
+.btn-qty:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(242, 70, 13, 0.3);
+}
+
+.btn-qty:active {
+    transform: scale(0.9);
+}
+
+.qty-display {
+    font-weight: 900;
+    font-size: 1.3rem;
+    min-width: 40px;
+    text-align: center;
+    color: var(--text-dark);
+}
+
+.fresh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 10px;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================
+       EXTRAS - Sistema de Chips Premium (reemplaza checkboxes)
+       ============================================================ */
+.extras-container {
+    margin-top: 1.25rem;
+    padding: 1rem 1.1rem;
+    background: var(--bg-light);
+    border-radius: 18px;
+    font-size: 0.9rem;
+    border: 1px dashed var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.extras-title {
+    font-weight: 800;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
+    display: block;
+    letter-spacing: 1.2px;
+}
+
+/* Grid de chips - flujo natural, se adapta al contenido */
+.extras-chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Chip individual - el <label> es el elemento clickeable completo */
+.extra-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    /* Fully pill-shaped */
+    border: 1.5px solid var(--border-color);
+    background: var(--card-bg);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    white-space: nowrap;
+}
+
+/* Ocultar el checkbox nativo completamente */
+.extra-chip input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Ícono de check — invisible por defecto */
+.chip-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    color: transparent;
+}
+
+.chip-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-dark);
+    transition: color 0.2s ease;
+}
+
+.chip-price {
+    font-weight: 800;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+/* === HOVER: sutil feedback antes de seleccionar === */
+.extra-chip:hover {
+    border-color: rgba(242, 70, 13, 0.35);
+    background: rgba(242, 70, 13, 0.03);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(242, 70, 13, 0.08);
+}
+
+.extra-chip:hover .chip-check {
+    border-color: rgba(242, 70, 13, 0.5);
+}
+
+/* === SELECCIONADO: chip activo con color primario === */
+.extra-chip:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(242, 70, 13, 0.07);
+    box-shadow: 0 4px 16px rgba(242, 70, 13, 0.18);
+    transform: translateY(-1px);
+}
+
+.extra-chip:has(input:checked) .chip-check {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.extra-chip:has(input:checked) .chip-name {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.extra-chip:has(input:checked) .chip-price {
+    color: var(--primary);
+    opacity: 0.85;
+}
+
+/* === ACTIVE: feedback táctil al presionar === */
+.extra-chip:active {
+    transform: scale(0.96) translateY(0);
+}
+
+/* Dark mode adjustments para chips */
+@media (prefers-color-scheme: dark) {
+    .extra-chip {
+        border-color: #2a2a2a;
+        background: #1a1a1a;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .btn-qty {
-            border-color: rgba(242, 70, 13, 0.2);
-            background: #1a1a1a;
-        }
-    }
-    
-    .btn-qty:hover {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: white;
-        transform: scale(1.1);
-        box-shadow: 0 8px 20px rgba(242, 70, 13, 0.3);
-    }
-    
-    .btn-qty:active {
-        transform: scale(0.9);
-    }
-    
-    .qty-display {
-        font-weight: 900;
-        font-size: 1.3rem;
-        min-width: 40px;
-        text-align: center;
-        color: var(--text-dark);
+    .extra-chip:hover {
+        background: rgba(242, 70, 13, 0.06);
+        border-color: rgba(242, 70, 13, 0.3);
     }
 
-    .fresh-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        font-size: 0.75rem;
-        padding: 0.35rem 0.8rem;
-        border-radius: 10px;
-        font-weight: 800;
-        margin-bottom: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .extra-chip:has(input:checked) {
+        background: rgba(242, 70, 13, 0.12);
+    }
+}
+
+/* ============================================================
+       CARRITO - Resumen Inferior
+       ============================================================ */
+.cart-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.cart-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.cart-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.25rem;
+}
+
+.cart-total {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--text-dark);
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.btn-send {
+    background: linear-gradient(135deg, #25d366 0%, #128C7E 100%);
+    color: white;
+    border: none;
+    padding: 1rem 1.75rem;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.45), 0 2px 8px rgba(18, 140, 126, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-send::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.btn-send:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 14px 32px rgba(37, 211, 102, 0.55), 0 4px 12px rgba(18, 140, 126, 0.35);
+}
+
+.btn-send:active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+/* Icono de WhatsApp para el botón */
+.btn-send::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath fill='white' d='M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.8 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.8 23.5 9.2 31.5 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.5 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+@keyframes btn-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 8px 24px rgba(37, 211, 102, 0.45), 0 2px 8px rgba(18, 140, 126, 0.3);
     }
 
-    /* Extras Styles */
-    .extras-container {
-        margin-top: 1.25rem;
-        padding: 1rem;
-        background: var(--bg-light);
-        border-radius: 18px;
-        display: none; /* Hidden by default */
-        font-size: 0.9rem;
-        border: 1px dashed var(--border-color);
-        transition: all 0.3s ease;
+    50% {
+        box-shadow: 0 8px 32px rgba(37, 211, 102, 0.7), 0 2px 12px rgba(18, 140, 126, 0.5);
     }
+}
 
-    .extras-title {
-        font-weight: 800;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        margin-bottom: 0.75rem;
-        display: block;
-        letter-spacing: 1px;
-    }
+#cart-summary-placeholder .btn-send,
+.cart-summary .btn-send {
+    animation: btn-glow 2.5s ease-in-out infinite;
+}
 
-    .extra-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.75rem;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 10px;
-        transition: background-color 0.2s;
-    }
-
-    .extra-item:hover {
-        background: rgba(0,0,0,0.02);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .extra-item:hover { background: rgba(255,255,255,0.02); }
-    }
-
-    .extra-item:last-child {
-        margin-bottom: 0;
-    }
-
-    .extra-item input[type="checkbox"] {
-        margin-right: 0.75rem;
-        width: 20px;
-        height: 20px;
-        accent-color: var(--primary);
-        cursor: pointer;
-    }
-
-    .extra-info {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        font-weight: 600;
-    }
-
-    .extra-price {
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    /* Estilos del Carrito (Resumen Inferior) */
+@media (max-width: 480px) {
     .cart-summary {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1.5rem;
-        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
     }
 
     .cart-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .cart-label {
-        font-size: 10px;
-        font-weight: 900;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        margin-bottom: 0.25rem;
-    }
-
-    .cart-total {
-        font-size: 1.75rem;
-        font-weight: 900;
-        color: var(--text-dark);
-        line-height: 1;
-        letter-spacing: -1px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 0.5rem;
     }
 
     .btn-send {
-        background: #25d366;
-        color: white;
-        border: none;
-        padding: 1.25rem 2rem;
-        border-radius: 20px;
-        font-weight: 900;
-        font-size: 1rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        justify-content: center;
     }
-
-    .btn-send:hover {
-        background: #20ba5a;
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 0 15px 30px rgba(37, 211, 102, 0.4);
-    }
-
-    .btn-send:active {
-        transform: translateY(0) scale(0.98);
-    }
-
-    .btn-send span::before {
-        content: 'WhatsApp';
-        display: none; /* Reservado para logo si se requiere */
-    }
-
-    /* Icono de WhatsApp para el botón */
-    .btn-send::before {
-        content: "";
-        width: 24px;
-        height: 24px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath fill='white' d='M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.4-11.3 2.5-2.4 5.5-6.5 8.3-9.8 2.8-3.3 3.7-5.6 5.5-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.8 23.5 9.2 31.5 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.5 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: center;
-    }
-
-    @media (max-width: 480px) {
-        .cart-summary {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 1rem;
-        }
-        
-        .cart-info {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 0.5rem;
-        }
-
-        .btn-send {
-            justify-content: center;
-        }
-    }
+}

@@ -14,6 +14,8 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
+
+from app import csrf  # para eximir el webhook de CSRF
 def send_otp_email(email, otp):
     try:
         msg = Message('Código de Verificación - Velzia',
@@ -397,6 +399,8 @@ def payment():
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
     price_val = float(plan_info['price'].replace('.', ''))
 
+    base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
+    
     preference_data = {
         "items": [
             {
@@ -407,12 +411,13 @@ def payment():
             }
         ],
         "back_urls": {
-            "success": "https://changelessly-polygonaceous-emmalee.ngrok-free.dev/payment-callback",
-            "failure": "https://changelessly-polygonaceous-emmalee.ngrok-free.dev/payment",
-            "pending": "https://changelessly-polygonaceous-emmalee.ngrok-free.dev/payment-callback"
+            "success": f"{base_url}/payment-callback",
+            "failure": f"{base_url}/payment",
+            "pending": f"{base_url}/payment-callback"
         },
         "auto_return": "approved",
         "external_reference": f"{restaurant_id}:{selected_plan_key}",
+        "notification_url": f"{base_url}/webhook",
         "payment_methods": {
             "excluded_payment_types": [
                 {"id": "ticket"} # Opcional: excluir efectivo para activación inmediata
@@ -449,41 +454,11 @@ def payment_callback():
     if status in ['approved', 'pending']:
         restaurant = Restaurant.query.get(restaurant_id)
         if restaurant:
-            restaurant.is_active = True
-            # Si ya tiene fecha de expiración y aún no ha expirado, extender desde esa fecha
-            # Si no tiene o ya expiró, extender desde ahora
-            from datetime import timezone
-            now_utc = datetime.now(timezone.utc)
-            if restaurant.subscription_expires_at:
-                expires_at = restaurant.subscription_expires_at
-                if expires_at.tzinfo is None:
-                    expires_at = expires_at.replace(tzinfo=timezone.utc)
-                
-                if expires_at > now_utc:
-                    # Renovación: extender desde la fecha actual de expiración
-                    restaurant.subscription_expires_at = expires_at + timedelta(days=30)
-                else:
-                    restaurant.subscription_expires_at = now_utc + timedelta(days=30)
-            else:
-                restaurant.subscription_expires_at = now_utc + timedelta(days=30)
+            if status == 'approved':
+                restaurant.is_active = True
+                db.session.commit()
             
-            db.session.commit()
             is_renewal = session.get('is_renewal', False)
-            
-            # Aplicar cambio de plan desde external_reference (más confiable que la sesión)
-            try:
-                if ':' in external_reference:
-                    _, plan_type = external_reference.split(':', 1)
-                    if plan_type in ['emprendedor', 'crecimiento', 'elite']:
-                        restaurant.plan_type = plan_type
-            except Exception as e:
-                print(f"Error parsing plan from external_reference: {e}")
-            
-            pending_plan = session.get('pending_plan_change')
-            if pending_plan and pending_plan in ['emprendedor', 'crecimiento', 'elite']:
-                restaurant.plan_type = pending_plan
-            
-            db.session.commit()
 
             sanitize_restaurant_limits(restaurant)
             
@@ -511,13 +486,14 @@ def payment_callback():
     return redirect(url_for('auth.payment'))
 
 @auth_bp.route('/webhook', methods=['POST'])
+@csrf.exempt  # MP es servicio externo — no puede enviar token CSRF
 def webhook():
     """
     Recibe notificaciones de Mercado Pago sobre actualizaciones de pago.
     """
     try:
         data = request.get_json()
-        print(f"WEBHOOK RECEIVED: {data}")
+
         
         if not data:
              # Mercado Pago sometimes sends data in form-data or other ways, but usually JSON
@@ -547,8 +523,19 @@ def webhook():
             if payment and payment.get("status") == "approved":
                 external_ref = payment.get("external_reference")
                 if external_ref:
-                    restaurant_id = int(external_ref)
-                    print(f"WEBHOOK: Activating restaurant {restaurant_id} for payment {payment_id}")
+                    # Parsear restaurant_id y plan desde external_reference (formato: "id:plan")
+                    try:
+                        if ':' in external_ref:
+                            restaurant_id_str, plan_type = external_ref.split(':', 1)
+                            restaurant_id = int(restaurant_id_str)
+                        else:
+                            restaurant_id = int(external_ref)
+                            plan_type = None
+                    except (ValueError, TypeError):
+                        return "OK", 200
+
+                    # Log minimal para producción (sin datos sensibles)
+                    current_app.logger.info(f"WEBHOOK: Activating restaurant {restaurant_id}")
                     
                     # Activar restaurante
                     restaurant = Restaurant.query.get(restaurant_id)
@@ -556,45 +543,39 @@ def webhook():
                         restaurant.is_active = True
                         
                         # Actualizar plan desde external_reference
-                        try:
-                            if ':' in external_ref:
-                                _, plan_type = external_ref.split(':', 1)
-                                if plan_type in ['emprendedor', 'crecimiento', 'elite']:
-                                    restaurant.plan_type = plan_type
-                        except Exception as e:
-                            print(f"WEBHOOK: Error parsing plan: {e}")
+                        if plan_type and plan_type in ['emprendedor', 'crecimiento', 'elite']:
+                            restaurant.plan_type = plan_type
 
-                        # Extender suscripción (Misma lógica que payment_callback)
+                        # Extender suscripción (Solo Webhook + Protección Anti-Duplicados)
                         from datetime import timezone
                         now_utc = datetime.now(timezone.utc)
-                        if restaurant.subscription_expires_at:
-                            expires_at = restaurant.subscription_expires_at
-                            if expires_at.tzinfo is None:
-                                expires_at = expires_at.replace(tzinfo=timezone.utc)
-                            
-                            if expires_at > now_utc:
-                                # Renovación: extender desde la fecha actual de expiración
+                        
+                        expires_at = restaurant.subscription_expires_at
+                        if expires_at and expires_at.tzinfo is None:
+                            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+                        # PROTECCIÓN: Si la suscripción expira en más de 35 días, ignoramos el webhook (Bounce de MP)
+                        if expires_at and (expires_at - now_utc).days > 35:
+                            pass
+                        else:
+                            if expires_at and expires_at > now_utc:
                                 restaurant.subscription_expires_at = expires_at + timedelta(days=30)
                             else:
-                                # Expirada: establecer desde ahora
                                 restaurant.subscription_expires_at = now_utc + timedelta(days=30)
-                        else:
-                            # Nueva suscripción: establecer desde ahora
-                            restaurant.subscription_expires_at = now_utc + timedelta(days=30)
 
-                        db.session.commit()
+                            db.session.commit()
 
                         # Aplicar límites del nuevo plan inmediatamente
                         try:
                             sanitize_restaurant_limits(restaurant)
                         except Exception as e:
-                            print(f"Error sanitizing limits in webhook: {e}")
+                            pass
 
                         return "OK", 200
         
         return "OK", 200  
     except Exception as e:
-        print(f"WEBHOOK ERROR: {e}")
+        # print(f"WEBHOOK ERROR: {e}")
         return "ERROR", 500
 
 @auth_bp.route('/logout')

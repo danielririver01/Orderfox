@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.models import db, Order, OrderItem, Product
 from app.utils.auth import login_required, active_required
 from datetime import datetime, date
@@ -27,7 +27,7 @@ def validate_status_transition(current_status, new_status):
         'pending': ['confirmed', 'cancelled', 'expired'],
         'confirmed': ['delivered', 'cancelled'],
         'delivered': [],  
-        'cancelled': [],
+        'cancelled': ['pending'],
         'expired': []
     }
     
@@ -51,11 +51,44 @@ def index():
     pending = [o for o in orders if o.status == 'pending']
     confirmed = [o for o in orders if o.status == 'confirmed']
     delivered = [o for o in orders if o.status == 'delivered']
+    cancelled = [o for o in orders if o.status == 'cancelled']
+
+    # ID del último pedido del día para que el JS detecte nuevos pedidos via polling
+    last_order_id = orders[0].id if orders else 0
     
     return render_template('dashboard/orders.html', 
                          pending=pending, 
                          confirmed=confirmed, 
-                         delivered=delivered)
+                         delivered=delivered,
+                         cancelled=cancelled,
+                         last_order_id=last_order_id)
+
+@orders_bp.route('/fragment')
+@login_required
+@active_required
+def fragment():
+    """Devuelve solo el HTML de la lista de pedidos para actualizaciones AJAX."""
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+
+    orders = Order.query.filter(
+        Order.restaurant_id == restaurant.id,
+        Order.created_at >= today_start
+    ).order_by(Order.created_at.desc()).all()
+
+    pending = [o for o in orders if o.status == 'pending']
+    confirmed = [o for o in orders if o.status == 'confirmed']
+    delivered = [o for o in orders if o.status == 'delivered']
+    cancelled = [o for o in orders if o.status == 'cancelled']
+
+    return render_template('dashboard/_orders_list.html',
+                           pending=pending,
+                           confirmed=confirmed,
+                           delivered=delivered,
+                           cancelled=cancelled)
+
 
 @orders_bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -128,16 +161,16 @@ def change_status(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
 
-    if not check_feature_access(restaurant, 'has_status_management'):
+    data = request.get_json()
+    new_status = data.get('status')
+
+    if not check_feature_access(restaurant, 'has_status_management') and new_status not in ['confirmed', 'cancelled', 'pending']:
          return jsonify({
             'success': False, 
-            'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite cambiar estados. Actualiza a Crecimiento.'
+            'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite marcar pedidos como Entregados. ¡Actualiza a Crecimiento para control total!'
         }), 403
 
     order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
-    
-    data = request.get_json()
-    new_status = data.get('status')
     
     if not validate_status_transition(order.status, new_status):
         return jsonify({
@@ -166,4 +199,34 @@ def cancel(id):
     order.status = 'cancelled'
     db.session.commit()
     
+    return redirect(url_for('orders.index'))
+
+@orders_bp.route('/<int:id>/receipt')
+@login_required
+@active_required
+def receipt(id):
+    """Generar vista de recibo para impresión"""
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    return render_template('dashboard/receipt.html', order=order, restaurant=restaurant)
+
+@orders_bp.route('/<int:id>/delete', methods=['POST'])
+@login_required
+@active_required
+def delete(id):
+    """Eliminar pedido permanentemente"""
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    
+    # Solo permitir eliminar si está cancelado (regla de negocio sugerida)
+    if order.status != 'cancelled':
+        flash('Solo se pueden eliminar pedidos que ya han sido cancelados', 'error')
+        return redirect(url_for('orders.detail', id=id))
+        
+    db.session.delete(order)
+    db.session.commit()
+    
+    flash('Pedido eliminado correctamente', 'success')
     return redirect(url_for('orders.index'))

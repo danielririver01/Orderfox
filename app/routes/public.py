@@ -4,8 +4,15 @@ from datetime import datetime, date, timedelta, timezone
 from app.utils.subscription import is_subscription_active, check_feature_access
 from app.utils.rate_limiter import OrderRateLimiter
 import json
+import time
 
 public_bp = Blueprint('public', __name__)
+
+@public_bp.route('/menu/api/init-checkout', methods=['POST'])
+def init_checkout():
+    """Registra el inicio del proceso de checkout en la sesión del usuario para anti-bots."""
+    session['checkout_start_time'] = time.time()
+    return jsonify({'success': True})
 
 def generate_order_number(restaurant_id):
     count = Order.query.filter_by(restaurant_id=restaurant_id).count()
@@ -71,19 +78,35 @@ def category_products(slug, category_id):
     
     # Lógica de "Solo Lectura"
     is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
-    ordering_disabled = not is_active_sub
+    ordering_disabled = not is_active_sub or not restaurant.is_open
+    closed_reason = 'sub' if not is_active_sub else ('closed' if not restaurant.is_open else None)
 
     return render_template('public/menu_category_products.html',
                          restaurant=restaurant,
                          category=category,
                          products=products,
-                         ordering_disabled=ordering_disabled)
+                         ordering_disabled=ordering_disabled,
+                         closed_reason=closed_reason)
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():
     data = request.get_json()
     if not data or 'cart' not in data:
         return jsonify({'success': False, 'error': 'Carrito vacío'}), 400
+
+    # 1. Validación de Honeypot (Anti-Bots)
+    if data.get('user_secondary_email'):
+        # Si el campo trampa está lleno, es un bot. Bloqueo silencioso o error de seguridad.
+        return jsonify({'success': False, 'error': 'Actividad sospechosa detectada.'}), 403
+
+    # 2. Validación de Tiempo (Time-to-Submit)
+    # Un humano tarda al menos 3 segundos en llenar el formulario.
+    start_time = session.get('checkout_start_time', 0)
+    if time.time() - start_time < 3.0:
+        return jsonify({
+            'success': False, 
+            'error': '¡Uy, vas muy rápido! Tómate un segundo para revisar tus datos.'
+        }), 429
 
     restaurant = Restaurant.query.filter_by(id=data.get('restaurant_id', 1)).first()
     if not restaurant:
@@ -125,13 +148,26 @@ def create_order():
 
     order_number = generate_order_number(restaurant.id)
     
+    notes = data.get('notes', 'Pedido realizado desde el menú digital.')
+    customer_name = data.get('customer_name', 'Cliente Web')
+    customer_phone = data.get('customer_phone', '')
+    city = data.get('city')
+    address = data.get('address')
+    
+    if city and address:
+        notes = f"ENTREGA EN: {city.upper()} - {address}\nTeléfono: {customer_phone}\n---\n{notes}"
+    else:
+        notes = f"Teléfono de Contacto: {customer_phone}\n---\n{notes}"
+
+    # Creamos la orden con total 0 inicialmente, lo calcularemos en el servidor
     order = Order(
         restaurant_id=restaurant.id,
         order_number=order_number,
         status='pending',
-        total=data.get('total', 0),
-        customer_name='Cliente Web',
-        notes=f'Pedido realizado desde el menú digital.',
+        total=0, 
+        customer_name=customer_name,
+        customer_phone=customer_phone,
+        notes=notes,
         table_id=session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
     )
     db.session.add(order)
@@ -140,26 +176,63 @@ def create_order():
     OrderRateLimiter.log_order_attempt(restaurant.id, order, client_ip)
 
     cart = data['cart']
+    order_total = 0
+    validated_items = []
+
     for product_id, item in cart.items():
-        extras_total = sum(e['price'] for e in item.get('extras', []))
-        subtotal = (item['price'] + extras_total) * item['quantity']
+        # 1. Validar Producto en DB
+        product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id, is_active=True).first()
+        if not product:
+            continue # O manejar error si el producto ya no existe
+
+        item_price = product.price
+        extras_price = 0
+        modifiers_data = []
+
+        # 2. Validar Modificadores en DB
+        for extra in item.get('extras', []):
+            modifier_id = extra.get('id')
+            if not modifier_id: continue
+            
+            modifier = Modifier.query.filter_by(id=modifier_id, product_id=product.id, is_active=True).first()
+            if modifier:
+                extras_price += modifier.extra_price
+                modifiers_data.append({
+                    'name': modifier.name,
+                    'price': modifier.extra_price
+                })
+
+        subtotal = (item_price + extras_price) * item['quantity']
+        order_total += subtotal
 
         order_item = OrderItem(
             order_id=order.id,
             restaurant_id=restaurant.id,
-            product_name=item['name'],
-            product_price=item['price'],
+            product_name=product.name,
+            product_price=item_price,
             quantity=item['quantity'],
-            modifiers_snapshot=json.dumps(item.get('extras', [])),
+            modifiers_snapshot=json.dumps(modifiers_data),
             subtotal=subtotal
         )
         db.session.add(order_item)
+        
+        validated_items.append({
+            'name': product.name,
+            'qty': item['quantity'],
+            'extras': [m['name'] for m in modifiers_data]
+        })
 
+    # 3. Actualizar total final validado
+    order.total = order_total
     db.session.commit()
     
     return jsonify({
         'success': True, 
         'order_number': order_number,
         'order_id': order.id,
+        'total': order_total,
+        'items': validated_items,
+        'customer_name': customer_name,
+        'address_full': f"{address}, {city}" if address and city else None,
         'table_name': order.table.name if order.table else None
     })

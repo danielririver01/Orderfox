@@ -20,10 +20,14 @@
                 </svg>
                 <span class="text-[10px] font-medium mt-0.5">Productos</span>
             </a>
-            <a href="{{ url_for('orders.index') }}" class="flex flex-col items-center justify-center w-full h-full text-text-muted dark:text-gray-400 hover:text-primary transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
+            <a href="{{ url_for('orders.index') }}" id="nav-orders-link" class="flex flex-col items-center justify-center w-full h-full text-text-muted dark:text-gray-400 hover:text-primary transition-colors relative">
+                <div class="relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  <!-- Badge de nuevos pedidos — inyectado dinámicamente por orders-realtime.js -->
+                  <span id="orders-nav-badge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.8)] animate-pulse"></span>
+                </div>
                 <span class="text-[10px] font-medium mt-0.5">Pedidos</span>
             </a>
             <a href="{{ url_for('categories.index') }}" class="flex flex-col items-center justify-center w-full h-full text-text-muted dark:text-gray-400 hover:text-primary transition-colors">

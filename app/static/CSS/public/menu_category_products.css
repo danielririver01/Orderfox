@@ -123,7 +123,7 @@
   display: none;
   text-align: center;
   padding: 3rem 2rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
   box-shadow: var(--shadow-sm);
   margin-top: 1rem;
@@ -259,11 +259,73 @@
 
 .extras-container {
   margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fafafa;
-  border-radius: 12px;
-  display: none;
+  padding: 0;
+  background: transparent;
   font-size: 0.85rem;
+}
+
+
+.extras-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.extra-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  background: var(--card-bg, white);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.extra-item:hover {
+  border-color: rgba(242, 70, 13, 0.4);
+  background: rgba(242, 70, 13, 0.02);
+}
+
+.extra-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.extra-item:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(242, 70, 13, 0.05);
+  box-shadow: 0 4px 12px rgba(242, 70, 13, 0.1);
+}
+
+.extra-checkbox.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.extra-name {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.extra-price {
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 0.9rem;
+  background: rgba(242, 70, 13, 0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
 }
 
 .quantity-controls {
@@ -294,6 +356,7 @@
 .btn-qty:hover {
   border-color: var(--primary);
   color: var(--primary);
+  background-color: var(--card-bg);
   transform: scale(1.05);
 }
 
@@ -364,5 +427,8 @@
   .btn-qty:hover {
     border-color: var(--primary);
     color: var(--primary);
+    background-color: var(--card-bg);
   }
 }
+
+/* Nota: Los estilos globales de botones y carrito se movieron a public_base.css */

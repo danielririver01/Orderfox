@@ -270,6 +270,7 @@ def sanitize_restaurant_limits(restaurant):
         return
 
     limits = get_plan_limits(restaurant.plan_type)
+    max_products = limits.get('max_products', float('inf'))
     
     if max_products != float('inf'):
         active_products = Product.query.filter_by(

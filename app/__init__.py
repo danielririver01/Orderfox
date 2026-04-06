@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 mail = Mail()
 scheduler = APScheduler()
@@ -29,9 +30,15 @@ def create_app():
     csrf.init_app(app)
     limiter.init_app(app)
     
+    # Soporte para Proxys (Nginx, Gunicorn, Heroku, etc.)
+    # Esto asegura que request.remote_addr sea la IP real del cliente.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
+    
     # Servir archivos estáticos en producción con WhiteNoise
-    static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
+    # En desarrollo (debug=True), Flask lo hace automáticamente.
+    if not app.debug:
+        static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+        app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
 
     scheduler.init_app(app)
     scheduler.start()
@@ -48,7 +55,6 @@ def create_app():
     from .routes.menu import menu_bp
     from .routes.tables import tables_bp
 
-    
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -57,6 +63,18 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(menu_bp)
     app.register_blueprint(tables_bp)
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        return render_template('errors/500.html'), 500
+    
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
 
     migrate.init_app(app, db)
     

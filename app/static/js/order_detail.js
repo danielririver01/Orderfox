@@ -4,34 +4,62 @@ function contactWhatsApp(phone, orderNumber, restaurantName) {
     if (!cleanPhone.startsWith('57')) {
         cleanPhone = '57' + cleanPhone;
     }
-    
+
     let message = `*MENÚ*\n`;
     message += `------------------------------\n`;
-    message += `¡Hola! Tu pedido ya está *LISTO*.\n\n`; 
-    message += `Orden: \`\`\`${orderNumber}\`\`\`\n`; 
+    message += `¡Hola! Tu pedido ya está *LISTO*.\n\n`;
+    message += `Orden: \`\`\`${orderNumber}\`\`\`\n`;
     message += `------------------------------\n`;
-    message += `_Gracias por tu preferencia_`; 
+    message += `_Gracias por tu preferencia_`;
 
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
 }
 
-//Para changeStatus, necesitas pasar el orderId como parámetro
+// Función para cambiar el estado de un pedido con redirección
 async function changeStatus(orderId, newStatus, redirectUrl) {
     try {
         const response = await fetch(`/orders/${orderId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ status: newStatus })
         });
-        
+
+        const data = await response.json();
+
         if (!response.ok) {
-            const data = await response.json();
             throw new Error(data.error || 'Error al cambiar estado');
         }
-        
-        location.href = redirectUrl;
+
+        if (redirectUrl) {
+            location.href = redirectUrl;
+        } else {
+            location.reload();
+        }
     } catch (error) {
         alert(error.message);
     }
 }
+// Modal de cancelación
+function showCancelModal() {
+    const modal = document.getElementById('cancelModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideCancelModal() {
+    const modal = document.getElementById('cancelModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function confirmCancelOrder() {
+    document.getElementById('cancelOrderForm').submit();
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideCancelModal();
+});

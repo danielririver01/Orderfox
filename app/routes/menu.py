@@ -16,8 +16,8 @@ def search_products(slug):
 
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
         
-        if not is_subscription_active(restaurant):
-            return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
+        if not restaurant.is_active:
+            return jsonify({'success': False, 'error': 'Restaurante inactivo', 'products': []}), 403
         
         categories = Category.query.filter_by(
             restaurant_id=restaurant.id,
@@ -59,8 +59,8 @@ def search_by_query(slug):
     try:
         restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
         
-        if not is_subscription_active(restaurant):
-            return jsonify({'success': False, 'error': 'Suscripción inactiva', 'products': []}), 403
+        if not restaurant.is_active:
+            return jsonify({'success': False, 'error': 'Restaurante inactivo', 'products': []}), 403
         
         query = request.args.get('q', '').lower().strip()
         

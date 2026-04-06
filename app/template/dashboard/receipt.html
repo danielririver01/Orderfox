@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            margin: 0;
+        }
+
+        body {
+            /* Fuente limpia y moderna tipo Google */
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            width: 80mm;
+            margin: 0;
+            padding: 10mm 5mm;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: 700;
+        }
+
+        .uppercase {
+            text-transform: uppercase;
+        }
+
+        /* Header */
+        .brand {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .info-header {
+            font-size: 11px;
+            margin-bottom: 15px;
+        }
+
+        /* Order Info */
+        .order-meta {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 8px 0;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Tabla de Items */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        th {
+            border-bottom: 1px solid #000;
+            text-align: left;
+            font-size: 10px;
+            padding-bottom: 4px;
+        }
+
+        td {
+            padding: 6px 0;
+            vertical-align: top;
+        }
+
+        .col-qty {
+            width: 10%;
+        }
+
+        .col-desc {
+            width: 60%;
+        }
+
+        .col-price {
+            width: 30%;
+            text-align: right;
+        }
+
+        .item-name {
+            font-weight: 600;
+            display: block;
+        }
+
+        .item-extras {
+            font-size: 10px;
+            color: #333;
+            margin-top: 2px;
+        }
+
+        /* Totales */
+        .total-container {
+            border-top: 1px solid #000;
+            padding-top: 8px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 10px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header text-center">
+        <div class="brand">{{ restaurant.name }}</div>
+        <div class="info-header">
+            ID de Orden: #{{ order.order_number }}<br>
+            {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+    </div>
+
+    <div class="order-meta">
+        <span><span class="bold">CLIENTE:</span> {{ order.customer_name or 'Mostrador' }}</span>
+        {% if order.table %}
+        <span><span class="bold">MESA:</span> {{ order.table.name }}</span>
+        {% endif %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-qty">CANT</th>
+                <th class="col-desc">DESCRIPCIÓN</th>
+                <th class="col-price">TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+            <tr>
+                <td class="col-qty">{{ item.quantity }}</td>
+                <td class="col-desc">
+                    <span class="item-name">{{ item.product_name }}</span>
+                    {% if item.modifiers_snapshot %}
+                    {% set extras = item.modifiers_snapshot | map(attribute='name') | list %}
+                    <div class="item-extras">+ {{ extras | join(', ') }}</div>
+                    {% endif %}
+                </td>
+                <td class="col-price">${{ "{:,}".format(item.subtotal) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-container">
+        <div class="total-row bold">
+            <span>TOTAL A PAGAR</span>
+            <span>${{ "{:,}".format(order.total) }}</span>
+        </div>
+    </div>
+
+    {% if order.notes %}
+    <div style="margin-top: 15px; font-size: 11px;">
+        <span class="bold italic">NOTAS:</span> {{ order.notes.split(' | IP:')[0].split('IP:')[0] }}
+    </div>
+    {% endif %}
+
+    <div class="footer text-center">
+        Gracias por su preferencia<br>
+        <span class="bold">VELZIA</span>
+    </div>
+
+    <script>
+        window.onload = () => {
+            window.print();
+            setTimeout(() => window.close(), 1000);
+        };
+    </script>
+</body>
+
+</html>

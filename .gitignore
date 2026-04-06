@@ -76,3 +76,8 @@ tests/playwright-report/
 tests/blob-report/
 tests/playwright/.cache/
 tests/playwright/.auth/
+
+#Archivos de prueba
+activate_test_restaurant.py
+bot_test_limiter.py
+
