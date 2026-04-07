@@ -1,4 +1,4 @@
-{% extends 'Common/base.html' %}
+{% extends 'common/base.html' %}
 {% block title %}Pedidos{% endblock %}
 {% block content %}
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
@@ -63,5 +63,5 @@
 <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
 <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
 <!-- Bottom Navigation -->
-{% include 'Common/navigation.html' %}
+{% include 'common/navigation.html' %}
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends "Common/base.html" %}
+{% extends "common/base.html" %}
 
 {% block content %}
 <div class="bg-gray-50 dark:bg-[#0a0a0a] min-h-screen pb-20">
@@ -220,7 +220,7 @@
     <span id="toast-message"></span>
 </div>
 
-{% include 'Common/navigation.html' %}
+{% include 'common/navigation.html' %}
 
 <script src="{{ url_for('static', filename='js/order_detail.js') }}"></script>
 {% endblock %}
