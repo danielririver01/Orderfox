@@ -1,12 +1,18 @@
 from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
-from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table
+from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table, Modifier
+from app import csrf
 from datetime import datetime, date, timedelta, timezone
 from app.utils.subscription import is_subscription_active, check_feature_access
 from app.utils.rate_limiter import OrderRateLimiter
 import json
 import time
+import os
+import mercadopago
 
 public_bp = Blueprint('public', __name__)
+
+# Inicializar Mercado Pago SDK
+sdk = mercadopago.SDK(os.getenv('MP_ACCESS_TOKEN'))
 
 @public_bp.route('/menu/api/init-checkout', methods=['POST'])
 def init_checkout():
@@ -236,13 +242,51 @@ def create_order():
     order.total = order_total
     db.session.commit()
     
+    # 4. Generar Preferencia de Mercado Pago (PRODUCCIÓN)
+    base_url = os.getenv('BASE_URL', '').rstrip('/')
+    preference_data = {
+        "items": [
+            {
+                "title": f"Pedido {order_number} - {restaurant.name}",
+                "quantity": 1,
+                "unit_price": float(order_total),
+                "currency_id": "COP"
+            }
+        ],
+        "back_urls": {
+            "success": url_for('public.payment_success', _external=True),
+            "failure": url_for('public.payment_failure', _external=True),
+            "pending": url_for('public.payment_success', _external=True)
+        },
+        "auto_return": "approved",
+        "external_reference": str(order.id),
+        "notification_url": f"{base_url}/webhook/mercadopago" if base_url else None
+    }
+    
+    preference_response = sdk.preference().create(preference_data)
+    preference = preference_response["response"]
+    
     return jsonify({
-        'success': True, 
-        'order_number': order_number,
-        'order_id': order.id,
-        'total': order_total,
-        'items': validated_items,
-        'customer_name': customer_name,
-        'address_full': f"{address}, {city}" if address and city else None,
-        'table_name': order.table.name if order.table else None
+        "success": True, 
+        "order_number": order_number,
+        "order_id": order.id,
+        "total": order_total,
+        "init_point": preference["init_point"], # Link real de pago
+        "items": validated_items,
+        "customer_name": customer_name
     })
+
+@public_bp.route('/payment/success')
+def payment_success():
+    return render_template('public/payment_success.html')
+
+@public_bp.route('/payment/failure')
+def payment_failure():
+    return render_template('public/payment_failure.html')
+
+@public_bp.route('/webhook/mercadopago', methods=['POST'])
+@csrf.exempt # El Webhook es una petición externa
+def mercadopago_webhook():
+    """Recibe notificaciones de pago de Mercado Pago."""
+    # Por ahora simplemente respondemos OK para confirmar recepción
+    return jsonify({"success": True}), 200
