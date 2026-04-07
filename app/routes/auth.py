@@ -379,10 +379,18 @@ def renew():
 def payment():
     restaurant_id = session.get('pending_restaurant_id')
     
+    # Si no hay un ID pendiente pero el usuario está logueado, usar su restaurante actual (Upgrade)
+    if not restaurant_id and 'user_id' in session:
+        from app.utils.restaurant import get_current_restaurant
+        current_res = get_current_restaurant()
+        if current_res:
+            restaurant_id = current_res.id
+            session['pending_restaurant_id'] = restaurant_id
+    
     if not restaurant_id:
         return redirect(url_for('auth.register'))
-    restaurant = Restaurant.query.get(restaurant_id)
     
+    restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         return redirect(url_for('auth.register'))
 

@@ -32,7 +32,7 @@
                     </div>
                     <div class="text-center">
                         <h1 class="text-gray-900 dark:text-white text-3xl font-black tracking-tight mb-3">
-                            Activa tu Plan
+                            {% if 'user_id' in session %}Mejora tu Plan{% else %}Activa tu Plan{% endif %}
                         </h1>
                         <p class="text-gray-500 dark:text-gray-400 text-sm font-medium px-4 leading-relaxed">
                             Impulsa tu negocio <strong>{{ restaurant.name }}</strong> con todas nuestras herramientas premium.
@@ -85,9 +85,12 @@
 
                     <div class="flex flex-col items-center gap-3">
                         {% if 'user_id' in session %}
-                        <a href="{{ url_for('auth.plans') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest flex items-center gap-2">
+                        <a href="{{ url_for('auth.plans') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-primary transition-colors uppercase tracking-widest flex items-center gap-2">
                             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
                             Cambiar plan seleccionado
+                        </a>
+                        <a href="{{ url_for('dashboard.index') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest mt-2">
+                            Volver al Dashboard
                         </a>
                         {% else %}
                         <a href="{{ url_for('auth.logout') }}" class="text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest">
