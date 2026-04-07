@@ -70,12 +70,15 @@
                     <h3 class="font-extrabold text-xl text-text-main dark:text-white tracking-tight">Tu Menú Digital</h3>
                     <p class="text-[11px] text-gray-500 dark:text-gray-500 font-medium uppercase tracking-widest mt-0.5">Visibilidad en Tiempo Real</p>
                 </div>
-                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <div id="menu-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300
+                    {{ 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' if is_open else 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20' }}">
+                    <span id="menu-status-dot" class="relative flex h-2 w-2">
+                        <span id="menu-status-ping" class="{{ 'animate-ping' if is_open else '' }} absolute inline-flex h-full w-full rounded-full {{ 'bg-emerald-400' if is_open else 'bg-rose-400' }} opacity-75"></span>
+                        <span id="menu-status-dot-inner" class="relative inline-flex rounded-full h-2 w-2 {{ 'bg-emerald-500' if is_open else 'bg-rose-500' }}"></span>
                     </span>
-                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Activo</span>
+                    <span id="menu-status-text" class="text-[10px] font-black uppercase tracking-widest {{ 'text-emerald-700 dark:text-emerald-400' if is_open else 'text-rose-700 dark:text-rose-400' }}">
+                        {{ 'Activo' if is_open else 'Inactivo' }}
+                    </span>
                 </div>
             </div>
             

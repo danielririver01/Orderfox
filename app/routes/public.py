@@ -154,7 +154,17 @@ def create_order():
     city = data.get('city')
     address = data.get('address')
     
-    if city and address:
+    # Obtener información de la mesa si existe
+    table_id = session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
+    table_name = None
+    if table_id:
+        table = Table.query.get(table_id)
+        if table:
+            table_name = table.name
+
+    if table_name:
+        notes = f"📍 MESA: {table_name.upper()}\nTeléfono: {customer_phone}\n---\n{notes}"
+    elif city and address:
         notes = f"ENTREGA EN: {city.upper()} - {address}\nTeléfono: {customer_phone}\n---\n{notes}"
     else:
         notes = f"Teléfono de Contacto: {customer_phone}\n---\n{notes}"
@@ -168,7 +178,7 @@ def create_order():
         customer_name=customer_name,
         customer_phone=customer_phone,
         notes=notes,
-        table_id=session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
+        table_id=table_id
     )
     db.session.add(order)
     db.session.flush()

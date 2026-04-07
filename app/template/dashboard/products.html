@@ -80,6 +80,13 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                 <h3 class="font-bold text-gray-900 dark:text-white truncate tracking-tight">{{ product.name }}</h3>
+                                <span id="status-badge-{{ product.id }}" 
+                                      class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300
+                                      {{ 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' if product.is_active else 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' }}">
+                                    <span id="status-dot-{{ product.id }}" 
+                                          class="w-1 h-1 rounded-full {{ 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' if product.is_active else 'bg-rose-500 opacity-20' }}"></span>
+                                    <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo' }}</span>
+                                </span>
                                 {% if product.modifiers %}
                                     <span class="text-[9px] bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-black border border-indigo-100 dark:border-indigo-500/20 uppercase tracking-tighter">Extras</span>
                                 {% endif %}

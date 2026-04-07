@@ -3,7 +3,31 @@
  */
 
 // Toggle Product Status
+// Toggle Product Status
 async function toggleProduct(id, newState) {
+    const badge = document.getElementById(`status-badge-${id}`);
+    const dot = document.getElementById(`status-dot-${id}`);
+    const text = document.getElementById(`status-text-${id}`);
+    
+    // Guardar estado anterior por si falla
+    let oldClasses, oldDotClasses, oldText;
+    if (badge) {
+        oldClasses = badge.className;
+        oldDotClasses = dot.className;
+        oldText = text.textContent;
+
+        // Actualización inmediata (Optimista)
+        if (newState) {
+            badge.className = "flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20";
+            dot.className = "w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]";
+            text.textContent = 'Activo';
+        } else {
+            badge.className = "flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20";
+            dot.className = "w-1 h-1 rounded-full bg-rose-500 opacity-20";
+            text.textContent = 'Inactivo';
+        }
+    }
+
     try {
         const response = await fetch(`/products/${id}/toggle`, {
             method: 'PATCH',
@@ -15,12 +39,17 @@ async function toggleProduct(id, newState) {
         
         if (!response.ok) throw new Error('Error al actualizar');
         
-        showToast(newState ? 'Producto activado' : 'Producto desactivado');
-        
     } catch (error) {
-        // Rollback
-        const checkbox = document.querySelector(`[data-product-id="${id}"] input[type="checkbox"]`);
+        // Revertir UI
+        if (badge) {
+            badge.className = oldClasses;
+            dot.className = oldDotClasses;
+            text.textContent = oldText;
+        }
+        
+        const checkbox = document.querySelector(`input[onchange*="toggleProduct(${id}"]`);
         if (checkbox) checkbox.checked = !newState;
+        
         showToast('Error de conexión. Intenta de nuevo.');
     }
 }

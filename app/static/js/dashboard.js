@@ -1,18 +1,4 @@
-  function showToast(message, type = 'default') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<span>${message}</span>`;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-20px)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+// El sistema de Toasts ahora es global y reside en auth-common.js
 
         // Lógica para el toggle de la tienda
         const storeToggle = document.getElementById('store-toggle');
@@ -39,10 +25,30 @@
                         return;
                     }
 
-                    if (data.success) {
-                        showToast(`Tienda ${isOpen ? 'Abierta' : 'Cerrada'}`, isOpen ? 'success' : 'default');
-                    } else {
+                    if (!data.success) {
                         throw new Error();
+                    }
+
+                    // Sincronizar Badge de Menú Digital
+                    const menuBadge = document.getElementById('menu-status-badge');
+                    const menuDot = document.getElementById('menu-status-dot-inner');
+                    const menuPing = document.getElementById('menu-status-ping');
+                    const menuText = document.getElementById('menu-status-text');
+
+                    if (menuBadge) {
+                        if (isOpen) {
+                            menuBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20";
+                            menuDot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+                            menuPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+                            menuText.className = "text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400";
+                            menuText.textContent = 'Activo';
+                        } else {
+                            menuBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20";
+                            menuDot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500";
+                            menuPing.className = "absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+                            menuText.className = "text-[10px] font-black uppercase tracking-widest text-rose-700 dark:text-rose-400";
+                            menuText.textContent = 'Inactivo';
+                        }
                     }
                 } catch (error) {
                     e.target.checked = !isOpen;

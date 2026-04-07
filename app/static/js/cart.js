@@ -347,6 +347,28 @@ function showOrderSuccessModal(result) {
     const orderBadge = document.getElementById('success-order-number');
     const totalDisplay = document.getElementById('success-order-total');
     
+    // Configuración dinámica para pedidos desde mesa
+    const description = document.getElementById('success-modal-description');
+    const whatsappBtn = document.getElementById('btn-confirm-whatsapp');
+    const backBtn = document.getElementById('btn-volver-menu');
+
+    if (window.isTableOrder) {
+        if (description) {
+            description.innerHTML = `Tu pedido ha sido enviado a la cocina. <br><strong class="text-orange-600 dark:text-orange-400">¡Lo traeremos a tu mesa pronto!</strong>`;
+        }
+        if (whatsappBtn) {
+            whatsappBtn.style.display = 'none';
+        }
+        if (backBtn) {
+            backBtn.textContent = 'Volver al Menú / Pedir más';
+            // Aplicar estilo de botón primario para resaltar la acción
+            backBtn.className = "w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-white dark:text-black text-white py-4 px-6 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl active:scale-95 outline-none";
+        }
+    } else {
+        // Reset por si acaso (flujo normal de domicilios)
+        if (whatsappBtn) whatsappBtn.style.display = 'flex';
+    }
+    
     if (orderBadge) orderBadge.textContent = result.order_number;
     if (totalDisplay) totalDisplay.textContent = `$${result.total.toLocaleString('es-CO')}`;
     

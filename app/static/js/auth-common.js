@@ -74,3 +74,32 @@ if (csrfToken) {
         return originalFetch(resource, config);
     };
 }
+
+// Global Toast System - Velzia Premium UI
+window.showToast = function(message, type = 'default') {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+        console.warn('Toast container not found in DOM');
+        return;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${message}</span>`;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};

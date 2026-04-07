@@ -114,6 +114,20 @@
                     class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>
 
+            <!-- Cambiar Contraseña -->
+            <a href="{{ url_for('dashboard.change_password') }}"
+                class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">lock_reset</span>
+                    </div>
+                    <span class="font-bold text-sm dark:text-white">Cambiar Contraseña</span>
+                </div>
+                <span
+                    class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+            </a>
+
             <!-- Contactanos -->
             <a href="https://api.whatsapp.com/send?phone={{ SUPPORT_PHONE }}&text=Hola,%20necesito%20ayuda%20con%20Velzia" target="_blank"
                 class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
@@ -142,11 +156,27 @@
             Cerrar Sesión
         </a>
         <p class="text-center text-[10px] text-gray-600 dark:text-gray-600 mt-6 font-bold uppercase tracking-[0.3em]">
-            Velzia v1.0</p>
+            Velzia v1.2.0</p>
     </div>
 
 </main>
 
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}
+
+<script>
+    // Detectar mensajes flash y convertirlos en Toasts Premium
+    document.addEventListener('DOMContentLoaded', function() {
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    // Pequeño delay para que la transición sea suave tras cargar la página
+                    setTimeout(() => {
+                        showToast("{{ message }}", "{{ 'success' if category == 'success' else 'error' }}");
+                    }, 500);
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    });
+</script>
 {% endblock %}

@@ -16,6 +16,38 @@
     <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
     <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <style>
+        /* GLOBAL: Fix para el fondo blanco del autocompletado de los navegadores */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #0a0a0a inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+        
+        /* Asegurar que el texto sea blanco en dark mode incluso con autofill */
+        .dark input:-webkit-autofill {
+            -webkit-text-fill-color: white !important;
+        }
+
+        /* Ocultar el ojo nativo del navegador (Edge/Chrome/Safari) */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+        input::-webkit-contacts-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute; 
+            right: 0;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 </head>
 
 <body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen pb-24">
@@ -114,6 +146,9 @@
     </div>
     {% endif %}
 
+    <!-- Toast Notifications Container (Global) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
+
     {% block content %}{% endblock %}
 
     <!-- Modal de Eliminación -->
@@ -146,7 +181,6 @@
             </div>
         </div>
     </div>     
-    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     <!-- Sistema base scripts -->
 </body>

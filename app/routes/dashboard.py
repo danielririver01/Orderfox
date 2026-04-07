@@ -383,3 +383,66 @@ def profile():
     return render_template('dashboard/profile_form.html', 
                          restaurant=restaurant, 
                          user=user)
+
+@dashboard_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+@active_required
+def change_password():
+    if request.method == 'POST':
+        # Detectar si es una petición JSON (Fetch API) o Formulario estándar
+        if request.is_json:
+            data = request.get_json()
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+            confirm_password = data.get('confirm_password')
+        else:
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+        user = User.query.get(session['user_id'])
+        
+        # 1. Validar Contraseña Actual
+        if not user.check_password(current_password):
+            msg = 'La contraseña actual es incorrecta.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_password'))
+        
+        # 2. Validar Coincidencia
+        if new_password != confirm_password:
+            msg = 'Las nuevas contraseñas no coinciden.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_password'))
+            
+        # 3. Validar Complejidad Senior (8 chars + 1 número)
+        if len(new_password) < 8 or not any(char.isdigit() for char in new_password):
+            msg = 'La contraseña debe tener al menos 8 caracteres y un número.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_password'))
+
+        # 4. Guardar
+        try:
+            user.set_password(new_password)
+            db.session.commit()
+            
+            msg = '¡Contraseña actualizada con éxito!'
+            if request.is_json:
+                return jsonify({'success': True, 'message': msg})
+            
+            flash(msg, 'success')
+            return redirect(url_for('dashboard.settings'))
+        except Exception as e:
+            db.session.rollback()
+            msg = 'Error al intentar cambiar la contraseña. Intenta de nuevo.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 500
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_password'))
+
+    return render_template('dashboard/change_password.html')
