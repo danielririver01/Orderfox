@@ -279,7 +279,13 @@ async function performCheckout(city = null, address = null, customerName = null,
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = 'Procesando...';
+            btn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 mr-2 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="vertical-align: middle;">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Procesando...
+            `;
         }
 
         let total = 0;
@@ -321,11 +327,17 @@ async function performCheckout(city = null, address = null, customerName = null,
             return;
         }
 
-        // --- NUEVO FLUJO: MODAL DE ÉXITO ---
-        showOrderSuccessModal(result);
-        
-        // Limpiar carrito al registrar éxito en servidor
-        clearCart(true);
+        // --- NUEVO FLUJO: REDIRECCIÓN MERCADO PAGO O MODAL DE ÉXITO ---
+        if (result.init_point) {
+            showToast('¡Pedido creado! Redirigiendo al pago...', 'success');
+            // Limpiar carrito antes de irnos
+            clearCart(true);
+            // Redirigir a Mercado Pago
+            window.location.href = result.init_point;
+        } else {
+            showOrderSuccessModal(result);
+            clearCart(true);
+        }
 
     } catch (error) {
         showToast('Error al registrar el pedido: ' + error.message, 'error');

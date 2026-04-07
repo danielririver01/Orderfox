@@ -38,75 +38,50 @@
             document.getElementById('items-json').value = JSON.stringify(items);
         }
 
-        document.getElementById('order-form').onsubmit = async function(e) {
-            e.preventDefault();
+        // Función para mostrar Toast Notifications
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return; // Si no hay contenedor, no hacer nada (o fallback a alert)
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
             
+            // Icono según el tipo
+            let iconSvg = '';
+            if (type === 'success') {
+                iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            } else {
+                iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+            }
+
+            toast.innerHTML = `
+                ${iconSvg}
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.getElementById('order-form').onsubmit = function(e) {
             const items = JSON.parse(document.getElementById('items-json').value || '[]');
             if (items.length === 0) {
+                e.preventDefault();
                 showToast('Por favor selecciona al menos un producto', 'error');
+                
+                // Efecto visual: sacudir o resaltar la sección de productos
                 const productSection = document.querySelector('.bg-white.rounded-lg.border.border-gray-200.shadow-sm.p-6:nth-of-type(2)');
                 if (productSection) {
                     productSection.classList.add('ring-2', 'ring-red-200');
                     setTimeout(() => productSection.classList.remove('ring-2', 'ring-red-200'), 500);
                 }
-                return;
-            }
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
-            
-            try {
-                // UI: Estado de carga
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `
-                    <svg class="animate-spin h-5 w-5 mr-2 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Procesando...
-                `;
-
-                const formData = new FormData(this);
-                const data = {
-                    restaurant_id: formData.get('restaurant_id'),
-                    customer_name: formData.get('customer_name'),
-                    customer_phone: formData.get('customer_phone'),
-                    city: formData.get('city'),
-                    address: formData.get('address'),
-                    notes: formData.get('notes'),
-                    cart: {}
-                };
-
-                // Formatear carrito para el backend
-                items.forEach(item => {
-                    data.cart[item.product_id] = {
-                        quantity: item.quantity,
-                        extras: []
-                    };
-                });
-
-                const response = await fetch('/menu/api/order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success && result.init_point) {
-                    showToast('¡Pedido creado! Redirigiendo al pago...', 'success');
-                    // Redirigir a Mercado Pago
-                    window.location.href = result.init_point;
-                } else {
-                    throw new Error(result.error || 'Error al procesar el pedido');
-                }
-
-            } catch (error) {
-                showToast(error.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
             }
         };
 
