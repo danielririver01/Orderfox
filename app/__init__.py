@@ -8,14 +8,20 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask import session
 
 mail = Mail()
 scheduler = APScheduler()
 csrf = CSRFProtect()
+
+def is_authenticated():
+    return 'user_id' in session
+
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    storage_uri="memory://",
+    exempt_when=is_authenticated  # ← admins no tienen límite
 )
 
 
@@ -75,6 +81,10 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(e):
         return render_template('errors/403.html'), 403
+    
+    @app.errorhandler(429)
+    def forbidden(e):
+        return render_template('errors/429.html'), 429
 
     migrate.init_app(app, db)
     
@@ -115,7 +125,7 @@ def create_app():
     def inject_global_data():
         from app.utils.restaurant import get_current_restaurant
         from app.utils.subscription import get_subscription_status
-        from flask import session
+        
         
         data = {
             'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
