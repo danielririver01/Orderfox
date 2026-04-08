@@ -78,6 +78,10 @@ def edit(id):
     categories = Category.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     form.category_id.choices = [(c.id, c.name) for c in categories]
     
+    #Forzar la seleccion correcta con GET
+    if request.method == "GET":
+        form.category_id.data = product.category_id
+
     if form.validate_on_submit():
         # Validación crítica
         category = Category.query.filter_by(id=form.category_id.data, restaurant_id=restaurant.id).first()

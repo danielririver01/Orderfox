@@ -14,15 +14,22 @@ mail = Mail()
 scheduler = APScheduler()
 csrf = CSRFProtect()
 
-def is_authenticated():
-    return 'user_id' in session
+# 1. Una key_func que identifique a cada uno por separado
+def get_limit_key():
+    if 'user_id' in session:
+        return f"user_{session['user_id']}" # Cada admin tiene su propio límite
+    return get_remote_address()
 
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-    exempt_when=is_authenticated  # ← admins no tienen límite
+    storage_uri="memory://"
 )
+
+# 2. El "Pase VIP" (Sustituto de exempt_when)
+@limiter.request_filter
+def exempt_admins():
+    return 'user_id' in session
 
 
 def create_app():
@@ -85,6 +92,10 @@ def create_app():
     @app.errorhandler(429)
     def forbidden(e):
         return render_template('errors/429.html'), 429
+    
+    @app.errorhandler(400)
+    def bad_request(e):
+        return render_template('errors/400.html'), 400
 
     migrate.init_app(app, db)
     
