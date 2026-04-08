@@ -58,6 +58,15 @@ def menu(slug=None):
         Category.is_active == True,
         Product.is_active == True
     ).order_by(Category.sort_order).distinct().all()
+
+# Inyectar conteo real de productos activos
+    for cat in categories:
+        cat.active_product_count = Product.query.filter_by(
+            category_id=cat.id,
+            
+            restaurant_id=restaurant.id,
+            is_active=True
+        ).count()
     
     return render_template('public/menu_categories.html', 
                          categories=categories,
@@ -116,7 +125,7 @@ def create_order():
     if not restaurant.is_open:
         return jsonify({
             'success': False, 
-            'error': '⏰ Estamos cerrados en este momento. ¡Vuelve pronto!'
+            'error': 'Estamos cerrados en este momento. ¡Vuelve pronto!'
         }), 403
     
     # Validación estricta de suscripción (Backend)
@@ -164,7 +173,7 @@ def create_order():
             table_name = table.name
 
     if table_name:
-        notes = f"📍 MESA: {table_name.upper()}\nTeléfono: {customer_phone}\n---\n{notes}"
+        notes = f"MESA: {table_name.upper()}\nTeléfono: {customer_phone}\n---\n{notes}"
     elif city and address:
         notes = f"ENTREGA EN: {city.upper()} - {address}\nTeléfono: {customer_phone}\n---\n{notes}"
     else:
