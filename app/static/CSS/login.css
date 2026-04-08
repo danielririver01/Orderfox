@@ -1,29 +1,67 @@
    /* Custom scrollbar for cleanliness */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #e8d5ce;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #d4b5ab;
-        }
+   ::-webkit-scrollbar {
+       width: 8px;
+   }
 
-/* GLOBAL: Fix para el fondo blanco del autocompletado de los navegadores */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #0f0f0f inset !important;
-    -webkit-text-fill-color: white !important;
-    transition: background-color 5000s ease-in-out 0s;
-}
+   ::-webkit-scrollbar-track {
+       background: transparent;
+   }
 
-/* Asegurar que el texto sea blanco en dark mode incluso con autofill */
-.dark input:-webkit-autofill {
-    -webkit-text-fill-color: white !important;
-}
+   ::-webkit-scrollbar-thumb {
+       background: #e8d5ce;
+       border-radius: 4px;
+   }
+
+   ::-webkit-scrollbar-thumb:hover {
+       background: #d4b5ab;
+   }
+
+   /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
+   :root {
+       --autofill-bg: #ffffff;
+       /* Fondo para modo claro */
+       --autofill-text: #000000;
+       /* Texto para modo claro */
+   }
+
+   /* Si el sistema del usuario está en modo oscuro */
+   @media (prefers-color-scheme: dark) {
+       :root {
+           --autofill-bg: #0a0a0a;
+           --autofill-text: #ffffff;
+       }
+   }
+
+   /* Si usas una clase .dark (común en Tailwind/Dashboard) */
+   .dark {
+       --autofill-bg: #0a0a0a;
+       --autofill-text: #ffffff;
+   }
+
+   /* 2. APLICACIÓN DEL AUTOFILL DINÁMICO */
+   input:-webkit-autofill,
+   input:-webkit-autofill:hover,
+   input:-webkit-autofill:focus,
+   input:-webkit-autofill:active {
+       /* Usamos las variables para que el color cambie solo */
+       -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+       -webkit-text-fill-color: var(--autofill-text) !important;
+       transition: background-color 5000s ease-in-out 0s;
+       border-radius: inherit;
+       /* Mantiene la estética de tus bordes redondeados */
+   }
+
+   /* 3. LIMPIEZA DE ICONOS NATIVOS (Mantenemos tu lógica) */
+   input::-ms-reveal,
+   input::-ms-clear {
+       display: none;
+   }
+
+   input::-webkit-contacts-auto-fill-button,
+   input::-webkit-credentials-auto-fill-button {
+       visibility: hidden;
+       display: none !important;
+       pointer-events: none;
+       position: absolute;
+       right: 0;
+   }
