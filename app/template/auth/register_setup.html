@@ -118,16 +118,35 @@
                             for="password">
                             Contraseña
                         </label>
-                        {{ form.password(id="password", class="w-full rounded-lg border border-[#e8d5ce]
-                        dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3
-                        text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="••••••••") }}
+                        <div class="relative">
+                            {{ form.password(id="password", class="w-full rounded-lg border border-[#e8d5ce]
+                            dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white pl-4
+                            pr-10 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all",
+                            placeholder="••••••••") }}
+                            <button type="button" onclick="togglePass('password', 'eyeIcon')"
+                                class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[20px]" id="eyeIcon">visibility</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Confirm Password -->
                     <div class="flex flex-col gap-2">
-                        {{ form.confirm_password(id="confirm_password", class="w-full rounded-lg border border-[#e8d5ce]
-                        dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3
-                        text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="Repetir contraseña") }}
+                        <label
+                            class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal"
+                            for="confirm_password">
+                            Confirmar Contraseña
+                        </label>
+                        <div class="relative">
+                            {{ form.confirm_password(id="confirm_password", class="w-full rounded-lg border
+                            border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d]
+                            dark:text-white pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all",
+                            placeholder="••••••••") }}
+                            <button type="button" onclick="togglePass('confirm_password', 'eyeIcon2')"
+                                class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[20px]" id="eyeIcon2">visibility</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Password Checklist -->
@@ -275,6 +294,19 @@
 
         password.addEventListener('input', validate);
         confirm.addEventListener('input', validate);
+
+        function togglePass(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerText = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.innerText = 'visibility';
+            }
+        }
     </script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 </body>
