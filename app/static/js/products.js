@@ -82,21 +82,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const noResults = document.getElementById('no-results');
     const messages = document.querySelectorAll('.flash-message');
 
+    // PAGINATION LOGIC
+    initializeCategoryPagination();
+
     // 1. Live Search
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
             let visibleCount = 0;
 
-            productCards.forEach(card => {
-                const name = card.dataset.name?.toLowerCase() || "";
-                const description = card.dataset.description?.toLowerCase() || "";
-                
-                if (name.includes(term) || description.includes(term)) {
-                    card.style.display = 'block';
-                    visibleCount++;
+            // Hide pagination and show all products when searching
+            document.querySelectorAll('.category-group').forEach(group => {
+                const groupProducts = group.querySelectorAll('.pagination-item');
+                let groupVisibleCount = 0;
+
+                groupProducts.forEach(card => {
+                    const name = card.dataset.name?.toLowerCase() || "";
+                    const description = card.dataset.description?.toLowerCase() || "";
+
+                    if (name.includes(term) || description.includes(term)) {
+                        card.style.display = 'block';
+                        groupVisibleCount++;
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Show/hide pagination based on search
+                const paginationControls = group.querySelector('.pagination-controls');
+                if (term === '') {
+                    // Reset pagination when search is cleared
+                    resetCategoryPagination(group);
+                    paginationControls.style.display = 'flex';
                 } else {
-                    card.style.display = 'none';
+                    paginationControls.style.display = 'none';
                 }
             });
 
@@ -122,3 +142,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ===== PAGINATION FUNCTIONS =====
+function initializeCategoryPagination() {
+    document.querySelectorAll('.category-group').forEach(group => {
+        const grid = group.querySelector('.category-products-grid');
+        const itemsPerPage = parseInt(grid.dataset.itemsPerPage) || 6;
+        const items = grid.querySelectorAll('.pagination-item');
+        const totalPages = Math.ceil(items.length / itemsPerPage);
+
+        // Update UI with total pages
+        group.querySelector('.total-pages').textContent = totalPages;
+
+        // Hide items beyond first page
+        items.forEach((item, index) => {
+            item.style.display = index < itemsPerPage ? 'block' : 'none';
+        });
+
+        // Setup pagination buttons
+        const prevBtn = group.querySelector('.prev-page');
+        const nextBtn = group.querySelector('.next-page');
+        const currentPageSpan = group.querySelector('.current-page');
+
+        prevBtn.addEventListener('click', () => {
+            const currentPage = parseInt(currentPageSpan.textContent);
+            if (currentPage > 1) {
+                goToPage(group, currentPage - 1, itemsPerPage);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const currentPage = parseInt(currentPageSpan.textContent);
+            if (currentPage < totalPages) {
+                goToPage(group, currentPage + 1, itemsPerPage);
+            }
+        });
+
+        // Update product count in category title
+        updateProductCount(group, items.length);
+    });
+}
+
+function goToPage(group, pageNum, itemsPerPage) {
+    const grid = group.querySelector('.category-products-grid');
+    const items = grid.querySelectorAll('.pagination-item');
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+
+    if (pageNum < 1 || pageNum > totalPages) return;
+
+    const startIndex = (pageNum - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    items.forEach((item, index) => {
+        item.style.display = (index >= startIndex && index < endIndex) ? 'block' : 'none';
+    });
+
+    // Update UI
+    const currentPageSpan = group.querySelector('.current-page');
+    currentPageSpan.textContent = pageNum;
+
+    const prevBtn = group.querySelector('.prev-page');
+    const nextBtn = group.querySelector('.next-page');
+
+    prevBtn.disabled = pageNum === 1;
+    nextBtn.disabled = pageNum === totalPages;
+
+    // Scroll to category
+    group.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetCategoryPagination(group) {
+    const grid = group.querySelector('.category-products-grid');
+    const itemsPerPage = parseInt(grid.dataset.itemsPerPage) || 6;
+    const items = grid.querySelectorAll('.pagination-item');
+
+    items.forEach((item, index) => {
+        item.style.display = index < itemsPerPage ? 'block' : 'none';
+    });
+
+    group.querySelector('.current-page').textContent = '1';
+    group.querySelector('.prev-page').disabled = true;
+    group.querySelector('.next-page').disabled = items.length <= itemsPerPage;
+}
+
+function updateProductCount(group, count) {
+    const countSpan = group.querySelector('.product-count');
+    if (countSpan) {
+        countSpan.textContent = count;
+    }
+}

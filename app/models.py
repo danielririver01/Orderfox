@@ -102,6 +102,7 @@ class Category(db.Model):
     description = db.Column(db.Text)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    image_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
                           onupdate=lambda: datetime.now(timezone.utc))
@@ -122,6 +123,8 @@ class Product(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Integer, nullable=False)  # En pesos colombianos
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_highlighted = db.Column(db.Boolean, default=False, nullable=False)
+    image_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
                           onupdate=lambda: datetime.now(timezone.utc))

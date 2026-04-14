@@ -13,7 +13,7 @@ block content %}
 </header>
 
 <div class="max-w-md mx-auto px-4 py-8">
-  <form method="POST" onsubmit="
+  <form method="POST" enctype="multipart/form-data" onsubmit="
       if (this.submitted) return false;
       this.submitted = true;
       let b = this.querySelector('input[type=submit], button[type=submit]');
@@ -22,6 +22,96 @@ block content %}
     "
     class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm p-8 space-y-6 transition-colors">
     {{ form.hidden_tag() }}
+
+    <!-- Imagen del Producto -->
+    <div class="space-y-3">
+      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest ml-1">IMAGEN DEL PRODUCTO (OPCIONAL)</label>
+      
+      <div class="relative group">
+        <input type="file" name="image" id="product_image" class="hidden" accept="image/*" onchange="previewImage(this)">
+        
+        <div id="image_preview_container" onclick="document.getElementById('product_image').click()" 
+          class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (product and product.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
+          
+          {% if product and product.image_url %}
+            <img id="original_img" src="{{ url_for('static', filename=product.image_url) }}" class="w-full h-full object-cover">
+            <div id="edit_overlay" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="material-symbols-outlined text-white text-3xl">edit</span>
+            </div>
+          {% else %}
+            <div id="placeholder_icon" class="flex flex-col items-center gap-2">
+              <span class="material-symbols-outlined text-4xl">add_a_photo</span>
+              <span class="text-[10px] font-bold uppercase tracking-widest">Subir Imagen</span>
+            </div>
+          {% endif %}
+          
+          <img id="new_preview" class="hidden w-full h-full object-cover absolute inset-0">
+        </div>
+
+        <input type="hidden" name="delete_image" id="delete_image_input" value="false">
+
+        <button type="button" id="remove_image_btn" onclick="removeImage()" 
+          class="{{ 'hidden' if not (product and product.image_url) else '' }} absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+      
+      <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1">
+        * Recomendado: 800x800px. Máx 5MB.
+      </p>
+    </div>
+
+    <script>
+      function previewImage(input) {
+        const container = document.getElementById('image_preview_container');
+        const placeholder = document.getElementById('placeholder_icon');
+        const preview = document.getElementById('new_preview');
+        const removeBtn = document.getElementById('remove_image_btn');
+        const deleteInput = document.getElementById('delete_image_input');
+        const originalImg = document.getElementById('original_img');
+        const editOverlay = document.getElementById('edit_overlay');
+        
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (originalImg) originalImg.classList.add('hidden');
+            if (editOverlay) editOverlay.classList.add('hidden');
+            removeBtn.classList.remove('hidden');
+            container.classList.remove('border-dashed');
+            deleteInput.value = 'false';
+          }
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      function removeImage() {
+        const input = document.getElementById('product_image');
+        const preview = document.getElementById('new_preview');
+        const placeholder = document.getElementById('placeholder_icon');
+        const removeBtn = document.getElementById('remove_image_btn');
+        const deleteInput = document.getElementById('delete_image_input');
+        const originalImg = document.getElementById('original_img');
+        const editOverlay = document.getElementById('edit_overlay');
+        const container = document.getElementById('image_preview_container');
+
+        input.value = '';
+        preview.classList.add('hidden');
+        preview.src = '';
+        
+        if (originalImg) {
+          originalImg.classList.add('hidden');
+          if (editOverlay) editOverlay.classList.add('hidden');
+          deleteInput.value = 'true';
+        }
+        
+        if (placeholder) placeholder.classList.remove('hidden');
+        removeBtn.classList.add('hidden');
+        container.classList.add('border-dashed');
+      }
+    </script>
 
     <!-- Nombre -->
     <div>
@@ -94,11 +184,28 @@ block content %}
         style="flex-shrink: 0; min-width: 48px;">
         {{ form.is_active(class="sr-only peer") }}
         <div
-          class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner"
+          class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0:15px_rgba(5,150,105,0.4)] shadow-inner"
           style="flex-shrink: 0; min-width: 48px;"></div>
       </label>
       <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">PRODUCTO
         DISPONIBLE</span>
+    </div>
+
+    <!-- Destacado -->
+    <div class="flex flex-col gap-2 px-1">
+      <div class="flex items-center gap-3">
+        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
+          style="flex-shrink: 0; min-width: 48px;">
+          {{ form.is_highlighted(class="sr-only peer") }}
+          <div
+            class="w-12 h-6 bg-orange-500/10 dark:bg-orange-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 peer-checked:shadow-[0_0:15px_rgba(249,115,22,0.4)] shadow-inner"
+            style="flex-shrink: 0; min-width: 48px;"></div>
+        </label>
+        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">DESTACAR EN CARRUSEL</span>
+      </div>
+      <p class="text-[9px] text-[#f2460d] font-bold italic ml-[61px] leading-tight">
+        * Los productos destacados aparecen en la parte superior del menú. Se recomienda usar fotos horizontales de alta calidad.
+      </p>
     </div>
 
     <!-- Botones -->

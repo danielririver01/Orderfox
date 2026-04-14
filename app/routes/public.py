@@ -9,6 +9,10 @@ import time
 
 public_bp = Blueprint('public', __name__)
 
+@public_bp.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
+
 @public_bp.route('/menu/api/init-checkout', methods=['POST'])
 def init_checkout():
     """Registra el inicio del proceso de checkout en la sesión del usuario para anti-bots."""
@@ -68,11 +72,42 @@ def menu(slug=None):
             is_active=True
         ).count()
     
+    # Obtener productos para el carrusel
+    # 1. Prioridad: Marcados como destacados con imagen
+    highlighted = Product.query.filter_by(
+        restaurant_id=restaurant.id, 
+        is_highlighted=True, 
+        is_active=True
+    ).filter(Product.image_url.isnot(None)).all()
+    
+    # 2. Fallback: Completar hasta 3 con los más recientes que tengan imagen
+    if len(highlighted) < 3:
+        ids_to_exclude = [p.id for p in highlighted]
+        recent = Product.query.filter_by(
+            restaurant_id=restaurant.id, 
+            is_active=True
+        ).filter(
+            Product.image_url.isnot(None),
+            ~Product.id.in_(ids_to_exclude) if ids_to_exclude else True
+        ).order_by(Product.created_at.desc()).limit(3 - len(highlighted)).all()
+        highlighted.extend(recent)
+    
+    # Limitar a 3 por si acaso
+    highlighted_products = highlighted[:3]
+    
+    # 3. Obtener los 4 productos más recientes para la sección "Productos nuevos"
+    new_products = Product.query.filter_by(
+        restaurant_id=restaurant.id,
+        is_active=True
+    ).order_by(Product.created_at.desc()).limit(6).all()
+    
     return render_template('public/menu_categories.html', 
                          categories=categories,
                          restaurant=restaurant,
                          store_open=store_open,
-                         ordering_disabled=ordering_disabled)
+                         ordering_disabled=ordering_disabled,
+                         highlighted_products=highlighted_products,
+                         new_products=new_products)
 
 @public_bp.route('/menu/<string:slug>/categoria/<int:category_id>')
 def category_products(slug, category_id):
@@ -260,3 +295,25 @@ def create_order():
         'address_full': f"{address}, {city}" if address and city else None,
         'table_name': order.table.name if order.table else None
     })
+
+@public_bp.route('/menu/<string:slug>/novedades')
+def novedades(slug):
+    restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
+    categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
+    
+    # Paginación
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    
+    pagination = Product.query.filter_by(
+        restaurant_id=restaurant.id,
+        is_active=True
+    ).order_by(Product.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    
+    products = pagination.items
+    
+    return render_template('public/menu_novedades.html',
+                         restaurant=restaurant,
+                         categories=categories,
+                         products=products,
+                         pagination=pagination)

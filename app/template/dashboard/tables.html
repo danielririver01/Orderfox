@@ -6,13 +6,18 @@
     <div class="flex items-center gap-4">
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">Mesas</h1>
     </div>
-    <button
-      {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
-      class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 {% if not has_table_qr_access %}opacity-50 cursor-not-allowed grayscale{% endif %}"
-    >
-      <span class="material-symbols-outlined text-[20px]">add</span>
-      Nueva Mesa
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
+        class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 {% if not has_table_qr_access %}opacity-50 cursor-not-allowed grayscale{% endif %}"
+      >
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        Nueva Mesa
+      </button>
+      <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#262626] rounded-lg">
+        <span class="material-symbols-outlined text-2xl">close</span>
+      </a>
+    </div>
   </div>
 </header>
 

@@ -1,93 +1,115 @@
 :root {
-  --primary: #f2460d;
-  --primary-dark: #d63d0a;
-  --midnight: #1e3a8a;
-  --midnight-dark: #172554;
-  --success: #25d366;
-  --text-dark: #2c3e50;
-  --text-muted: #7f8c8d;
-  --bg-light: #fdfcfb;
-  --card-bg: #ffffff;
-  --header-bg: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
-  --border-color: rgba(0, 0, 0, 0.04);
+    --primary: #f2460d;
+    --primary-dark: #d63d0a;
+    --midnight: #1e3a8a;
+    --midnight-dark: #172554;
+    --success: #25d366;
+    --text-dark: #1A1A1A;
+    --text-muted: #4A4A4A;
+    --bg-light: #F8F8F8;
+    --card-bg: #ffffff;
+    --header-bg: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --border-color: rgba(0, 0, 0, 0.04);
 
-  /* Overriding Pico variables */
-  --pico-primary: var(--primary);
-  --pico-primary-hover: var(--primary-dark);
+    /* Overriding Pico variables */
+    --pico-primary: var(--primary);
+    --pico-primary-hover: var(--primary-dark);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg-light: #0a0a0a;
-    --card-bg: #141414;
-    --text-dark: #ffffff;
-    --text-muted: #9ca3af;
-    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --border-color: #262626;
-    --header-bg: linear-gradient(135deg, #3d1405 0%, #0a0a0a 100%);
-  }
+    :root {
+        --bg-light: #000000;
+        /* Negro puro */
+        --card-bg: #0d0d0d;
+        --text-dark: #f5f5f7;
+        --text-muted: #86868b;
+        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
+        --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
+        --border-color: #1a1a1a;
+        --header-bg: linear-gradient(180deg, #121212 0%, #000000 100%);
+        --glass-bg: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Forzar a Pico CSS a usar nuestro negro */
+    [data-theme="dark"],
+    :root:not([data-theme="light"]) {
+        --pico-background-color: #000000 !important;
+    }
 }
 
 body {
-  background: var(--bg-light);
-  padding-bottom: 120px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: var(--text-dark);
-  margin: 0;
-  transition: background-color 0.4s ease, color 0.4s ease;
+    background: var(--bg-light);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+    margin: 0;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
 }
 
 .container-menu {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
 }
 
 .header-menu {
-  text-align: center;
-  padding: 3rem 1rem 2.5rem;
-  background: var(--header-bg);
-  border-radius: 0 0 40px 40px;
-  margin: 0 0 2.5rem;
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-  border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    padding: 3rem 1rem 2.5rem;
+    background: var(--header-bg);
+    border-radius: 0 0 40px 40px;
+    margin: 0 0 2.5rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .header-menu h1 {
-  margin: 0;
-  color: white !important;
-  font-size: 2.75rem;
-  font-weight: 900;
-  letter-spacing: -1px;
+    margin: 0;
+    color: white !important;
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -1px;
 }
 
 #sticky-cart {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--card-bg);
-  padding: 1.25rem 2rem;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
-  display: none;
-  z-index: 1000;
-  max-width: 600px;
-  margin: 0 auto;
-  border-radius: 32px 32px 0 0;
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(20px);
-  animation: slideUp 0.5s ease-out;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #FAFAFA;
+    padding: 1.25rem 2rem;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+    display: none;
+    z-index: 1000;
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 32px 32px 0 0;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+    animation: slideUp 0.5s ease-out;
 }
 
 @keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .visually-hidden {
@@ -126,33 +148,45 @@ body {
 }
 
 @keyframes bounceIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes drawCheck {
-    0% { stroke-dashoffset: 48; }
-    100% { stroke-dashoffset: 0; }
+    0% {
+        stroke-dashoffset: 48;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
 }
 
 #toast-container {
-  position: fixed;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  width: 90%;
-  max-width: 400px;
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: 90%;
+    max-width: 400px;
 }
 
 .toast {
-  background: var(--card-bg);
-  color: var(--text-dark);
-  padding: 1rem 1.5rem;
-  border-radius: 15px;
-  box-shadow: var(--shadow-md);
-  margin-bottom: 0.75rem;
-  border-left: 5px solid var(--primary);
+    background: var(--card-bg);
+    color: var(--text-dark);
+    padding: 1rem 1.5rem;
+    border-radius: 15px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 0.75rem;
+    border-left: 5px solid var(--primary);
 }
 
 /* ===== BOTONES PREMIUM ===== */
@@ -188,4 +222,488 @@ body {
     font-weight: 800 !important;
     font-size: 0.85rem !important;
     cursor: pointer !important;
+}
+
+/* ===== FOOTER PREMIUM ===== */
+.footer-premium {
+    background: #000;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    /* Línea metálica sutil */
+    padding: 5rem 1.5rem 8rem 1.5rem;
+    /* Más espacio para que se note */
+    margin-top: 8rem;
+    position: relative;
+    z-index: 50;
+    display: block !important;
+}
+
+.footer-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 0 0 10px 100px;
+    opacity: 0.8;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+}
+
+.brand-section {
+    text-align: center;
+}
+
+.footer-logo {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: white;
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -1px;
+}
+
+.footer-tagline {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.footer-info {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff !important;
+    /* Forzar blanco para visibilidad */
+}
+
+.footer-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.powered-by {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.v-mini-logo {
+    width: 16px;
+    height: 16px;
+}
+
+.powered-by strong {
+    color: #999;
+    letter-spacing: 1px;
+}
+
+.footer-copy {
+    font-size: 0.75rem;
+    color: #444;
+    font-weight: 500;
+}
+
+/* ===== BACK TO TOP BUTTON ===== */
+.btn-back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    z-index: 1500;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    padding: 0;
+}
+
+.btn-back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.btn-back-to-top:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: 0 10px 20px rgba(242, 70, 13, 0.2);
+}
+
+@media (max-width: 480px) {
+    .btn-back-to-top {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 44px;
+        height: 44px;
+    }
+
+    .footer-premium {
+        padding: 3rem 1.5rem;
+    }
+}
+
+/* ===== UNIVERSAL 3D PRODUCT CARDS (Refactor Senior) ===== */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem 0 12rem 0; /* Espacio para el footer y carrito */
+    perspective: 1000px;
+}
+
+.product-card {
+    background: transparent;
+    border: none;
+    min-height: 500px;
+    position: relative;
+    padding: 0;
+}
+
+.product-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+    will-change: transform; /* Optimización sugerida por el usuario */
+}
+
+.product-card.flipped .product-card-inner {
+    transform: rotateY(180deg);
+}
+
+.product-card-front, .product-card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 28px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cara Trasera (Deep Black) */
+.product-card-back {
+    transform: rotateY(180deg);
+    background: #000 !important;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+/* Espaciado condicional para evitar traslapes con botones */
+.product-card-front {
+    padding-top: 4.5rem;
+}
+
+.product-card-front:has(.product-image-container) {
+    padding-top: 1.5rem;
+}
+
+/* Botones de Giro */
+.btn-flip {
+    position: absolute !important;
+    top: 1.25rem !important;
+    left: 1.25rem !important; 
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: rgba(0,0,0,0.6) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 20;
+    transition: all 0.3s;
+    padding: 0 !important;
+    cursor: pointer;
+}
+
+.btn-flip:hover {
+    background: var(--primary) !important;
+    transform: rotate(90deg) scale(1.1);
+}
+
+.btn-flip-back {
+    position: absolute !important;
+    top: 1.5rem !important;
+    left: 1.5rem !important;
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    font-size: 0.75rem !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+/* Contenedor de Imagen */
+.product-image-container {
+    height: 200px;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: -1.5rem -1.5rem 1.25rem -1.5rem;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Cabecera del Producto */
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.product-category-tag {
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.product-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.product-price {
+    background: rgba(242, 70, 13, 0.15);
+    color: var(--primary);
+    padding: 0.35rem 0.8rem;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.95rem;
+}
+
+.product-description {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+/* Controles de Compra */
+.product-actions {
+    margin-top: auto;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    padding: 0.4rem;
+}
+
+.btn-qty {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    background: white !important;
+    color: #000 !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    font-size: 1.2rem !important;
+    cursor: pointer;
+    padding: 0 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .quantity-controls {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .btn-qty {
+        background: #252525 !important;
+        color: #fff !important;
+    }
+}
+
+.qty-display {
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+.view-only-badge {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.8rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 14px;
+}
+
+/* Extras / Modificadores */
+.extras-container {
+    background: rgba(242, 70, 13, 0.03);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(242, 70, 13, 0.05);
+}
+
+.extras-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.75rem;
+}
+
+.extra-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+
+.extra-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.extra-checkbox {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+}
+
+/* QR y Compartir */
+.qr-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.qr-image {
+    width: 160px;
+    height: 160px;
+    background: white;
+    padding: 10px;
+    border-radius: 15px;
+    display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.qr-loading {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.share-actions {
+    width: 100%;
+    padding: 0 1rem;
+}
+
+.btn-share-premium {
+    width: 100%;
+    background: white !important;
+    color: #000 !important;
+    border: none !important;
+    padding: 1.1rem !important;
+    border-radius: 20px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 1px !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
 }

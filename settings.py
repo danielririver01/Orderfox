@@ -27,3 +27,7 @@ class Config:
     SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL') or 'soporte@velzia.com'
     SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE') or '+573000000000'
     BASE_URL = os.environ.get('BASE_URL') # URL base para QRs y links (ngrok o dominio)
+
+    # Configuración de Archivos
+    UPLOAD_FOLDER = os.path.join('app', 'static', 'uploads')
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB

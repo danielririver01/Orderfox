@@ -37,7 +37,19 @@
                  data-category-id="{{ category.id }}"
                  data-name="{{ category.name|lower }}">
                 <div class="flex items-center justify-between">
-                    <div class="flex-1 min-w-0 pr-4">
+                    <div class="flex items-center gap-4 flex-1 min-w-0 pr-4">
+                        <!-- Miniatura de Imagen -->
+                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
+                            {% if category.image_url %}
+                                <img src="{{ url_for('static', filename=category.image_url) }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
+                                    {{ category.name[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
                             <h3 class="category-name font-black text-gray-900 dark:text-white tracking-tight text-base">{{ category.name }}</h3>
                             <span id="status-badge-{{ category.id }}" 
@@ -51,6 +63,7 @@
                         {% if category.description %}
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 font-medium line-clamp-1 italic">“{{ category.description }}”</p>
                         {% endif %}
+                    </div>
                     </div>
                     
                     <div class="flex items-center gap-1">

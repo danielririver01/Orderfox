@@ -1,167 +1,72 @@
 {% extends 'common/base.html' %}
 {% block title %}Productos{% endblock %}
+
 {% block content %}
-    
+
     <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
-        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold text-gray-900 dark:text-white">Productos</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ products|length }} productos</p>
             </div>
-            <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white">
                 <span class="material-symbols-outlined">close</span>
             </a>
         </div>
     </header>
 
-    <div class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-[65px] z-10 px-4 py-3">
-        <div class="max-w-md mx-auto relative">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span class="material-symbols-outlined text-gray-500 text-[20px]">search</span>
-            </span>
-            <input type="text" 
-                   id="search-input" 
-                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#262626] rounded-xl leading-5 bg-gray-50 dark:bg-[#141414] text-text-main dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] sm:text-sm transition-all" 
-                   placeholder="Buscar productos...">
-        </div>
-    </div>
-
-    <div class="max-w-md mx-auto px-4 pt-4">
+    <div class="max-w-2xl mx-auto px-4 py-6">
         {% if plan_limits.max_products < 1000000 %}
-            <div class="mb-2 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+            <div class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
                 <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
                     <span class="text-blue-800 dark:text-blue-400">Plan {{ plan_limits.name }}</span>
                     <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products }} ACTIVOS</span>
                 </div>
                 <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-2">
-                    <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(37,99,235,0.3)]" 
-                         style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
+                    <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700" style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
                 </div>
-                {% if current_active_count >= plan_limits.max_products %}
-                    <p class="text-[10px] text-orange-600 dark:text-orange-400 mt-2 font-bold flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">warning</span>
-                        Límite alcanzado. <a href="{{ url_for('auth.payment') }}" class="underline decoration-2">Mejora tu plan</a>.
-                    </p>
-                {% endif %}
             </div>
         {% endif %}
-    </div>
 
-    <div class="max-w-md mx-auto px-4">
-                    {% if get_flashed_messages() %}
-                        <div class="max-w-md mx-auto px-4 pt-4">
-                    {% include 'components/flash_messages.html' %}
-                    </div>
-                    {% endif %}
-    </div>
+        <!-- Grid de Categorías -->
+        {% if categories %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for category in categories %}
+                    {% set category_products = products | selectattr('category_id', 'equalto', category.id) | list %}
 
-    <div class="max-w-md mx-auto px-4 py-4">
-        {% if products %}
-            {% set current_category = namespace(id=None) %}
-            {% for product in products %}
-                {% if product.category_id != current_category.id %}
-                    {% set current_category.id = product.category_id %}
-                    <h2 class="category-title text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mt-8 mb-4 first:mt-0 flex items-center gap-2">
-                        {{ product.category.name }}
-                        <div class="h-[1px] flex-1 bg-gray-100 dark:bg-[#262626]"></div>
-                    </h2>
-                {% endif %}
-                
-                {# Lógica de bloqueo por plan #}
-                {% set is_limit_reached = current_active_count >= plan_limits.max_products %}
-                {% set is_blocked = not product.is_active and is_limit_reached %}
-
-                <div class="product-card bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] shadow-sm p-5 mb-4 relative transition-all active:scale-[0.99]" 
-                     data-product-id="{{ product.id }}"
-                     data-name="{{ product.name|lower }}"
-                     data-category="{{ product.category.name|lower }}">
-                    
-                    <div class="flex items-start justify-between gap-4 {{ 'opacity-40' if is_blocked else '' }}">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex flex-wrap items-center gap-2 mb-1">
-                                <h3 class="font-bold text-gray-900 dark:text-white truncate tracking-tight">{{ product.name }}</h3>
-                                <span id="status-badge-{{ product.id }}" 
-                                      class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300
-                                      {{ 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' if product.is_active else 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' }}">
-                                    <span id="status-dot-{{ product.id }}" 
-                                          class="w-1 h-1 rounded-full {{ 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' if product.is_active else 'bg-rose-500 opacity-20' }}"></span>
-                                    <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo' }}</span>
-                                </span>
-                                {% if product.modifiers %}
-                                    <span class="text-[9px] bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-black border border-indigo-100 dark:border-indigo-500/20 uppercase tracking-tighter">Extras</span>
-                                {% endif %}
-                                {% if is_blocked %}
-                                    <span class="text-[9px] bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md font-black border border-amber-100 dark:border-amber-500/20 uppercase tracking-tighter">Blocked</span>
-                                {% endif %}
+                    <a href="{{ url_for('products.by_category', category_id=category.id) }}" class="category-card block bg-white dark:bg-[#141414] rounded-2xl border-2 border-gray-200 dark:border-[#262626] p-6 hover:border-[#f2460d] hover:shadow-lg hover:scale-105 transition-all">
+                        <!-- Header de categoría -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3 flex-1">
+                                <div class="w-14 h-14 rounded-xl bg-[#f2460d] flex items-center justify-center flex-shrink-0">
+                                    {% if category.image_url %}
+                                        <img src="{{ url_for('static', filename=category.image_url) }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-xl">
+                                    {% else %}
+                                        <span class="text-white font-black text-lg">{{ category.name[0] }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 dark:text-white">{{ category.name }}</h3>
+                                    <p class="text-xs text-gray-500">{{ category_products|length }} productos</p>
+                                </div>
                             </div>
-                            {% if product.description %}
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">{{ product.description }}</p>
-                            {% endif %}
-                            <p class="text-xl font-black text-[#f2460d] mt-3">${{ '{:,}'.format(product.price) }}</p>
+                            <span class="material-symbols-outlined text-gray-400">arrow_forward</span>
                         </div>
-                        
-                        <div class="flex flex-col items-end gap-4">
-                            <label class="relative inline-flex items-center cursor-pointer group">
-                                <input type="checkbox" 
-                                       class="sr-only peer product-toggle" 
-                                       {% if product.is_active %}checked{% endif %}
-                                       {% if is_blocked %}disabled{% endif %}
-                                       onchange="toggleProduct({{ product.id }}, this.checked)">
-                                
-                                <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
-                                            peer-checked:after:translate-x-6 peer-checked:after:border-white 
-                                            after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                                            after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
-                                            after:h-5 after:w-5 after:transition-all 
-                                            peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner
-                                            {{ 'cursor-not-allowed peer-checked:bg-gray-500' if is_blocked else '' }}"></div>
-
-                                {% if is_blocked %}
-                                    <div class="absolute right-0 bottom-8 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg hidden group-hover:block z-50 text-center">
-                                        Límite de plan alcanzado.<br>Mejora tu plan para activar este producto.
-                                    </div>
-                                {% endif %}
-                            </label>
-                            
-                            <div class="flex gap-1">
-                                <a href="{{ url_for('products.modifiers', product_id=product.id) }}" class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all active:scale-90" title="Modificadores">
-                                    <span class="material-symbols-outlined text-[20px]">tune</span>
-                                </a>
-                                <a href="{{ url_for('products.edit', id=product.id) }}" class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90" title="Editar">
-                                    <span class="material-symbols-outlined text-[20px]">edit</span>
-                                </a>
-                                <form action="{{ url_for('products.delete', id=product.id) }}" method="POST" class="hidden" id="delete-form-{{ product.id }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                </form>
-                                <button onclick="openDeleteModal(document.getElementById('delete-form-{{ product.id }}'), '¿Estás seguro de que deseas eliminar el producto «{{ product.name }}»?', 'Eliminar Producto')" class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90" title="Eliminar">
-                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+                    </a>
+                {% endfor %}
+            </div>
         {% else %}
-            <div class="text-center py-20 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
-                <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">inventory_2</span>
-                <p class="text-gray-500 dark:text-gray-400 font-medium">No hay productos aún</p>
-                <a href="{{ url_for('products.create') }}" class="text-[#f2460d] font-bold text-sm mt-2 inline-block">Crea tu primer producto</a>
+            <div class="text-center py-20">
+                <span class="material-symbols-outlined text-gray-300 text-5xl mb-4">inventory_2</span>
+                <p class="text-gray-500">No hay categorías</p>
             </div>
         {% endif %}
-
-        <div id="no-results" class="hidden text-center py-20">
-            <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">search_off</span>
-            <p class="text-gray-600 dark:text-gray-400 font-medium">No hay resultados para tu búsqueda</p>
-        </div>
     </div>
 
-    <a href="{{ url_for('products.create') }}" class="fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 active:scale-95 transition-all z-20">
-        <span class="material-symbols-outlined text-[28px]">add</span>
+    <a href="{{ url_for('products.create') }}" class="fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl z-20">
+        <span class="material-symbols-outlined">add</span>
     </a>
 
-    <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 dark:bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
-        <span id="toast-message"></span>
-    </div>
-
+    <script src="{{ url_for('static', filename='js/products-dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 {% endblock %}

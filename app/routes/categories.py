@@ -4,6 +4,7 @@ from app.models import db, Category
 from app.utils.auth import login_required, active_required
 
 from app.utils.restaurant import get_current_restaurant
+from app.utils.image_handler import save_image, delete_image
 
 categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
 
@@ -35,6 +36,13 @@ def create():
             is_active=form.is_active.data,
             sort_order=max_order + 1
         )
+        
+        # Manejo de imagen
+        if form.image.data:
+            image_url = save_image(form.image.data, 'categories')
+            if image_url:
+                category.image_url = image_url
+                
         db.session.add(category)
         db.session.commit()
         flash('Categoría creada exitosamente', 'success')
@@ -56,6 +64,21 @@ def edit(id):
         category.name = form.name.data
         category.description = form.description.data
         category.is_active = form.is_active.data
+        
+        # Manejo de imagen
+        if form.image.data:
+            # Eliminar imagen anterior si existe
+            if category.image_url:
+                delete_image(category.image_url)
+            
+            image_url = save_image(form.image.data, 'categories')
+            if image_url:
+                category.image_url = image_url
+        elif request.form.get('delete_image') == 'true':
+            if category.image_url:
+                delete_image(category.image_url)
+            category.image_url = None
+                
         db.session.commit()
         flash('Categoría actualizada exitosamente', 'success')
         return redirect(url_for('categories.index'))
@@ -113,6 +136,10 @@ def delete(id):
         flash(f'No puedes eliminar esta categoría porque tiene {product_count} producto(s) asociado(s).', 'error')
         return redirect(url_for('categories.index'))
     
+    # Eliminar imagen física antes de borrar de la BD
+    if category.image_url:
+        delete_image(category.image_url)
+        
     db.session.delete(category)
     db.session.commit()
     flash('Categoría eliminada exitosamente', 'success')

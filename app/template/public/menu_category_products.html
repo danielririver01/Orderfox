@@ -1,4 +1,5 @@
 {% extends "public_base.html" %}
+{% from "components/product_macros.html" import render_product_card %}
 
 {% block title %}{{ category.name }} - {{ restaurant.name }}{% endblock %}
 
@@ -6,8 +7,19 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_category_products.css') }}">
 {% endblock %}
 
-{% block header_title %}{{ category.name }}{% endblock %}
-{% block header_subtitle %}{{ category.description or 'Selecciona tus favoritos' }}{% endblock %}
+{% block hero %}
+<div class="menu-hero-container category-hero">
+    {# Siempre usamos el estilo minimalista Rich Black para categorías, ignorando la imagen de fondo para consistencia #}
+    <div class="hero-fallback compact">
+        <div class="fallback-content">
+            <span class="brand-tag">Explora</span>
+            <h1 class="modern-title">{{ category.name }}</h1>
+            <p class="modern-subtitle">{{ category.description or 'Nuestra selección para ti' }}</p>
+            <a href="#productGrid" class="btn-modern">Descubrir</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
 
@@ -19,7 +31,7 @@
                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            Volver al menú
+            Volver
         </a>
 
         <div class="search-container">
@@ -28,7 +40,7 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
             </svg>
-            <input type="search" id="productSearch" placeholder="Buscar en todo el menú..." autocomplete="off">
+            <input type="search" id="productSearch" placeholder="Buscar en {{ category.name }}..." autocomplete="off">
         </div>
     </div>
 </div>
@@ -42,46 +54,7 @@
 <!-- Grid de productos -->
 <div class="product-grid" id="productGrid">
     {% for product in products %}
-    <article class="product-card" data-id="{{ product.id }}" data-name="{{ product.name }}"
-        data-price="{{ product.price }}" data-description="{{ product.description or '' }}"
-        data-keywords="{{ product.name|lower }} {{ product.description|lower if product.description else '' }}">
-        <div class="product-header">
-            <h3 class="product-name">{{ product.name }}</h3>
-            <span class="product-price">${{ "{:,}".format(product.price) }}</span>
-        </div>
-        <p class="product-description" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ product.description or 'Deliciosa preparación con ingredientes de calidad.' }}
-        </p>
-
-        {% if product.modifiers %}
-        <div class="extras-container" id="extras-{{ product.id }}">
-            <span style="font-weight: 700; font-size: 0.8rem; color: #888; text-transform: uppercase;">Extras:</span>
-            {% for modifier in product.modifiers if modifier.is_active %}
-            <label style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" class="extra-checkbox" data-id="{{ modifier.id }}" data-name="{{ modifier.name }}"
-                        data-price="{{ modifier.extra_price }}" onchange="updateExtra({{ product.id }})" {% if
-                        ordering_disabled %}disabled{% endif %}>
-                    <span>{{ modifier.name }}</span>
-                </div>
-                <b>+${{ "{:,}".format(modifier.extra_price) }}</b>
-            </label>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        {% if not ordering_disabled %}
-        <div class="quantity-controls">
-            <button class="btn-qty" onclick="updateQty({{ product.id }}, -1)">-</button>
-            <span class="qty-display" id="qty-{{ product.id }}">0</span>
-            <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)">+</button>
-        </div>
-        {% else %}
-        <div style="margin-top: 0.75rem; display: inline-block; background: rgba(242,70,13,0.08); border: 1px solid rgba(242,70,13,0.15); color: #f2460d; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.3rem 0.7rem; border-radius: 20px;">
-            Solo vista
-        </div>
-        {% endif %}
-    </article>
+        {{ render_product_card(product, restaurant, ordering_disabled) }}
     {% endfor %}
 </div>
 
@@ -110,4 +83,26 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='JS/public/interactions.js') }}"></script>
+<script>
+    // Scroll Suave para anclajes
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -13,18 +13,23 @@
     <script src="{{ url_for('static', filename='JS/tailwind.app.js') }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/public_base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/footer.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+    {% block hero %}
     <header class="header-menu">
         <h1>{% block header_title %}{{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
-        <div class="header-subtitle">{% block header_subtitle %}🍽️ Tu menú digital de confianza{% endblock %}</div>
+        <div class="header-subtitle">{% block header_subtitle %}Tu menú digital de confianza{% endblock %}</div>
     </header>
+    {% endblock %}
 
     <main class="container-menu">
         {% block content %}{% endblock %}
     </main>
+
+    {% include 'public/footer.html' %}
 
     <div id="sticky-cart">
         {% block footer_cart %}{% endblock %}
@@ -32,6 +37,13 @@
 
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>
+
+    <!-- Back to Top Button -->
+    <button id="btn-back-to-top" class="btn-back-to-top" onclick="scrollToTop()" aria-label="Volver arriba">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
 
     {% if restaurant %}
     <script>
@@ -49,14 +61,15 @@
     <!-- Modal de Dirección para Domicilios -->
     <div id="address-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-black/80 backdrop-blur-md" onclick="closeAddressModal()"></div>
-        <div class="relative bg-white dark:bg-[#141414] rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 dark:border-[#262626]">
+        <div
+            class="relative bg-white dark:bg-[#141414] rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 dark:border-[#262626]">
             <!-- Header con Logo Velzia -->
             <div class="p-8 text-center pb-4">
                 <div class="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-12 h-12">
-                        <path d="M24 42L8 22L16 10L20 16H28L32 10L40 22L24 42Z" fill="#f2460d"/>
-                        <path d="M24 42L18 30L24 35L30 30L24 42Z" fill="#fff"/>
-                        <path d="M24 38L23 39.5L24 41L25 39.5L24 38Z" fill="#1c1917"/>
+                        <path d="M24 42L8 22L16 10L20 16H28L32 10L40 22L24 42Z" fill="#f2460d" />
+                        <path d="M24 42L18 30L24 35L30 30L24 42Z" fill="#fff" />
+                        <path d="M24 38L23 39.5L24 41L25 39.5L24 38Z" fill="#1c1917" />
                     </svg>
                 </div>
                 <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -72,41 +85,51 @@
                 <!-- Honeypot (Campo Trampa Anti-Bots) -->
                 <div class="visually-hidden" aria-hidden="true">
                     <label for="user_secondary_email">Secondary Email</label>
-                    <input type="text" id="user_secondary_email" name="user_secondary_email" tabindex="-1" autocomplete="off">
+                    <input type="text" id="user_secondary_email" name="user_secondary_email" tabindex="-1"
+                        autocomplete="off">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Tu Nombre <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-name" placeholder="Ej: Juan Pérez" 
-                               class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Tu
+                            Nombre <span class="text-red-500">*</span></label>
+                        <input type="text" id="delivery-name" placeholder="Ej: Juan Pérez"
+                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Teléfono <span class="text-red-500">*</span></label>
-                        <input type="tel" id="delivery-phone" placeholder="Ej: 300..." autocomplete="tel" pattern="^3[0-9]{9}$" title="Debe contener 10 dígitos y comenzar con 3"
-                               class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Teléfono
+                            <span class="text-red-500">*</span></label>
+                        <input type="tel" id="delivery-phone" placeholder="Ej: 300..." autocomplete="tel"
+                            pattern="^3[0-9]{9}$" title="Debe contener 10 dígitos y comenzar con 3"
+                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Ciudad <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-city" placeholder="Ej: Bogotá" 
-                               class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Ciudad
+                            <span class="text-red-500">*</span></label>
+                        <input type="text" id="delivery-city" placeholder="Ej: Bogotá"
+                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Dirección <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-address" placeholder="Ej: Calle 123..." 
-                               class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label
+                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Dirección
+                            <span class="text-red-500">*</span></label>
+                        <input type="text" id="delivery-address" placeholder="Ej: Calle 123..."
+                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
                     </div>
                 </div>
-                
+
                 <div class="pt-4 flex gap-3">
-                    <button onclick="closeAddressModal()" 
-                            class="flex-1 px-4 py-4 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333333] text-gray-700 dark:text-gray-300 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-95">
+                    <button onclick="closeAddressModal()"
+                        class="flex-1 px-4 py-4 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333333] text-gray-700 dark:text-gray-300 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-95">
                         Volver
                     </button>
-                    <button onclick="processOrderWithAddress()" 
-                            class="flex-2 px-8 py-4 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+                    <button onclick="processOrderWithAddress()"
+                        class="flex-2 px-8 py-4 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">
                         Confirmar y Pedir
                     </button>
                 </div>
@@ -118,64 +141,84 @@
     <div id="order-success-modal" class="modal hidden fixed inset-0 z-[2000] flex items-center justify-center p-4">
         <!-- Animated Background Overlay -->
         <div class="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"></div>
-        
-        <div class="modal-success-content relative w-full max-w-sm mx-auto bg-white dark:bg-[#111] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
-            
+
+        <div
+            class="modal-success-content relative w-full max-w-sm mx-auto bg-white dark:bg-[#111] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+
             <!-- Confetti / Deco Background -->
-            <div class="absolute top-0 left-0 w-full h-40 bg-gradient-to-br from-orange-400 to-red-500 opacity-10 dark:opacity-20 pointer-events-none"></div>
+            <div
+                class="absolute top-0 left-0 w-full h-40 bg-gradient-to-br from-orange-400 to-red-500 opacity-10 dark:opacity-20 pointer-events-none">
+            </div>
 
             <div class="relative pt-10 pb-6 px-6 text-center">
-                
+
                 <!-- Animated Checkmark Icon -->
-                <div class="relative mx-auto mb-6 w-24 h-24 bg-gradient-to-tr from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
+                <div
+                    class="relative mx-auto mb-6 w-24 h-24 bg-gradient-to-tr from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
                     <div class="absolute inset-0 rounded-full animate-ping opacity-20 bg-orange-500"></div>
-                    <svg class="checkmark-svg w-12 h-12 text-white relative z-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <svg class="checkmark-svg w-12 h-12 text-white relative z-10" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 52 52">
                         <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
-                        <path class="checkmark-check" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M14 27l7 7 16-16" />
+                        <path class="checkmark-check" fill="none" stroke="currentColor" stroke-width="4"
+                            stroke-linecap="round" stroke-linejoin="round" d="M14 27l7 7 16-16" />
                     </svg>
                 </div>
-                
+
                 <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">¡Pedido Exitoso!</h2>
-                <p id="success-modal-description" class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6 leading-relaxed">
-                    Tu pedido está en el sistema. Para que lo preparen más rápido, <strong class="text-gray-700 dark:text-gray-300">confírmalo por WhatsApp</strong>.
+                <p id="success-modal-description"
+                    class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6 leading-relaxed">
+                    Tu pedido está en el sistema. Para que lo preparen más rápido, <strong
+                        class="text-gray-700 dark:text-gray-300">confírmalo por WhatsApp</strong>.
                 </p>
-                
-            <!-- Card Box para Orden y Total -->
-            <div class="bg-gray-50 dark:bg-[#1a1a1a] rounded-3xl p-6 mx-6 mb-8 border border-gray-100 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
-                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Nº de Orden</span>
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        <span class="text-sm font-black text-gray-800 dark:text-gray-300 font-mono tracking-wider" id="success-order-number">ORD-000</span>
+
+                <!-- Card Box para Orden y Total -->
+                <div
+                    class="bg-gray-50 dark:bg-[#1a1a1a] rounded-3xl p-6 mx-6 mb-8 border border-gray-100 dark:border-gray-800">
+                    <div
+                        class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Nº de Orden</span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            <span class="text-sm font-black text-gray-800 dark:text-gray-300 font-mono tracking-wider"
+                                id="success-order-number">ORD-000</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">Total a Pagar</p>
+                        <div class="text-3xl font-black text-gray-900 dark:text-white" id="success-order-total">$0</div>
                     </div>
                 </div>
-                
-                <div class="text-center pt-2">
-                    <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">Total a Pagar</p>
-                    <div class="text-3xl font-black text-gray-900 dark:text-white" id="success-order-total">$0</div>
-                </div>
-            </div>
 
                 <!-- Action Buttons -->
-            <div class="px-6 pb-8">
-                <button id="btn-confirm-whatsapp" onclick="confirmAndRedirectWhatsApp();" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-red-600 text-white py-3.5 px-6 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-[0_4px_15px_rgba(249,115,22,0.3)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.4)] hover:-translate-y-0.5 mb-5 outline-none focus:ring-4 focus:ring-orange-500/20 border-none">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                    Confirmar Whatsapp
-                </button>
-                
-                <button id="btn-volver-menu" onclick="location.reload()" class="w-full flex items-center justify-center gap-1.5 text-[0.8rem] font-bold text-gray-400 bg-transparent border-none outline-none hover:text-gray-800 dark:hover:text-white transition-colors focus:outline-none hover:bg-transparent">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Volver al inicio
-                </button>
+                <div class="px-6 pb-8">
+                    <button id="btn-confirm-whatsapp" onclick="confirmAndRedirectWhatsApp();"
+                        class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-red-600 text-white py-3.5 px-6 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-[0_4px_15px_rgba(249,115,22,0.3)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.4)] hover:-translate-y-0.5 mb-5 outline-none focus:ring-4 focus:ring-orange-500/20 border-none">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                        </svg>
+                        Confirmar Whatsapp
+                    </button>
+
+                    <button id="btn-volver-menu" onclick="location.reload()"
+                        class="w-full flex items-center justify-center gap-1.5 text-[0.8rem] font-bold text-gray-400 bg-transparent border-none outline-none hover:text-gray-800 dark:hover:text-white transition-colors focus:outline-none hover:bg-transparent">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Volver al inicio
+                    </button>
+                </div>
+
+
             </div>
-
-
         </div>
-    </div>
 
 
-    <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
-    {% block extra_js %}{% endblock %}
+        <script src="{{ url_for('static', filename='js/public/interactions.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+        {% block extra_js %}{% endblock %}
 </body>
 
 </html>

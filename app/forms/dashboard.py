@@ -1,11 +1,16 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField, IntegerField
-from wtforms.validators import DataRequired, Length, NumberRange
+from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class CategoryForm(FlaskForm):
     name = StringField('Nombre', validators=[DataRequired(), Length(max=100)])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activa', default=True)
+    image = FileField('Imagen (Opcional)', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')
+    ])
     submit = SubmitField('Guardar')
 
 class ProductForm(FlaskForm):
@@ -14,6 +19,11 @@ class ProductForm(FlaskForm):
     price = IntegerField('Precio', validators=[DataRequired(), NumberRange(min=1, message='El precio debe ser mayor a 0')])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activo', default=True)
+    is_highlighted = BooleanField('Destacado en carrusel', default=False)
+    image = FileField('Imagen (Opcional)', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')
+    ])
     submit = SubmitField('Guardar')
 
 class ModifierForm(FlaskForm):
