@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# App Version
+APP_VERSION = '1.3.0'
+APP_RELEASE_DATE = '2026-04-14'
+
 class Config:
     # Flask
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'una-clave-secreta-para-desarrollo'
