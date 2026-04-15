@@ -13,7 +13,6 @@
     <script src="{{ url_for('static', filename='JS/tailwind.app.js') }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/public_base.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/footer.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -21,7 +20,7 @@
     {% block hero %}
     <header class="header-menu">
         <h1>{% block header_title %}{{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
-        <div class="header-subtitle">{% block header_subtitle %}Tu menú digital de confianza{% endblock %}</div>
+        <div class="header-subtitle">{% block header_subtitle %}🍽️ Tu menú digital de confianza{% endblock %}</div>
     </header>
     {% endblock %}
 
@@ -29,21 +28,12 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% include 'public/footer.html' %}
-
     <div id="sticky-cart">
         {% block footer_cart %}{% endblock %}
     </div>
 
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>
-
-    <!-- Back to Top Button -->
-    <button id="btn-back-to-top" class="btn-back-to-top" onclick="scrollToTop()" aria-label="Volver arriba">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-            <polyline points="18 15 12 9 6 15"></polyline>
-        </svg>
-    </button>
 
     {% if restaurant %}
     <script>
@@ -216,7 +206,6 @@
         </div>
 
 
-        <script src="{{ url_for('static', filename='js/public/interactions.js') }}"></script>
         <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
         {% block extra_js %}{% endblock %}
 </body>

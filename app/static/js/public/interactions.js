@@ -74,11 +74,12 @@ function loadQR(productId) {
 /**
  * Sistema de compartido nativo o portapapeles
  */
-async function shareProduct(productId, productName) {
+async function shareProduct(productId, productName, categoryName) {
     const productUrl = `${window.location.origin}${window.location.pathname}#product-${productId}`;
+    const shareText = getShareMessage(productName, categoryName);
     const shareData = {
         title: `Prueba esto en ${document.title}`,
-        text: `¡Mira este delicioso plato: ${productName}!`,
+        text: shareText,
         url: productUrl
     };
 
@@ -93,6 +94,31 @@ async function shareProduct(productId, productName) {
     } catch (err) {
         console.error('Error al compartir:', err);
     }
+}
+
+/**
+ * Determina el tipo de producto basado en el nombre de la categoría
+ */
+function getProductTypeText(categoryName) {
+    if (!categoryName) return 'plato';
+
+    const nameLower = categoryName.toLowerCase();
+
+    if (nameLower.includes('bebida')) return 'bebida';
+    if (nameLower.includes('postre')) return 'postre';
+    if (nameLower.includes('entrada')) return 'entrada';
+
+    return 'plato'; // default
+}
+
+/**
+ * Genera el mensaje de compartir adaptado según la categoría
+ */
+function getShareMessage(productName, categoryName) {
+    const typeText = getProductTypeText(categoryName);
+    // Usar 'deliciosa' para bebida y entrada, 'delicioso' para postre y plato
+    const adjective = (typeText === 'bebida' || typeText === 'entrada') ? 'deliciosa' : 'delicioso';
+    return `¡Mira este ${adjective} ${typeText}: ${productName}!`;
 }
 
 /**

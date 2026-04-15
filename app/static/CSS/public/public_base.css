@@ -4,13 +4,13 @@
     --midnight: #1e3a8a;
     --midnight-dark: #172554;
     --success: #25d366;
-    --text-dark: #1A1A1A;
-    --text-muted: #4A4A4A;
-    --bg-light: #F8F8F8;
+    --text-dark: #2c3e50;
+    --text-muted: #7f8c8d;
+    --bg-light: #fdfcfb;
     --card-bg: #ffffff;
     --header-bg: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
     --border-color: rgba(0, 0, 0, 0.04);
 
     /* Overriding Pico variables */
@@ -41,18 +41,13 @@
 
 body {
     background: var(--bg-light);
+    padding-bottom: 120px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--text-dark);
     margin: 0;
     transition: background-color 0.4s ease, color 0.4s ease;
     overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-main {
-    flex: 1;
+    /* Elimina el scroll horizontal */
 }
 
 .container-menu {
@@ -87,17 +82,34 @@ main {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #FAFAFA;
-    padding: 1.25rem 2rem;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
-    display: none;
+    
+    /* Usa tus variables, pero asegura que el fondo cambie */
+    background: var(--card-bg);
+    /* Forzamos que el texto siga la variable de tu root */
+    color: var(--text-dark); 
+    
+    /* El padding-bottom es la clave para que no se "despegue" en móviles */
+    padding: 1.25rem 2rem calc(1.25rem + env(safe-area-inset-bottom));
+    
+    box-shadow: var(--shadow-md);
     z-index: 1000;
     max-width: 600px;
     margin: 0 auto;
     border-radius: 32px 32px 0 0;
     border: 1px solid var(--border-color);
+    
+    /* Esto ayuda a que el efecto blur se vea bien en ambos modos */
     backdrop-filter: blur(20px);
-    animation: slideUp 0.5s ease-out;
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* IMPORTANTE: Evita que el carrito crezca más de la cuenta */
+    box-sizing: border-box;
+    display: none; /* Se activa con JS */
+}
+
+/* Asegura que los botones internos también respeten el tema */
+#sticky-cart button {
+    margin-bottom: 5px; /* Pequeño respiro para que no se peguen al borde */
 }
 
 @keyframes slideUp {
@@ -433,7 +445,7 @@ main {
     border-radius: 28px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
