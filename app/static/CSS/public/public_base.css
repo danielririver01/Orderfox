@@ -78,38 +78,37 @@ body {
 }
 
 #sticky-cart {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    
-    /* Usa tus variables, pero asegura que el fondo cambie */
-    background: var(--card-bg);
-    /* Forzamos que el texto siga la variable de tu root */
-    color: var(--text-dark); 
-    
-    /* El padding-bottom es la clave para que no se "despegue" en móviles */
-    padding: 1.25rem 2rem calc(1.25rem + env(safe-area-inset-bottom));
-    
-    box-shadow: var(--shadow-md);
-    z-index: 1000;
-    max-width: 600px;
-    margin: 0 auto;
-    border-radius: 32px 32px 0 0;
-    border: 1px solid var(--border-color);
-    
-    /* Esto ayuda a que el efecto blur se vea bien en ambos modos */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    
-    /* IMPORTANTE: Evita que el carrito crezca más de la cuenta */
-    box-sizing: border-box;
-    display: none; /* Se activa con JS */
-}
 
-/* Asegura que los botones internos también respeten el tema */
-#sticky-cart button {
-    margin-bottom: 5px; /* Pequeño respiro para que no se peguen al borde */
+    position: fixed;
+
+    bottom: 0;
+
+    left: 0;
+
+    right: 0;
+
+    background: var(--card-bg);
+
+    padding: 1.25rem 2rem;
+
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+
+    display: none;
+
+    z-index: 1000;
+
+    max-width: 600px;
+
+    margin: 0 auto;
+
+    border-radius: 32px 32px 0 0;
+
+    border: 1px solid var(--border-color);
+
+    backdrop-filter: blur(20px);
+
+    animation: slideUp 0.5s ease-out;
+
 }
 
 @keyframes slideUp {
