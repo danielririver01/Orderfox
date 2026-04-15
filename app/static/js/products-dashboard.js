@@ -92,5 +92,55 @@ function showPage(categoryElement, pageNum, itemsPerPage) {
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     // All products start hidden until expanded
+
+    // Búsqueda de productos en tiempo real
+    const searchInput = document.getElementById('searchProducts');
+    const searchResults = document.getElementById('searchResults');
+    const categoriesGrid = document.getElementById('categoriesGrid');
+    const productItems = document.querySelectorAll('.product-result-item');
+
+    if (searchInput && searchResults && categoriesGrid && productItems.length > 0) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+
+            if (searchTerm === '') {
+                // Si está vacío, mostrar categorías y ocultar resultados
+                searchResults.classList.add('hidden');
+                categoriesGrid.classList.remove('hidden');
+            } else {
+                // Mostrar resultados y ocultar categorías
+                searchResults.classList.remove('hidden');
+                categoriesGrid.classList.add('hidden');
+
+                // Filtrar productos
+                productItems.forEach(item => {
+                    const productName = item.querySelector('h3').textContent.toLowerCase();
+                    const productDesc = item.querySelector('p') ? item.querySelector('p').textContent.toLowerCase() : '';
+
+                    if (productName.includes(searchTerm) || productDesc.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Mostrar mensaje si no hay resultados
+                const visibleItems = Array.from(productItems).filter(item => item.style.display !== 'none');
+                let emptyMessage = document.getElementById('no-products-message');
+
+                if (visibleItems.length === 0) {
+                    if (!emptyMessage) {
+                        emptyMessage = document.createElement('div');
+                        emptyMessage.id = 'no-products-message';
+                        emptyMessage.className = 'text-center py-12 text-gray-500';
+                        emptyMessage.innerHTML = '<span class="material-symbols-outlined text-5xl mb-3">search_off</span><p class="text-sm">No hay productos que coincidan</p>';
+                        searchResults.appendChild(emptyMessage);
+                    }
+                } else if (emptyMessage) {
+                    emptyMessage.remove();
+                }
+            }
+        });
+    }
 });
 

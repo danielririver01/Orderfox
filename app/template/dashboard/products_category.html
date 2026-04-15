@@ -62,7 +62,7 @@
                         <form action="{{ url_for('products.delete', id=product.id) }}" method="POST" id="delete-form-{{ product.id }}" style="display:none;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         </form>
-                        <button onclick="openDeleteModal(document.getElementById('delete-form-{{ product.id }}'), '¿Eliminar «{{ product.name }}»?', 'Eliminar')" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 rounded-lg transition-all">
+                        <button onclick="openDeleteModal(document.getElementById('delete-form-{{ product.id }}'), 'Este producto se eliminará permanentemente del menú.', '¿Eliminar {{ product.name }}?')" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 rounded-lg transition-all">
                             <span class="material-symbols-outlined">delete</span>
                         </button>
                     </div>

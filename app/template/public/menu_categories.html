@@ -139,27 +139,71 @@
 
 {% block extra_js %}
 <script>
-    // Lógica del Carrusel (Sin Auto-scroll)
+    // Lógica del Carrusel con Auto-scroll
     const track = document.querySelector('.carousel-track');
     const dots = document.querySelectorAll('.dot');
-    
+    let currentIndex = 0;
+    let autoplayInterval;
+
     if (track && dots.length > 0) {
+        const slideCount = dots.length;
+
+        // Función para ir a un slide específico
+        function goToSlide(index) {
+            track.scrollTo({
+                left: track.offsetWidth * index,
+                behavior: 'smooth'
+            });
+            currentIndex = index;
+            updateDots();
+        }
+
+        // Actualizar indicadores (dots)
+        function updateDots() {
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        }
+
+        // Auto-scroll cada 5 segundos
+        function startAutoplay() {
+            autoplayInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % slideCount;
+                goToSlide(currentIndex);
+            }, 5000);
+        }
+
+        // Pausar autoplay
+        function pauseAutoplay() {
+            clearInterval(autoplayInterval);
+        }
+
+        // Reanudar autoplay después de inactividad
+        function resetAutoplay() {
+            pauseAutoplay();
+            startAutoplay();
+        }
+
         track.addEventListener('scroll', () => {
             const index = Math.round(track.scrollLeft / track.offsetWidth);
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
+            currentIndex = index;
+            updateDots();
         });
 
         dots.forEach(dot => {
             dot.addEventListener('click', () => {
                 const index = parseInt(dot.getAttribute('data-index'));
-                track.scrollTo({
-                    left: track.offsetWidth * index,
-                    behavior: 'smooth'
-                });
+                goToSlide(index);
+                resetAutoplay();
             });
         });
+
+        // Pausar autoplay al pasar el mouse
+        track.addEventListener('mouseenter', pauseAutoplay);
+        track.addEventListener('mouseleave', startAutoplay);
+
+        // Iniciar autoplay
+        startAutoplay();
     }
 
     // Scroll Suave para anclajes

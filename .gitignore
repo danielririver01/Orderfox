@@ -81,3 +81,5 @@ tests/playwright/.auth/
 activate_test_restaurant.py
 bot_test_limiter.py
 
+#ignorar archivos de imagenes
+static/uploads/
