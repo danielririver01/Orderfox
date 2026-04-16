@@ -156,11 +156,71 @@ def edit(id):
     return render_template('dashboard/product_form.html', form=form, title='Editar Producto', product=product)
 
 
+@products_bp.route('/<int:id>/status', methods=['GET'])
+@login_required
+@active_required
+def get_status(id):
+    """Obtener el estado actual de un producto"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not product:
+        return jsonify({'error': 'Producto no encontrado'}), 404
+
+    return jsonify({
+        'success': True,
+        'id': product.id,
+        'is_active': product.is_active
+    })
+
+@products_bp.route('/<int:id>/status', methods=['PUT'])
+@login_required
+@active_required
+def update_status(id):
+    """Actualizar el estado is_active con validación de límites"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not product:
+        return jsonify({'error': 'Producto no encontrado'}), 404
+
+    data = request.get_json()
+    if not data or 'is_active' not in data:
+        return jsonify({'error': 'Datos inválidos'}), 400
+
+    desired_state = data.get('is_active')
+
+    # Si se intenta activar, verificar límites del plan
+    if desired_state is True and product.is_active is False:
+        allowed, message = check_product_limit(restaurant)
+        if not allowed:
+            return jsonify({
+                'success': False,
+                'message': message,
+                'is_active': product.is_active
+            }), 400
+
+    if product.is_active == desired_state:
+        return jsonify({'success': True, 'is_active': product.is_active})
+
+    product.is_active = desired_state
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'is_active': product.is_active,
+        'message': 'Estado actualizado correctamente'
+    })
+
 @products_bp.route('/<int:id>/toggle', methods=['PATCH', 'POST'])
 @login_required
 @active_required
 def toggle(id):
-    """Toggle is_active con validación estricta de límites"""
+    """Mantenemos compatibilidad con el endpoint anterior si es necesario"""
     restaurant = get_current_restaurant()
     if not restaurant:
         return jsonify({'error': 'Restaurante no encontrado'}), 404
