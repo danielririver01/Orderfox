@@ -2,12 +2,13 @@
  * Products Management - Velzia
  */
 
-// Toggle Product Status
+
 // Toggle Product Status
 async function toggleProduct(id, newState) {
     const badge = document.getElementById(`status-badge-${id}`);
     const dot = document.getElementById(`status-dot-${id}`);
     const text = document.getElementById(`status-text-${id}`);
+    const toggles = document.querySelectorAll(`input[data-product-id="${id}"]`);
     
     // Guardar estado anterior por si falla
     let oldClasses, oldDotClasses, oldText;
@@ -27,17 +28,21 @@ async function toggleProduct(id, newState) {
             text.textContent = 'Inactivo';
         }
     }
-
+    toggles.forEach(t => t.checked = newState);
     try {
-        const response = await fetch(`/products/${id}/toggle`, {
-            method: 'PATCH',
+        const response = await fetch(`/products/${id}/status`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ is_active: newState })
         });
         
-        if (!response.ok) throw new Error('Error al actualizar');
+       const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al actualizar');
+        }
         
     } catch (error) {
         // Revertir UI
@@ -47,10 +52,14 @@ async function toggleProduct(id, newState) {
             text.textContent = oldText;
         }
         
-        const checkbox = document.querySelector(`input[onchange*="toggleProduct(${id}"]`);
-        if (checkbox) checkbox.checked = !newState;
+        toggles.forEach(t => t.checked = !newState);
         
-        showToast('Error de conexión. Intenta de nuevo.');
+         // Usar el sistema de toast global de Velzia
+        if (window.showToast) {
+            window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
+        } else {
+            alert(error.message || 'Error de conexión. Intenta de nuevo.');
+        }
     }
 }
 

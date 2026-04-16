@@ -44,16 +44,22 @@
                         {% endif %}
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-lg font-black text-[#f2460d]">${{ '{:,}'.format(product.price) }}</span>
-                            <span class="px-2 py-1 rounded text-[9px] font-bold {% if product.is_active %}bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400{% else %}bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400{% endif %}">
-                                {{ 'Activo' if product.is_active else 'Inactivo' }}
-                            </span>
+                            <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 
+                                {% if product.is_active %}
+                                    bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20
+                                {% else %}
+                                    bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20
+                                {% endif %}">
+                                <div id="status-dot-{{ product.id }}" class="w-1 h-1 rounded-full {% if product.is_active %}bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]{% else %}bg-rose-500 opacity-20{% endif %}"></div>
+                                <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo' }}</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Acciones -->
                     <div class="flex gap-2 flex-shrink-0">
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer product-toggle" {% if product.is_active %}checked{% endif %} {% if is_blocked %}disabled{% endif %} onchange="toggleProduct({{ product.id }}, this.checked)">
+                            <input type="checkbox" data-product-id="{{ product.id }}" class="sr-only peer product-toggle" {% if product.is_active %}checked{% endif %} {% if is_blocked %}disabled{% endif %} onchange="toggleProduct({{ product.id }}, this.checked)">
                             <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
                         </label>
                         <a href="{{ url_for('products.edit', id=product.id) }}" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#f2460d] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
