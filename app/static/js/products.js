@@ -2,13 +2,13 @@
  * Products Management - Velzia
  */
 
-
 // Toggle Product Status
-async function toggleProduct(id, newState) {
+async function toggleProduct(id, newState, url = null) {
     const badge = document.getElementById(`status-badge-${id}`);
     const dot = document.getElementById(`status-dot-${id}`);
     const text = document.getElementById(`status-text-${id}`);
     const toggles = document.querySelectorAll(`input[data-product-id="${id}"]`);
+    const endpoint = url || `/products/${id}/status`;
     
     // Guardar estado anterior por si falla
     let oldClasses, oldDotClasses, oldText;
@@ -28,9 +28,12 @@ async function toggleProduct(id, newState) {
             text.textContent = 'Inactivo';
         }
     }
+
+    // Sincronizar todos los toggles del mismo producto (ej: en búsqueda y en lista)
     toggles.forEach(t => t.checked = newState);
+
     try {
-        const response = await fetch(`/products/${id}/status`, {
+        const response = await fetch(endpoint, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -38,7 +41,7 @@ async function toggleProduct(id, newState) {
             body: JSON.stringify({ is_active: newState })
         });
         
-       const data = await response.json();
+        const data = await response.json();
 
         if (!response.ok) {
             throw new Error(data.message || 'Error al actualizar');
@@ -54,7 +57,7 @@ async function toggleProduct(id, newState) {
         
         toggles.forEach(t => t.checked = !newState);
         
-         // Usar el sistema de toast global de Velzia
+        // Usar el sistema de toast global de Velzia
         if (window.showToast) {
             window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
         } else {

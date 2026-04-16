@@ -85,11 +85,56 @@ def edit(id):
     
     return render_template('dashboard/category_form.html', form=form, title='Editar Categoría', category=category)
 
+categories_bp.route('/<int:id>/status', methods=['GET'])
+@login_required
+@active_required
+def get_status(id):
+    """Obtener el estado actual de una categoría"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+        
+    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not category:
+        return jsonify({'error': 'Categoría no encontrada'}), 404
+    
+    return jsonify({
+        'success': True,
+        'id': category.id,
+        'is_active': category.is_active
+    })
+
+@categories_bp.route('/<int:id>/status', methods=['PUT', 'POST'])
+@login_required
+@active_required
+def update_status(id):
+    """Actualizar el estado is_active de una categoría"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+        
+    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not category:
+        return jsonify({'error': 'Categoría no encontrada'}), 404
+    
+    data = request.get_json()
+    if not data or 'is_active' not in data:
+        return jsonify({'error': 'Datos inválidos'}), 400
+        
+    category.is_active = data.get('is_active')
+    db.session.commit()
+    
+    return jsonify({
+        'success': True, 
+        'is_active': category.is_active,
+        'message': 'Estado de categoría actualizado'
+    })
+
 @categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
 @login_required
 @active_required
 def toggle(id):
-    """Toggle is_active (UI Optimista)"""
+    """Mantenemos para compatibilidad"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
