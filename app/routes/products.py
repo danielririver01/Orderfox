@@ -175,7 +175,7 @@ def get_status(id):
         'is_active': product.is_active
     })
 
-@products_bp.route('/<int:id>/status', methods=['PUT'])
+@products_bp.route('/<int:id>/status', methods=['PUT', 'POST'])
 @login_required
 @active_required
 def update_status(id):

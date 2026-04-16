@@ -91,8 +91,12 @@ def edit(id):
 def get_status(id):
     """Obtener el estado actual de una categoría"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not category:
+        return jsonify({'error': 'Categoría no encontrada'}), 404
 
     return jsonify({
         'success': True,
@@ -100,14 +104,18 @@ def get_status(id):
         'is_active': category.is_active
     })
 
-@categories_bp.route('/<int:id>/status', methods=['PUT'])
+@categories_bp.route('/<int:id>/status', methods=['PUT', 'POST'])
 @login_required
 @active_required
 def update_status(id):
     """Actualizar el estado is_active de una categoría"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not category:
+        return jsonify({'error': 'Categoría no encontrada'}), 404
 
     data = request.get_json()
     if not data or 'is_active' not in data:

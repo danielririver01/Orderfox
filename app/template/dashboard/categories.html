@@ -74,7 +74,7 @@
                                    data-category-id="{{ category.id }}"
                                    class="sr-only peer" 
                                    {% if category.is_active %}checked{% endif %}
-                                   onchange="toggleCategory({{ category.id }}, this.checked)">
+                                   onchange="toggleCategory({{ category.id }}, this.checked, '{{ url_for('categories.update_status', id=category.id) }}')">
                         <div class="w-11 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:shadow-[0_0_15px_rgba(16,185,129,0.4)] shadow-inner"></div>
                         </label>
                         
