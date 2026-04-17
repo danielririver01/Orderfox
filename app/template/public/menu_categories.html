@@ -1,7 +1,7 @@
 {% extends "public_base.html" %}
 {% from "components/product_macros.html" import render_product_card %}
 
-{% block title %}Categorías{% endblock %}
+{% block title %}Categorías - {{ restaurant.name }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_categories.css') }}">
@@ -121,11 +121,11 @@
         <div class="cart-label">Total de tu pedido</div>
         <span class="cart-total" id="cart-total">$0</span>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-send" onclick="sendWhatsApp()">
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
             Enviar pedido
         </button>
-        <button class="btn-clear" onclick="clearCart()">
+        <button class="btn-clear" onclick="clearCart()" title="Cancelar pedido">
             ✖
         </button>
     </div>

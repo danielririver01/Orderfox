@@ -312,8 +312,13 @@ def novedades(slug):
     
     products = pagination.items
     
+    # Lógica de "Solo Lectura"
+    is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
+    ordering_disabled = not is_active_sub or not restaurant.is_open
+
     return render_template('public/menu_novedades.html',
                          restaurant=restaurant,
                          categories=categories,
                          products=products,
-                         pagination=pagination)
+                         pagination=pagination,
+                         ordering_disabled=ordering_disabled)
