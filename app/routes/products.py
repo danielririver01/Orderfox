@@ -14,6 +14,7 @@ products_bp = Blueprint('products', __name__, url_prefix='/products')
 @active_required
 def index():
     """Listar todos los productos del restaurante agrupados por categoría"""
+    from flask import abort
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     products = Product.query.filter_by(restaurant_id=restaurant.id).order_by(Product.category_id, Product.name).all()
@@ -259,8 +260,10 @@ def toggle(id):
 @active_required
 def delete(id):
     """Eliminar producto"""
+    from flask import abort
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
+    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     # Eliminar imagen física antes de borrar de la BD
     if product.image_url:
         delete_image(product.image_url)
@@ -278,6 +281,7 @@ def delete(id):
 @active_required
 def modifiers(product_id):
     """Listar modificadores de un producto"""
+    from flask import abort
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
@@ -295,6 +299,7 @@ def modifiers(product_id):
 @active_required
 def create_modifier(product_id):
     """Crear modificador para un producto"""
+    from flask import abort
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
@@ -326,6 +331,7 @@ def create_modifier(product_id):
 @active_required
 def delete_modifier(id):
     """Eliminar modificador"""
+    from flask import abort
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()

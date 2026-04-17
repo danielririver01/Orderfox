@@ -1,7 +1,7 @@
 {% extends "public_base.html" %}
 {% from "components/product_macros.html" import render_product_card %}
 
-{% block title %}Nuevos Lanzamientos - {{ restaurant.name }}{% endblock %}
+{% block title %}Nuevos Lanzamientos - {{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_novedades.css') }}">

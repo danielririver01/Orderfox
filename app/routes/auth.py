@@ -13,7 +13,6 @@ import mercadopago
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.utils.subscription import sanitize_restaurant_limits
-from app import oauth
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -588,71 +587,6 @@ def webhook():
         # print(f"WEBHOOK ERROR: {e}")
         return "ERROR", 500
 
-@auth_bp.route('/login/google')
-def login_google():
-    if not current_app.config.get('GOOGLE_CLIENT_ID'):
-        flash('El inicio de sesión con Google no está configurado todavía. Por favor contacta al administrador.', 'warning')
-        return redirect(url_for('auth.login'))
-    redirect_uri = url_for('auth.google_authorize', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
-
-@auth_bp.route('/authorize/google')
-def google_authorize():
-    token = oauth.google.authorize_access_token()
-    user_info = token.get('userinfo')
-    if user_info:
-        email = user_info['email']
-        user = User.query.filter_by(email=email).first()
-        if user:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            if user.restaurant and not user.restaurant.is_active:
-                session['pending_restaurant_id'] = user.restaurant.id
-                flash('Tu suscripción está pendiente de pago.', 'info')
-                return redirect(url_for('auth.payment'))
-            return redirect(url_for('dashboard.index'))
-        else:
-            flash('No existe una cuenta asociada a este correo de Google. Por favor regístrate primero.', 'warning')
-            return redirect(url_for('auth.login'))
-    return redirect(url_for('auth.login'))
-
-@auth_bp.route('/login/facebook')
-def login_facebook():
-    if not current_app.config.get('FACEBOOK_CLIENT_ID'):
-        flash('El inicio de sesión con Facebook no está configurado todavía. Por favor contacta al administrador.', 'warning')
-        return redirect(url_for('auth.login'))
-    redirect_uri = url_for('auth.facebook_authorize', _external=True)
-    return oauth.facebook.authorize_redirect(redirect_uri)
-
-@auth_bp.route('/authorize/facebook')
-def facebook_authorize():
-    token = oauth.facebook.authorize_access_token()
-    resp = oauth.facebook.get('me?fields=id,name,email')
-    profile = resp.json()
-    if profile:
-        email = profile.get('email')
-        name = profile.get('name')
-
-        user = None
-        if email:
-            user = User.query.filter_by(email=email).first()
-
-        if not user and name:
-            # Intento de vinculación por nombre si no hay email (según requerimiento)
-            user = User.query.filter_by(username=name).first()
-
-        if user:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            if user.restaurant and not user.restaurant.is_active:
-                session['pending_restaurant_id'] = user.restaurant.id
-                flash('Tu suscripción está pendiente de pago.', 'info')
-                return redirect(url_for('auth.payment'))
-            return redirect(url_for('dashboard.index'))
-        else:
-            flash('No pudimos vincular tu cuenta de Facebook. Asegúrate de tener una cuenta creada con el mismo nombre o correo.', 'warning')
-            return redirect(url_for('auth.login'))
-    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 def sync_clerk():

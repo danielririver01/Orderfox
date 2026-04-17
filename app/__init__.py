@@ -9,12 +9,9 @@ from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
-from authlib.integrations.flask_client import OAuth
-
 mail = Mail()
 scheduler = APScheduler()
 csrf = CSRFProtect()
-oauth = OAuth()
 
 # 1. Una key_func que identifique a cada uno por separado
 def get_limit_key():
@@ -44,28 +41,6 @@ def create_app():
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
-    oauth.init_app(app)
-
-    # Registro de Clientes OAuth
-    oauth.register(
-        name='google',
-        client_id=app.config.get('GOOGLE_CLIENT_ID'),
-        client_secret=app.config.get('GOOGLE_CLIENT_SECRET'),
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid email profile'}
-    )
-
-    oauth.register(
-        name='facebook',
-        client_id=app.config.get('FACEBOOK_CLIENT_ID'),
-        client_secret=app.config.get('FACEBOOK_CLIENT_SECRET'),
-        access_token_url='https://graph.facebook.com/v12.0/oauth/access_token',
-        access_token_params=None,
-        authorize_url='https://www.facebook.com/v12.0/dialog/oauth',
-        authorize_params=None,
-        api_base_url='https://graph.facebook.com/',
-        client_kwargs={'scope': 'email public_profile'}
-    )
     
     # Soporte para Proxys (Nginx, Gunicorn, Heroku, etc.)
     # Esto asegura que request.remote_addr sea la IP real del cliente.
