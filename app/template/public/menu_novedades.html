@@ -20,6 +20,25 @@
 </div>
 {% endblock %}
 
+{% block footer_cart %}
+{% if not ordering_disabled %}
+<div class="cart-summary">
+    <div class="cart-info">
+        <div class="cart-label">Total de tu pedido</div>
+        <span class="cart-total" id="cart-total">$0</span>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
+            Enviar pedido
+        </button>
+        <button class="btn-clear" onclick="clearCart()" title="Cancelar pedido">
+            ✖
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="novedades-header">
     <a href="{{ url_for('public.menu', slug=restaurant.slug) }}" class="btn-back">
