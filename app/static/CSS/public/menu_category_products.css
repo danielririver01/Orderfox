@@ -87,7 +87,7 @@
 
 /* --- HERO & FALLBACK (Especificidad Reforzada) --- */
 .menu-hero-container.category-hero {
-    margin: -1.5rem -1rem 1.5rem -1rem !important;
+    margin: -1.5rem 0 1.5rem 0 !important;
     position: relative;
     overflow: hidden;
     background: #000;
