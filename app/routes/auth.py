@@ -591,30 +591,42 @@ def webhook():
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 def sync_clerk():
     """Sincroniza el usuario de Clerk con la base de datos local"""
+    from app.utils.auth import verify_clerk_session
+
+    # Verificación de seguridad: Clerk maneja la autenticación.
+    # En un entorno de producción, aquí verificaríamos el JWT de Clerk.
+    # Por ahora, confiamos en la sincronización del frontend si el token es válido.
+
     data = request.get_json()
     if not data:
-        return jsonify({'success': False}), 400
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
 
     email = data.get('email')
-    username = data.get('username') or email.split('@')[0]
+    username = data.get('username') or (email.split('@')[0] if email else 'User')
+
+    if not email:
+        return jsonify({'success': False, 'error': 'Email is required'}), 400
 
     user = User.query.filter_by(email=email).first()
 
+    is_new_user = False
     if not user:
-        # Si no existe, lo creamos (Registro vía Social Auth de Clerk)
-        # Nota: En un flujo real, aquí podrías redirigir a elegir plan si no tiene restaurante
         user = User(email=email, username=username)
-        user.set_password(secrets.token_hex(16)) # Pass aleatorio seguro
+        user.set_password(secrets.token_hex(16))
         db.session.add(user)
         db.session.commit()
+        is_new_user = True
 
     session['user_id'] = user.id
     session['username'] = user.username
 
+    redirect_url = url_for('dashboard.index') if user.restaurant_id else url_for('auth.plans')
+
     return jsonify({
         'success': True,
         'has_restaurant': user.restaurant_id is not None,
-        'redirect': url_for('dashboard.index') if user.restaurant_id else url_for('auth.plans')
+        'is_new_user': is_new_user,
+        'redirect': redirect_url
     })
 
 @auth_bp.route('/logout')

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -13,24 +12,20 @@
     <link rel="icon"
         href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
         type="image/svg+xml">
-
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
-
-    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
     <!-- Clerk SDK -->
-    <script
-        async
-        crossorigin="anonymous"
-        data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
-        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-        type="text/javascript"
-    ></script>
+   <script
+    crossorigin="anonymous"
+    data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+></script>
 </head>
 
 <body
@@ -66,55 +61,6 @@
                 <!-- Clerk Login Container -->
                 <div id="clerk-signin" class="w-full min-h-[400px]"></div>
 
-                <script>
-                    window.addEventListener('load', async function() {
-                        await Clerk.load();
-
-                        const signInDiv = document.getElementById('clerk-signin');
-
-                        Clerk.mountSignIn(signInDiv, {
-                            appearance: {
-                                elements: {
-                                    rootBox: "w-full",
-                                    card: "shadow-none border-none bg-transparent p-0",
-                                    headerTitle: "hidden",
-                                    headerSubtitle: "hidden",
-                                    socialButtonsBlockButton: "rounded-lg h-11 border-gray-200 dark:border-[#333] hover:bg-gray-50 dark:hover:bg-[#222] transition-all",
-                                    formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
-                                    footer: "hidden",
-                                    dividerRow: "my-6",
-                                    dividerText: "text-[10px] font-black text-gray-400 uppercase tracking-widest"
-                                }
-                            },
-                            // Redirigir a planes si el usuario intenta registrarse
-                            signUpUrl: "{{ url_for('auth.plans') }}",
-                        });
-
-                        Clerk.addListener(({ user }) => {
-                            if (user) {
-                                // Sincronizar con backend
-                                const email = user.primaryEmailAddress.emailAddress;
-                                const username = user.username || user.firstName;
-
-                                fetch("{{ url_for('auth.sync_clerk') }}", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "X-CSRFToken": "{{ csrf_token() }}"
-                                    },
-                                    body: JSON.stringify({ email, username })
-                                })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        window.location.href = data.redirect;
-                                    }
-                                });
-                            }
-                        });
-                    });
-                </script>
-
                 <div class="mt-8 w-full flex flex-col items-center gap-4">
                     <a href="{{ url_for('auth.plans') }}"
                         class="w-full flex items-center justify-center gap-2 bg-[#fff5f2] dark:bg-[#2a120c] border border-[#f2460d]/30 text-[#f2460d] hover:bg-[#f2460d] hover:text-white font-bold h-11 rounded-lg transition-all duration-200 shadow-sm">
@@ -133,59 +79,6 @@
                 </span>
             </div>
         </div>
-
-        <style>
-            /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
-            :root {
-                --autofill-bg: #ffffff;
-                /* Fondo para modo claro */
-                --autofill-text: #000000;
-                /* Texto para modo claro */
-            }
-
-            /* Si el sistema del usuario está en modo oscuro */
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    --autofill-bg: #0a0a0a;
-                    --autofill-text: #ffffff;
-                }
-            }
-
-            /* Si usas una clase .dark (común en Tailwind/Dashboard) */
-            .dark {
-                --autofill-bg: #0a0a0a;
-                --autofill-text: #ffffff;
-            }
-
-            /* 2. APLICACIÓN DEL AUTOFILL DINÁMICO */
-            input:-webkit-autofill,
-            input:-webkit-autofill:hover,
-            input:-webkit-autofill:focus,
-            input:-webkit-autofill:active {
-                /* Usamos las variables para que el color cambie solo */
-                -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
-                -webkit-text-fill-color: var(--autofill-text) !important;
-                transition: background-color 5000s ease-in-out 0s;
-                border-radius: inherit;
-                /* Mantiene la estética de tus bordes redondeados */
-            }
-
-            /* 3. LIMPIEZA DE ICONOS NATIVOS (Mantenemos tu lógica) */
-            input::-ms-reveal,
-            input::-ms-clear {
-                display: none;
-            }
-
-            input::-webkit-contacts-auto-fill-button,
-            input::-webkit-credentials-auto-fill-button {
-                visibility: hidden;
-                display: none !important;
-                pointer-events: none;
-                position: absolute;
-                right: 0;
-            }
-        </style>
-
         <div class="mt-8 flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500 font-medium">
             <a class="hover:text-primary transition-colors"
                 href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
@@ -194,9 +87,100 @@
         </div>
 
     </main>
-
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+<script>
+    async function initClerk() {
+        // 1. Buscamos el div AQUÍ ADENTRO, no afuera.
+        const signInDiv = document.getElementById('clerk-signin');
+
+        function showClerkError() {
+            if (signInDiv) {
+                signInDiv.innerHTML = '<div class="flex flex-col items-center gap-3 py-8 text-center">' +
+                    '<span class="material-symbols-outlined text-gray-400 text-[40px]">error_outline</span>' +
+                    '<p class="text-gray-500 text-sm">No se pudo cargar el formulario.</p>' +
+                    '<button onclick="window.location.reload()" ' +
+                        'class="text-[#f2460d] text-sm font-semibold hover:underline">' +
+                        'Intentar de nuevo' +
+                    '</button>' +
+                    '</div>';
+            }
+        }
+
+        // 2. Esperar a que el SDK de Clerk esté disponible
+        let attempts = 0;
+        while (typeof window.Clerk === 'undefined' && attempts < 50) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+
+        if (typeof window.Clerk === 'undefined') {
+            console.error("Clerk SDK no cargó después de 5 segundos.");
+            showClerkError();
+            return;
+        }
+
+        try {
+            // 3. Inicializar Clerk
+            await window.Clerk.load();
+
+            // 4. Montar el componente
+            if (signInDiv) {
+                window.Clerk.mountSignIn(signInDiv, {
+                    appearance: {
+                        elements: {
+                            rootBox: "w-full",
+                            card: "shadow-none border-none bg-transparent p-0",
+                            headerTitle: "hidden",
+                            headerSubtitle: "hidden",
+                            socialButtonsBlockButton: "rounded-lg h-11 border-gray-200 dark:border-[#333] hover:bg-gray-50 dark:hover:bg-[#222] transition-all",
+                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
+                            footer: "hidden",
+                            dividerRow: "my-6",
+                            dividerText: "text-[10px] font-black text-gray-400 uppercase tracking-widest"
+                        }
+                    },
+                    signUpUrl: "{{ url_for('auth.plans') }}",
+                });
+                console.log("✅ Clerk montado en #clerk-signin");
+            }
+
+            // 5. Escuchar el login
+            window.Clerk.addListener(({ user }) => {
+                if (user) {
+                    const email = user.primaryEmailAddress.emailAddress;
+                    const username = user.username || user.firstName;
+
+                    fetch("{{ url_for('auth.sync_clerk') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({ email, username })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = data.redirect;
+                        }
+                    })
+                    .catch(() => showClerkError());
+                }
+            });
+
+        } catch (e) {
+            console.error('Error inicializando Clerk:', e);
+            showClerkError();
+        }
+    }
+
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initClerk);
+    } else {
+        initClerk();
+    }
+</script>
 </body>
 
 </html>
