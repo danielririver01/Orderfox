@@ -589,6 +589,9 @@ def webhook():
 
 @auth_bp.route('/login/google')
 def login_google():
+    if not current_app.config.get('GOOGLE_CLIENT_ID'):
+        flash('El inicio de sesión con Google no está configurado todavía. Por favor contacta al administrador.', 'warning')
+        return redirect(url_for('auth.login'))
     redirect_uri = url_for('auth.google_authorize', _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
@@ -614,6 +617,9 @@ def google_authorize():
 
 @auth_bp.route('/login/facebook')
 def login_facebook():
+    if not current_app.config.get('FACEBOOK_CLIENT_ID'):
+        flash('El inicio de sesión con Facebook no está configurado todavía. Por favor contacta al administrador.', 'warning')
+        return redirect(url_for('auth.login'))
     redirect_uri = url_for('auth.facebook_authorize', _external=True)
     return oauth.facebook.authorize_redirect(redirect_uri)
 
