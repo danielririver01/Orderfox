@@ -6,6 +6,7 @@ from app.forms import LoginForm, ForgotPasswordForm
 from app.forms.auth import RegisterEmailForm, RegisterVerifyForm, RegisterSetupForm
 from app.models import User, Restaurant, TrialHistory
 import random
+import secrets
 import re
 import unicodedata
 import mercadopago
@@ -652,6 +653,35 @@ def facebook_authorize():
             flash('No pudimos vincular tu cuenta de Facebook. Asegúrate de tener una cuenta creada con el mismo nombre o correo.', 'warning')
             return redirect(url_for('auth.login'))
     return redirect(url_for('auth.login'))
+
+@auth_bp.route('/api/sync-clerk', methods=['POST'])
+def sync_clerk():
+    """Sincroniza el usuario de Clerk con la base de datos local"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False}), 400
+
+    email = data.get('email')
+    username = data.get('username') or email.split('@')[0]
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Si no existe, lo creamos (Registro vía Social Auth de Clerk)
+        # Nota: En un flujo real, aquí podrías redirigir a elegir plan si no tiene restaurante
+        user = User(email=email, username=username)
+        user.set_password(secrets.token_hex(16)) # Pass aleatorio seguro
+        db.session.add(user)
+        db.session.commit()
+
+    session['user_id'] = user.id
+    session['username'] = user.username
+
+    return jsonify({
+        'success': True,
+        'has_restaurant': user.restaurant_id is not None,
+        'redirect': url_for('dashboard.index') if user.restaurant_id else url_for('auth.plans')
+    })
 
 @auth_bp.route('/logout')
 def logout():

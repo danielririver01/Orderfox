@@ -41,3 +41,8 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     FACEBOOK_CLIENT_ID = os.environ.get('FACEBOOK_CLIENT_ID')
     FACEBOOK_CLIENT_SECRET = os.environ.get('FACEBOOK_CLIENT_SECRET')
+
+    # Clerk Auth
+    CLERK_PUBLISHABLE_KEY = os.environ.get('CLERK_PUBLISHABLE_KEY')
+    CLERK_SECRET_KEY = os.environ.get('CLERK_SECRET_KEY')
+    CLERK_FRONTEND_API = os.environ.get('CLERK_FRONTEND_API')
