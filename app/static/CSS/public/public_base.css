@@ -440,10 +440,20 @@ body {
 /* ===== UNIVERSAL 3D PRODUCT CARDS (Refactor Senior) ===== */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
     padding: 2rem 0 12rem 0; /* Espacio para el footer y carrito */
     perspective: 1000px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem 0 10rem 0;
+    }
 }
 
 .product-card {
