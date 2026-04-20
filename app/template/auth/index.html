@@ -32,20 +32,17 @@
         <div
             class="w-full bg-white dark:bg-[#141414] rounded-xl shadow-lg border border-gray-100 dark:border-[#262626] overflow-hidden">
 
-            <div class="px-8 pt-10 pb-8 flex flex-col items-center">
+            <div class="px-8 pt-6 pb-8 flex flex-col items-center">
 
                 <div
-                    class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
+                    class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
                     <span class="material-symbols-outlined text-[#f2460d] text-[32px]">lunch_dining</span>
                 </div>
 
-                <div class="text-center mb-4">
-                    <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
-                        Acceder al Dashboard
+                <div class="text-center mb-2">
+                    <h1 class="text-[#1c110d] dark:text-white text-3xl font-black tracking-tighter uppercase">
+                        Velzia
                     </h1>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                        Bienvenido de nuevo
-                    </p>
                 </div>
 
                 {% if get_flashed_messages() %}
@@ -80,6 +77,15 @@
         </div>
 
         <style>
+            /* Ocultar scrollbar en Clerk container */
+            #clerk-signin::-webkit-scrollbar {
+                display: none;
+            }
+            #clerk-signin {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
             /* Desactivar autocompletado visual */
             input:-webkit-autofill {
                 -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
@@ -190,8 +196,8 @@
                     localization: {
                         signIn: {
                             start: {
-                                title: 'Acceder al Dashboard',
-                                subtitle: 'Bienvenido de nuevo',
+                                title: 'Velzia',
+                                subtitle: 'Dashboard Administrativo',
                                 actionText: '¿No tienes suscripción?',
                                 actionLink: 'Ver planes'
                             }
