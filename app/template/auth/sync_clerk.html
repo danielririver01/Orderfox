@@ -30,10 +30,10 @@
                     window.location.href = result.redirect_url;
                 } else {
                     console.error('Error syncing:', result.message);
-                    window.location.href = '/login';
+                    window.location.href = "{{ url_for('auth.login') }}";
                 }
             } else {
-                window.location.href = '/login';
+                window.location.href = "{{ url_for('auth.login') }}";
             }
         }
     });

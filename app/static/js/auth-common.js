@@ -61,7 +61,13 @@ if (csrfToken) {
         }
 
         // Add CSRF token ONLY to non-GET requests to SAME ORIGIN
-        const isSameOrigin = !resource.toString().startsWith('http') || resource.toString().startsWith(window.location.origin);
+        let isSameOrigin = false;
+        try {
+            const url = new URL(resource instanceof Request ? resource.url : resource.toString(), window.location.origin);
+            isSameOrigin = url.origin === window.location.origin;
+        } catch (e) {
+            isSameOrigin = !resource.toString().startsWith('http');
+        }
 
         if (isSameOrigin && config.method && config.method.toUpperCase() !== 'GET') {
             if (config.headers instanceof Headers) {

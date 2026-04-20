@@ -170,6 +170,13 @@
         window.addEventListener('load', async function () {
             if (window.Clerk) {
                 await window.Clerk.load();
+
+                // Si ya hay usuario de Clerk, ir directo a sincronizar
+                if (window.Clerk.user) {
+                    window.location.href = "{{ url_for('auth.sync_clerk_redirect') }}";
+                    return;
+                }
+
                 const signInDiv = document.getElementById('clerk-signin');
 
                 // Determinar si está en modo oscuro
