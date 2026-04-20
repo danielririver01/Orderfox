@@ -15,6 +15,47 @@ from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
 
+@auth_bp.route('/api/sync-clerk', methods=['POST'])
+@csrf.exempt
+def sync_clerk():
+    data = request.get_json()
+    clerk_id = data.get('clerk_id')
+    email = data.get('email')
+    username = data.get('username') or email.split('@')[0]
+
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Si el usuario no existe, lo creamos
+        user = User(
+            email=email,
+            username=username,
+            password='clerk_authenticated' # Password dummy
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    session['user_id'] = user.id
+    session['username'] = user.username
+    session['clerk_id'] = clerk_id
+
+    # Redirección lógica: si es nuevo y no tiene restaurante, ir a planes
+    redirect_url = url_for('dashboard.index')
+    if not user.restaurant:
+        redirect_url = url_for('auth.plans')
+
+    return jsonify({
+        'success': True,
+        'redirect_url': redirect_url
+    })
+
+@auth_bp.route('/api/sync-clerk-redirect')
+def sync_clerk_redirect():
+    return render_template('auth/sync_clerk.html')
+
 from app import csrf  # para eximir el webhook de CSRF
 def send_otp_email(email, otp):
     try:
@@ -589,7 +630,6 @@ def webhook():
 @auth_bp.route('/logout')
 def logout():
     session.clear()
-    flash('Has cerrado sesión correctamente.')
-    return redirect(url_for('auth.login'))
+    return render_template('auth/logout_clerk.html')
 
         
