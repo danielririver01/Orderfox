@@ -60,15 +60,17 @@ if (csrfToken) {
             config.headers = {};
         }
 
-        // Add CSRF token to non-GET requests
-        if (config.method && config.method.toUpperCase() !== 'GET') {
+        // Add CSRF token ONLY to non-GET requests to SAME ORIGIN
+        const isSameOrigin = !resource.toString().startsWith('http') || resource.toString().startsWith(window.location.origin);
+
+        if (isSameOrigin && config.method && config.method.toUpperCase() !== 'GET') {
             if (config.headers instanceof Headers) {
                 config.headers.append('X-CSRFToken', csrfToken);
             } else if (Array.isArray(config.headers)) {
                 config.headers.push(['X-CSRFToken', csrfToken]);
             } else {
                 config.headers['X-CSRFToken'] = csrfToken;
-    }
+            }
         }
 
         return originalFetch(resource, config);
