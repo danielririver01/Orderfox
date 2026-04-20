@@ -3,37 +3,56 @@
 {% block title %}Sincronizando...{% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[60vh]">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-    <p class="text-gray-600 dark:text-gray-400 font-medium">Sincronizando tu cuenta...</p>
+<div id="sync-container" class="flex flex-col items-center justify-center min-h-[60vh]">
+    <div id="sync-spinner" class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+    <p id="sync-message" class="text-gray-600 dark:text-gray-400 font-medium">Sincronizando tu cuenta...</p>
+    <div id="error-container" class="hidden mt-4 text-center">
+        <a href="{{ url_for('auth.login') }}" class="px-4 py-2 bg-primary text-white rounded-lg font-bold">Volver a intentar</a>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     window.addEventListener('load', async function () {
-        if (window.Clerk) {
-            await window.Clerk.load();
-            if (window.Clerk.user) {
-                const email = window.Clerk.user.primaryEmailAddress.emailAddress;
-                const clerk_id = window.Clerk.user.id;
+        const syncMessage = document.getElementById('sync-message');
+        const syncSpinner = document.getElementById('sync-spinner');
+        const errorContainer = document.getElementById('error-container');
 
-                const response = await fetch('/api/sync-clerk', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ clerk_id, email })
-                });
-                const result = await response.json();
-                if (result.success && result.redirect_url) {
-                    window.location.href = result.redirect_url;
+        if (window.Clerk) {
+            try {
+                await window.Clerk.load();
+                if (window.Clerk.user) {
+                    const email = window.Clerk.user.primaryEmailAddress.emailAddress;
+                    const clerk_id = window.Clerk.user.id;
+
+                    const response = await fetch('/api/sync-clerk', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ clerk_id, email })
+                    });
+
+                    if (!response.ok) {
+                         throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.success && result.redirect_url) {
+                        window.location.href = result.redirect_url;
+                    } else {
+                        throw new Error(result.message || 'Error desconocido durante la sincronización');
+                    }
                 } else {
-                    console.error('Error syncing:', result.message);
                     window.location.href = "{{ url_for('auth.login') }}";
                 }
-            } else {
-                window.location.href = "{{ url_for('auth.login') }}";
+            } catch (error) {
+                console.error('Error en sincronización:', error);
+                syncMessage.innerText = 'Hubo un problema al sincronizar tu cuenta: ' + error.message;
+                syncMessage.classList.add('text-red-500');
+                syncSpinner.classList.add('hidden');
+                errorContainer.classList.remove('hidden');
             }
         }
     });

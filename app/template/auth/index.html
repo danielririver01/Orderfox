@@ -172,7 +172,9 @@
                 await window.Clerk.load();
 
                 // Si ya hay usuario de Clerk, ir directo a sincronizar
-                if (window.Clerk.user) {
+                // pero SOLO si no hay mensajes de flash (errores) visibles
+                const hasFlashMessages = document.querySelector('.flash-message') !== null;
+                if (window.Clerk.user && !hasFlashMessages) {
                     window.location.href = "{{ url_for('auth.sync_clerk_redirect') }}";
                     return;
                 }

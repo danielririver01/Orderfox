@@ -49,33 +49,32 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
 if (csrfToken) {
     const originalFetch = window.fetch;
-    window.fetch = async function(...args) {
-        let [resource, config] = args;
-        
-        // Ensure config object exists
-        config = config || {};
-        
-        // Normalize headers to be an object (fetch headers can be Headers object or array)
-        if (!config.headers) {
-            config.headers = {};
+    window.fetch = async function(resource, config = {}) {
+        let url;
+        if (resource instanceof Request) {
+            url = resource.url;
+        } else {
+            url = resource.toString();
         }
 
-        // Add CSRF token ONLY to non-GET requests to SAME ORIGIN
-        let isSameOrigin = false;
-        try {
-            const url = new URL(resource instanceof Request ? resource.url : resource.toString(), window.location.origin);
-            isSameOrigin = url.origin === window.location.origin;
-        } catch (e) {
-            isSameOrigin = !resource.toString().startsWith('http');
-        }
+        const isSameOrigin = !url.startsWith('http') || url.startsWith(window.location.origin);
+        const method = (config.method || (resource instanceof Request ? resource.method : 'GET')).toUpperCase();
 
-        if (isSameOrigin && config.method && config.method.toUpperCase() !== 'GET') {
-            if (config.headers instanceof Headers) {
-                config.headers.append('X-CSRFToken', csrfToken);
-            } else if (Array.isArray(config.headers)) {
-                config.headers.push(['X-CSRFToken', csrfToken]);
+        if (isSameOrigin && method !== 'GET') {
+            // Clonar la petición si es un objeto Request para poder modificar las cabeceras
+            if (resource instanceof Request) {
+                const newHeaders = new Headers(resource.headers);
+                newHeaders.append('X-CSRFToken', csrfToken);
+                resource = new Request(resource, { headers: newHeaders });
             } else {
-                config.headers['X-CSRFToken'] = csrfToken;
+                if (!config.headers) config.headers = {};
+                if (config.headers instanceof Headers) {
+                    config.headers.append('X-CSRFToken', csrfToken);
+                } else if (Array.isArray(config.headers)) {
+                    config.headers.push(['X-CSRFToken', csrfToken]);
+                } else {
+                    config.headers['X-CSRFToken'] = csrfToken;
+                }
             }
         }
 
