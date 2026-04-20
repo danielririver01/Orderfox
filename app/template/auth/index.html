@@ -176,7 +176,7 @@
                     afterSignInUrl: '/api/sync-clerk-redirect',
                     afterSignUpUrl: '/api/sync-clerk-redirect',
                     appearance: {
-                        baseTheme: isDarkMode ? undefined : undefined, // Clerk maneja temas internamente o vía variables
+                        baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
                         variables: {
                             colorPrimary: '#f2460d',
                             colorTextOnPrimaryBackground: 'white'
