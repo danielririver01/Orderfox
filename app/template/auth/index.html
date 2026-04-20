@@ -51,7 +51,7 @@
                 </div>
                 {% endif %}
 
-                <div id="clerk-signin" class="w-full min-h-[300px]"></div>
+                <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
 
                 <div class="mt-2 w-full flex flex-col items-center gap-4">
                     <a href="{{ url_for('auth.plans') }}"
@@ -188,8 +188,8 @@
                             colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
                         },
                         elements: {
-                            rootBox: "w-full",
-                            card: "shadow-none border-none bg-transparent p-0",
+                            rootBox: "w-full flex justify-center",
+                            card: "w-full shadow-none border-none bg-transparent p-0",
                             headerTitle: "hidden",
                             headerSubtitle: "hidden",
                             socialButtonsBlockButton: "rounded-lg h-11 border-gray-700 bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#222] transition-all",
