@@ -25,13 +25,18 @@
                 if (window.Clerk.user) {
                     const email = window.Clerk.user.primaryEmailAddress.emailAddress;
                     const clerk_id = window.Clerk.user.id;
+                    const session_id = window.Clerk.session.id;
+
+                    // Obtener el token de sesión para verificación segura en el backend
+                    const token = await window.Clerk.session.getToken();
 
                     const response = await fetch('/api/sync-clerk', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ clerk_id, email })
+                        body: JSON.stringify({ clerk_id, email, session_id })
                     });
 
                     if (!response.ok) {
