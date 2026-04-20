@@ -39,7 +39,8 @@ def sync_clerk():
         # Verificar la sesión activa primero
         session_resp = requests.get(
             f"https://api.clerk.com/v1/sessions/{session_id}",
-            headers={"Authorization": f"Bearer {clerk_secret}"}
+            headers={"Authorization": f"Bearer {clerk_secret}"},
+            timeout=5
         )
 
         if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
@@ -48,7 +49,8 @@ def sync_clerk():
         # Verificar los datos del usuario
         response = requests.get(
             f"https://api.clerk.com/v1/users/{clerk_id}",
-            headers={"Authorization": f"Bearer {clerk_secret}"}
+            headers={"Authorization": f"Bearer {clerk_secret}"},
+            timeout=5
         )
 
         if response.status_code != 200:
