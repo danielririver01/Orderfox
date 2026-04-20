@@ -154,6 +154,9 @@
 
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 
+    <!-- Clerk Themes -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/themes@latest/dist/index.browser.js"></script>
+
     <!-- Clerk SDK -->
     {% if config.CLERK_PUBLISHABLE_KEY %}
     <script
@@ -179,18 +182,22 @@
                         baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
                         variables: {
                             colorPrimary: '#f2460d',
-                            colorTextOnPrimaryBackground: 'white'
+                            colorBackground: isDarkMode ? '#111' : '#ffffff',
+                            colorText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
                         },
                         elements: {
-                            card: 'shadow-none border-none bg-transparent',
-                            headerTitle: 'hidden',
-                            headerSubtitle: 'hidden',
-                            footer: 'hidden', // Oculta el "No account? Sign up"
-                            socialButtonsBlockButton: 'border-gray-200 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1f1f1f]',
-                            formButtonPrimary: 'bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11',
+                            rootBox: "w-full",
+                            card: "shadow-none border-none bg-transparent p-0",
+                            headerTitle: "hidden",
+                            headerSubtitle: "hidden",
+                            socialButtonsBlockButton: "rounded-lg h-11 border-gray-700 bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#222] transition-all",
+                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
+                            footer: "hidden",
+                            dividerRow: "my-6",
+                            dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
                             formFieldInput: 'bg-[#fcf9f8] dark:bg-[#0f0f0f] border-[#e8d5ce] dark:border-[#333333] focus:ring-primary/20 focus:border-primary',
-                            dividerLine: 'bg-gray-200 dark:bg-[#262626]',
-                            dividerText: 'text-gray-400'
                         }
                     },
                     localization: {
