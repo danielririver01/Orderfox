@@ -15,15 +15,22 @@ from app.utils.subscription import sanitize_restaurant_limits
 
 auth_bp = Blueprint('auth', __name__)
 
+from app.extensions import csrf
+
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 @csrf.exempt
 def sync_clerk():
+    """
+    Sincroniza el usuario de Clerk con la base de datos local.
+    NOTA DE SEGURIDAD: En producción, se debe verificar el token JWT de Clerk
+    usando la CLERK_SECRET_KEY para evitar suplantación de identidad.
+    """
     data = request.get_json()
     clerk_id = data.get('clerk_id')
     email = data.get('email')
     username = data.get('username') or email.split('@')[0]
 
-    if not email:
+    if not email or not clerk_id:
         return jsonify({'success': False, 'message': 'Email is required'}), 400
 
     user = User.query.filter_by(email=email).first()
@@ -56,7 +63,6 @@ def sync_clerk():
 def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
 
-from app import csrf  # para eximir el webhook de CSRF
 def send_otp_email(email, otp):
     try:
         msg = Message('Código de Verificación - Velzia',
@@ -535,7 +541,7 @@ def payment_callback():
     return redirect(url_for('auth.payment'))
 
 @auth_bp.route('/webhook', methods=['POST'])
-@csrf.exempt  # MP es servicio externo — no puede enviar token CSRF
+@csrf.exempt
 def webhook():
     """
     Recibe notificaciones de Mercado Pago sobre actualizaciones de pago.

@@ -10,21 +10,7 @@ from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
 
-mail = Mail()
-scheduler = APScheduler()
-csrf = CSRFProtect()
-
-# 1. Una key_func que identifique a cada uno por separado
-def get_limit_key():
-    if 'user_id' in session:
-        return f"user_{session['user_id']}" # Cada admin tiene su propio límite
-    return get_remote_address()
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+from .extensions import mail, scheduler, csrf, limiter
 
 # 2. El "Pase VIP" (Sustituto de exempt_when)
 @limiter.request_filter
