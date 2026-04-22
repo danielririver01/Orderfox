@@ -1,0 +1,49 @@
+/* Velzia Obsidian Design System - Tokens */
+:root {
+    /* Colors - Dark Mode Primary (Always Dark) */
+    --bg-deep: #050505;
+    --bg-surface: #0f0f10;
+    --bg-surface-hover: #161618;
+
+    --primary: #f97316;
+    --primary-glow: rgba(249, 115, 22, 0.2);
+
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --border-glow: rgba(255, 255, 255, 0.1);
+
+    --text-main: #ffffff;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+
+    /* Accents */
+    --accent-cyan: #06b6d4;
+    --accent-purple: #a855f7;
+
+    /* Effects */
+    --glass-blur: blur(20px);
+    --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Base resets for Always Dark transition */
+html,
+body {
+    background-color: var(--bg-deep) !important;
+    color: var(--text-main) !important;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-heading {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Glassmorphism Utility */
+.glass-surface {
+    background: var(--bg-surface);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-premium);
+}

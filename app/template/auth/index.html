@@ -15,7 +15,7 @@
         type="image/svg+xml">
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap"
         rel="stylesheet" />
 
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
@@ -32,20 +32,17 @@
         <div
             class="w-full bg-white dark:bg-[#141414] rounded-xl shadow-lg border border-gray-100 dark:border-[#262626] overflow-hidden">
 
-            <div class="px-8 pt-10 pb-8 flex flex-col items-center">
+            <div class="px-8 pt-6 pb-8 flex flex-col items-center">
 
                 <div
-                    class="mb-6 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
+                    class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
                     <span class="material-symbols-outlined text-[#f2460d] text-[32px]">lunch_dining</span>
                 </div>
 
-                <div class="text-center mb-8">
-                    <h1 class="text-[#1c110d] dark:text-white text-2xl font-bold tracking-tight mb-2">
-                        Acceder al Dashboard
+                <div class="text-center mb-2">
+                    <h1 class="text-[#1c110d] dark:text-white text-3xl font-black tracking-tighter uppercase">
+                        Velzia
                     </h1>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                        Bienvenido de nuevo
-                    </p>
                 </div>
 
                 {% if get_flashed_messages() %}
@@ -54,56 +51,9 @@
                 </div>
                 {% endif %}
 
-                <form class="w-full flex flex-col gap-5" method="POST">
-                    {{ form.hidden_tag() }}
+                <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
 
-                    <div class="flex flex-col gap-2">
-                        <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal"
-                            for="email">
-                            Correo electrónico
-                        </label>
-                        <div class="relative">
-                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce]
-                            dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4
-                            py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2
-                            focus:ring-primary/20 focus:border-primary transition-all duration-200",
-                            placeholder="tu@restaurante.com") }}
-                            <div
-                                class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#9c5e49]">
-                                <span class="material-symbols-outlined text-[20px]">mail</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <div class="flex justify-between items-center">
-                            <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal"
-                                for="password">
-                                Contraseña
-                            </label>
-                        </div>
-                        <div class="relative">
-                            {{ form.password(class="form-input w-full rounded-lg border border-[#e8d5ce]
-                            dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4
-                            py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2
-                            focus:ring-primary/20 focus:border-primary transition-all duration-200",
-                            placeholder="••••••••") }}
-                            <div class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-[#9c5e49] hover:text-primary transition-colors"
-                                id="toggle-password">
-                                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        class="mt-2 w-full flex items-center justify-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]"
-                        type="submit">
-                        <span>Ingresar</span>
-                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
-                    </button>
-                </form>
-
-                <div class="mt-6 w-full flex flex-col items-center gap-4">
+                <div class="mt-2 w-full flex flex-col items-center gap-4">
                     <a href="{{ url_for('auth.plans') }}"
                         class="w-full flex items-center justify-center gap-2 bg-[#fff5f2] dark:bg-[#2a120c] border border-[#f2460d]/30 text-[#f2460d] hover:bg-[#f2460d] hover:text-white font-bold h-11 rounded-lg transition-all duration-200 shadow-sm">
                         <span class="material-symbols-outlined text-[20px]">verified</span>
@@ -127,6 +77,22 @@
         </div>
 
         <style>
+            /* Ocultar scrollbar en Clerk container */
+            #clerk-signin::-webkit-scrollbar {
+                display: none;
+            }
+
+            #clerk-signin {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
+            /* Desactivar autocompletado visual */
+            input:-webkit-autofill {
+                -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+                transition: background-color 5000s ease-in-out 0s !important;
+            }
+
             /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
             :root {
                 --autofill-bg: #ffffff;
@@ -178,6 +144,25 @@
             }
         </style>
 
+        <style>
+            /* Fix: inputs OTP de Clerk invisibles en dark mode
+               Clerk renderiza .cl-otpCodeFieldInput con estilos internos que
+               pueden no coincidir con nuestras variables de color */
+            .cl-otpCodeFieldInput {
+                color: #1c110d !important;
+                background-color: #ffffff !important;
+                caret-color: #f2460d !important;
+            }
+            @media (prefers-color-scheme: dark) {
+                .cl-otpCodeFieldInput {
+                    color: #ffffff !important;
+                    background-color: #1a1a1a !important;
+                    border-color: #444444 !important;
+                    caret-color: #f2460d !important;
+                }
+            }
+        </style>
+
         <div class="mt-8 flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500 font-medium">
             <a class="hover:text-primary transition-colors"
                 href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
@@ -188,7 +173,119 @@
     </main>
 
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+
+    <!-- Clerk Themes -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/themes@latest/dist/index.browser.js"></script>
+
+    <!-- Clerk SDK -->
+    {% if config.CLERK_PUBLISHABLE_KEY %}
+    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+        src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"></script>
+    <script>
+        window.addEventListener('load', async function () {
+            if (window.Clerk) {
+                await window.Clerk.load({
+                    localization: {
+                        socialButtonsBlockButton__google: "Continuar con Google",
+                        socialButtonsBlockButton__facebook: "Continuar con Facebook",
+                        signIn: {
+                            start: {
+                                title: 'Velzia',
+                                subtitle: 'Dashboard Administrativo',
+                                actionText: '¿No tienes suscripción?',
+                                actionLink: 'Ver planes'
+                            }
+                        },
+                        formFieldLabel__emailAddress: "Correo electrónico",
+                        formFieldInputPlaceholder__emailAddress: "ejemplo@velzia.com",
+                        formFieldLabel__password: "Contraseña",
+                        formButtonPrimary: "INICIAR SESIÓN",
+                    }
+                });
+
+                // Silent Sync: Si ya hay usuario de Clerk, sincronizar en el fondo
+                const hasFlashMessages = document.querySelector('.flash-message') !== null;
+                if (window.Clerk.user && !hasFlashMessages) {
+                    const signInDiv = document.getElementById('clerk-signin');
+                    
+                    // Mostrar estado de carga elegante en lugar del formulario
+                    signInDiv.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-12">
+                            <div class="h-10 w-10 border-4 border-[#f2460d] border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p class="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
+                        </div>
+                    `;
+
+                    try {
+                        const token = await window.Clerk.session.getToken();
+                        const response = await fetch('/api/sync-clerk', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ 
+                                clerk_id: window.Clerk.user.id, 
+                                email: window.Clerk.user.primaryEmailAddress.emailAddress, 
+                                session_id: window.Clerk.session.id 
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success && result.redirect_url) {
+                            window.location.href = result.redirect_url;
+                        } else {
+                            throw new Error("Sync failed");
+                        }
+                    } catch (error) {
+                        console.error("Silent sync failed, falling back to manual sign in", error);
+                        // Si falla la sincronización silenciosa (ej. sesión de Clerk expirada),
+                        // recargar para mostrar el login normal.
+                        window.location.reload();
+                    }
+                    return;
+                }
+
+                const signInDiv = document.getElementById('clerk-signin');
+
+                // Determinar si está en modo oscuro
+                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                window.Clerk.mountSignIn(signInDiv, {
+                    afterSignInUrl: '/', // Volver aquí para que el script detecte al usuario y haga Silent Sync
+                    afterSignUpUrl: '/',
+                    appearance: {
+                        baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
+                        variables: {
+                            colorPrimary: '#f2460d',
+                            colorBackground: isDarkMode ? '#111' : '#ffffff',
+                            colorText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
+                        },
+                        elements: {
+                            rootBox: "w-full flex justify-center",
+                            card: "w-full shadow-none border-none bg-transparent p-0",
+                            headerTitle: "hidden",
+                            headerSubtitle: "hidden",
+                            socialButtonsBlockButton: "rounded-lg h-11 border-gray-700 bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#222] transition-all",
+                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
+                            footer: "hidden",
+                            dividerRow: "my-6",
+                            dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
+                            formFieldInput: 'bg-[#fcf9f8] dark:bg-[#0f0f0f] border-[#e8d5ce] dark:border-[#333333] focus:ring-primary/20 focus:border-primary',
+                            // Fix: forzar color de texto en inputs OTP (Clerk los estiliza diferente)
+                            otpCodeFieldInput: isDarkMode
+                                ? 'text-white bg-[#1a1a1a] border-[#444] caret-orange-500'
+                                : 'text-[#1c110d] bg-white border-[#e8d5ce] caret-orange-500',
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 
 </html>

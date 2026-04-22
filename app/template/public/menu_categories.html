@@ -14,13 +14,15 @@
         <div class="carousel-track">
             {% for product in highlighted_products %}
             <div class="carousel-slide">
-                <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}" class="carousel-img">
+                <img src="{{ get_image_url(product.image_url) }}" alt="{{ product.name }}" class="carousel-img">
                 <div class="carousel-overlay">
                     <div class="carousel-content">
                         <span class="badge">{{ product.category.name }}</span>
                         <h2>{{ product.name }}</h2>
-                        <p>{{ product.description|truncate(60) if product.description else 'Prueba nuestro plato estrella' }}</p>
-                        <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=product.category_id) }}#product-{{ product.id }}" class="btn-hero">Ver Menú</a>
+                        <p>{{ product.description|truncate(60) if product.description else 'Prueba nuestro plato
+                            estrella' }}</p>
+                        <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=product.category_id) }}#product-{{ product.id }}"
+                            class="btn-hero">Ver Menú</a>
                     </div>
                 </div>
             </div>
@@ -64,19 +66,22 @@
 {% endif %}
 
 {# Rejilla de Categorías #}
-<div id="category-section" class="category-grid {% if not restaurant.is_active or ordering_disabled %}dimmed{% endif %}">
+<div id="category-section"
+    class="category-grid {% if not restaurant.is_active or ordering_disabled %}dimmed{% endif %}">
     {% for category in categories %}
-    <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}" class="category-card">
+    <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}"
+        class="category-card">
         <div class="category-icon">
             {% if category.image_url %}
-            <img src="{{ url_for('static', filename=category.image_url) }}" alt="{{ category.name }}" class="category-img">
+            <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" class="category-img">
             {% else %}
             <span class="category-initial">{{ category.name[0] }}</span>
             {% endif %}
         </div>
         <div class="category-text-info">
             <h3>{{ category.name }}</h3>
-            <span>{{ category.active_product_count }} {{ 'producto' if category.active_product_count == 1 else 'productos' }}</span>
+            <span>{{ category.active_product_count }} {{ 'producto' if category.active_product_count == 1 else
+                'productos' }}</span>
         </div>
     </a>
     {% else %}
@@ -95,14 +100,14 @@
         <h2 class="section-title">Lo más reciente</h2>
         <div class="gold-line"></div>
     </div>
-    
+
     <div class="new-products-mirage-container">
         <div class="product-grid">
             {% for product in new_products %}
-                {{ render_product_card(product, restaurant, ordering_disabled, show_category=True) }}
+            {{ render_product_card(product, restaurant, ordering_disabled, show_category=True) }}
             {% endfor %}
         </div>
-        
+
         {# Efecto de desvanecimiento con botón de alto contraste #}
         <div class="mirage-overlay">
             <a href="{{ url_for('public.novedades', slug=restaurant.slug) }}" class="btn-see-more-premium">

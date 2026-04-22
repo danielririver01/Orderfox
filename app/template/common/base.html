@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Velzia{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon"
@@ -12,14 +13,15 @@
         type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet" />
     <!-- Material Symbols -->
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
 
-    <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
+    <!-- Tailwind Configuration -->
     <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 
@@ -77,9 +79,16 @@
 
     </style>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+
+    <!-- Clerk SDK -->
+    {% if config.CLERK_PUBLISHABLE_KEY %}
+    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+        src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"></script>
+    {% endif %}
 </head>
 
-<body class="bg-bg-light dark:bg-[#0a0a0a] text-text-main dark:text-white antialiased min-h-screen pb-24">
+<body class="bg-[#050505] text-white antialiased min-h-screen pb-24 selection:bg-orange-500/30">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
     <div id="status-banner"
         class="relative w-full z-40 bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#262626] transition-transform duration-300">
@@ -180,41 +189,18 @@
     <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
 
     {% block content %}{% endblock %}
-
-    <!-- Modal de Eliminación -->
-    <div id="deleteModal"
-        class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div
-            class="bg-white dark:bg-[#141414] rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 dark:border-[#262626] overflow-hidden">
-            <!-- Header -->
-            <div class="p-6 border-b border-gray-100 dark:border-[#262626]">
-                <h3 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
-                    Confirmar eliminación
-                </h3>
-            </div>
-
-            <!-- Body -->
-            <div class="p-6">
-                <div id="modal-message" class="text-sm text-gray-600 dark:text-gray-400">
-                    ¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="p-6 bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#262626] flex gap-3">
-                <button onclick="closeDeleteModal()"
-                    class="flex-1 px-4 py-3 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333333] text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all active:scale-95">
-                    Cancelar
-                </button>
-                <button id="confirmDeleteBtn"
-                    class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all active:scale-95">
-                    Eliminar
-                </button>
-            </div>
-        </div>
-    </div>
+    {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
+    {% if session.get('user_id') %}
+    <!-- Velzia 2.0.0 Global Token Bubble -->
+    {% from 'components/token_bubble.html' import token_bubble %}
+    {{ token_bubble() }}
+    {% include 'components/modal_tokens.html' %}
+    <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>
+    {% endif %}
+
     <!-- Sistema base scripts -->
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

@@ -85,7 +85,7 @@ def edit(id):
     
     return render_template('dashboard/category_form.html', form=form, title='Editar Categoría', category=category)
 
-categories_bp.route('/<int:id>/status', methods=['GET'])
+@categories_bp.route('/<int:id>/status', methods=['GET'])
 @login_required
 @active_required
 def get_status(id):

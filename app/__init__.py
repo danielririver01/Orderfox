@@ -9,22 +9,8 @@ from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
-
-mail = Mail()
-scheduler = APScheduler()
-csrf = CSRFProtect()
-
-# 1. Una key_func que identifique a cada uno por separado
-def get_limit_key():
-    if 'user_id' in session:
-        return f"user_{session['user_id']}" # Cada admin tiene su propio límite
-    return get_remote_address()
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+from .extensions import mail, scheduler, csrf, limiter
+from .routes.tokens import tokens_bp
 
 # 2. El "Pase VIP" (Sustituto de exempt_when)
 @limiter.request_filter
@@ -76,6 +62,7 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(menu_bp)
     app.register_blueprint(tables_bp)
+    app.register_blueprint(tokens_bp)
 
     @app.errorhandler(404)
     def page_not_found(e):
@@ -130,6 +117,15 @@ def create_app():
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '-1'
         return response
+
+    @app.template_global()
+    def get_image_url(image_path):
+        if not image_path:
+            return None
+        if image_path.startswith('http'):
+            return image_path
+        from flask import url_for
+        return url_for('static', filename=image_path)
 
     # Inyectar variables de soporte y suscripción globalmente
     @app.context_processor

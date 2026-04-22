@@ -25,37 +25,40 @@ block content %}
 
     <!-- Imagen del Producto -->
     <div class="space-y-3">
-      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest ml-1">IMAGEN DEL PRODUCTO (OPCIONAL)</label>
-      
+      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest ml-1">IMAGEN
+        DEL PRODUCTO (OPCIONAL)</label>
+
       <div class="relative group">
-        <input type="file" name="image" id="product_image" class="hidden" accept="image/*" onchange="previewImage(this)">
-        
-        <div id="image_preview_container" onclick="document.getElementById('product_image').click()" 
+        <input type="file" name="image" id="product_image" class="hidden" accept="image/*"
+          onchange="previewImage(this)">
+
+        <div id="image_preview_container" onclick="document.getElementById('product_image').click()"
           class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (product and product.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
-          
+
           {% if product and product.image_url %}
-            <img id="original_img" src="{{ url_for('static', filename=product.image_url) }}" class="w-full h-full object-cover">
-            <div id="edit_overlay" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span class="material-symbols-outlined text-white text-3xl">edit</span>
-            </div>
+          <img id="original_img" src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
+          <div id="edit_overlay"
+            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span class="material-symbols-outlined text-white text-3xl">edit</span>
+          </div>
           {% else %}
-            <div id="placeholder_icon" class="flex flex-col items-center gap-2">
-              <span class="material-symbols-outlined text-4xl">add_a_photo</span>
-              <span class="text-[10px] font-bold uppercase tracking-widest">Subir Imagen</span>
-            </div>
+          <div id="placeholder_icon" class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-4xl">add_a_photo</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Subir Imagen</span>
+          </div>
           {% endif %}
-          
+
           <img id="new_preview" class="hidden w-full h-full object-cover absolute inset-0">
         </div>
 
         <input type="hidden" name="delete_image" id="delete_image_input" value="false">
 
-        <button type="button" id="remove_image_btn" onclick="removeImage()" 
+        <button type="button" id="remove_image_btn" onclick="removeImage()"
           class="{{ 'hidden' if not (product and product.image_url) else '' }} absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
           <span class="material-symbols-outlined text-sm">close</span>
         </button>
       </div>
-      
+
       <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1">
         * Recomendado: 800x800px. Máx 5MB.
       </p>
@@ -70,10 +73,10 @@ block content %}
         const deleteInput = document.getElementById('delete_image_input');
         const originalImg = document.getElementById('original_img');
         const editOverlay = document.getElementById('edit_overlay');
-        
+
         if (input.files && input.files[0]) {
           const reader = new FileReader();
-          reader.onload = function(e) {
+          reader.onload = function (e) {
             preview.src = e.target.result;
             preview.classList.remove('hidden');
             if (placeholder) placeholder.classList.add('hidden');
@@ -100,13 +103,13 @@ block content %}
         input.value = '';
         preview.classList.add('hidden');
         preview.src = '';
-        
+
         if (originalImg) {
           originalImg.classList.add('hidden');
           if (editOverlay) editOverlay.classList.add('hidden');
           deleteInput.value = 'true';
         }
-        
+
         if (placeholder) placeholder.classList.remove('hidden');
         removeBtn.classList.add('hidden');
         container.classList.add('border-dashed');
@@ -201,10 +204,12 @@ block content %}
             class="w-12 h-6 bg-orange-500/10 dark:bg-orange-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 peer-checked:shadow-[0_0:15px_rgba(249,115,22,0.4)] shadow-inner"
             style="flex-shrink: 0; min-width: 48px;"></div>
         </label>
-        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">DESTACAR EN CARRUSEL</span>
+        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">DESTACAR EN
+          CARRUSEL</span>
       </div>
       <p class="text-[9px] text-[#f2460d] font-bold italic ml-[61px] leading-tight">
-        * Los productos destacados aparecen en la parte superior del menú. Se recomienda usar fotos horizontales de alta calidad.
+        * Los productos destacados aparecen en la parte superior del menú. Se recomienda usar fotos horizontales de alta
+        calidad.
       </p>
     </div>
 

@@ -1,0 +1,26 @@
+{% extends "common/base.html" %}
+
+{% block title %}Cerrando sesión...{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[60vh]">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+    <p class="text-gray-600 dark:text-gray-400 font-medium">Cerrando tu sesión de forma segura...</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.addEventListener('load', async function () {
+        if (window.Clerk) {
+            await window.Clerk.load();
+            if (window.Clerk.user) {
+                await window.Clerk.signOut();
+            }
+            window.location.href = "{{ url_for('auth.login') }}";
+        } else {
+            window.location.href = "{{ url_for('auth.login') }}";
+        }
+    });
+</script>
+{% endblock %}

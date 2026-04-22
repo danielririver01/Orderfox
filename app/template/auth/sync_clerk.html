@@ -1,0 +1,133 @@
+{% extends "common/base.html" %}
+
+{% block title %}Sincronizando...{% endblock %}
+
+{% block content %}
+<div id="sync-container" class="flex flex-col items-center justify-center min-h-[60vh]">
+    <div id="sync-spinner" class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+    <p id="sync-message" class="text-gray-600 dark:text-gray-400 font-medium">Sincronizando tu cuenta...</p>
+    <div id="error-container" class="hidden mt-4 text-center">
+        <a href="{{ url_for('auth.login') }}" class="px-4 py-2 bg-primary text-white rounded-lg font-bold">Volver a
+            intentar</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function startSync() {
+        console.log("Iniciando proceso de sincronización...");
+        const syncMessage = document.getElementById('sync-message');
+        const syncSpinner = document.getElementById('sync-spinner');
+        const errorContainer = document.getElementById('error-container');
+
+        // Función de timeout para no quedar colgados infinitamente
+        const syncTimeout = setTimeout(() => {
+            if (syncSpinner && !syncSpinner.classList.contains('hidden')) {
+                console.error("Timeout de sincronización alcanzado");
+                syncMessage.innerText = 'La sincronización está tardando demasiado. Por favor, refresca la página.';
+                syncMessage.classList.add('text-amber-500');
+            }
+        }, 15000);
+
+        try {
+            if (!window.Clerk) {
+                throw new Error("El SDK de Clerk no se ha cargado correctamente.");
+            }
+
+            console.log("Cargando Clerk...");
+            await window.Clerk.load();
+            console.log("Clerk cargado exitosamente");
+
+            if (window.Clerk.user) {
+                const user = window.Clerk.user;
+                const email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : null;
+                const clerk_id = user.id;
+                const session_id = window.Clerk.session ? window.Clerk.session.id : null;
+
+                console.log("Identidad Clerk detectada:", email);
+
+                if (!email || !session_id) {
+                    throw new Error("No se pudo obtener la información de sesión de Clerk.");
+                }
+
+                console.log("Solicitando token de sesión...");
+                const token = await window.Clerk.session.getToken();
+                console.log("Token obtenido, enviando a backend...");
+
+                const response = await fetch('/api/sync-clerk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ clerk_id, email, session_id })
+                });
+
+                console.log("Respuesta del backend recibida:", response.status);
+                clearTimeout(syncTimeout);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Error del servidor (${response.status})`);
+                }
+
+                const result = await response.json();
+                if (result.success && result.redirect_url) {
+                    console.log("Sincronización exitosa, redirigiendo a:", result.redirect_url);
+                    window.location.href = result.redirect_url;
+                } else {
+                    throw new Error(result.message || 'Error desconocido en la respuesta del servidor');
+                }
+            } else {
+                console.warn("No hay usuario de Clerk activo, redirigiendo a login");
+                clearTimeout(syncTimeout);
+                window.location.href = "{{ url_for('auth.login') }}";
+            }
+        } catch (error) {
+            clearTimeout(syncTimeout);
+            console.error('CRITICAL SYNC ERROR:', error);
+            syncMessage.innerText = 'Error de Sincronización: ' + error.message;
+            syncMessage.classList.add('text-red-500');
+            if (syncSpinner) syncSpinner.classList.add('hidden');
+            if (errorContainer) errorContainer.classList.remove('hidden');
+        }
+    }
+
+    // Esperar a que el SDK de Clerk esté disponible con polling robusto.
+    // El script de Clerk es `async`, y puede no estar disponible cuando
+    // el evento 'load' dispara. El polling garantiza que esperamos el tiempo necesario.
+    function waitForClerkAndSync() {
+        if (window.Clerk) {
+            startSync();
+            return;
+        }
+        let attempts = 0;
+        const maxAttempts = 100; // 10 segundos máximo (100ms x 100)
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (window.Clerk) {
+                clearInterval(checkInterval);
+                startSync();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                const syncMessage = document.getElementById('sync-message');
+                const syncSpinner = document.getElementById('sync-spinner');
+                const errorContainer = document.getElementById('error-container');
+                if (syncMessage) {
+                    syncMessage.innerText = 'Error: No se pudo cargar el servicio de autenticación. Por favor, recarga la página.';
+                    syncMessage.classList.add('text-red-500');
+                }
+                if (syncSpinner) syncSpinner.classList.add('hidden');
+                if (errorContainer) errorContainer.classList.remove('hidden');
+            }
+        }, 100);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', waitForClerkAndSync);
+    } else {
+        waitForClerkAndSync();
+    }
+</script>
+{% endblock %}

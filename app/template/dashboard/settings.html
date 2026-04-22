@@ -129,7 +129,8 @@
             </a>
 
             <!-- Contactanos -->
-            <a href="https://api.whatsapp.com/send?phone={{ SUPPORT_PHONE }}&text=Hola,%20necesito%20ayuda%20con%20Velzia" target="_blank"
+            <a href="https://api.whatsapp.com/send?phone={{ SUPPORT_PHONE }}&text=Hola,%20necesito%20ayuda%20con%20Velzia"
+                target="_blank"
                 class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
                 <div class="flex items-center gap-4">
                     <div
@@ -155,8 +156,6 @@
             <span class="material-symbols-outlined text-[20px]">logout</span>
             Cerrar Sesión
         </a>
-        <p class="text-center text-[10px] text-gray-600 dark:text-gray-600 mt-6 font-bold uppercase tracking-[0.3em]">
-            Velzia v1.3.0</p>
     </div>
 
 </main>
@@ -166,16 +165,16 @@
 
 <script>
     // Detectar mensajes flash y convertirlos en Toasts Premium
-    document.addEventListener('DOMContentLoaded', function() {
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    // Pequeño delay para que la transición sea suave tras cargar la página
-                    setTimeout(() => {
-                        showToast("{{ message }}", "{{ 'success' if category == 'success' else 'error' }}");
-                    }, 500);
-                {% endfor %}
-            {% endif %}
+    document.addEventListener('DOMContentLoaded', function () {
+        {% with messages = get_flashed_messages(with_categories = true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        // Pequeño delay para que la transición sea suave tras cargar la página
+        setTimeout(() => {
+            showToast("{{ message }}", "{{ 'success' if category == 'success' else 'error' }}");
+        }, 500);
+        {% endfor %}
+        {% endif %}
         {% endwith %}
     });
 </script>

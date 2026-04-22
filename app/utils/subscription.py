@@ -36,6 +36,32 @@ PLAN_LIMITS = {
     }
 }
 
+# ─── Velzia 2.0.0: Configuración de Tokens IA ─────────────────────────────────
+
+# Límites de tokens asignados por plan mensualmente
+AI_TOKEN_LIMITS = {
+    'trial':       10,
+    'emprendedor': 25,
+    'crecimiento': 40,
+    'elite':       None,  # NULL en DB = Ilimitado
+}
+
+# Paquetes de recarga (Top-ups)
+TOP_UP_PACKS = {
+    '5k':  {
+        'price_cop': 5000, 
+        'tokens': 15, 
+        'label': 'Pack Básico',
+        'badge': 'Starter'
+    },
+    '10k': {
+        'price_cop': 10000, 
+        'tokens': 35, 
+        'label': 'Pack Pro',
+        'badge': 'Popular'
+    },
+}
+
 GRACE_PERIOD_DAYS = 10
 
 def is_subscription_active(restaurant, include_grace_period=False):
@@ -300,3 +326,89 @@ def sanitize_restaurant_limits(restaurant):
     except Exception as e:
         db.session.rollback()
         print(f"ERROR en sanitize_restaurant_limits: {e}")
+
+def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
+    """
+    Sincroniza el wallet de tokens IA con el plan actual del restaurante.
+    Punto Central de Verdad para Velzia 2.0.0.
+    """
+    from app.models import AITokenWallet, AITokenTransaction
+    from datetime import datetime, timezone
+
+    if not user or not user.restaurant:
+        return None
+
+    wallet = user.token_wallet
+    plan_type = user.restaurant.plan_type
+    
+    # Importar los límites centrales de este MISMO archivo (subscription.py)
+    plan_limit = AI_TOKEN_LIMITS.get(plan_type, 10)
+    
+    now = datetime.now(timezone.utc)
+    
+    # Helper para calcular fecha del próximo reset (1º del mes siguiente)
+    def get_next_reset_date(current_date):
+        if current_date.month == 12:
+            return current_date.replace(year=current_date.year + 1, month=1, day=1,
+                                       hour=0, minute=0, second=0, microsecond=0)
+        return current_date.replace(month=current_date.month + 1, day=1,
+                                   hour=0, minute=0, second=0, microsecond=0)
+
+    # 1. Crear wallet si no existe
+    if not wallet:
+        wallet = AITokenWallet(
+            user_id=user.id,
+            plan_limit=plan_limit,
+            plan_tokens=plan_limit if plan_limit is not None else 0,
+            extra_tokens=0,
+            tokens_used_month=0,
+            reset_at=get_next_reset_date(now)
+        )
+        db.session.add(wallet)
+        
+        tx = AITokenTransaction(
+            user_id=user.id,
+            type='topup_plan',
+            amount=plan_limit if plan_limit is not None else 0,
+            source='system_init',
+            description=f'Wallet inicializado — Plan {plan_type}'
+        )
+        db.session.add(tx)
+        print(f"WALLET: Creado para usuario {user.id} ({plan_type})")
+        return wallet
+
+    # 2. Verificar Reset automático (si ya pasó la fecha de reset)
+    if wallet.reset_at and now >= wallet.reset_at:
+        is_reset = True
+        print(f"WALLET: Detectado reset automático necesario para {user.id}")
+
+    # 3. Executar Reset (por renovación o cambio de mes)
+    if is_reset:
+        # IDEMPOTENCIA: Verificar si ya acreditamos este pago exacto
+        if mp_payment_id:
+            already = AITokenTransaction.query.filter_by(
+                mp_payment_id=mp_payment_id, 
+                type='topup_plan'
+            ).first()
+            if already:
+                print(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
+                return wallet
+
+        wallet.plan_limit = plan_limit
+        wallet.plan_tokens = plan_limit if plan_limit is not None else 0
+        wallet.tokens_used_month = 0
+        wallet.reset_at = get_next_reset_date(now if now >= (wallet.reset_at or now) else wallet.reset_at)
+
+        tx = AITokenTransaction(
+            user_id=user.id,
+            type='topup_plan',
+            amount=plan_limit if plan_limit is not None else 0,
+            source='plan_renewal' if mp_payment_id else 'auto_reset',
+            mp_payment_id=mp_payment_id,
+            description=f'Reset de tokens ({plan_type})'
+        )
+        db.session.add(tx)
+        db.session.commit()
+        print(f"WALLET: Reset completo para usuario {user.id}")
+
+    return wallet

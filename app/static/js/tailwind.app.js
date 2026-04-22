@@ -1,18 +1,24 @@
 window.tailwind = window.tailwind || {};
 window.tailwind.config = {
-    darkMode: 'media',
+    darkMode: 'class',
     theme: {
         extend: {
             colors: {
-                "primary": "#f2460d",
-                "success": "#16a34a",
-                "text-main": "#1c110d",
-                "text-muted": "#6b7280",
-                "bg-light": "#f8f6f5",
-                "background-dark": "#0a0a0a",
+                "primary": "#f97316",
+                "accent-cyan": "#06b6d4",
+                "accent-purple": "#a855f7",
+                "bg-deep": "#050505",
+                "surface": "#0f0f10",
+                "surface-hover": "#161618",
+                "border-subtle": "rgba(255, 255, 255, 0.05)",
+                "text-muted": "#a1a1aa",
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
+                heading: ['Outfit', 'sans-serif'],
+            },
+            backdropBlur: {
+                xs: '2px',
             }
         },
     },

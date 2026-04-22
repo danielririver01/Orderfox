@@ -14,30 +14,23 @@ function openDeleteModal(form, message = null, title = null) {
     const modal = document.getElementById('deleteModal');
     const titleEl = document.getElementById('modal-title');
     const messageEl = document.getElementById('modal-message');
-    
-    if (title) {
-        titleEl.textContent = title;
-    } else {
-        titleEl.textContent = 'Confirmar eliminación';
-    }
-    
-    if (message) {
-        messageEl.textContent = message;
-    } else {
-        messageEl.textContent = '¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.';
-    }
-    
+
+    if (title) titleEl.textContent = title;
+    else titleEl.textContent = 'Confirmar eliminación';
+
+    if (message) messageEl.textContent = message;
+    else messageEl.textContent = '¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.';
+
     formToSubmit = form;
     modal.classList.remove('hidden');
+    modal.classList.add('flex');        // ← agregar
     document.body.style.overflow = 'hidden';
 }
 
-/**
- * Cierra el modal de eliminación
- */
 function closeDeleteModal() {
     const modal = document.getElementById('deleteModal');
     modal.classList.add('hidden');
+    modal.classList.remove('flex');     // ← agregar
     document.body.style.overflow = 'auto';
     formToSubmit = null;
 }

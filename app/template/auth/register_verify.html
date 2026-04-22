@@ -9,9 +9,31 @@
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+        /* Desactivar el background de autocompletado del navegador */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active  {
+            -webkit-box-shadow: 0 0 0 1000px #141414 inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Si el modo es claro */
+        @media (prefers-color-scheme: light) {
+            input:-webkit-autofill,
+            input:-webkit-autofill:hover, 
+            input:-webkit-autofill:focus, 
+            input:-webkit-autofill:active  {
+                -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+                -webkit-text-fill-color: #1c110d !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-background-light dark:bg-[#0a0a0a] font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
@@ -42,58 +64,14 @@
                     </div>
                     {% endif %}
 
-                <!-- Form -->
-                <form class="w-full flex flex-col gap-5" method="POST" {% if step == 'otp' %}data-ajax="true"{% endif %}>
-                    {{ form.hidden_tag() }}
-                    
-                    {% if step == 'email' %}
-                    <div class="flex flex-col gap-2">
-                        <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="email">
-                            Correo electrónico
-                        </label>
-                        <div class="relative">
-                            {{ form.email(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-base placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="restaurante@empresa.com") }}
-                            <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#9c5e49]">
-                                <span class="material-symbols-outlined text-[20px]">mail</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="flex flex-col gap-2">
-                        <label class="text-[#1c110d] dark:text-gray-200 text-sm font-semibold leading-normal" for="code">
-                            Código de verificación
-                        </label>
-                        <div class="relative">
-                            {{ form.code(class="form-input w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-2xl font-bold tracking-[0.5em] text-center placeholder:text-[#9c5e49] dark:placeholder:text-[#7a4e40] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200", placeholder="000000", maxlength="6") }}
-                        </div>
-                        <p class="text-[10px] text-gray-400 text-center mt-1 uppercase font-bold tracking-wider">Ingresa los 6 dígitos</p>
-                    </div>
-                    {% endif %}
-
-                    <!-- Submit Button -->
-                    <button class="mt-2 w-full flex items-center justify-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold h-12 rounded-lg transition-colors duration-200 shadow-sm hover:shadow active:scale-[0.99]" type="submit">
-                        <span>{{ 'Verificar y Continuar' if step == 'otp' else 'Siguiente paso' }}</span>
-                        <span class="material-symbols-outlined text-[20px]">{{ 'login' if step == 'otp' else 'arrow_forward' }}</span>
-                    </button>
-                </form>
-                
-                {% if step == 'otp' %}
-                <div class="mt-4 text-center">
-                    <button type="button" id="resendBtn" onclick="resendOTP()" class="text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto group">
-                        <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-500">refresh</span>
-                        Reenviar código
-                    </button>
-                    <a class="mt-4 text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto" href="{{ url_for('auth.register') }}">
-                        Cambiar correo ({{ session.get('register_email') }})
-                    </a>
-                </div>
-                {% endif %}
+                <!-- Clerk SignUp container -->
+                <div id="clerk-signup" class="w-full min-h-[400px] flex justify-center"></div>
 
                 <!-- Footer Links -->
-                <div class="mt-6 text-center">
-                    <a class="text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors flex items-center justify-center gap-2" href="{{ url_for('auth.plans') }}">
-                        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                        Volver a planes
+                <div class="mt-8 text-center border-t border-gray-100 dark:border-[#262626] pt-6 w-full">
+                    <a class="text-xs font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-2" href="{{ url_for('auth.plans') }}">
+                        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                        VOLVER A PLANES
                     </a>
                 </div>
             </div>
@@ -102,7 +80,7 @@
             <div class="bg-gray-50 dark:bg-[#0f0f0f] border-t border-gray-100 dark:border-[#262626] py-4 px-8 flex flex-col gap-3 items-center text-xs text-gray-400 dark:text-gray-500">
                 <div class="flex justify-between w-full items-center">
                     <span>© 2026 Velzia</span>
-                    <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia" class="hover:text-primary transition-colors flex items-center gap-1">
+                    <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia" class="hover:text-primary transition-colors flex items-center gap-1 uppercase font-bold tracking-widest">
                         <span class="material-symbols-outlined text-[14px]">mail</span>
                         Ayuda
                     </a>
@@ -110,42 +88,92 @@
             </div>
         </div>
     </main>
-    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auth/ajax_form.js') }}"></script>
-    <script>
-        async function resendOTP() {
-            const btn = document.getElementById('resendBtn');
-            const originalHTML = btn.innerHTML;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Enviando...';
-            
-            try {
-                // Obtener el token CSRF del formulario
-                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
-                const response = await fetch("{{ url_for('auth.resend_otp') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
+    <!-- Version script helper -->
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    
+    <!-- Clerk Themes -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/themes@latest/dist/index.browser.js"></script>
+
+    <!-- Clerk SDK -->
+    {% if config.CLERK_PUBLISHABLE_KEY %}
+    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+        src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"></script>
+    <script>
+        window.addEventListener('load', async function () {
+            if (window.Clerk) {
+                // Seteamos la localización GLOBALMENTE al cargar Clerk
+                await window.Clerk.load({
+                    localization: {
+                        socialButtonsBlockButton__google: "Continuar con Google",
+                        socialButtonsBlockButton__facebook: "Continuar con Facebook",
+                        signUp: {
+                            start: {
+                                title: "Comienza tu registro",
+                                subtitle: "Ingresa tu correo profesional para empezar"
+                            }
+                        },
+                        formFieldLabel__firstName: "Nombre",
+                        formFieldLabel__lastName: "Apellido",
+                        formFieldInputPlaceholder__firstName: "Juan",
+                        formFieldInputPlaceholder__lastName: "Pérez",
+                        formFieldLabel__emailAddress: "Correo electrónico",
+                        formFieldInputPlaceholder__emailAddress: "ejemplo@velzia.com",
+                        formFieldLabel__password: "Contraseña",
+                        formButtonPrimary: "CONTINUAR",
+                        formFieldHintText__password: "Mínimo 8 caracteres, una mayúscula y un número.",
+                        formFieldAction__forgotPassword: "¿Olvidaste tu contraseña?",
+                        dividerText: "o también",
+                        unstable__errors: {
+                            password_too_short: "La contraseña es muy corta.",
+                            password_missing_uppercase: "Falta una letra mayúscula.",
+                            password_missing_number: "Falta un número."
+                        }
                     }
                 });
-                
-                const data = await response.json();
-                if (data.success) {
-                    showFlash(data.message, 'success');
-                } else {
-                    showFlash(data.message, 'error');
+
+                if (window.Clerk.user) {
+                    window.location.href = "{{ url_for('auth.login') }}";
+                    return;
                 }
-            } catch (error) {
-                showFlash('No se pudo reenviar el código.', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
+
+                const signUpDiv = document.getElementById('clerk-signup');
+
+                // Determinar modo oscuro
+                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                window.Clerk.mountSignUp(signUpDiv, {
+                    afterSignUpUrl: '/', 
+                    appearance: {
+                        baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
+                        variables: {
+                            colorPrimary: '#f2460d',
+                            colorBackground: isDarkMode ? '#111' : '#ffffff',
+                            colorText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputText: isDarkMode ? '#ffffff' : '#1c110d',
+                            colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
+                        },
+                        elements: {
+                            rootBox: "w-full flex justify-center",
+                            card: "w-full shadow-none border-none bg-transparent p-0",
+                            headerTitle: "hidden",
+                            headerSubtitle: "hidden",
+                            socialButtonsBlockButton: "rounded-lg h-11 border-gray-700 bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#222] transition-all",
+                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
+                            footer: "hidden",
+                            dividerRow: "my-6",
+                            dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
+                            formFieldInput: 'bg-[#fcf9f8] dark:bg-[#0f0f0f] border-[#e8d5ce] dark:border-[#333333] focus:ring-primary/20 focus:border-primary',
+                            otpCodeFieldInput: isDarkMode
+                                ? 'text-white bg-[#1a1a1a] border-[#444] caret-orange-500'
+                                : 'text-[#1c110d] bg-white border-[#e8d5ce] caret-orange-500',
+                        }
+                    }
+                });
             }
-        }
+        });
     </script>
+    {% endif %}
 </body>
 </html>

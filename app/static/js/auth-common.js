@@ -1,12 +1,12 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Auto-hide flash messages after 5 seconds
     const flashMessages = document.querySelectorAll('.flash-message');
-    flashMessages.forEach(function(message) {
-        setTimeout(function() {
+    flashMessages.forEach(function (message) {
+        setTimeout(function () {
             message.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
             message.style.opacity = '0';
             message.style.transform = 'translateY(-10px)';
-            setTimeout(function() {
+            setTimeout(function () {
                 message.remove();
             }, 500);
         }, 5000);
@@ -31,10 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 2. Listen to HTML5 native invalid event (when user hits submit without filling it)
-        field.addEventListener('invalid', function(e) {
+        field.addEventListener('invalid', function (e) {
             // Add red border and pulse animation
             field.classList.add('border-red-500', 'dark:border-red-500', 'animate-pulse');
-            
+
             // Remove after 3 seconds
             setTimeout(() => {
                 field.classList.remove('border-red-500', 'dark:border-red-500', 'animate-pulse');
@@ -49,26 +49,33 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
 if (csrfToken) {
     const originalFetch = window.fetch;
-    window.fetch = async function(...args) {
-        let [resource, config] = args;
-        
-        // Ensure config object exists
-        config = config || {};
-        
-        // Normalize headers to be an object (fetch headers can be Headers object or array)
-        if (!config.headers) {
-            config.headers = {};
+    window.fetch = async function (resource, config = {}) {
+        let url;
+        if (resource instanceof Request) {
+            url = resource.url;
+        } else {
+            url = resource.toString();
         }
 
-        // Add CSRF token to non-GET requests
-        if (config.method && config.method.toUpperCase() !== 'GET') {
-            if (config.headers instanceof Headers) {
-                config.headers.append('X-CSRFToken', csrfToken);
-            } else if (Array.isArray(config.headers)) {
-                config.headers.push(['X-CSRFToken', csrfToken]);
+        const isSameOrigin = !url.startsWith('http') || url.startsWith(window.location.origin);
+        const method = (config.method || (resource instanceof Request ? resource.method : 'GET')).toUpperCase();
+
+        if (isSameOrigin && method !== 'GET') {
+            // Clonar la petición si es un objeto Request para poder modificar las cabeceras
+            if (resource instanceof Request) {
+                const newHeaders = new Headers(resource.headers);
+                newHeaders.append('X-CSRFToken', csrfToken);
+                resource = new Request(resource, { headers: newHeaders });
             } else {
-                config.headers['X-CSRFToken'] = csrfToken;
-    }
+                if (!config.headers) config.headers = {};
+                if (config.headers instanceof Headers) {
+                    config.headers.append('X-CSRFToken', csrfToken);
+                } else if (Array.isArray(config.headers)) {
+                    config.headers.push(['X-CSRFToken', csrfToken]);
+                } else {
+                    config.headers['X-CSRFToken'] = csrfToken;
+                }
+            }
         }
 
         return originalFetch(resource, config);
@@ -76,19 +83,19 @@ if (csrfToken) {
 }
 
 // Global Toast System - Velzia Premium UI
-window.showToast = function(message, type = 'default') {
+window.showToast = function (message, type = 'default') {
     const container = document.getElementById('toast-container');
     if (!container) {
         console.warn('Toast container not found in DOM');
         return;
     }
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `<span>${message}</span>`;
-    
+
     container.appendChild(toast);
-    
+
     // Trigger animation
     setTimeout(() => {
         toast.style.opacity = '1';

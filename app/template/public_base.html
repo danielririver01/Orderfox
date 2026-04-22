@@ -5,12 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Menú - {{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="icon"
         href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
         type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{{ url_for('static', filename='JS/tailwind.app.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/public_base.css') }}">
     {% block extra_css %}{% endblock %}
@@ -18,9 +20,9 @@
 
 <body>
     {% block hero %}
-    <header class="header-menu">
-        <h1>{% block header_title %}{{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
-        <div class="header-subtitle">{% block header_subtitle %}🍽️ Tu menú digital de confianza{% endblock %}</div>
+    <header class="header-menu bg-[#050505] border-b border-white/5 py-12 text-center">
+        <h1 class="text-4xl font-black tracking-[-0.05em] text-white uppercase mb-2">{% block header_title %}{{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
+        <div class="header-subtitle text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px]">{% block header_subtitle %}🍽️ Menú Digital Premium{% endblock %}</div>
     </header>
     {% endblock %}
 
@@ -52,65 +54,42 @@
     <div id="address-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-black/80 backdrop-blur-md" onclick="closeAddressModal()"></div>
         <div
-            class="relative bg-white dark:bg-[#141414] rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 dark:border-[#262626]">
-            <!-- Header con Logo Velzia -->
-            <div class="p-8 text-center pb-4">
-                <div class="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            class="relative bg-[#0f0f10] rounded-[2.5rem] max-w-md w-full shadow-2xl overflow-hidden border border-white/5">
+            <!-- Header Premium -->
+            <div class="p-10 text-center pb-6">
+                <div class="w-20 h-20 bg-orange-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-orange-500/20">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-12 h-12">
-                        <path d="M24 42L8 22L16 10L20 16H28L32 10L40 22L24 42Z" fill="#f2460d" />
+                        <path d="M24 42L8 22L16 10L20 16H28L32 10L40 22L24 42Z" fill="#f97316" />
                         <path d="M24 42L18 30L24 35L30 30L24 42Z" fill="#fff" />
-                        <path d="M24 38L23 39.5L24 41L25 39.5L24 38Z" fill="#1c1917" />
+                        <path d="M24 38L23 39.5L24 41L25 39.5L24 38Z" fill="#050505" />
                     </svg>
                 </div>
-                <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                    Finalizar Compra
+                <h3 class="text-3xl font-black text-white tracking-tight">
+                    Checkout
                 </h3>
-                <p class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">
-                    Ingresa tus datos para el envío
+                <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-3">
+                    Información de Envío
                 </p>
             </div>
 
             <!-- Form -->
-            <div class="px-8 pb-8 space-y-4">
-                <!-- Honeypot (Campo Trampa Anti-Bots) -->
-                <div class="visually-hidden" aria-hidden="true">
-                    <label for="user_secondary_email">Secondary Email</label>
-                    <input type="text" id="user_secondary_email" name="user_secondary_email" tabindex="-1"
-                        autocomplete="off">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
+            <div class="px-10 pb-10 space-y-5">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label
-                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Tu
-                            Nombre <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-name" placeholder="Ej: Juan Pérez"
-                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Nombre Completo</label>
+                        <input type="text" id="delivery-name" placeholder="Tu nombre"
+                            class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                     </div>
                     <div>
-                        <label
-                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Teléfono
-                            <span class="text-red-500">*</span></label>
-                        <input type="tel" id="delivery-phone" placeholder="Ej: 300..." autocomplete="tel"
-                            pattern="^3[0-9]{9}$" title="Debe contener 10 dígitos y comenzar con 3"
-                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
+                        <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">WhatsApp</label>
+                        <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel"
+                            class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label
-                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Ciudad
-                            <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-city" placeholder="Ej: Bogotá"
-                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
-                    </div>
-                    <div>
-                        <label
-                            class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Dirección
-                            <span class="text-red-500">*</span></label>
-                        <input type="text" id="delivery-address" placeholder="Ej: Calle 123..."
-                            class="w-full bg-gray-50 dark:bg-[#0a0a0a] border-2 border-gray-100 dark:border-[#262626] rounded-2xl px-4 py-3 text-sm font-semibold focus:border-[#1e3a8a] dark:focus:border-[#1e3a8a] outline-none transition-all dark:text-white">
-                    </div>
+                <div>
+                    <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Dirección de Entrega</label>
+                    <input type="text" id="delivery-address" placeholder="Ej: Calle 123 #45-67"
+                        class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                 </div>
 
                 <div class="pt-4 flex gap-3">

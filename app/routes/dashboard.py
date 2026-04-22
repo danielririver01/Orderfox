@@ -69,7 +69,8 @@ def index():
                          delivered_count=delivered_count,
                          total_sales=f"{int(total_sales):,}",
                          is_open=restaurant.is_open,
-                         menu_url=menu_url)
+                         menu_url=menu_url,
+                         SCANNER_IA_URL=current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000'))
 
 @dashboard_bp.route('/toggle-status', methods=['POST'])
 @login_required
@@ -129,6 +130,35 @@ def api_check_orders():
         'last_id': last_id,
         'pending_count': pending_count,
         'new_orders': pending_count > 0
+    })
+
+@dashboard_bp.route('/api/stats')
+@login_required
+@active_required
+def api_stats():
+    """Endpoint para obtener estadísticas filtradas por rango (hoy/mes)."""
+    restaurant = get_current_restaurant()
+    if not restaurant: return jsonify({'error': 'not found'}), 404
+
+    range_type = request.args.get('range', 'today')
+    today = date.today()
+    
+    if range_type == 'month':
+        start_date = datetime.combine(today.replace(day=1), datetime.min.time())
+    else:
+        start_date = datetime.combine(today, datetime.min.time())
+
+    # Ventas totales confirmadas/entregadas
+    total_sales = db.session.query(func.sum(Order.total)).filter(
+        Order.restaurant_id == restaurant.id,
+        Order.created_at >= start_date,
+        Order.status.in_(['confirmed', 'delivered'])
+    ).scalar() or 0
+
+    return jsonify({
+        'success': True,
+        'total_sales': int(total_sales),
+        'range': range_type
     })
 
 @dashboard_bp.route('/Productos')

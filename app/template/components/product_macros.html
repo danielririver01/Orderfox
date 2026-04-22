@@ -2,22 +2,27 @@
 <article class="product-card" id="product-{{ product.id }}" data-id="{{ product.id }}" data-name="{{ product.name }}"
     data-price="{{ product.price }}" data-description="{{ product.description or '' }}"
     data-keywords="{{ product.name|lower }} {{ product.description|lower if product.description else '' }} {{ product.category.name|lower if product.category else '' }}">
-    
-    <div class="product-card-inner" id="card-inner-{{ product.id }}" style="{% if not is_3d %}transform: none; transition: none;{% endif %}">
+
+    <div class="product-card-inner" id="card-inner-{{ product.id }}"
+        style="{% if not is_3d %}transform: none; transition: none;{% endif %}">
         <!-- Cara Frontal -->
         <div class="product-card-front">
             {% if is_3d %}
             <button class="btn-flip" onclick="flipCard({{ product.id }})" title="Ver info y QR">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+                </svg>
             </button>
             {% endif %}
 
             {% if product.image_url %}
             <div class="product-image-container">
-                <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                <img src="{{ get_image_url(product.image_url) }}" alt="{{ product.name }}" class="product-image"
+                    loading="lazy">
             </div>
             {% endif %}
-            
+
             <div class="product-header">
                 <div class="product-title-group">
                     {% if show_category and product.category %}
@@ -27,7 +32,7 @@
                 </div>
                 <span class="product-price">${{ "{:,}".format(product.price) }}</span>
             </div>
-            
+
             <p class="product-description">
                 {{ product.description or 'Deliciosa preparación con ingredientes de calidad.' }}
             </p>
@@ -38,9 +43,9 @@
                 {% for modifier in product.modifiers if modifier.is_active %}
                 <label class="extra-item">
                     <div class="extra-info">
-                        <input type="checkbox" class="extra-checkbox" data-id="{{ modifier.id }}" data-name="{{ modifier.name }}"
-                            data-price="{{ modifier.extra_price }}" onchange="updateExtra({{ product.id }})" 
-                            {% if ordering_disabled %}disabled{% endif %}>
+                        <input type="checkbox" class="extra-checkbox" data-id="{{ modifier.id }}"
+                            data-name="{{ modifier.name }}" data-price="{{ modifier.extra_price }}"
+                            onchange="updateExtra({{ product.id }})" {% if ordering_disabled %}disabled{% endif %}>
                         <span>{{ modifier.name }}</span>
                     </div>
                     <b>+${{ "{:,}".format(modifier.extra_price) }}</b>
@@ -66,18 +71,25 @@
         {% if is_3d %}
         <div class="product-card-back">
             <button class="btn-flip-back" onclick="flipCard({{ product.id }})">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
                 Volver
             </button>
-            
+
             <div class="qr-container">
                 <div class="qr-loading">Generando código QR...</div>
                 <img id="qr-{{ product.id }}" class="qr-image" src="" alt="Código QR para compartir {{ product.name }}">
             </div>
 
             <div class="share-actions">
-                <button class="btn-share-premium" onclick="shareProduct({{ product.id }}, '{{ product.name }}', '{{ product.category.name if product.category else '' }}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+                <button class="btn-share-premium"
+                    onclick="shareProduct({{ product.id }}, '{{ product.name }}', '{{ product.category.name if product.category else '' }}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
+                    </svg>
                     Compartir Producto
                 </button>
             </div>

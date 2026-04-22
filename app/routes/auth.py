@@ -11,11 +11,123 @@ import unicodedata
 import mercadopago
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from app.utils.subscription import sanitize_restaurant_limits
+from app.utils.subscription import sanitize_restaurant_limits, initialize_or_reset_token_wallet
 
 auth_bp = Blueprint('auth', __name__)
 
-from app import csrf  # para eximir el webhook de CSRF
+from app.extensions import csrf
+
+@auth_bp.route('/api/sync-clerk', methods=['POST'])
+@csrf.exempt
+def sync_clerk():
+    """
+    Sincroniza el usuario de Clerk con la base de datos local.
+    Realiza una verificación segura consultando la API de Clerk.
+    """
+    data = request.get_json()
+    clerk_id = data.get('clerk_id')
+    email = data.get('email')
+    session_id = data.get('session_id')
+    
+    # 1. Verificación en el backend contra Clerk
+    clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
+    if not clerk_secret:
+        return jsonify({'success': False, 'message': 'Clerk secret not configured'}), 500
+        
+    try:
+        import requests
+        # Verificar la sesión activa primero
+        session_resp = requests.get(
+            f"https://api.clerk.com/v1/sessions/{session_id}",
+            headers={"Authorization": f"Bearer {clerk_secret}"},
+            timeout=5
+        )
+        
+        if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
+             return jsonify({'success': False, 'message': 'Invalid or inactive session'}), 401
+             
+        # Verificar los datos del usuario
+        response = requests.get(
+            f"https://api.clerk.com/v1/users/{clerk_id}",
+            headers={"Authorization": f"Bearer {clerk_secret}"},
+            timeout=5
+        )
+        
+        if response.status_code != 200:
+             return jsonify({'success': False, 'message': 'Invalid Clerk user'}), 401
+             
+        clerk_user_data = response.json()
+        
+        # Buscar el email primario por ID
+        verified_email = next(
+            (e['email_address'] for e in clerk_user_data.get('email_addresses', []) 
+             if e['id'] == clerk_user_data.get('primary_email_address_id')), 
+            None
+        )
+        
+        # Fallback: para usuarios OAuth (Google/Facebook) buscar el email en toda la lista
+        if not verified_email:
+            all_emails = [e['email_address'] for e in clerk_user_data.get('email_addresses', [])]
+            if email.lower() in [e.lower() for e in all_emails]:
+                verified_email = email  # El email existe y viene del JWT de Clerk
+        
+        # Seguridad: Comparar el email del cliente con el verificado por Clerk (case-insensitive)
+        if not verified_email or verified_email.lower() != email.lower():
+             return jsonify({'success': False, 'message': 'Email mismatch or not verified'}), 401
+        
+        # Normalizar email al verificado por Clerk
+        email = verified_email
+             
+    except Exception as e:
+        current_app.logger.error(f"Error verifying Clerk user: {e}")
+        return jsonify({'success': False, 'message': 'Verification failed'}), 500
+
+    username = data.get('username') or email.split('@')[0]
+
+    if not email or not clerk_id:
+        return jsonify({'success': False, 'message': 'Identification is required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Si el usuario no existe, lo creamos
+        user = User(
+            email=email,
+            username=username,
+            password='clerk_authenticated',  # Password dummy
+            clerk_id=clerk_id
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
+        if not user.clerk_id:
+            user.clerk_id = clerk_id
+            db.session.commit()
+
+    # Inicializar wallet de tokens si no existe (Velzia 2.0.0 Alpha)
+    if not user.token_wallet:
+        initialize_or_reset_token_wallet(user)
+
+    session['user_id'] = user.id
+    session['username'] = user.username
+    session['clerk_id'] = clerk_id
+
+    # Redirección lógica: si es nuevo y no tiene restaurante, ir a configuración de cuenta
+    redirect_url = url_for('dashboard.index')
+    if not user.restaurant:
+        # Si viene de registro silencioso, mandarlo a configurar su restaurante
+        redirect_url = url_for('auth.setup_account')
+
+    return jsonify({
+        'success': True,
+        'redirect_url': redirect_url
+    })
+
+@auth_bp.route('/api/sync-clerk-redirect')
+def sync_clerk_redirect():
+    return render_template('auth/sync_clerk.html')
+
 def send_otp_email(email, otp):
     try:
         msg = Message('Código de Verificación - Velzia',
@@ -150,109 +262,44 @@ def terms():
 def plans():
     return render_template('auth/plans.html')
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
+@auth_bp.route('/register', methods=['GET'])
 def register():
     plan = request.args.get('plan')
     if plan:
         session['selected_plan'] = plan
-
-    from app.forms.auth import RegisterEmailForm
-    form = RegisterEmailForm()
-    if form.validate_on_submit():
-        email = form.email.data
-
-        # Limpiar SIEMPRE la sesión anterior al iniciar un nuevo intento de registro.
-        # Esto previene el exploit de sesión cacheada: si un intento previo dejó un
-        # OTP válido en sesión, el siguiente submit lo borra obligatoriamente.
-        session.pop('otp', None)
-        session.pop('register_email', None)
-        session.pop('otp_verified', None)
-
-        user_exists = User.query.filter_by(email=email).first()
-        
-        if user_exists:
-            try:
-                msg = Message('Ya eres parte de Velzia', recipients=[email])
-                login_url = url_for('auth.login', _external=True)
-                msg.html = render_template('email/account_exists.html', login_url=login_url)
-                msg.body = f"Ya tienes una cuenta activa en Velzia. Puedes iniciar sesión aquí: {login_url}"
-                mail.send(msg)
-            except Exception as e:
-                 print(f"Error enviando correo de cuenta existente: {e}")
-        else:
-            # Verificar abuso de trial ANTES de enviar el OTP
-            selected_plan = session.get('selected_plan', 'emprendedor')
-            if selected_plan == 'trial':
-                past_trial = TrialHistory.query.filter_by(email=email).first()
-                if past_trial:
-                    flash('Este correo ya disfrutó de una prueba gratuita. Por favor elige un plan pago para continuar.', 'warning')
-                    return render_template('auth/register_verify.html', form=form, step='email')
-
-            import random
-            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-            session['otp'] = otp
-            session['register_email'] = email
-            
-            if not send_otp_email(email, otp):
-                flash('Error al enviar el correo de verificación. Por favor intente más tarde.')
-                return render_template('auth/register_verify.html', form=form, step='email')
-
-        # Respuesta UNIFICADA: Independientemente de si existe o no
-        flash('Si el correo ingresado es correcto, recibirás instrucciones para continuar.')
-        return redirect(url_for('auth.verify_otp'))
-    return render_template('auth/register_verify.html', form=form, step='email')
-
-@auth_bp.route('/verify-otp', methods=['GET', 'POST'])
-def verify_otp():
-    from app.forms.auth import RegisterVerifyForm
-    if 'register_email' not in session or 'otp' not in session:
-        return redirect(url_for('auth.register'))
     
-    form = RegisterVerifyForm()
-    if form.validate_on_submit():
-        submitted_code = str(form.code.data).strip()
-        session_code = str(session.get('otp')).strip()
-        
-        if submitted_code == session_code:
-            session['otp_verified'] = True
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': True, 'redirect': url_for('auth.setup_account')})
-                
-            return redirect(url_for('auth.setup_account'))
-        else:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Código incorrecto. Inténtalo de nuevo.'})
-                
-            flash('Código incorrecto. Inténtalo de nuevo.')
-    return render_template('auth/register_verify.html', form=form, step='otp')
+    # Renderizamos la página de registro (ahora manejada por Clerk SignUp en el cliente)
+    return render_template('auth/register_verify.html', step='email')
 
-@auth_bp.route('/resend-otp', methods=['POST'])
-def resend_otp():
-    email = session.get('register_email')
-    if not email:
-        return jsonify({'success': False, 'message': 'Sesión expirada. Por favor regístrate de nuevo.'})
-    
-    otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-    session['otp'] = otp
-    
-    if send_otp_email(email, otp):
-        return jsonify({'success': True, 'message': f'Hemos enviado un nuevo código a {email}.'})
-    else:
-        return jsonify({'success': False, 'message': 'No pudimos enviar el código. Inténtalo de nuevo.'})
+# Rutas de OTP legadas eliminadas - Velzia 2.0.0 usa Clerk para identidad gestionada
 
 
 @auth_bp.route('/setup-account', methods=['GET', 'POST'])
 def setup_account():
-    if not session.get('otp_verified'):
+    # El usuario debe estar autenticado (vía Clerk o tradicional)
+    if 'user_id' not in session:
         return redirect(url_for('auth.register'))
     
+    from app.forms.auth import RegisterSetupForm
     form = RegisterSetupForm()
-    email = session.get('register_email')
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return redirect(url_for('auth.register'))
+        
+    # Si ya tiene restaurante, no debería estar aquí
+    if user.restaurant:
+        return redirect(url_for('dashboard.index'))
+
+    email = user.email
+
+    # Si es usuario de Clerk, relajamos la validación de campos que ya no necesitamos
+    if user.clerk_id:
+        form.admin_name.validators = []
+        form.password.validators = []
+        form.confirm_password.validators = []
 
     if form.validate_on_submit():
-        if User.query.filter_by(email=email).first():
-            return redirect(url_for('auth.login'))
 
         # Validar abuso de Trial por Teléfono y Email (Tenant Check)
         past_active_trial = Restaurant.query.filter_by(whatsapp_phone=form.phone.data, has_used_trial=True).first()
@@ -306,44 +353,36 @@ def setup_account():
         db.session.add(new_restaurant)
         db.session.flush()
 
-        new_user = User(
-            username=form.admin_name.data.strip() if form.admin_name.data else "",
-            email=email,
-            restaurant_id=new_restaurant.id
-        )
-        new_user.set_password(form.password.data)
-        db.session.add(new_user)
+        # Vinculamos al usuario existente con el nuevo restaurante
+        user.restaurant_id = new_restaurant.id
+        
+        # Si NO es Clerk, actualizamos identidad (tradicional)
+        if not user.clerk_id:
+            user.username = form.admin_name.data.strip()
+            user.set_password(form.password.data)
         
         if is_trial:
             new_history_record = TrialHistory(email=email, whatsapp_phone=form.phone.data)
             db.session.add(new_history_record)
 
-        
         try:
             db.session.commit()
             
             if is_trial:
-                # Caso TRIAL: Auto-login y Dashboard
-                session['user_id'] = new_user.id
-                session['username'] = new_user.username
-                
-                
-                
-
-                
+                # Caso TRIAL: El usuario ya está en la sesión de Flask, actualizamos username
+                session['username'] = user.username
                 flash('¡Registro exitoso! Disfruta de tus 10 días de prueba gratuita.', 'success')
                 return redirect(url_for('dashboard.index'))
             else:
                 # Caso PAGO: Redirigir a payment
                 session['pending_restaurant_id'] = new_restaurant.id
                 return redirect(url_for('auth.payment'))
-
         except Exception as e:
             db.session.rollback()
             flash('Error al crear la cuenta. Inténtalo de nuevo.')
             print(f"Error en setup_account: {e}")
 
-    return render_template('auth/register_setup.html', form=form, plan=session.get('selected_plan'))
+    return render_template('auth/register_setup.html', form=form, plan=session.get('selected_plan'), user=user)
 
 @auth_bp.route('/renew', methods=['GET'])
 def renew():
@@ -470,6 +509,13 @@ def payment_callback():
 
             sanitize_restaurant_limits(restaurant)
             
+            # Reset de tokens IA al activar/renovar plan (Fase 1 Velzia 2.0.0)
+            from app.models import User
+            user = User.query.filter_by(restaurant_id=restaurant.id).first()
+            if user:
+                mp_payment_id = request.args.get('payment_id')
+                initialize_or_reset_token_wallet(user, is_reset=True, mp_payment_id=mp_payment_id)
+
             session.pop('otp', None)
             session.pop('register_email', None)
             session.pop('otp_verified', None)
@@ -494,7 +540,7 @@ def payment_callback():
     return redirect(url_for('auth.payment'))
 
 @auth_bp.route('/webhook', methods=['POST'])
-@csrf.exempt  # MP es servicio externo — no puede enviar token CSRF
+@csrf.exempt
 def webhook():
     """
     Recibe notificaciones de Mercado Pago sobre actualizaciones de pago.
@@ -576,6 +622,10 @@ def webhook():
                         # Aplicar límites del nuevo plan inmediatamente
                         try:
                             sanitize_restaurant_limits(restaurant)
+                            # Reset de tokens IA vía Webhook
+                            user = User.query.filter_by(restaurant_id=restaurant.id).first()
+                            if user:
+                                initialize_or_reset_token_wallet(user, is_reset=True, mp_payment_id=payment_id)
                         except Exception as e:
                             pass
 
@@ -589,7 +639,6 @@ def webhook():
 @auth_bp.route('/logout')
 def logout():
     session.clear()
-    flash('Has cerrado sesión correctamente.')
-    return redirect(url_for('auth.login'))
+    return render_template('auth/logout_clerk.html')
 
         

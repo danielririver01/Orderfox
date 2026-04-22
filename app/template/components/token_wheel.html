@@ -1,0 +1,78 @@
+<!-- 
+    app/template/components/token_wheel.html
+    Componente visual de tokens IA para Velzia 2.0.0
+-->
+
+{% macro token_wheel() %}
+<div id="token-wheel-container" class="flex flex-col items-center justify-center p-4 mb-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl transition-all duration-300 hover:border-indigo-500/50 group" style="background-color: #0f172a;">
+    <div class="relative w-24 h-24 flex items-center justify-center">
+        <!-- SVG de la Rueda -->
+        <svg class="w-full h-full transform -rotate-90">
+            <!-- Círculo de fondo -->
+            <circle 
+                cx="48" cy="48" r="40" 
+                stroke="#1e293b" 
+                stroke-width="6" 
+                fill="transparent" 
+            />
+            <!-- Círculo de progreso -->
+            <circle 
+                id="token-wheel-progress"
+                cx="48" cy="48" r="40" 
+                stroke="#f97316" 
+                stroke-width="6" 
+                stroke-linecap="round"
+                fill="transparent" 
+                stroke-dasharray="251.2"
+                stroke-dashoffset="251.2"
+                class="transition-all duration-700 ease-out"
+            />
+        </svg>
+
+        <!-- Contenido Central -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+            <span id="token-count-value" class="text-xl font-bold leading-none">-</span>
+            <span class="text-[10px] uppercase tracking-tighter text-slate-400 mt-1">Tokens IA</span>
+        </div>
+
+        <!-- Indicador Elite (Diamante) - Oculto por defecto -->
+        <div id="token-elite-badge" class="hidden absolute inset-0 flex items-center justify-center bg-slate-900 rounded-full">
+            <div class="animate-pulse flex flex-col items-center">
+                <span class="material-symbols-outlined text-indigo-400 text-3xl">diamond</span>
+                <span class="text-[10px] font-black text-indigo-400 tracking-widest">ELITE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Inferior -->
+    <div class="w-full mt-3 flex items-center justify-between">
+        <div class="flex flex-col">
+            <span id="token-reset-text" class="text-[9px] text-slate-500 italic">Cargando...</span>
+        </div>
+        
+        <!-- Botón de Compra Rápida -->
+        <button 
+            onclick="openTokenModal()"
+            class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all shadow-sm"
+            title="Recargar Tokens"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Estilos inline para manejo rápido de colores -->
+<style>
+    #token-wheel-progress.critical { stroke: #ef4444; filter: drop-shadow(0 0 6px #ef444455); }
+    #token-wheel-progress.warning { stroke: #eab308; }
+    #token-wheel-progress.success { stroke: #22c55e; }
+    
+    /* Efecto para el contenedor Elite */
+    #token-wheel-container.is-elite {
+        border-color: #6366f1;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endmacro %}

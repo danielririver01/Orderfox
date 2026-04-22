@@ -53,7 +53,7 @@
                 </div>
                 {% endif %}
 
-                <form class="flex flex-col gap-5" method="POST" id="setupForm">
+                <form class="flex flex-col gap-5" method="POST" id="setupForm" novalidate>
                     {{ form.hidden_tag() }}
 
                     <!-- Email (Pre-filled & Disabled) -->
@@ -63,14 +63,58 @@
                             Correo Verificado
                         </label>
                         <div class="relative">
-                            <input type="text" value="{{ session.get('register_email') }}" disabled
-                                class="w-full rounded-lg border border-[#e8d5ce] bg-[#fcf9f8] text-[#1c110d] px-4 py-3 text-sm font-bold">
+                            <input type="text" value="{{ user.email }}" disabled
+                                class="w-full rounded-lg border border-[#e8d5ce] bg-[#fcf9f8] dark:bg-[#1f1a1a] text-[#1c110d] dark:text-gray-300 px-4 py-3 text-sm font-bold">
                             <div class="absolute inset-y-0 right-3 flex items-center text-green-500">
                                 <span class="material-symbols-outlined text-[20px]">verified</span>
                             </div>
                         </div>
                     </div>
 
+                    {% if session.get('clerk_id') %}
+                    <!-- Modo Simplificado para Clerk -->
+                    <div class="bg-orange-50/50 dark:bg-[#201511] border border-orange-200/50 dark:border-orange-900/30 p-4 rounded-lg mb-4 flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[#f2460d] text-[20px] mt-0.5">verified</span>
+                        <div>
+                            <p class="text-xs font-bold text-[#f2460d] uppercase tracking-widest mb-1">Identidad Verificada</p>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                                Hemos sincronizado tu cuenta de <span class="font-bold">Google/Facebook</span>. No necesitas crear una contraseña para Velzia.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden redundant fields for Clerk -->
+                    <div class="hidden">
+                        {{ form.admin_name(value=user.username or 'Admin', required=False) }}
+                        {{ form.password(id="hidden_pass", value="ClerkAuth123_Controlled", required=False) }}
+                        {{ form.confirm_password(id="hidden_confirm", value="ClerkAuth123_Controlled", required=False) }}
+                    </div>
+
+                    <!-- Solo pedimos lo esencial -->
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal">
+                                Nombre del Restaurante
+                            </label>
+                            {{ form.restaurant_name(class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="Ej: Pizzería Roma") }}
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[#1c110d] dark:text-gray-200 text-xs font-bold uppercase tracking-widest leading-normal">
+                                WhatsApp del Negocio
+                            </label>
+                            {{ form.phone(class="w-full rounded-lg border border-[#e8d5ce] dark:border-[#333333] bg-[#fcf9f8] dark:bg-[#0f0f0f] text-[#1c110d] dark:text-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all", placeholder="573...") }}
+                        </div>
+                    </div>
+                    <script>
+                        // Para usuarios de Clerk, el submit siempre está habilitado porque no hay requisitos de password
+                        window.addEventListener('load', () => {
+                            const btn = document.getElementById('submitBtn');
+                            if (btn) btn.disabled = false;
+                        });
+                    </script>
+
+                    {% else %}
+                    <!-- Modo Tradicional -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Admin Name -->
                         <div class="flex flex-col gap-2">
@@ -170,6 +214,7 @@
                             <span>Las contraseñas coinciden</span>
                         </div>
                     </div>
+                    {% endif %}
 
                     <button id="submitBtn" disabled
                         class="mt-4 w-full flex items-center justify-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold h-12 rounded-lg transition-all duration-200 shadow-sm active:scale-[0.99]"
@@ -259,6 +304,7 @@
         };
 
         function validate() {
+            if (!password || !confirm) return;
             const val = password.value;
             const valConfirm = confirm.value;
 
@@ -292,8 +338,8 @@
             }
         }
 
-        password.addEventListener('input', validate);
-        confirm.addEventListener('input', validate);
+        if (password) password.addEventListener('input', validate);
+        if (confirm) confirm.addEventListener('input', validate);
 
         function togglePass(inputId, iconId) {
             const input = document.getElementById(inputId);
