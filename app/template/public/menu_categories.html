@@ -14,7 +14,7 @@
         <div class="carousel-track">
             {% for product in highlighted_products %}
             <div class="carousel-slide">
-                <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}" class="carousel-img">
+                <img src="{{ get_image_url(product.image_url) }}" alt="{{ product.name }}" class="carousel-img">
                 <div class="carousel-overlay">
                     <div class="carousel-content">
                         <span class="badge">{{ product.category.name }}</span>
@@ -69,7 +69,7 @@
     <a href="{{ url_for('public.category_products', slug=restaurant.slug, category_id=category.id) }}" class="category-card">
         <div class="category-icon">
             {% if category.image_url %}
-            <img src="{{ url_for('static', filename=category.image_url) }}" alt="{{ category.name }}" class="category-img">
+            <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" class="category-img">
             {% else %}
             <span class="category-initial">{{ category.name[0] }}</span>
             {% endif %}

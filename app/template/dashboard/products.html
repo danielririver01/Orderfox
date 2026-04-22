@@ -32,7 +32,7 @@
                     <!-- Imagen -->
                     <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                         {% if product.image_url %}
-                            <img src="{{ url_for('static', filename=product.image_url) }}" class="w-full h-full object-cover">
+                            <img src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
                         {% else %}
                             <div class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">{{ product.name[0] }}</div>
                         {% endif %}
@@ -107,7 +107,7 @@
                                 <div class="flex items-center gap-3 flex-1">
                                     <div class="w-14 h-14 rounded-xl bg-[#f2460d] flex items-center justify-center flex-shrink-0">
                                         {% if category.image_url %}
-                                            <img src="{{ url_for('static', filename=category.image_url) }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-xl">
+                                            <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-xl">
                                         {% else %}
                                             <span class="text-white font-black text-lg">{{ category.name[0] }}</span>
                                         {% endif %}

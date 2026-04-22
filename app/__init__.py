@@ -117,6 +117,15 @@ def create_app():
             response.headers['Expires'] = '-1'
         return response
 
+    @app.template_global()
+    def get_image_url(image_path):
+        if not image_path:
+            return None
+        if image_path.startswith('http'):
+            return image_path
+        from flask import url_for
+        return url_for('static', filename=image_path)
+
     # Inyectar variables de soporte y suscripción globalmente
     @app.context_processor
     def inject_global_data():

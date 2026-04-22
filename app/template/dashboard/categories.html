@@ -41,7 +41,7 @@
                         <!-- Miniatura de Imagen -->
                         <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
                             {% if category.image_url %}
-                                <img src="{{ url_for('static', filename=category.image_url) }}" class="w-full h-full object-cover">
+                                <img src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
                             {% else %}
                                 <div class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
                                     {{ category.name[0] }}

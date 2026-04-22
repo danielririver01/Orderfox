@@ -42,7 +42,7 @@ block content %}
           class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (category and category.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
           
           {% if category and category.image_url %}
-            <img id="original_img" src="{{ url_for('static', filename=category.image_url) }}" class="w-full h-full object-cover">
+            <img id="original_img" src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
             <div id="edit_overlay" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <span class="material-symbols-outlined text-white text-3xl">edit</span>
             </div>

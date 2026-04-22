@@ -14,7 +14,7 @@
 
             {% if product.image_url %}
             <div class="product-image-container">
-                <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                <img src="{{ get_image_url(product.image_url) }}" alt="{{ product.name }}" class="product-image" loading="lazy">
             </div>
             {% endif %}
             
