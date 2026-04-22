@@ -57,7 +57,7 @@ def delete_image(image_url):
     Elimina la imagen de Cloudinary o del sistema local.
     - image_url: La URL completa de Cloudinary o la ruta relativa local.
     """
-    if not image_url:
+    if not image_url or not isinstance(image_url, str):
         return
 
     # Si es una URL de Cloudinary

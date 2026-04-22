@@ -261,6 +261,8 @@ def delete(id):
     """Eliminar producto"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
+    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+
     # Eliminar imagen física antes de borrar de la BD
     if product.image_url:
         delete_image(product.image_url)
