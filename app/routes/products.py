@@ -9,6 +9,44 @@ from app.utils.image_handler import save_image, delete_image
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 
+@products_bp.route('/search')
+@login_required
+@active_required
+def search_products():
+    """API para buscar productos con paginación para la creación de pedidos"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    query = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+
+    products_query = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True)
+
+    if query:
+        products_query = products_query.filter(Product.name.ilike(f'%{query}%'))
+
+    pagination = products_query.order_by(Product.name).paginate(page=page, per_page=per_page, error_out=False)
+
+    products_data = []
+    for p in pagination.items:
+        products_data.append({
+            'id': p.id,
+            'name': p.name,
+            'price': p.price,
+            'price_formatted': f"${p.price:,}",
+            'image_url': p.image_url
+        })
+
+    return jsonify({
+        'products': products_data,
+        'has_next': pagination.has_next,
+        'next_page': pagination.next_num,
+        'total': pagination.total,
+        'page': page
+    })
+
 @products_bp.route('/')
 @login_required
 @active_required

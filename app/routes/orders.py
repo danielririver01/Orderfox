@@ -140,8 +140,7 @@ def create():
         db.session.commit()
         return redirect(url_for('orders.detail', id=order.id))
     
-    products = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
-    return render_template('dashboard/order_create.html', products=products)
+    return render_template('dashboard/order_create.html')
 
 @orders_bp.route('/<int:id>')
 @login_required

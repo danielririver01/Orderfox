@@ -35,38 +35,44 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-                        {% for product in products %}
-                        <div class="product-item flex items-center justify-between py-3 border-b border-gray-50 dark:border-[#262626] last:border-0">
-                            <div class="flex-1 min-w-0 pr-4">
-                                <h3 class="product-name font-bold text-gray-900 dark:text-white tracking-tight truncate">{{ product.name }}</h3>
-                                <p class="text-sm font-black text-[#f2460d]">${{ '{:,}'.format(product.price) }}</p>
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
-                                    <span class="material-symbols-outlined text-[18px]">remove</span>
-                                </button>
-                                <span id="qty-{{ product.id }}" class="w-6 text-center font-black dark:text-white">0</span>
-                                <button type="button" onclick="updateQty('{{ product.id }}', 1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
-                                    <span class="material-symbols-outlined text-[18px]">add</span>
-                                </button>
-                                <input type="hidden" class="product-qty-input" data-id="{{ product.id }}" data-price="{{ product.price }}" value="0">
-                            </div>
+                    <div id="product-list-container" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+                        <div id="product-list-items">
+                            <!-- Los productos se cargarán dinámicamente aquí -->
                         </div>
-                        {% else %}
+
+                        <!-- Skeleton Loading State -->
+                        <div id="product-skeleton" class="hidden space-y-3">
+                            {% for i in range(5) %}
+                            <div class="animate-pulse flex items-center justify-between py-3 border-b border-gray-50 dark:border-[#262626]">
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 bg-gray-200 dark:bg-[#262626] rounded w-3/4"></div>
+                                    <div class="h-3 bg-gray-100 dark:bg-[#1a1a1a] rounded w-1/4"></div>
+                                </div>
+                                <div class="w-24 h-9 bg-gray-200 dark:bg-[#262626] rounded-xl"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
                         <!-- Empty State -->
-                        <div class="text-center py-8 flex flex-col items-center">
+                        <div id="empty-state" class="hidden text-center py-8 flex flex-col items-center">
                             <div class="w-14 h-14 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl flex items-center justify-center mb-3 border border-dashed border-gray-200 dark:border-[#262626]">
                                 <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[28px]">inventory_2</span>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">Menú vacío</h3>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-500 max-w-xs mx-auto mb-4">No tienes productos creados aún.</p>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-500 max-w-xs mx-auto mb-4">No tienes productos creados aún o que coincidan con tu búsqueda.</p>
                             <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-br from-[#f2460d] to-[#d63a0a] hover:from-[#d63a0a] hover:to-[#f2460d] text-black dark:text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 active:scale-95">
                                 <span class="material-symbols-outlined text-[16px]">add</span>
                                 Crear Producto
                             </a>
                         </div>
-                        {% endfor %}
+
+                        <!-- "Cargar Más" Button -->
+                        <div id="load-more-container" class="hidden pt-4 pb-2">
+                            <button type="button" id="load-more-btn" class="w-full py-3 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-[#f2460d] dark:hover:text-[#f2460d] transition-colors flex items-center justify-center gap-2 border border-dashed border-gray-200 dark:border-[#262626] rounded-xl">
+                                <span>Cargar más productos</span>
+                                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                            </button>
+                        </div>
 
                         <div id="no-results-message" class="hidden py-8 text-center">
                             <div class="w-10 h-10 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl flex items-center justify-center mx-auto mb-3">
