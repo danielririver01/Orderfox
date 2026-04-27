@@ -23,6 +23,14 @@ def generate_order_number(restaurant_id):
     count = Order.query.filter_by(restaurant_id=restaurant_id).count()
     return f"ORD-{count + 1:03d}"
 
+@public_bp.route('/scanner-IA')
+@public_bp.route('/scanner-ia')
+def scanner_ia():
+    """
+    Ruta reservada para el Escáner IA (Próximamente).
+    """
+    return render_template('public/scanner_ia.html')
+
 @public_bp.route('/menu/<string:slug>')
 @public_bp.route('/menu')
 def menu(slug=None):

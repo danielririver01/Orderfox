@@ -6,10 +6,9 @@ from app.forms import LoginForm, ForgotPasswordForm
 from app.forms.auth import RegisterEmailForm, RegisterVerifyForm, RegisterSetupForm
 from app.models import User, Restaurant, TrialHistory
 import random
-import re
-import unicodedata
 import mercadopago
 from flask import current_app
+from app.utils.slug import slugify, is_slug_reserved
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.utils.subscription import sanitize_restaurant_limits, initialize_or_reset_token_wallet
 
@@ -315,9 +314,11 @@ def setup_account():
             return render_template('auth/register_setup.html', form=form, plan=selected_plan)
 
         restaurant_name = form.restaurant_name.data
-        slug = unicodedata.normalize('NFKD', restaurant_name).encode('ascii', 'ignore').decode('ascii')
-        slug = re.sub(r'[^\w\s-]', '', slug).strip().lower()
-        slug = re.sub(r'[-\s]+', '-', slug)
+        slug = slugify(restaurant_name)
+
+        if is_slug_reserved(slug):
+            flash('Este nombre de negocio es parte de la infraestructura de Velzia y no está disponible. Por favor, elige otro.', 'error')
+            return render_template('auth/register_setup.html', form=form, plan=selected_plan, user=user)
         
         base_slug = slug
         counter = 1

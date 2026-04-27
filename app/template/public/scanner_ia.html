@@ -1,0 +1,72 @@
+{% extends 'common/base.html' %}
+{% block content %}
+<div class="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <!-- Fondos decorativos -->
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#f2460d]/10 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]"></div>
+
+    <div class="max-w-2xl w-full text-center z-10">
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[#f2460d]/10 border border-[#f2460d]/20 rounded-full mb-8 animate-bounce">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f2460d] opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#f2460d]"></span>
+            </span>
+            <span class="text-[10px] font-black text-[#f2460d] uppercase tracking-[0.2em]">En Desarrollo</span>
+        </div>
+
+        <!-- Título -->
+        <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
+            Scanner <span class="text-[#f2460d]">IA</span>
+        </h1>
+
+        <p class="text-gray-400 text-lg md:text-xl mb-12 font-medium leading-relaxed">
+            El futuro de la gestión inteligente está llegando.<br class="hidden md:block">
+            Estamos construyendo algo increíble para revolucionar tu negocio.
+        </p>
+
+        <!-- Card con info -->
+        <div class="bg-[#141414] border border-[#262626] rounded-[2.5rem] p-8 md:p-12 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-[#0a0a0a] border border-[#262626] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-[#f2460d]">rocket_launch</span>
+                    </div>
+                    <h3 class="text-white font-bold mb-1">Velocidad</h3>
+                    <p class="text-gray-500 text-xs">Escaneo en milisegundos</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-[#0a0a0a] border border-[#262626] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-[#f2460d]">psychology</span>
+                    </div>
+                    <h3 class="text-white font-bold mb-1">Inteligencia</h3>
+                    <p class="text-gray-500 text-xs">Análisis predictivo real</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-[#0a0a0a] border border-[#262626] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-[#f2460d]">sync</span>
+                    </div>
+                    <h3 class="text-white font-bold mb-1">Integración</h3>
+                    <p class="text-gray-500 text-xs">Conectado con Velzia Cloud</p>
+                </div>
+            </div>
+        </div>
+
+        <a href="/" class="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold uppercase tracking-widest text-[10px]">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Volver a Velzia
+        </a>
+    </div>
+
+    <!-- Footer decorativo -->
+    <div class="absolute bottom-10 left-0 w-full text-center">
+        <p class="text-[9px] font-black text-gray-800 uppercase tracking-[0.5em]">
+            VELZIA NEXT GENERATION • 2024
+        </p>
+    </div>
+</div>
+
+<style>
+    body { background-color: #0a0a0a; }
+</style>
+{% endblock %}

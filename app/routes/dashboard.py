@@ -28,6 +28,7 @@ from app.utils.subscription import (
 )
 import re
 import unicodedata
+from app.utils.slug import slugify, is_slug_reserved
 
 import logging
 
@@ -389,6 +390,13 @@ def profile():
             return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
         
         try:
+            # Validar contra nombres reservados si el nombre cambia sustancialmente
+            # O simplemente validar el slug proyectado
+            projected_slug = slugify(restaurant_name)
+            if is_slug_reserved(projected_slug):
+                flash('Este nombre de negocio es parte de la infraestructura de Velzia y no está disponible.', 'error')
+                return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
+
             existing_restaurant = Restaurant.query.filter(
                 Restaurant.name == restaurant_name, 
                 Restaurant.id != restaurant.id
