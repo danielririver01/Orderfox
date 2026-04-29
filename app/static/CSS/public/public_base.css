@@ -18,25 +18,22 @@
     --pico-primary-hover: var(--primary-dark);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-light: #000000;
-        /* Negro puro */
-        --card-bg: #0d0d0d;
-        --text-dark: #f5f5f7;
-        --text-muted: #86868b;
-        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
-        --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
-        --border-color: #1a1a1a;
-        --header-bg: linear-gradient(180deg, #121212 0%, #000000 100%);
-        --glass-bg: rgba(0, 0, 0, 0.8);
-    }
+.dark {
+    --bg-light: #000000;
+    /* Negro puro */
+    --card-bg: #0d0d0d;
+    --text-dark: #f5f5f7;
+    --text-muted: #86868b;
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
+    --border-color: #1a1a1a;
+    --header-bg: linear-gradient(180deg, #121212 0%, #000000 100%);
+    --glass-bg: rgba(0, 0, 0, 0.8);
+}
 
-    /* Forzar a Pico CSS a usar nuestro negro */
-    [data-theme="dark"],
-    :root:not([data-theme="light"]) {
-        --pico-background-color: #000000 !important;
-    }
+.dark [data-theme="dark"],
+.dark :root:not([data-theme="light"]) {
+    --pico-background-color: #000000 !important;
 }
 
 html, body {
@@ -629,14 +626,21 @@ body {
     padding: 0 !important;
 }
 
-@media (prefers-color-scheme: dark) {
-    .quantity-controls {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    .btn-qty {
-        background: #252525 !important;
-        color: #fff !important;
-    }
+.dark .quantity-controls {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .btn-qty {
+    background: #1a1a1a !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .btn-qty:hover {
+    background: var(--primary) !important;
+    color: #fff !important;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(242, 70, 13, 0.3) !important;
 }
 
 .qty-display {

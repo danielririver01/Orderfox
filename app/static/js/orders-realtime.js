@@ -1,15 +1,16 @@
 /**
  * orders-realtime.js
  * Sistema de polling para detectar nuevos pedidos en tiempo real (cada 15s).
- * Muestra un Toast con botón AJAX para actualizar la lista SIN recargar la página.
+ * Soporta Notificaciones de Sistema (Browser API) y sonidos.
  */
 
 // ─── Estado del módulo ───────────────────────────────────────────────────────
 let currentLastId = typeof LAST_ORDER_ID !== 'undefined' ? LAST_ORDER_ID : 0;
-let soundEnabled = false;         // Off por defecto (user gesture requerido)
+let soundEnabled = false;         // Controla sonido Y notificaciones de sistema
 let audioCtx = null;              // Web Audio API context (lazy init)
 let pollingInterval = null;
 let newOrdersToastVisible = false;
+let isFirstPoll = true;           // Para evitar notificar pedidos antiguos al cargar
 
 // ─── Inicialización ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ─── Polling ─────────────────────────────────────────────────────────────────
 function startPolling() {
+    // Si ya hay un intervalo, lo limpiamos para evitar duplicados
+    if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(checkForNewOrders, 15000); // 15 segundos
 }
 
@@ -32,24 +35,66 @@ async function checkForNewOrders() {
 
         const data = await res.json();
 
+        // Inicialización del ID en la primera carga si no fue inyectado por el template
+        if (isFirstPoll) {
+            if (currentLastId === 0) {
+                currentLastId = data.last_id;
+            }
+            isFirstPoll = false;
+            return; // No notificar en el primer check (es el estado actual)
+        }
+
         if (data.last_id > currentLastId) {
             // ¡Nuevo/s pedido/s detectado/s!
             currentLastId = data.last_id;
             const count = data.pending_count;
 
+            // 1. Mostrar Toast si el elemento existe (en pantalla de pedidos)
             showNewOrdersToast(count);
 
+            // 2. Notificación de sistema (Browser API)
             if (soundEnabled) {
                 playNotificationSound();
+                showBrowserNotification(count);
             }
 
-            // Actualizar el puntito del nav badge
+            // 3. Actualizar el puntito del nav badge (global)
             updateNavBadge(count);
         }
     } catch (err) {
-        // Fallo silencioso — no interrumpir al usuario
         console.warn('[Velzia] Error en polling de pedidos:', err);
     }
+}
+
+// ─── Notificaciones de Navegador ──────────────────────────────────────────────
+async function showBrowserNotification(count) {
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "granted") {
+        const title = count > 1 ? `¡${count} pedidos pendientes!` : '¡Nuevo pedido recibido!';
+        const options = {
+            body: 'Tienes nuevos pedidos esperando en tu panel de Orderfox.',
+            icon: '/static/img/icon-192x192.png', // Ajustar ruta si existe un icono
+            tag: 'new-order', // Evita múltiples notificaciones iguales
+            renotify: true
+        };
+        
+        const n = new Notification(title, options);
+        n.onclick = () => {
+            window.focus();
+            window.location.href = '/orders/'; // Redirigir a pedidos
+        };
+    }
+}
+
+async function requestNotificationPermission() {
+    if (!("Notification" in window)) return false;
+    
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        const permission = await Notification.requestPermission();
+        return permission === "granted";
+    }
+    return Notification.permission === "granted";
 }
 
 // ─── AJAX Refresh (fragmento) ─────────────────────────────────────────────────
@@ -57,9 +102,12 @@ async function refreshOrderList() {
     dismissNewOrdersToast();
 
     const container = document.getElementById('orders-container');
-    if (!container) { location.reload(); return; }
+    if (!container) { 
+        // Si no estamos en la pantalla de pedidos, redirigimos
+        window.location.href = '/orders/';
+        return; 
+    }
 
-    // Animación de carga sutil
     container.style.opacity = '0.5';
     container.style.transition = 'opacity 0.2s ease';
 
@@ -72,24 +120,24 @@ async function refreshOrderList() {
         container.innerHTML = html;
         container.style.opacity = '1';
 
-        // Actualizar contador del header
         const countEl = document.getElementById('orders-count');
         if (countEl) {
             const cards = container.querySelectorAll('[data-order-id]').length;
             countEl.textContent = `${cards} pedidos`;
         }
 
-        showToast('✅ Pedidos actualizados', 'success');
+        if (typeof showToast === 'function') {
+            showToast('✅ Pedidos actualizados', 'success');
+        }
     } catch (err) {
         container.style.opacity = '1';
-        // Fallback: recarga completa si AJAX falla
         location.reload();
     }
 }
 
-// ─── Toast de nuevos pedidos ──────────────────────────────────────────────────
+// ─── UI Helpers ───────────────────────────────────────────────────────────────
 function showNewOrdersToast(pendingCount) {
-    if (newOrdersToastVisible) return; // No acumular toasts
+    if (newOrdersToastVisible) return;
 
     const toast = document.getElementById('new-orders-toast');
     const msg = document.getElementById('new-orders-toast-msg');
@@ -110,7 +158,6 @@ function dismissNewOrdersToast() {
     newOrdersToastVisible = false;
 }
 
-// ─── Nav Badge (puntito naranja en icono de Pedidos) ─────────────────────────
 function updateNavBadge(count) {
     const badge = document.getElementById('orders-nav-badge');
     if (!badge) return;
@@ -121,7 +168,7 @@ function updateNavBadge(count) {
     }
 }
 
-// ─── Sonido de notificación (Web Audio API — sin archivos externos) ───────────
+// ─── Audio ───────────────────────────────────────────────────────────────────
 function unlockAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -141,8 +188,6 @@ function playNotificationSound() {
         }
 
         const t = audioCtx.currentTime;
-
-        // Tono 1: frecuencia alta (ding!)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.connect(gain1);
@@ -154,7 +199,6 @@ function playNotificationSound() {
         osc1.start(t);
         osc1.stop(t + 0.4);
 
-        // Tono 2: ligeramente después (doble ding suave)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.connect(gain2);
@@ -171,8 +215,8 @@ function playNotificationSound() {
     }
 }
 
-// ─── Toggle de sonido ─────────────────────────────────────────────────────────
-function toggleSound() {
+// ─── Toggle de sonido y notificaciones ────────────────────────────────────────
+async function toggleSound() {
     soundEnabled = !soundEnabled;
     localStorage.setItem('velzia_sound_enabled', soundEnabled ? '1' : '0');
 
@@ -180,37 +224,42 @@ function toggleSound() {
     const btn = document.getElementById('sound-toggle-btn');
 
     if (soundEnabled) {
-        // Desbloquear contexto de audio con este gesto del usuario
         unlockAudio();
+        // Solicitar permiso de notificaciones al activar
+        await requestNotificationPermission();
 
-        icon.textContent = 'notifications_active';
-        btn.classList.add('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
-        btn.classList.remove('text-gray-400', 'dark:text-gray-500');
+        if (icon) icon.textContent = 'notifications_active';
+        if (btn) {
+            btn.classList.add('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
+            btn.classList.remove('text-gray-400', 'dark:text-gray-500');
+        }
 
-        // Reproducir sonido de confirmación
         playNotificationSound();
-        showToast('🔔 Alertas sonoras activadas', 'success');
+        if (typeof showToast === 'function') {
+            showToast('🔔 Alertas y notificaciones activadas', 'success');
+        }
     } else {
-        icon.textContent = 'notifications_off';
-        btn.classList.remove('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
-        btn.classList.add('text-gray-400', 'dark:text-gray-500');
-        showToast('🔕 Alertas sonoras desactivadas', 'default');
+        if (icon) icon.textContent = 'notifications_off';
+        if (btn) {
+            btn.classList.remove('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
+            btn.classList.add('text-gray-400', 'dark:text-gray-500');
+        }
+        if (typeof showToast === 'function') {
+            showToast('🔕 Alertas desactivadas', 'default');
+        }
     }
 }
 
 function restoreSoundPreference() {
     const saved = localStorage.getItem('velzia_sound_enabled');
     if (saved === '1') {
-        // Restaurar estado visual sin reproducir sonido
         soundEnabled = true;
         const icon = document.getElementById('sound-icon');
         const btn = document.getElementById('sound-toggle-btn');
         if (icon) icon.textContent = 'notifications_active';
         if (btn) {
-            btn.classList.add('bg-orange-100', 'text-orange-500');
+            btn.classList.add('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
             btn.classList.remove('text-gray-400', 'dark:text-gray-500');
         }
     }
 }
-
-// showToast ya viene de orders.js — se reutiliza aquí también.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -10,8 +10,16 @@
     <link rel="icon"
         href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
         type="image/svg+xml">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
+    <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/public_base.css') }}">
@@ -21,8 +29,10 @@
 <body>
     {% block hero %}
     <header class="header-menu bg-[#050505] border-b border-white/5 py-12 text-center">
-        <h1 class="text-4xl font-black tracking-[-0.05em] text-white uppercase mb-2">{% block header_title %}{{ restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
-        <div class="header-subtitle text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px]">{% block header_subtitle %}🍽️ Menú Digital Premium{% endblock %}</div>
+        <h1 class="text-4xl font-black tracking-[-0.05em] text-white uppercase mb-2">{% block header_title %}{{
+            restaurant.name if restaurant else 'Velzia' }}{% endblock %}</h1>
+        <div class="header-subtitle text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px]">{% block
+            header_subtitle %}Tu Menú Digital{% endblock %}</div>
     </header>
     {% endblock %}
 
@@ -57,7 +67,8 @@
             class="relative bg-[#0f0f10] rounded-[2.5rem] max-w-md w-full shadow-2xl overflow-hidden border border-white/5">
             <!-- Header Premium -->
             <div class="p-10 text-center pb-6">
-                <div class="w-20 h-20 bg-orange-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-orange-500/20">
+                <div
+                    class="w-20 h-20 bg-orange-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-orange-500/20">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-12 h-12">
                         <path d="M24 42L8 22L16 10L20 16H28L32 10L40 22L24 42Z" fill="#f97316" />
                         <path d="M24 42L18 30L24 35L30 30L24 42Z" fill="#fff" />
@@ -76,18 +87,23 @@
             <div class="px-10 pb-10 space-y-5">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Nombre Completo</label>
+                        <label
+                            class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Nombre
+                            Completo</label>
                         <input type="text" id="delivery-name" placeholder="Tu nombre"
                             class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                     </div>
                     <div>
-                        <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">WhatsApp</label>
+                        <label
+                            class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">WhatsApp</label>
                         <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel"
                             class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Dirección de Entrega</label>
+                    <label
+                        class="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1">Dirección
+                        de Entrega</label>
                     <input type="text" id="delivery-address" placeholder="Ej: Calle 123 #45-67"
                         class="w-full bg-zinc-900 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700">
                 </div>

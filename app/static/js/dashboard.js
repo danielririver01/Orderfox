@@ -38,7 +38,6 @@ function initStoreToggle() {
 
             // Sincronizar Badge de Menú Digital
             updateMenuStatusBadge(isOpen);
-            showToast(`Tienda ${isOpen ? 'Abierta' : 'Cerrada'}`, 'success');
 
         } catch (error) {
             e.target.checked = !isOpen;
@@ -105,8 +104,10 @@ async function fetchFinancialData() {
     const loadingEl = document.getElementById('stat-gastos-loading');
 
     // Loading states
+    // Loading states
     loadingEl.classList.remove('hidden');
-    gastosEl.textContent = 'Consultando...';
+    gastosEl.textContent = '...';
+    ventasEl.textContent = '$ --';
     utilityEl.textContent = '$ --';
     utilityEl.className = "text-xl font-black tracking-tighter text-gray-300 dark:text-[#262626]";
 

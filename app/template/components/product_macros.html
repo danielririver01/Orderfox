@@ -62,7 +62,13 @@
                     <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)" aria-label="Aumentar">+</button>
                 </div>
                 {% else %}
-                <div class="view-only-badge">Solo lectura</div>
+                <div class="view-only-badge">
+                    {% if restaurant.is_open %}
+                    Solo lectura
+                    {% else %}
+                    Cerrado
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
         </div>

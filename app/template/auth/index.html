@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -20,6 +20,11 @@
 
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
 </head>
@@ -94,19 +99,10 @@
             }
 
             /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
+            /* Forzar variables de modo oscuro por defecto */
             :root {
-                --autofill-bg: #ffffff;
-                /* Fondo para modo claro */
-                --autofill-text: #000000;
-                /* Texto para modo claro */
-            }
-
-            /* Si el sistema del usuario está en modo oscuro */
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    --autofill-bg: #0a0a0a;
-                    --autofill-text: #ffffff;
-                }
+                --autofill-bg: #0a0a0a;
+                --autofill-text: #ffffff;
             }
 
             /* Si usas una clase .dark (común en Tailwind/Dashboard) */
@@ -149,17 +145,10 @@
                Clerk renderiza .cl-otpCodeFieldInput con estilos internos que
                pueden no coincidir con nuestras variables de color */
             .cl-otpCodeFieldInput {
-                color: #1c110d !important;
-                background-color: #ffffff !important;
+                color: #ffffff !important;
+                background-color: #1a1a1a !important;
+                border-color: #444444 !important;
                 caret-color: #f2460d !important;
-            }
-            @media (prefers-color-scheme: dark) {
-                .cl-otpCodeFieldInput {
-                    color: #ffffff !important;
-                    background-color: #1a1a1a !important;
-                    border-color: #444444 !important;
-                    caret-color: #f2460d !important;
-                }
             }
         </style>
 
@@ -208,7 +197,7 @@
                 const hasFlashMessages = document.querySelector('.flash-message') !== null;
                 if (window.Clerk.user && !hasFlashMessages) {
                     const signInDiv = document.getElementById('clerk-signin');
-                    
+
                     // Mostrar estado de carga elegante en lugar del formulario
                     signInDiv.innerHTML = `
                         <div class="flex flex-col items-center justify-center py-12">
@@ -225,10 +214,10 @@
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${token}`
                             },
-                            body: JSON.stringify({ 
-                                clerk_id: window.Clerk.user.id, 
-                                email: window.Clerk.user.primaryEmailAddress.emailAddress, 
-                                session_id: window.Clerk.session.id 
+                            body: JSON.stringify({
+                                clerk_id: window.Clerk.user.id,
+                                email: window.Clerk.user.primaryEmailAddress.emailAddress,
+                                session_id: window.Clerk.session.id
                             })
                         });
 
@@ -250,7 +239,8 @@
                 const signInDiv = document.getElementById('clerk-signin');
 
                 // Determinar si está en modo oscuro
-                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                // Forzar modo oscuro siempre para Velzia Obsidian
+                const isDarkMode = true;
 
                 window.Clerk.mountSignIn(signInDiv, {
                     afterSignInUrl: '/', // Volver aquí para que el script detecte al usuario y haga Silent Sync

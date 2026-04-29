@@ -67,12 +67,25 @@ def active_required(f):
             return return_error('Tu cuenta ha sido suspendida. Contacta a soporte para más información.')
         
         # Verificación 3: ¿Está activa la suscripción (o en gracia)?
-        if not is_subscription_active(restaurant, include_grace_period=True):
+        # Velzia 2.0.0: Permitimos acceso SIEMPRE si tienen tokens disponibles para el Scanner,
+        # incluso si el plan principal expiró.
+        has_tokens = False
+        if restaurant.users:
+            # Tomamos el primer usuario (dueño) para verificar tokens
+            owner = restaurant.users[0]
+            if owner.token_wallet and owner.token_wallet.can_scan():
+                has_tokens = True
+
+        if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
             logger.info(
                 f"Acceso denegado (expirado total) - Restaurant ID: {restaurant.id} - "
                 f"Expira: {restaurant.subscription_expires_at} - Ruta: {request.path}"
             )
             return return_error('Tu periodo de gracia ha terminado. Por favor renueva tu plan para recuperar el acceso.', redirect_to='dashboard.subscription')
+        
+        # Guardar en 'g' si estamos en modo lectura (suscripción expirada pero permitida por tokens o gracia)
+        g.is_expired = not is_subscription_active(restaurant, include_grace_period=False)
+        g.has_tokens = has_tokens
         
         # Todo OK - permitir acceso
         return f(*args, **kwargs)

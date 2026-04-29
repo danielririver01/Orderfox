@@ -1,0 +1,31 @@
+{
+  "name": "orderfox",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --minify",
+    "watch:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielririver01/Orderfox.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/danielririver01/Orderfox/issues"
+  },
+  "homepage": "https://github.com/danielririver01/Orderfox#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.2.4",
+    "tailwindcss": "^4.2.4"
+  }
+}

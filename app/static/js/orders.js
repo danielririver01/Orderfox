@@ -20,10 +20,3 @@ async function changeStatus(orderId, newStatus) {
     showToast(error.message);
   }
 }
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  document.getElementById("toast-message").textContent = message;
-  toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 3000);
-}

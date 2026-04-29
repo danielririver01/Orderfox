@@ -3,6 +3,9 @@
 @source "../../template/**/*.html";
 @source "../../static/JS/**/*.js";
 
+/* Forzar dark mode por clase .dark en lugar de prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #f2460d;
   --color-success: #16a34a;

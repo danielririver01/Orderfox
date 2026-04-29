@@ -22,6 +22,18 @@
 {% endblock %}
 
 {% block content %}
+{# Banner de Cerrado / Suscripción #}
+{% if not restaurant.is_active or closed_reason == 'sub' %}
+<div class="store-closed-banner">
+    <h3>Pedidos desactivados</h3>
+    <p>Estamos actualizando nuestro sistema. Puedes explorar el menú cómodamente.</p>
+</div>
+{% elif closed_reason == 'closed' %}
+<div class="store-closed-banner">
+    <h3>{{ restaurant.name }} se encuentra cerrado</h3>
+    <p>Puedes explorar nuestra carta, pero los pedidos están desactivados temporalmente.</p>
+</div>
+{% endif %}
 
 <!-- Sección de búsqueda sticky -->
 <div class="search-section">

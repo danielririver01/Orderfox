@@ -49,13 +49,13 @@ def menu(slug=None):
         else:
             session.pop('table_id', None)
     
-    # Lógica de "Solo Lectura" para menú público
-    # Si la suscripción expiró, SE MUESTRA EL MENÚ pero se desactivan los pedidos
-    is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
+    # Bloqueo Radical: Si el local está cerrado por el dueño, mostramos la Landing de Cerrado
+    if not restaurant.is_open:
+        return render_template('public/store_closed.html', restaurant=restaurant)
+
+    # Lógica de "Solo Lectura" por suscripción
+    is_active_sub = restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)
     ordering_disabled = not is_active_sub
-    
-    # Si está desactivado, forzamos store_open a False visualmente o lo manejamos con ordering_disabled
-    store_open = restaurant.is_open and is_active_sub
     
     categories = Category.query.join(Product).filter(
         Category.restaurant_id == restaurant.id,
@@ -104,7 +104,6 @@ def menu(slug=None):
     return render_template('public/menu_categories.html', 
                          categories=categories,
                          restaurant=restaurant,
-                         store_open=store_open,
                          ordering_disabled=ordering_disabled,
                          highlighted_products=highlighted_products,
                          new_products=new_products)
@@ -121,17 +120,19 @@ def category_products(slug, category_id):
         is_active=True
     ).all()
     
-    # Lógica de "Solo Lectura"
-    is_active_sub = restaurant.is_active and is_subscription_active(restaurant)
-    ordering_disabled = not is_active_sub or not restaurant.is_open
-    closed_reason = 'sub' if not is_active_sub else ('closed' if not restaurant.is_open else None)
+    # Bloqueo Radical: Si el local está cerrado por el dueño, mostramos la Landing de Cerrado
+    if not restaurant.is_open:
+        return render_template('public/store_closed.html', restaurant=restaurant)
+
+    # Lógica de "Solo Lectura" por suscripción
+    is_active_sub = restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)
+    ordering_disabled = not is_active_sub
 
     return render_template('public/menu_category_products.html',
                          restaurant=restaurant,
                          category=category,
                          products=products,
-                         ordering_disabled=ordering_disabled,
-                         closed_reason=closed_reason)
+                         ordering_disabled=ordering_disabled)
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():
@@ -164,7 +165,7 @@ def create_order():
         }), 403
     
     # Validación estricta de suscripción (Backend)
-    if not (restaurant.is_active and is_subscription_active(restaurant)):
+    if not (restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)):
         return jsonify({
             'success': False, 
             'error': 'Pedidos temporalmente desactivados.'

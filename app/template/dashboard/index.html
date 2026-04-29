@@ -100,8 +100,8 @@
                         <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Ingresos Menú Digital</span>
                     </div>
                     <span id="stat-ventas"
-                        class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">${{
-                        total_sales }}</span>
+                        class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{{
+                        total_sales if '$' in total_sales else '$' + total_sales }}</span>
                 </div>
 
                 <!-- Gastos (Output) -->
@@ -128,16 +128,16 @@
                     class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#0c0c0c] transition-all duration-500">
                     <div class="flex items-center gap-3">
                         <div id="utilidad-icon-bg"
-                            class="w-10 h-10 rounded-xl bg-gray-200 dark:bg-[#262626] flex items-center justify-center transition-colors">
+                            class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center transition-colors">
                             <span id="utilidad-icon"
-                                class="material-symbols-outlined text-gray-400 text-xl">calculate</span>
+                                class="material-symbols-outlined text-emerald-600 text-xl">trending_up</span>
                         </div>
                         <div class="flex flex-col">
                             <span
                                 class="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Utilidad
                                 Operativa</span>
                             <span id="utilidad-status"
-                                class="text-[9px] font-bold text-gray-500 uppercase">Calculando...</span>
+                                class="text-[9px] font-bold text-emerald-500 uppercase">Balance Positivo</span>
                         </div>
                     </div>
                     <span id="stat-utilidad"

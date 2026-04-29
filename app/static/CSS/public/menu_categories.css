@@ -17,25 +17,23 @@
         --cart-text: #6b7280;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --banner-text-strong: #dc2626;
-            --icon-bg: rgba(242, 70, 13, 0.08);
-            --btn-clear-bg: #fde2e2;
-            --btn-clear-text: #e11d48;
-            --card-bg: #0d0d0d;
-            --primary: #f2460d;
-            --text-dark: #f5f5f7;
-            --text-muted: #86868b;
-            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
-            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
-            --banner-bg: #1a0505;
-            --banner-border: #7f1d1d;
-            --banner-text: #fca5a5;
-            --empty-bg: #050505;
-            --cart-bg: #0d0d0d;
-            --cart-text: #d1d5db;
-        }
+    .dark {
+        --banner-text-strong: #dc2626;
+        --icon-bg: rgba(242, 70, 13, 0.08);
+        --btn-clear-bg: #fde2e2;
+        --btn-clear-text: #e11d48;
+        --card-bg: #0d0d0d;
+        --primary: #f2460d;
+        --text-dark: #f5f5f7;
+        --text-muted: #86868b;
+        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
+        --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
+        --banner-bg: #1a0505;
+        --banner-border: #7f1d1d;
+        --banner-text: #fca5a5;
+        --empty-bg: #050505;
+        --cart-bg: #0d0d0d;
+        --cart-text: #d1d5db;
     }
 
     .category-grid {

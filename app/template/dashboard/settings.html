@@ -84,6 +84,21 @@
                 <span
                     class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>
+            <!--Codigo Qr de las Mesas-->
+            <a href="{{ url_for('tables.index') }}"
+                class="settings-row flex items-center justify-between p-5 transition-all hover:bg-[#1a1a1a]">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm text-white">Gestión de Mesas</span>
+                        <span class="text-[10px] text-zinc-500 uppercase tracking-wider">Configurar códigos QR por
+                            mesa</span>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-zinc-500 text-[18px]">chevron_right</span>
+            </a>
         </div>
     </div>
 

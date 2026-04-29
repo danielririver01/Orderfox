@@ -144,5 +144,12 @@ def download_qr(id):
     buffer = BytesIO()
     img.save(buffer, 'PNG')
     buffer.seek(0)
-    
-    return send_file(buffer, mimetype='image/png', as_attachment=True, download_name=f'Mesa-{table.name}.png')
+
+    import unicodedata, re
+    safe_name = unicodedata.normalize('NFKD', table.name)
+    safe_name = safe_name.encode('ascii', 'ignore').decode('ascii')
+    safe_name = re.sub(r'[^\w\s-]', '', safe_name).strip()
+    safe_name = re.sub(r'[\s]+', '-', safe_name)
+    filename = f"QR-{safe_name}.png" if safe_name else f"QR-mesa-{table.id}.png"
+
+    return send_file(buffer, mimetype='image/png', as_attachment=True, download_name=filename)

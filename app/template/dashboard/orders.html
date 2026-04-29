@@ -23,21 +23,6 @@
   </div>
 </header>
 
-<!-- Toast de nuevos pedidos -->
-<div id="new-orders-toast"
-  class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
-  <div class="flex items-center gap-3 bg-[#0a0a0a] dark:bg-white text-white dark:text-[#0a0a0a] px-5 py-3 rounded-2xl shadow-2xl border border-white/10 dark:border-black/10 animate-bounce-in">
-    <span class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
-    <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
-    <button onclick="refreshOrderList()"
-      class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
-      Ver ahora
-    </button>
-    <button onclick="dismissNewOrdersToast()" class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
-      <span class="material-symbols-outlined text-[18px]">close</span>
-    </button>
-  </div>
-</div>
 
 <!-- Contenedor principal de pedidos (target del AJAX refresh) -->
 <div class="max-w-md mx-auto px-4 py-6 space-y-6" id="orders-container">
@@ -52,7 +37,7 @@
 
 <!-- Toast -->
 <div id="toast"
-  class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 dark:bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
+  class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
   <span id="toast-message"></span>
 </div>
 
@@ -61,7 +46,6 @@
   const LAST_ORDER_ID = {{ last_order_id }};
 </script>
 <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
-<script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}
 {% endblock %}

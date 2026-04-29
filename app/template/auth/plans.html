@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -13,10 +13,15 @@
     <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
 </head>
 
-<body class="bg-[#f9f7f6] dark:bg-[#0a0a0a] font-display antialiased min-h-screen py-10 px-4">
+<body class="bg-[#0a0a0a] font-display antialiased min-h-screen py-10 px-4">
     
     <main class="max-w-6xl mx-auto">
         

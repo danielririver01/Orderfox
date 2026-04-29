@@ -17,6 +17,12 @@ auth_bp = Blueprint('auth', __name__)
 
 from app.extensions import csrf
 
+RESERVED_SLUGS = {
+    'scanner-ia', 'admin', 'api', 'dashboard', 'velzia', 'soporte', 'help', 
+    'billing', 'account', 'login', 'register', 'auth', 'public', 'menu', 
+    'order', 'status', 'health', 'test', 'scanner', 'ia', 'ai', 'bot'
+}
+
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 @csrf.exempt
 def sync_clerk():
@@ -319,6 +325,11 @@ def setup_account():
         slug = re.sub(r'[^\w\s-]', '', slug).strip().lower()
         slug = re.sub(r'[-\s]+', '-', slug)
         
+        # Validación de Nombres Reservados y Originalidad
+        if slug in RESERVED_SLUGS:
+            flash(f'El nombre "{restaurant_name}" está reservado para el sistema. Por favor elige uno más original para tu negocio.', 'warning')
+            return render_template('auth/register_setup.html', form=form, plan=selected_plan, user=user)
+
         base_slug = slug
         counter = 1
         while Restaurant.query.filter_by(slug=slug).first():

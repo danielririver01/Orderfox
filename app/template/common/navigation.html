@@ -1,57 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
+<nav
+    class="fixed bottom-6 inset-x-0 mx-auto w-[90%] max-w-md bg-[#0f0f10]/80 backdrop-blur-2xl border border-white/5 z-[100] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] px-2 py-2">
+    <div class="flex justify-between items-center h-14">
+        <!-- Home -->
+        <a href="{{ url_for('dashboard.index') }}"
+            class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-zinc-500 hover:text-zinc-300' }}">
+            <span class="material-symbols-outlined text-[24px]">home</span>
+            <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Inicio</span>
+        </a>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+        <!-- Products -->
+        <a href="{{ url_for('products.index') }}"
+            class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-zinc-500 hover:text-zinc-300' }}">
+            <span class="material-symbols-outlined text-[24px]">inventory_2</span>
+            <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Stock</span>
+        </a>
 
-<body>
-    <nav
-        class="fixed bottom-6 inset-x-0 mx-auto w-[90%] max-w-md bg-[#0f0f10]/80 backdrop-blur-2xl border border-white/5 z-[100] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] px-2 py-2">
-        <div class="flex justify-between items-center h-14">
-            <!-- Home -->
-            <a href="{{ url_for('dashboard.index') }}"
-                class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-zinc-500 hover:text-zinc-300' }}">
-                <span class="material-symbols-outlined text-[24px]">home</span>
-                <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Inicio</span>
-            </a>
+        <!-- Scanner Central -->
+        <a href="{{ SCANNER_IA_URL }}"
+            class="flex flex-col items-center justify-center flex-1 h-full relative group">
+            <div
+                class="absolute -top-10 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-[0_10px_20px_rgba(249,115,22,0.3)] flex items-center justify-center transform group-hover:-translate-y-1 transition-all duration-300">
+                <span class="material-symbols-outlined text-white text-[32px]">document_scanner</span>
+            </div>
+            <span class="text-[9px] font-black mt-6 text-orange-500 uppercase tracking-tighter">AI SCAN</span>
+        </a>
 
-            <!-- Products -->
-            <a href="{{ url_for('products.index') }}"
-                class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-zinc-500 hover:text-zinc-300' }}">
-                <span class="material-symbols-outlined text-[24px]">inventory_2</span>
-                <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Stock</span>
-            </a>
+        <!-- Orders -->
+        <a href="{{ url_for('orders.index') }}"
+            class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-zinc-500 hover:text-zinc-300' }}">
+            <span class="material-symbols-outlined text-[24px]">receipt_long</span>
+            <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Pedidos</span>
+            <span id="orders-nav-badge"
+                class="hidden absolute top-2 right-4 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
+        </a>
 
-            <!-- Scanner Central -->
-            <a href="{{ SCANNER_IA_URL }}"
-                class="flex flex-col items-center justify-center flex-1 h-full relative group">
-                <div
-                    class="absolute -top-10 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-[0_10px_20px_rgba(249,115,22,0.3)] flex items-center justify-center transform group-hover:-translate-y-1 transition-all duration-300">
-                    <span class="material-symbols-outlined text-white text-[32px]">document_scanner</span>
-                </div>
-                <span class="text-[9px] font-black mt-6 text-orange-500 uppercase tracking-tighter">AI SCAN</span>
-            </a>
-
-            <!-- Orders -->
-            <a href="{{ url_for('orders.index') }}"
-                class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-zinc-500 hover:text-zinc-300' }}">
-                <span class="material-symbols-outlined text-[24px]">receipt_long</span>
-                <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Pedidos</span>
-                <span id="orders-nav-badge"
-                    class="hidden absolute top-2 right-4 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
-            </a>
-
-            <!-- Settings -->
-            <a href="{{ url_for('dashboard.settings') }}"
-                class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-zinc-500 hover:text-zinc-300' }}">
-                <span class="material-symbols-outlined text-[24px]">grid_view</span>
-                <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Menú</span>
-            </a>
-        </div>
-    </nav>
-</body>
-
-</html>
+        <!-- Settings -->
+        <a href="{{ url_for('dashboard.settings') }}"
+            class="flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-300 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-zinc-500 hover:text-zinc-300' }}">
+            <span class="material-symbols-outlined text-[24px]">grid_view</span>
+            <span class="text-[9px] font-bold mt-0.5 uppercase tracking-tighter">Menú</span>
+        </a>
+    </div>
+</nav>

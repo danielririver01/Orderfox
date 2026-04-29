@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -7,12 +7,18 @@
     <title>{% block title %}Velzia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
+    <script>
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon"
         href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
         type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link crossorigin=" href=" https://fonts.gstatic.com" rel="preconnect" />
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet" />
@@ -21,29 +27,11 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
 
-    <!-- Tailwind Configuration -->
-    <script src="{{ url_for('static', filename='js/tailwind.app.js') }}"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
 
     <style>
-        /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
+        /* 1. DEFINICIÓN DE COLORES (Obsidian Dark Only) */
         :root {
-            --autofill-bg: #ffffff;
-            /* Fondo para modo claro */
-            --autofill-text: #000000;
-            /* Texto para modo claro */
-        }
-
-        /* Si el sistema del usuario está en modo oscuro */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --autofill-bg: #0a0a0a;
-                --autofill-text: #ffffff;
-            }
-        }
-
-        /* Si usas una clase .dark (común en Tailwind/Dashboard) */
-        .dark {
             --autofill-bg: #0a0a0a;
             --autofill-text: #ffffff;
         }
@@ -76,9 +64,8 @@
             right: 0;
         }
     </style>
-
-    </style>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
 
     <!-- Clerk SDK -->
     {% if config.CLERK_PUBLISHABLE_KEY %}
@@ -91,35 +78,29 @@
 <body class="bg-[#050505] text-white antialiased min-h-screen pb-24 selection:bg-orange-500/30">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
     <div id="status-banner"
-        class="relative w-full z-40 bg-white dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-[#262626] transition-transform duration-300">
+        class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
         <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center
-                    {% if sub_status.status == 'expiring_soon_neutral' %}
-                        bg-slate-100 dark:bg-[#262626] text-slate-600 dark:text-slate-400
-                    {% elif sub_status.status == 'expiring_soon_warning' %}
-                        bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400
-                    {% else %}
-                        bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400
-                    {% endif %}
-                ">
+                <div
+                    class="w-9 h-9 rounded-xl flex items-center justify-center
+                        {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
+                        {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
+                        {% else %} bg-red-900/30 text-red-400
+                        {% endif %}">
                     <span class="material-symbols-outlined text-[20px]">schedule</span>
                 </div>
 
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <p class="text-sm font-medium text-slate-300">
                     {{ sub_status.message }}
                 </p>
             </div>
 
-            <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
-               {% if sub_status.status == 'expiring_soon_neutral' %}
-                    text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20
-               {% elif sub_status.status == 'expiring_soon_warning' %}
-                    text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20
-               {% else %}
-                    text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20
-               {% endif %}
-               transition-all">
+            <a href="{{ url_for('dashboard.subscription') }}"
+                class="text-sm font-semibold px-4 py-2 rounded-xl
+                    {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
+                    {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
+                    {% else %} text-red-400 hover:bg-red-900/20
+                    {% endif %} transition-all">
                 Renovar
             </a>
         </div>
@@ -128,7 +109,7 @@
 
     {% if sub_status.status == 'grace_period' %}
     <div id="status-banner"
-        class="relative w-full z-40 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900/50 transition-transform duration-300">
+        class="relative w-full z-40 bg-red-950/20 border-b border-red-900/50 transition-transform duration-300">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
 
             <div class="flex items-center gap-4">
@@ -172,7 +153,7 @@
 
             <div class="flex gap-3 justify-center pt-4">
                 <a href="{{ url_for('auth.plans') }}"
-                    class="bg-white text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition">
+                    class="bg-[#141414] text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-[#1a1a1a] transition">
                     Reactivar ahora
                 </a>
 
@@ -188,6 +169,20 @@
     <!-- Toast Notifications Container (Global) -->
     <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
 
+    <!-- Toast de nuevos pedidos (Global) -->
+    <div id="new-orders-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
+        <div class="flex items-center gap-3 bg-[#0a0a0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-bounce-in">
+            <span class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
+            <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
+            <button onclick="refreshOrderList()" class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
+                Ver ahora
+            </button>
+            <button onclick="dismissNewOrdersToast()" class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+    </div>
+
     {% block content %}{% endblock %}
     {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
@@ -200,7 +195,22 @@
     {% endif %}
 
     <!-- Sistema base scripts -->
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    <!-- Sistema de notificaciones toast global -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            {% for category, message in messages %}
+            showToast("{{ message }}", "{{ category }}");
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+    {% endwith %}
+    {% endblock %}
+    
+    <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
 </body>
 
 </html>
