@@ -6,6 +6,7 @@ from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_cors import CORS
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
@@ -28,6 +29,7 @@ def create_app():
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    CORS(app)
     
     # Soporte para Proxys (Nginx, Gunicorn, Heroku, etc.)
     # Esto asegura que request.remote_addr sea la IP real del cliente.
