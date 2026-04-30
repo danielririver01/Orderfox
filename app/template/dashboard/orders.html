@@ -10,11 +10,19 @@
       </p>
     </div>
     <div class="flex items-center gap-3">
+      <!-- Botón de orden (Asc/Desc) -->
+      <button id="sort-toggle-btn" title="Alternar orden" onclick="toggleSort()"
+        class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:text-blue-500 transition-all border border-gray-200 dark:border-[#262626]">
+        <span class="material-symbols-outlined text-[20px]" id="sort-icon">arrow_upward</span>
+      </button>
+
+
       <!-- Botón de activar/silenciar notificaciones de sonido -->
       <button id="sound-toggle-btn" title="Activar alertas sonoras" onclick="toggleSound()"
         class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-orange-100 dark:hover:bg-orange-500/10 hover:text-orange-500 transition-all border border-gray-200 dark:border-[#262626]">
         <span class="material-symbols-outlined text-[20px]" id="sound-icon">notifications_off</span>
       </button>
+
       <a href="{{ url_for('dashboard.index') }}"
         class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
         <span class="material-symbols-outlined">close</span>
@@ -44,8 +52,51 @@
 <script>
   // Pasar el último ID de pedido al JS para detectar nuevos
   const LAST_ORDER_ID = {{ last_order_id }};
+
+  function toggleSort() {
+    const currentSort = localStorage.getItem('orders_sort_order') || 'asc';
+    const newSort = currentSort === 'asc' ? 'desc' : 'asc';
+    localStorage.setItem('orders_sort_order', newSort);
+    
+    const url = new URL(window.location);
+    url.searchParams.set('sort', newSort);
+    window.location.href = url.href;
+  }
+
+  function updateSortIcon() {
+    const url = new URL(window.location);
+    const sort = url.searchParams.get('sort') || localStorage.getItem('orders_sort_order') || 'asc';
+    const icon = document.getElementById('sort-icon');
+    const btn = document.getElementById('sort-toggle-btn');
+    
+    if (icon) {
+      icon.textContent = sort === 'asc' ? 'arrow_upward' : 'arrow_downward';
+    }
+
+    if (btn && sort === 'desc') {
+        btn.classList.add('bg-blue-100', 'dark:bg-blue-500/10', 'text-blue-500');
+    }
+  }
+
+  function showAllPending() {
+    document.querySelectorAll('.pending-order-item').forEach(el => el.classList.remove('hidden'));
+    document.getElementById('load-more-pending').classList.add('hidden');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateSortIcon();
+    
+    // Si no hay parámetro de sort en la URL pero sí en localStorage, redirigir
+    const url = new URL(window.location);
+    const savedSort = localStorage.getItem('orders_sort_order');
+    if (!url.searchParams.has('sort') && savedSort) {
+      url.searchParams.set('sort', savedSort);
+      window.location.replace(url.href);
+    }
+  });
 </script>
 <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}
 {% endblock %}

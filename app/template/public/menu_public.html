@@ -62,19 +62,4 @@
 {% endfor %}
 {% endblock %}
 
-{% block footer_cart %}
-<div class="cart-summary" id="cart-summary-placeholder">
-    <div class="cart-info">
-        <div class="cart-label">Total de tu pedido</div>
-        <span class="cart-total" id="cart-total">$0</span>
-    </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-send" onclick="sendWhatsApp()" style="flex: 2;">
-            Enviar pedido
-        </button>
-        <button class="btn-clear" onclick="clearCart()" title="Cancelar pedido">
-            ✖
-        </button>
-    </div>
-</div>
-{% endblock %}
+

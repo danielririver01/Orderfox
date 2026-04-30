@@ -14,6 +14,10 @@ class Config:
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_recycle": 280,
+        "pool_pre_ping": True,
+    }
     
     # Mail Configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
@@ -39,8 +43,14 @@ class Config:
     # Clerk Configuration
     CLERK_PUBLISHABLE_KEY = os.environ.get('CLERK_PUBLISHABLE_KEY') or os.environ.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
     CLERK_SECRET_KEY = os.environ.get('CLERK_SECRET_KEY')
+    CLERK_JWT_ISSUER = os.environ.get('CLERK_JWT_ISSUER') or 'https://oriented-tortoise-50.clerk.accounts.dev'
 
     # Cloudinary Configuration
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
     CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
     CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+
+    # Scanner IA Integration
+    # En producción configurar como https://velzia.co/scanner-IA
+    SCANNER_IA_URL = os.environ.get('SCANNER_IA_URL') or 'http://localhost:3000'
+    SERVICE_API_KEY = os.environ.get('SERVICE_API_KEY')

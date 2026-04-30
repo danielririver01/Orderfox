@@ -28,20 +28,31 @@
         </div>
 
         <!-- Toggle Tienda -->
-        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-            <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer">
-            <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
-                            peer-checked:after:translate-x-6 peer-checked:after:border-white 
-                            after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                            after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
-                            after:h-5 after:w-5 after:transition-all 
-                            peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0"
-                style="min-width: 48px;"></div>
-            <span
-                class="ml-8 text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-500 peer-checked:hidden">CERRADO</span>
-            <span
-                class="ml-8 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 hidden peer-checked:block">ABIERTO</span>
-        </label>
+        <div class="flex items-center gap-4">
+            <!-- Botón Volver a Scanner IA -->
+            <a href="{{ SCANNER_IA_URL }}" 
+               class="group relative w-10 h-10 flex items-center justify-center bg-[#f2460d]/10 hover:bg-[#f2460d] rounded-full border border-[#f2460d]/20 transition-all duration-300 shadow-lg shadow-orange-500/10"
+               title="Volver al Scanner IA">
+                <span class="material-symbols-outlined text-[#f2460d] group-hover:text-white transition-colors text-[22px]">view_in_ar</span>
+                <!-- Tooltip mini -->
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded border border-white/10 whitespace-nowrap z-50">Scanner IA</span>
+            </a>
+
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer">
+                <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
+                                peer-checked:after:translate-x-6 peer-checked:after:border-white 
+                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
+                                after:h-5 after:w-5 after:transition-all 
+                                peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0"
+                    style="min-width: 48px;"></div>
+                <span
+                    class="ml-8 text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-500 peer-checked:hidden">CERRADO</span>
+                <span
+                    class="ml-8 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 hidden peer-checked:block">ABIERTO</span>
+            </label>
+        </div>
     </header>
 
     <div class="mb-6">

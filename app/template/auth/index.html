@@ -58,13 +58,13 @@
 
                 <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
 
-                <div class="mt-2 w-full flex flex-col items-center gap-4">
+                <div class="mt-4 w-full flex flex-col items-center gap-4">
                     <a href="{{ url_for('auth.plans') }}"
-                        class="w-full flex items-center justify-center gap-2 bg-[#fff5f2] dark:bg-[#2a120c] border border-[#f2460d]/30 text-[#f2460d] hover:bg-[#f2460d] hover:text-white font-bold h-11 rounded-lg transition-all duration-200 shadow-sm">
-                        <span class="material-symbols-outlined text-[20px]">verified</span>
-                        <span>Ver planes y precios</span>
+                        class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-primary transition-all duration-300 flex items-center gap-2 group">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-primary transition-colors"></span>
+                        Ver planes y precios
                     </a>
-                    <a class="text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors"
+                    <a class="text-xs font-bold text-zinc-600 hover:text-white transition-colors"
                         href="{{ url_for('auth.forgot_password') }}">
                         ¿Olvidaste tu contraseña?
                     </a>

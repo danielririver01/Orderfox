@@ -356,25 +356,38 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
 
     # 1. Crear wallet si no existe
     if not wallet:
-        wallet = AITokenWallet(
-            user_id=user.id,
-            plan_limit=plan_limit,
-            plan_tokens=plan_limit if plan_limit is not None else 0,
-            extra_tokens=0,
-            tokens_used_month=0,
-            reset_at=get_next_reset_date(now)
-        )
-        db.session.add(wallet)
-        
-        tx = AITokenTransaction(
-            user_id=user.id,
-            type='topup_plan',
-            amount=plan_limit if plan_limit is not None else 0,
-            source='system_init',
-            description=f'Wallet inicializado — Plan {plan_type}'
-        )
-        db.session.add(tx)
-        print(f"WALLET: Creado para usuario {user.id} ({plan_type})")
+        try:
+            # Re-verificar dentro del bloque para evitar race conditions
+            from app.models import AITokenWallet
+            wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
+            if not wallet:
+                wallet = AITokenWallet(
+                    user_id=user.id,
+                    plan_limit=plan_limit,
+                    plan_tokens=plan_limit if plan_limit is not None else 0,
+                    extra_tokens=0,
+                    tokens_used_month=0,
+                    reset_at=get_next_reset_date(now)
+                )
+                db.session.add(wallet)
+                
+                tx = AITokenTransaction(
+                    user_id=user.id,
+                    type='topup_plan',
+                    amount=plan_limit if plan_limit is not None else 0,
+                    source='system_init',
+                    description=f'Wallet inicializado — Plan {plan_type}'
+                )
+                db.session.add(tx)
+                db.session.commit()
+                print(f"WALLET: Creado para usuario {user.id} ({plan_type})")
+        except Exception as e:
+            db.session.rollback()
+            # Si falló por concurrencia, lo buscamos de nuevo
+            wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
+            if not wallet:
+                print(f"ERROR CRÍTICO WALLET: No se pudo crear ni recuperar: {e}")
+                return None
         return wallet
 
     # 2. Verificar Reset automático (si ya pasó la fecha de reset)

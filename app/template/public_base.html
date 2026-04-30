@@ -40,9 +40,63 @@
         {% block content %}{% endblock %}
     </main>
 
-    <div id="sticky-cart">
-        {% block footer_cart %}{% endblock %}
+    <!-- Nueva Estructura de Carrito Vertical Premium -->
+    <!-- Botón Flotante (Trigger) -->
+    <button id="cart-toggle-btn" class="fixed bottom-6 right-6 z-[1001] w-16 h-16 bg-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 hidden" onclick="toggleCart()">
+        <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span id="cart-count-badge" class="absolute -top-2 -right-2 bg-white text-orange-600 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-orange-600">0</span>
+        </div>
+    </button>
+
+    <!-- Sidebar Drawer -->
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full max-w-md bg-[#0f0f10]/95 backdrop-blur-2xl z-[2000] transform translate-x-full transition-transform duration-500 ease-in-out border-l border-white/5 shadow-2xl flex flex-col">
+        <!-- Header -->
+        <div class="p-8 border-b border-white/5 flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-black text-white tracking-tight">Tu Pedido</h2>
+                <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-1">Resumen de productos</p>
+            </div>
+            <button onclick="toggleCart()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Scrollable Items List -->
+        <div id="cart-items-list" class="flex-grow overflow-y-auto p-8 space-y-6 custom-scrollbar">
+            <!-- Renderizado dinámicamente por cart.js -->
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <p class="font-bold uppercase tracking-widest text-xs">El carrito está vacío</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-8 bg-black/40 border-t border-white/5 space-y-6">
+            <div class="flex items-center justify-between">
+                <span class="text-zinc-500 font-bold uppercase tracking-widest text-xs">Total del pedido</span>
+                <span id="sidebar-cart-total" class="text-3xl font-black text-white">$0</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="clearCart()" class="py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-95 border border-white/5">
+                    Cancelar
+                </button>
+                <button onclick="sendWhatsApp()" class="py-4 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-600/20 transition-all active:scale-95">
+                    Comprar
+                </button>
+            </div>
+        </div>
     </div>
+
+    <!-- Overlay -->
+    <div id="cart-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1999] opacity-0 pointer-events-none transition-opacity duration-500" onclick="toggleCart()"></div>
+
 
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>

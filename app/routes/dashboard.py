@@ -12,6 +12,7 @@ from flask import (
     session,
     current_app
 )
+import requests
 from app.utils.auth import login_required, active_required
 from app.models import db, Order, Restaurant, User
 from datetime import date, datetime, timezone, timedelta
@@ -69,8 +70,7 @@ def index():
                          delivered_count=delivered_count,
                          total_sales=f"{int(total_sales):,}",
                          is_open=restaurant.is_open,
-                         menu_url=menu_url,
-                         SCANNER_IA_URL=current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000'))
+                         menu_url=menu_url)
 
 @dashboard_bp.route('/toggle-status', methods=['POST'])
 @login_required
@@ -160,6 +160,40 @@ def api_stats():
         'total_sales': int(total_sales),
         'range': range_type
     })
+
+@dashboard_bp.route('/api/ai-stats')
+@login_required
+@active_required
+def api_ai_stats():
+    """Puente Servidor a Servidor para traer los gastos de IA (Next.js)"""
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    if not user or not user.clerk_id:
+        # Si el usuario no tiene clerk_id, devolvemos 0 para no romper el panel
+        return jsonify({'totalExpenses': 0, 'success': True})
+
+    range_type = request.args.get('range', 'today')
+    scanner_url = current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000')
+    api_key = current_app.config.get('SERVICE_API_KEY')
+    
+    if not api_key:
+        logger.error("Atención: SERVICE_API_KEY no está configurada en el archivo .env de Orderfox.")
+        return jsonify({'totalExpenses': 0, 'error': 'Falta API Key'}), 200
+
+    try:
+        resp = requests.get(
+            f"{scanner_url}/api/stats/summary?range={range_type}&userId={user.clerk_id}",
+            headers={'x-api-key': api_key},
+            timeout=5
+        )
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+        else:
+            return jsonify({'totalExpenses': 0, 'error': f'Status {resp.status_code}'}), 200
+    except Exception as e:
+        logger.error(f"Error S2S a Next.js: {e}")
+        return jsonify({'totalExpenses': 0, 'error': 'Sin conexión IA'}), 200
 
 @dashboard_bp.route('/Productos')
 @login_required

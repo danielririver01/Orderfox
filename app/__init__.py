@@ -10,6 +10,7 @@ from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
 from .extensions import mail, scheduler, csrf, limiter
+from flask_cors import CORS
 from .routes.tokens import tokens_bp
 
 # 2. El "Pase VIP" (Sustituto de exempt_when)
@@ -28,6 +29,9 @@ def create_app():
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    
+    # Habilitar CORS para permitir peticiones desde Scanner IA (Next.js/Node)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}) 
     
     # Soporte para Proxys (Nginx, Gunicorn, Heroku, etc.)
     # Esto asegura que request.remote_addr sea la IP real del cliente.
@@ -137,6 +141,7 @@ def create_app():
         data = {
             'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
             'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL'),
+            'SCANNER_IA_URL': app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),
             'sub_status': None,
             'user': None,
             'is_admin': False

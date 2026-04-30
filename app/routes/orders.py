@@ -43,10 +43,19 @@ def index():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
     
-    orders = Order.query.filter(
+    # Obtener el orden de clasificación (default: asc para los más antiguos primero)
+    sort_order = request.args.get('sort', 'asc')
+    
+    query = Order.query.filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start
-    ).order_by(Order.created_at.desc()).all()
+    )
+    
+    if sort_order == 'desc':
+        orders = query.order_by(Order.created_at.desc()).all()
+    else:
+        orders = query.order_by(Order.created_at.asc()).all()
+
     
     pending = [o for o in orders if o.status == 'pending']
     confirmed = [o for o in orders if o.status == 'confirmed']
@@ -73,10 +82,19 @@ def fragment():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
 
-    orders = Order.query.filter(
+    # Obtener el orden de clasificación para el fragmento
+    sort_order = request.args.get('sort', 'asc')
+    
+    query = Order.query.filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start
-    ).order_by(Order.created_at.desc()).all()
+    )
+    
+    if sort_order == 'desc':
+        orders = query.order_by(Order.created_at.desc()).all()
+    else:
+        orders = query.order_by(Order.created_at.asc()).all()
+
 
     pending = [o for o in orders if o.status == 'pending']
     confirmed = [o for o in orders if o.status == 'confirmed']
@@ -138,7 +156,7 @@ def create():
         
         order.total = total
         db.session.commit()
-        return redirect(url_for('orders.detail', id=order.id))
+        return redirect(url_for('orders.index'))
     
     products = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     return render_template('dashboard/order_create.html', products=products)

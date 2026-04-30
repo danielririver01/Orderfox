@@ -69,6 +69,28 @@ def _get_user_from_request() -> User | None:
         if clerk_id:
             return User.query.filter_by(clerk_id=clerk_id).first()
 
+    # Soporte para Server-to-Server (S2S) con x-api-key
+    api_key = request.headers.get('x-api-key')
+    valid_api_key = current_app.config.get('SERVICE_API_KEY')
+    if api_key and valid_api_key and api_key == valid_api_key:
+        data = request.get_json() or {}
+        clerk_id = request.args.get('userId') or data.get('clerk_id')
+        email = data.get('email')
+
+        if clerk_id:
+            user = User.query.filter_by(clerk_id=clerk_id).first()
+            if user:
+                return user
+            
+            # Si no se encuentra por clerk_id pero tenemos el email, lo vinculamos automáticamente (Auto-healing DB)
+            if email:
+                user = User.query.filter_by(email=email).first()
+                if user:
+                    user.clerk_id = clerk_id
+                    db.session.commit()
+                    current_app.logger.info(f"Cuenta vinculada automáticamente: {email} -> {clerk_id}")
+                    return user
+
     return None
 
 
@@ -90,12 +112,12 @@ def token_status():
 
     return jsonify({
         'is_elite':        wallet.is_elite,
-        'plan_limit':      wallet.plan_limit,
-        'plan_tokens':     wallet.plan_tokens,
+        'plan_limit':      wallet.plan_limit or 999,
+        'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 999,
         'extra_tokens':    wallet.extra_tokens,
-        'total_available': wallet.total_available,
+        'total_available': wallet.total_available if not wallet.is_elite else 999,
         'tokens_used':     wallet.tokens_used_month,
-        'usage_percent':   wallet.usage_percent,
+        'usage_percent':   wallet.usage_percent or 0,
         'can_scan':        wallet.can_scan(),
         'plan_type':       plan_type,
         'reset_at':        wallet.reset_at.isoformat() if wallet.reset_at else None,
@@ -202,6 +224,7 @@ def token_refund():
 
 
 @tokens_bp.route('/api/tokens/topup/initiate', methods=['POST'])
+@csrf.exempt
 def topup_initiate():
     """Inicia el flujo de pago MP para comprar tokens."""
     user = _get_user_from_request()

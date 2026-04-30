@@ -117,12 +117,10 @@ async function fetchFinancialData() {
         const salesData = await salesResp.json();
         const sales = salesData.total_sales || 0;
 
-        // 2. Fetch Gastos desde Next.js API (CORS)
+        // 2. Fetch Gastos desde Flask API (S2S Puente)
         let expenses = 0;
         try {
-            const expResp = await fetch(`${SCANNER_IA_URL}/api/stats/summary?range=${currentRange}`, {
-                credentials: 'include'
-            });
+            const expResp = await fetch(`/dashboard/api/ai-stats?range=${currentRange}`);
             if (expResp.ok) {
                 const expData = await expResp.json();
                 expenses = expData.totalExpenses || 0;
@@ -130,7 +128,7 @@ async function fetchFinancialData() {
                 gastosEl.textContent = 'N/A';
             }
         } catch (e) {
-            console.error('Next.js API unreachable:', e);
+            console.error('S2S API unreachable:', e);
             gastosEl.textContent = 'Sin conexión IA';
         }
 

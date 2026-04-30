@@ -12,21 +12,61 @@ let pollingInterval = null;
 let newOrdersToastVisible = false;
 let isFirstPoll = true;           // Para evitar notificar pedidos antiguos al cargar
 
+// Canal de comunicación entre pestañas para evitar duplicados
+const syncChannel = 'serviceWorker' in navigator ? new BroadcastChannel('velzia_orders_sync') : null;
+if (syncChannel) {
+    syncChannel.onmessage = (event) => {
+        if (event.data && event.data.last_id > currentLastId) {
+            console.log('[Velzia] Sincronizando ID desde otra pestaña:', event.data.last_id);
+            currentLastId = event.data.last_id;
+            // Si otra pestaña ya lo vio, nosotros no notificamos
+            dismissNewOrdersToast();
+        }
+    };
+}
+
 // ─── Inicialización ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     restoreSoundPreference();
     startPolling();
+    registerServiceWorker();
 
     // Cualquier clic en la página habilita el contexto de audio si el sonido está activo
     document.addEventListener('click', unlockAudio, { once: true });
 });
 
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/static/js/sw.js');
+            console.log('[Velzia] Service Worker registrado correctamente');
+
+            // Escuchar mensajes del Service Worker
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.action === 'REFRESH_ORDERS') {
+                    console.log('[Velzia] Mensaje de refresco recibido del SW');
+                    if (typeof refreshOrderList === 'function') {
+                        refreshOrderList();
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('[Velzia] Error al registrar SW:', e);
+        }
+    }
+}
+
+
+
 // ─── Polling ─────────────────────────────────────────────────────────────────
 function startPolling() {
     // Si ya hay un intervalo, lo limpiamos para evitar duplicados
     if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(checkForNewOrders, 15000); // 15 segundos
+    pollingInterval = setInterval(checkForNewOrders, 10000); // 10 segundos (más rápido)
 }
+
 
 async function checkForNewOrders() {
     try {
@@ -49,6 +89,11 @@ async function checkForNewOrders() {
             currentLastId = data.last_id;
             const count = data.pending_count;
 
+            // Avisar a otras pestañas que ya procesamos este ID
+            if (syncChannel) {
+                syncChannel.postMessage({ last_id: currentLastId });
+            }
+
             // 1. Mostrar Toast si el elemento existe (en pantalla de pedidos)
             showNewOrdersToast(count);
 
@@ -61,6 +106,7 @@ async function checkForNewOrders() {
             // 3. Actualizar el puntito del nav badge (global)
             updateNavBadge(count);
         }
+
     } catch (err) {
         console.warn('[Velzia] Error en polling de pedidos:', err);
     }
@@ -71,25 +117,36 @@ async function showBrowserNotification(count) {
     if (!("Notification" in window)) return;
 
     if (Notification.permission === "granted") {
-        const title = count > 1 ? `¡${count} pedidos pendientes!` : '¡Nuevo pedido recibido!';
+        const title = count > 1 ? `¡${count} pedidos pendientes!` : '¡Nuevo pedido entrante!';
         const options = {
-            body: 'Tienes nuevos pedidos esperando en tu panel de Orderfox.',
-            icon: '/static/img/icon-192x192.png', // Ajustar ruta si existe un icono
-            tag: 'new-order', // Evita múltiples notificaciones iguales
-            renotify: true
+            body: 'Revisa tu panel de administración para gestionar los pedidos actuales.',
+            icon: '/static/img/icon-192x192.png',
+            badge: '/static/img/badge-icon.png', // Icono pequeño para la barra de estado
+            tag: 'new-order',
+            renotify: true,
+            silent: false, // Intentar que el sistema haga ruido
+            vibrate: [200, 100, 200] // Vibración en móviles
         };
-        
-        const n = new Notification(title, options);
-        n.onclick = () => {
-            window.focus();
-            window.location.href = '/orders/'; // Redirigir a pedidos
-        };
+
+
+        // Intentar usar Service Worker si está disponible (mejor para segundo plano)
+        const registration = await navigator.serviceWorker.ready;
+        if (registration && registration.showNotification) {
+            registration.showNotification(title, options);
+        } else {
+            // Fallback a notificación normal
+            new Notification(title, options);
+        }
+    } else if (Notification.permission !== "denied") {
+        // Si no tenemos permiso, lo pedimos de nuevo (esto puede ser intrusivo, pero el usuario lo pidió)
+        requestNotificationPermission();
     }
 }
 
+
 async function requestNotificationPermission() {
     if (!("Notification" in window)) return false;
-    
+
     if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         const permission = await Notification.requestPermission();
         return permission === "granted";
@@ -102,17 +159,18 @@ async function refreshOrderList() {
     dismissNewOrdersToast();
 
     const container = document.getElementById('orders-container');
-    if (!container) { 
+    if (!container) {
         // Si no estamos en la pantalla de pedidos, redirigimos
         window.location.href = '/orders/';
-        return; 
+        return;
     }
 
     container.style.opacity = '0.5';
     container.style.transition = 'opacity 0.2s ease';
 
     try {
-        const res = await fetch('/orders/fragment');
+        const sort = localStorage.getItem('orders_sort_order') || 'asc';
+        const res = await fetch(`/orders/fragment?sort=${sort}`);
         if (!res.ok) throw new Error('Fragment fetch failed');
 
         const html = await res.text();
@@ -127,7 +185,7 @@ async function refreshOrderList() {
         }
 
         if (typeof showToast === 'function') {
-            showToast('✅ Pedidos actualizados', 'success');
+            showToast(' Pedidos actualizados', 'success');
         }
     } catch (err) {
         container.style.opacity = '1';
@@ -236,7 +294,7 @@ async function toggleSound() {
 
         playNotificationSound();
         if (typeof showToast === 'function') {
-            showToast('🔔 Alertas y notificaciones activadas', 'success');
+            showToast(' Alertas y notificaciones activadas', 'success');
         }
     } else {
         if (icon) icon.textContent = 'notifications_off';
@@ -245,7 +303,7 @@ async function toggleSound() {
             btn.classList.add('text-gray-400', 'dark:text-gray-500');
         }
         if (typeof showToast === 'function') {
-            showToast('🔕 Alertas desactivadas', 'default');
+            showToast(' Alertas desactivadas', 'default');
         }
     }
 }

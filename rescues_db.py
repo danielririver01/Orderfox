@@ -14,7 +14,7 @@ with app.app_context():
         
         db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
         db.session.commit()
-        print("✅ Tablas eliminadas con éxito. Ahora puedes correr flask db upgrade.")
+        print("Tablas eliminadas con éxito. Ahora puedes correr flask db upgrade.")
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error al limpiar: {e}")
+        print(f"Error al limpiar: {e}")
