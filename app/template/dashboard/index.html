@@ -29,15 +29,6 @@
 
         <!-- Toggle Tienda -->
         <div class="flex items-center gap-4">
-            <!-- Botón Volver a Scanner IA -->
-            <a href="{{ SCANNER_IA_URL }}" 
-               class="group relative w-10 h-10 flex items-center justify-center bg-[#f2460d]/10 hover:bg-[#f2460d] rounded-full border border-[#f2460d]/20 transition-all duration-300 shadow-lg shadow-orange-500/10"
-               title="Volver al Scanner IA">
-                <span class="material-symbols-outlined text-[#f2460d] group-hover:text-white transition-colors text-[22px]">view_in_ar</span>
-                <!-- Tooltip mini -->
-                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded border border-white/10 whitespace-nowrap z-50">Scanner IA</span>
-            </a>
-
             <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                 <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer">
                 <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
@@ -147,8 +138,8 @@
                             <span
                                 class="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Utilidad
                                 Operativa</span>
-                            <span id="utilidad-status"
-                                class="text-[9px] font-bold text-emerald-500 uppercase">Balance Positivo</span>
+                            <span id="utilidad-status" class="text-[9px] font-bold text-emerald-500 uppercase">Balance
+                                Positivo</span>
                         </div>
                     </div>
                     <span id="stat-utilidad"

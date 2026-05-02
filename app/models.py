@@ -261,14 +261,14 @@ class AITokenWallet(db.Model):
 
     @property
     def is_elite(self):
-        """plan_limit NULL → Elite ilimitado."""
-        return self.plan_limit is None
+        """Plan Elite = 3000 tokens (basado en plan_type del restaurant)."""
+        return self.user.restaurant.plan_type == 'elite' if self.user.restaurant else False
 
     @property
     def total_available(self):
         """Tokens disponibles para usar ahora mismo."""
         if self.is_elite:
-            return None  # Ilimitado
+            return 3000  # Simulado como ilimitado
         return self.plan_tokens + self.extra_tokens
 
     @property
@@ -283,7 +283,7 @@ class AITokenWallet(db.Model):
         """¿El usuario puede hacer un escaneo ahora?"""
         if self.is_elite:
             return True
-        return (self.plan_tokens + self.extra_tokens) > 0
+        return self.total_available > 0
 
     def __repr__(self):
         return (f'<AITokenWallet user={self.user_id} '

@@ -11,7 +11,7 @@ import unicodedata
 import mercadopago
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from app.utils.subscription import sanitize_restaurant_limits, initialize_or_reset_token_wallet
+from app.utils.subscription import sanitize_restaurant_limits, initialize_or_reset_token_wallet, get_plan_limits, AI_TOKEN_LIMITS
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -453,6 +453,10 @@ def payment():
     
     selected_plan_key = session.get('selected_plan', 'crecimiento')
     plan_info = plans_data.get(selected_plan_key, plans_data['crecimiento'])
+
+    plan_limits = get_plan_limits(selected_plan_key)
+    plan_info['has_ai_tokens'] = plan_limits.get('has_ai_tokens', False)
+    plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(selected_plan_key, 0)
 
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
     price_val = float(plan_info['price'].replace('.', ''))

@@ -4,37 +4,50 @@
 -->
 
 {% macro token_bubble() %}
-<div id="token-floating-bubble" 
-     class="fixed bottom-28 left-4 z-[9999] flex items-center justify-center transition-all duration-500 cursor-pointer"
-     onclick="window.openTokenModal()">
-    
+<div id="token-floating-bubble"
+    class="fixed bottom-28 left-4 z-[9999] flex items-center justify-center transition-all duration-500 cursor-pointer"
+    onclick="window.openTokenModal()">
+
     <!-- Tooltip -->
-    <div id="token-bubble-tooltip" class="absolute bottom-full mb-3 left-0 bg-slate-900 border border-slate-700 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl">
+    <div id="token-bubble-tooltip"
+        class="absolute bottom-full mb-3 left-0 bg-slate-900 border border-slate-700 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl">
         <span id="token-tooltip-text">tokens...</span>
     </div>
 
-    <div class="relative w-14 h-14 bg-slate-950 border-2 border-slate-800 rounded-full shadow-2xl flex items-center justify-center group hover:scale-105 active:scale-90 transition-transform">
+    <div
+        class="relative w-14 h-14 bg-slate-950 border-2 border-slate-800 rounded-full shadow-2xl flex items-center justify-center group hover:scale-105 active:scale-90 transition-transform">
         <!-- SVG Borde -->
         <svg class="absolute inset-0 w-full h-full transform -rotate-90">
             <circle cx="28" cy="28" r="24" stroke="#1e293b" stroke-width="4" fill="transparent" />
-            <circle id="token-bubble-progress" cx="28" cy="28" r="24" stroke="#f97316" stroke-width="4" stroke-linecap="round" fill="transparent" stroke-dasharray="150.8" stroke-dashoffset="150.8" class="transition-all duration-700 ease-out" />
+            <circle id="token-bubble-progress" cx="28" cy="28" r="24" stroke="#f97316" stroke-width="4"
+                stroke-linecap="round" fill="transparent" stroke-dasharray="150.8" stroke-dashoffset="150.8"
+                class="transition-all duration-700 ease-out" />
         </svg>
 
         <!-- Contenido -->
         <div class="relative z-10 flex flex-col items-center">
             <span id="token-bubble-value" class="text-white font-black text-sm">--</span>
-            <span id="token-bubble-elite" class="hidden material-symbols-outlined text-indigo-400 text-2xl">diamond</span>
         </div>
     </div>
 </div>
 
 <style>
     /* Aseguramos visibilidad en el hover para el tooltip */
-    #token-floating-bubble:hover #token-bubble-tooltip { opacity: 1; }
-    
-    #token-bubble-progress.critical { stroke: #ef4444; }
-    #token-bubble-progress.warning { stroke: #f59e0b; }
-    #token-bubble-progress.success { stroke: #10b981; }
+    #token-floating-bubble:hover #token-bubble-tooltip {
+        opacity: 1;
+    }
+
+    #token-bubble-progress.critical {
+        stroke: #ef4444;
+    }
+
+    #token-bubble-progress.warning {
+        stroke: #f59e0b;
+    }
+
+    #token-bubble-progress.success {
+        stroke: #10b981;
+    }
 
     /* Estado de carga */
     #token-floating-bubble.is-ready {

@@ -25,6 +25,7 @@ from app.utils.subscription import (
     check_feature_access,
     get_plan_limits,
     PLAN_LIMITS,
+    AI_TOKEN_LIMITS,
     get_subscription_status
 )
 import re
@@ -363,6 +364,7 @@ def subscription():
     
     # Límites del plan actual
     plan_info = get_plan_limits(restaurant.plan_type)
+    plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(restaurant.plan_type, 0)
     
     # Fecha de creación del restaurante (formateada)
     created_date = "No disponible"

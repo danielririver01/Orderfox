@@ -17,7 +17,6 @@ const syncChannel = 'serviceWorker' in navigator ? new BroadcastChannel('velzia_
 if (syncChannel) {
     syncChannel.onmessage = (event) => {
         if (event.data && event.data.last_id > currentLastId) {
-            console.log('[Velzia] Sincronizando ID desde otra pestaña:', event.data.last_id);
             currentLastId = event.data.last_id;
             // Si otra pestaña ya lo vio, nosotros no notificamos
             dismissNewOrdersToast();
@@ -39,12 +38,10 @@ async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
             const registration = await navigator.serviceWorker.register('/static/js/sw.js');
-            console.log('[Velzia] Service Worker registrado correctamente');
 
             // Escuchar mensajes del Service Worker
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'REFRESH_ORDERS') {
-                    console.log('[Velzia] Mensaje de refresco recibido del SW');
                     if (typeof refreshOrderList === 'function') {
                         refreshOrderList();
                     } else {

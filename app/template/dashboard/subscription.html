@@ -64,7 +64,7 @@
                         Hasta {{ plan_info.max_products }} Productos
                         {% endif %}
                     </p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium">Gestiona tu catálogo completo
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Gestiona tu catálogo completo
                     </p>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                         class="text-sm font-bold {% if plan_info.has_qr %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
                         Menú Digital Inteligente
                     </p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
                         {% if plan_info.has_qr %}Presencia digital profesional para tu negocio{% else %}No disponible en
                         tu plan actual{% endif %}
                     </p>
@@ -96,7 +96,7 @@
                         class="text-sm font-bold {% if plan_info.has_modifiers %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
                         Personalización (Adicionales)
                     </p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
                         {% if plan_info.has_modifiers %}Opciones y extras para tus productos{% else %}No disponible en
                         tu plan actual{% endif %}
                     </p>
@@ -113,9 +113,29 @@
                         class="text-sm font-bold {% if plan_info.has_status_management %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
                         Control del Local
                     </p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-500 font-medium tracking-tight">
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
                         {% if plan_info.has_status_management %}Gestiona apertura y cierre en tiempo real{% else %}No
                         disponible en tu plan actual{% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="font-bold text-blue-600 dark:text-purple-400 uppercase tracking-tight w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-purple-500 text-[20px]">auto_awesome</span>
+                </div>
+                <div>
+                    <p
+                        class="text-sm font-bold {% if plan_info.has_ai_tokens %}text-gray-800 dark:text-white{% else %}text-gray-600 dark:text-gray-600{% endif %}">
+                        Tokens IA
+                    </p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
+                        {% if plan_info.has_ai_tokens %}
+                        Potencia tu catálogo con <b class="text-gray-800 dark:text-white">{{ plan_info.ai_tokens }} créditos de IA</b> para
+                        clasificación automática.
+                        {% else %}
+                        IA de clasificación no disponible en este plan.
+                        {% endif %}
                     </p>
                 </div>
             </div>
@@ -187,11 +207,15 @@
         class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
 
         {% for plan_key, plan in [
-        ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos', 'price': '$30.000', 'color':
+        ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos + 150 Tokens IA', 'price':
+        '$30.000', 'color':
         'blue'}),
-        ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR', 'price': '$40.000', 'color':
+        ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR + 500 Tokens IA', 'price':
+        '$40.000', 'color':
         'green'}),
-        ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores', 'price': '$50.000', 'color': 'orange'})
+        ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores + 3000 Tokens IA', 'price': '$50.000',
+        'color':
+        'orange'})
         ] %}
         {% set is_current = restaurant.plan_type == plan_key %}
         {% if not is_current %}
@@ -215,15 +239,15 @@
         </a>
         {% else %}
         <div
-            class="block p-5 rounded-2xl bg-{{ plan.color }}-500 dark:bg-{{ plan.color }}-600 border border-{{ plan.color }}-400 shadow-lg shadow-{{ plan.color }}-500/20">
+            class="block p-5 rounded-2xl bg-white dark:bg-[#141414] border-2 border-orange-400/40 dark:border-orange-500/40 shadow-lg shadow-orange-500/10">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="font-black text-white tracking-tight">{{ plan.title }}</h4>
-                    <p class="text-[10px] text-white/70 font-medium">{{ plan.desc }}</p>
+                    <h4 class="font-black text-gray-800 dark:text-white tracking-tight">{{ plan.title }}</h4>
+                    <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium">{{ plan.desc }}</p>
                 </div>
-                <div class="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
-                    <span class="material-symbols-outlined text-white text-[14px]">check_circle</span>
-                    <span class="text-[9px] font-black text-white uppercase tracking-widest">ACTUAL</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 dark:bg-orange-500/10 rounded-lg border border-orange-200 dark:border-orange-500/20">
+                    <span class="material-symbols-outlined text-orange-500 text-[12px]">star</span>
+                    <span class="text-[9px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">ACTUAL</span>
                 </div>
             </div>
         </div>
@@ -235,18 +259,16 @@
 <!-- Acciones Finales -->
 <section class="px-4 mb-12">
     <a href="{{ url_for('auth.renew') }}"
-        class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs mb-6">
+        class="w-full bg-gray-900 hover:bg-gray-800 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs mb-6">
         <span class="material-symbols-outlined">refresh</span>
         Renovar mi Plan
     </a>
 
     <button onclick="openAccountDeleteModal()"
-        class="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100 dark:border-red-500/20 active:scale-95 text-xs">
-        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
-        Eliminar Cuenta
+        class="w-full text-red-600 dark:text-red-400 font-medium py-2 flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs hover:underline">
+        <span class="material-symbols-outlined text-[14px]">delete_forever</span>
+        Eliminar mi cuenta
     </button>
-    <p class="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-8 font-bold uppercase tracking-[0.3em]">Velzia
-        v1.3.0</p>
 </section>
 
 <!-- Bottom Navigation -->

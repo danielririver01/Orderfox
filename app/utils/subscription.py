@@ -8,6 +8,7 @@ PLAN_LIMITS = {
         'has_table_qr': False,
         'has_modifiers': False,
         'has_status_management': False,
+        'has_ai_tokens': True,
         'name': 'Emprendedor'
     },
     'crecimiento': {
@@ -16,6 +17,7 @@ PLAN_LIMITS = {
         'has_table_qr': True,
         'has_modifiers': False,
         'has_status_management': True,
+        'has_ai_tokens': True,
         'name': 'Crecimiento'
     },
     'elite': {
@@ -24,6 +26,7 @@ PLAN_LIMITS = {
         'has_table_qr': True,
         'has_modifiers': True,
         'has_status_management': True,
+        'has_ai_tokens': True,
         'name': 'Élite'
     },
     'trial': {
@@ -32,6 +35,7 @@ PLAN_LIMITS = {
         'has_table_qr': True,
         'has_modifiers': True,
         'has_status_management': True,
+        'has_ai_tokens': True,
         'name': 'Prueba Gratuita Premium'
     }
 }
@@ -41,9 +45,9 @@ PLAN_LIMITS = {
 # Límites de tokens asignados por plan mensualmente
 AI_TOKEN_LIMITS = {
     'trial':       10,
-    'emprendedor': 25,
-    'crecimiento': 40,
-    'elite':       None,  # NULL en DB = Ilimitado
+    'emprendedor': 150,
+    'crecimiento': 500,
+    'elite':       3000,   # Número alto parasimular ilimitado
 }
 
 # Paquetes de recarga (Top-ups)
@@ -361,10 +365,15 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
             from app.models import AITokenWallet
             wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
             if not wallet:
+                # Para Elite: plan_limit es NULL (ilimitado)
+                is_elite_plan = (plan_type == 'elite')
+                actual_plan_limit = None if is_elite_plan else plan_limit
+                actual_plan_tokens = 0 if is_elite_plan else plan_limit
+                
                 wallet = AITokenWallet(
                     user_id=user.id,
-                    plan_limit=plan_limit,
-                    plan_tokens=plan_limit if plan_limit is not None else 0,
+                    plan_limit=actual_plan_limit,
+                    plan_tokens=actual_plan_tokens,
                     extra_tokens=0,
                     tokens_used_month=0,
                     reset_at=get_next_reset_date(now)
@@ -374,7 +383,7 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 tx = AITokenTransaction(
                     user_id=user.id,
                     type='topup_plan',
-                    amount=plan_limit if plan_limit is not None else 0,
+                    amount=actual_plan_tokens,
                     source='system_init',
                     description=f'Wallet inicializado — Plan {plan_type}'
                 )
@@ -407,15 +416,20 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 print(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
                 return wallet
 
-        wallet.plan_limit = plan_limit
-        wallet.plan_tokens = plan_limit if plan_limit is not None else 0
+        # Para Elite: plan_limit es NULL (ilimitado)
+        is_elite_plan = (plan_type == 'elite')
+        actual_plan_limit = None if is_elite_plan else plan_limit
+        actual_plan_tokens = 0 if is_elite_plan else plan_limit
+        
+        wallet.plan_limit = actual_plan_limit
+        wallet.plan_tokens = actual_plan_tokens
         wallet.tokens_used_month = 0
         wallet.reset_at = get_next_reset_date(now if now >= (wallet.reset_at or now) else wallet.reset_at)
 
         tx = AITokenTransaction(
             user_id=user.id,
             type='topup_plan',
-            amount=plan_limit if plan_limit is not None else 0,
+            amount=actual_plan_tokens,
             source='plan_renewal' if mp_payment_id else 'auto_reset',
             mp_payment_id=mp_payment_id,
             description=f'Reset de tokens ({plan_type})'

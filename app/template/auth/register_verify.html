@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -140,8 +140,8 @@
 
                 const signUpDiv = document.getElementById('clerk-signup');
 
-                // Determinar modo oscuro
-                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                // Forzar modo oscuro siempre para Velzia Obsidian
+                const isDarkMode = true;
 
                 window.Clerk.mountSignUp(signUpDiv, {
                     afterSignUpUrl: '/', 

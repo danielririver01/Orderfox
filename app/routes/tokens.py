@@ -112,10 +112,10 @@ def token_status():
 
     return jsonify({
         'is_elite':        wallet.is_elite,
-        'plan_limit':      wallet.plan_limit or 999,
-        'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 999,
+        'plan_limit':      wallet.plan_limit or 3000,
+        'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 3000,
         'extra_tokens':    wallet.extra_tokens,
-        'total_available': wallet.total_available if not wallet.is_elite else 999,
+        'total_available': wallet.total_available,  # Ya retorna 3000 para Elite
         'tokens_used':     wallet.tokens_used_month,
         'usage_percent':   wallet.usage_percent or 0,
         'can_scan':        wallet.can_scan(),

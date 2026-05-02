@@ -2,26 +2,21 @@
  * token-wheel.js (v2.0.0 Alpha)
  * Sistema de monitoreo global de tokens IA
  */
-console.log("VELZIA: Cargando sistema de tokens...");
-
 document.addEventListener('DOMContentLoaded', () => {
     const bubbleContainer = document.getElementById('token-floating-bubble');
 
     if (!bubbleContainer) {
-        console.warn("VELZIA: No se encontró el contenedor del globo de tokens.");
         return;
     }
 
     const bubbleProgress = document.getElementById('token-bubble-progress');
     const bubbleValue = document.getElementById('token-bubble-value');
-    const eliteIcon = document.getElementById('token-bubble-elite');
     const tooltipText = document.getElementById('token-tooltip-text');
 
     const CIRCUMFERENCE = 150.8;
 
     async function updateTokenStatus() {
         try {
-            console.log("VELZIA: Actualizando estado de tokens...");
             const response = await fetch('/api/tokens/status');
 
             if (!response.ok) throw new Error('No autorizado');
@@ -32,17 +27,22 @@ document.addEventListener('DOMContentLoaded', () => {
             bubbleContainer.classList.add('is-ready');
 
             if (data.is_elite) {
-                if (eliteIcon) eliteIcon.classList.remove('hidden');
-                if (bubbleValue) bubbleValue.classList.add('hidden');
+                // Mostramos el número y le pasamos el valor de la API
+                if (bubbleValue) {
+                    bubbleValue.classList.remove('hidden');
+                    bubbleValue.textContent = data.total_available;
+                }
+
                 bubbleContainer.classList.add('is-elite');
+
                 if (bubbleProgress) {
                     bubbleProgress.classList.remove('critical', 'warning');
                     bubbleProgress.classList.add('success');
                     bubbleProgress.style.strokeDashoffset = 0; // Círculo completo
                 }
-                if (tooltipText) tooltipText.textContent = 'Plan Elite: Escaneos Ilimitados';
+
+                if (tooltipText) tooltipText.textContent = `Plan Élite: ${data.total_available} tokens disponibles`;
             } else {
-                if (eliteIcon) eliteIcon.classList.add('hidden');
                 if (bubbleValue) bubbleValue.classList.remove('hidden');
                 bubbleContainer.classList.remove('is-elite');
 
@@ -117,7 +117,7 @@ window.initiateTokenPurchase = async function (packKey) {
         }
 
     } catch (error) {
-        console.error('VELZIA: Error en compra de tokens:', error);
+        //console.error('VELZIA: Error en compra de tokens:', error);
         showToast('Error de conexión con la pasarela de pagos', 'error');
     }
 };
