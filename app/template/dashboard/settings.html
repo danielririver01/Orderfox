@@ -71,6 +71,23 @@
                     class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>
 
+            <!-- Categorías -->
+            <a href="{{ url_for('categories.index') }}"
+                class="settings-row flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">category</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm dark:text-white">Categorías</span>
+                        <span class="text-[10px] text-gray-600 dark:text-gray-500 font-medium">Organizar productos</span>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+            </a>
+
             <!-- Generar QR -->
             <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}"
                 class="settings-row flex items-center justify-between p-5 transition-all hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">

@@ -135,9 +135,7 @@ async function fetchFinancialData() {
         // 3. Update UI
         loadingEl.classList.add('hidden');
         ventasEl.textContent = formatCurrency(sales);
-        if (expenses > 0) {
-            gastosEl.textContent = formatCurrency(expenses);
-        }
+        gastosEl.textContent = formatCurrency(expenses);
         
         updateUtilityCard(sales, expenses);
 

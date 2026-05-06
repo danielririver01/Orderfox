@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orderfox Video Presentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-obsidian: #050505;
+            --primary-orange: #F2460D;
+            --whatsapp-green: #25D366;
+            --text-main: #FFFFFF;
+            --text-muted: #A1A1AA;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 1080px;
+            height: 1920px;
+            background: var(--bg-obsidian);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .composition-root {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 120px;
+            box-sizing: border-box;
+            background: var(--bg-obsidian);
+        }
+
+        .scene.active {
+            display: flex;
+        }
+
+        /* UI Elements */
+        .title-large {
+            font-size: 140px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            margin: 0;
+            line-height: 0.9;
+            text-align: center;
+        }
+
+        .orange-glow {
+            color: var(--primary-orange);
+            text-shadow: 0 0 40px rgba(242, 70, 13, 0.4);
+        }
+
+        .subtitle {
+            font-size: 48px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 60px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+        }
+
+        .phone-mockup {
+            width: 500px;
+            height: 900px;
+            background: #111;
+            border: 12px solid #222;
+            border-radius: 60px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
+        }
+
+        .phone-screen {
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .menu-item {
+            background: #1A1A1C;
+            height: 120px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            gap: 20px;
+        }
+
+        .menu-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-orange);
+            border-radius: 12px;
+        }
+
+        .menu-text {
+            height: 20px;
+            background: #333;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+        .chat-container,
+        .phone-screen.chat-mode {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .phone-screen.chat-mode {
+            padding: 0;
+            background: #0b0b0b;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #075E54;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            background: #ccc;
+            border-radius: 50%;
+        }
+
+        .chat-name {
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .chat-status {
+            font-size: 14px;
+            color: #d1d1d1;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .whatsapp-bubble {
+            color: white;
+            padding: 12px 18px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 500;
+            position: relative;
+            max-width: 85%;
+        }
+
+        .whatsapp-bubble.incoming {
+            background: #25D366;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .whatsapp-bubble.outgoing {
+            background: #1A1A1C;
+            border: 1px solid var(--glass-border);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Animations */
+        .hidden {
+            opacity: 0;
+        }
+
+        /* Background Decor */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--glass-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+            background-size: 100px 100px;
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(242, 70, 13, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .scanner-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(90deg, transparent, var(--primary-orange), transparent);
+            box-shadow: 0 0 20px var(--primary-orange);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div data-composition-id="orderfox-promo" data-width="1080" data-height="1920" data-start="0"
+        class="composition-root">
+        <div class="bg-grid"></div>
+        <div class="glow-orb" id="orb-1" style="top: 10%; left: -10%;"></div>
+        <div class="glow-orb" id="orb-2" style="bottom: 10%; right: -10%;"></div>
+
+        <!-- Scene 1: Intro -->
+        <div id="scene-1" class="scene clip active" data-start="0" data-duration="4" data-track-index="1">
+            <h1 class="title-large" id="s1-title">VEL<span class="orange-glow">ZIA</span></h1>
+            <p class="subtitle" id="s1-subtitle">El futuro de tu restaurante</p>
+        </div>
+
+        <!-- Scene 2: Digital Menu -->
+        <div id="scene-2" class="scene clip" data-start="4" data-duration="6" data-track-index="1">
+            <div class="phone-mockup" id="s2-phone">
+                <div class="phone-screen">
+                    <div class="menu-item">
+                        <div class="menu-icon"></div>
+                        <div class="menu-text" style="width: 60%"></div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon"></div>
+                        <div class="menu-text" style="width: 40%"></div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon"></div>
+                        <div class="menu-text" style="width: 80%"></div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon"></div>
+                        <div class="menu-text" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+            <h2 class="title-large" id="s2-title" style="font-size: 80px; margin-top: 60px;">MENÚ DIGITAL</h2>
+            <p class="subtitle" id="s2-subtitle" style="font-size: 32px; margin-top: 20px; color: var(--text-muted);">
+                Tu carta en el móvil de tus clientes
+            </p>
+        </div>
+
+        <!-- Scene 3: WhatsApp -->
+        <div id="scene-3" class="scene clip" data-start="10" data-duration="10" data-track-index="1">
+            <div class="phone-mockup" id="s3-phone">
+                <div class="phone-screen chat-mode">
+                    <div class="chat-header">
+                        <div class="chat-avatar"></div>
+                        <div class="chat-info">
+                            <div class="chat-name">Chat Manual</div>
+                            <div id="s3-status" class="chat-status">online</div>
+                        </div>
+                    </div>
+                    <div class="chat-messages">
+                        <div class="whatsapp-bubble incoming" id="s3-msg-1">Hola, quiero 2 hamburguesas sin cebolla 🍔
+                        </div>
+                        <div class="whatsapp-bubble outgoing" id="s3-msg-2">Listo, anotado ✅</div>
+                        <div class="whatsapp-bubble incoming" id="s3-msg-3">Ah no, mejor 3, una sin salsa</div>
+                        <div class="whatsapp-bubble outgoing" id="s3-msg-4">Espera, no entendí tu pedido estoy
+                            desconcentrado 😅</div>
+                        <div class="whatsapp-bubble incoming" id="s3-msg-5">Mejor déjalo así, ¡qué mala atención! 😡
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h2 class="title-large" id="s3-title" style="font-size: 70px; margin-top: 40px;">DEJA DE PERDER PEDIDOS</h2>
+            <p class="subtitle" id="s3-subtitle" style="font-size: 32px; margin-top: 15px; color: var(--text-muted);">
+                Velzia te lo hace más fácil</p>
+        </div>
+
+        <!-- Scene 4: Scanner IA -->
+        <div id="scene-4" class="scene clip" data-start="20" data-duration="6" data-track-index="1">
+            <div class="feature-card" id="s4-card" style="position: relative; overflow: hidden;">
+                <div class="scanner-bar" id="s4-scanner"></div>
+                <div class="title-large orange-glow" style="font-size: 100px;">SCANNER IA</div>
+                <p class="subtitle" style="color: white;">Optimización inteligente de procesos</p>
+            </div>
+        </div>
+
+        <!-- Scene 5: Outro -->
+        <div id="scene-5" class="scene clip" data-start="26" data-duration="4" data-track-index="1">
+            <div class="title-large" id="s5-title">Lleva tu negocio al<br><span class="orange-glow">Siguiente
+                    Nivel</span></div>
+            <p class="subtitle" id="s5-brand">velzia.co</p>
+        </div>
+
+    </div>
+
+    <script>
+        window.__timelines = window.__timelines || {};
+
+        const tl = gsap.timeline({ paused: true });
+
+        // Scene Switching Logic
+        const sceneConfig = [
+            { id: 'scene-1', start: 0 },
+            { id: 'scene-2', start: 4 },
+            { id: 'scene-3', start: 10 },
+            { id: 'scene-4', start: 20 },
+            { id: 'scene-5', start: 26 }
+        ];
+
+        sceneConfig.forEach((scene, index) => {
+            const startTime = scene.start;
+            if (index === 0) {
+                tl.set(`#${scene.id}`, { display: 'flex' }, 0);
+            } else {
+                const prevId = sceneConfig[index - 1].id;
+                // Prepare incoming scene
+                tl.set(`#${scene.id}`, { display: 'flex', x: 1080 }, startTime);
+                // Transition: Outgoing slides left, Incoming slides from right
+                tl.to(`#${prevId}`, { x: -1080, duration: 0.6, ease: "power4.inOut" }, startTime);
+                tl.to(`#${scene.id}`, { x: 0, duration: 0.6, ease: "power4.inOut" }, startTime);
+                // Clean up outgoing scene
+                tl.set(`#${prevId}`, { display: 'none' }, startTime + 0.6);
+            }
+        });
+
+        // Background Animations
+        tl.to("#orb-1", { x: 200, y: 100, duration: 10, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0);
+        tl.to("#orb-2", { x: -200, y: -100, duration: 12, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0);
+
+        // Scene 1 Animations (0-4s)
+        tl.from("#s1-title", { y: 120, opacity: 0, duration: 1.4, ease: "expo.out" }, 0.3);
+        tl.from("#s1-subtitle", { y: 60, opacity: 0, duration: 1.2, ease: "expo.out" }, 0.6);
+
+        // Scene 2 Animations (4-10s)
+        tl.from("#s2-phone", { scale: 0.7, opacity: 0, rotationY: 20, duration: 1.2, ease: "power4.out" }, 4.3);
+        tl.from(".menu-item", { x: -80, opacity: 0, stagger: 0.15, duration: 1, ease: "expo.out" }, 4.6);
+        tl.from("#s2-title", { y: 40, opacity: 0, duration: 1, ease: "expo.out" }, 5.2);
+        tl.from("#s2-subtitle", { y: 20, opacity: 0, duration: 1, ease: "expo.out" }, 5.5);
+
+        // Scene 3 Animations (10-20s)
+        // WhatsApp theme pulsing orbs: Transition to green
+        tl.to("#orb-1", { background: "radial-gradient(circle, rgba(37, 211, 102, 0.2) 0%, transparent 70%)", duration: 1.5 }, 10);
+        tl.to("#orb-2", { background: "radial-gradient(circle, rgba(37, 211, 102, 0.15) 0%, transparent 70%)", duration: 1.5 }, 10.5);
+
+        tl.from("#s3-phone", { scale: 0.8, opacity: 0, y: 50, duration: 1.2, ease: "power4.out" }, 10.5);
+
+        // Sequence of messages
+        tl.from("#s3-msg-1", { scale: 0.6, opacity: 0, x: -50, duration: 0.5, ease: "back.out(1.7)" }, 11.5);
+        tl.from("#s3-msg-2", { scale: 0.6, opacity: 0, x: 50, duration: 0.5, ease: "back.out(1.7)" }, 12.5);
+        tl.from("#s3-msg-3", { scale: 0.6, opacity: 0, x: -50, duration: 0.5, ease: "back.out(1.7)" }, 13.5);
+        tl.from("#s3-msg-4", { scale: 0.6, opacity: 0, x: 50, duration: 0.5, ease: "back.out(1.7)" }, 14.5);
+        tl.from("#s3-msg-5", { scale: 0.6, opacity: 0, x: -50, duration: 0.5, ease: "back.out(1.7)" }, 15.5);
+
+        // Conclusion
+        tl.from("#s3-title", { y: 60, scale: 0.9, opacity: 0, duration: 1.2, ease: "expo.out" }, 17.5);
+        tl.from("#s3-subtitle", { y: 20, opacity: 0, duration: 1, ease: "expo.out" }, 18.0);
+
+        // Reset orbs back to orange for Scene 4
+        tl.to("#orb-1", { background: "radial-gradient(circle, rgba(242, 70, 13, 0.15) 0%, transparent 70%)", duration: 1.5 }, 20);
+        tl.to("#orb-2", { background: "radial-gradient(circle, rgba(242, 70, 13, 0.15) 0%, transparent 70%)", duration: 1.5 }, 20);
+
+        // Scene 4 Animations (20-26s)
+        tl.from("#s4-card", { rotationY: -30, opacity: 0, scale: 0.85, duration: 1.5, ease: "expo.out" }, 20.4);
+        tl.fromTo("#s4-scanner", { top: "0%" }, { top: "100%", duration: 2, repeat: 1, yoyo: true, ease: "power1.inOut" }, 21);
+
+        // Scene 5 Animations (26-30s)
+        tl.from("#s5-title", { scale: 1.3, opacity: 0, filter: "blur(20px)", duration: 1.5, ease: "expo.out" }, 26.4);
+        tl.from("#s5-brand", { y: 30, opacity: 0, duration: 1, ease: "expo.out" }, 27.4);
+
+        // Final Fade Out
+        tl.to(".composition-root", { opacity: 0, duration: 1 }, 29);
+
+        window.__timelines["orderfox-promo"] = tl;
+    </script>
+</body>
+
+</html>

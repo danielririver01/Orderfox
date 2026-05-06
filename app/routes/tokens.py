@@ -103,7 +103,6 @@ def token_status():
     if not user:
         return jsonify({'error': 'unauthorized'}), 401
 
-    # initialize_or_reset_token_wallet maneja creación y reset mensual automáticamente
     wallet = initialize_or_reset_token_wallet(user)
     if not wallet:
         return jsonify({'error': 'no_wallet'}), 404
@@ -112,114 +111,15 @@ def token_status():
 
     return jsonify({
         'is_elite':        wallet.is_elite,
-        'plan_limit':      wallet.plan_limit or 3000,
-        'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 3000,
+        'plan_limit':      wallet.plan_limit or 300,
+        'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 300,
         'extra_tokens':    wallet.extra_tokens,
-        'total_available': wallet.total_available,  # Ya retorna 3000 para Elite
+        'total_available': wallet.total_available,
         'tokens_used':     wallet.tokens_used_month,
         'usage_percent':   wallet.usage_percent or 0,
         'can_scan':        wallet.can_scan(),
         'plan_type':       plan_type,
         'reset_at':        wallet.reset_at.isoformat() if wallet.reset_at else None,
-    })
-
-
-@tokens_bp.route('/api/tokens/consume', methods=['POST'])
-@csrf.exempt
-def token_consume():
-    """Consume 1 token del wallet."""
-    user = _get_user_from_request()
-    if not user:
-        return jsonify({'success': False, 'message': 'No autorizado'}), 401
-
-    # Verificación extra: clerk_id del body debe coincidir con el del JWT
-    data = request.get_json() or {}
-    body_clerk_id = data.get('clerk_id')
-    if body_clerk_id:
-        auth_header = request.headers.get('Authorization', '')
-        if auth_header.startswith('Bearer '):
-            jwt_clerk_id = _verify_clerk_jwt(auth_header[7:])
-            if jwt_clerk_id and jwt_clerk_id != body_clerk_id:
-                return jsonify({'success': False, 'message': 'Token mismatch'}), 401
-
-    wallet = initialize_or_reset_token_wallet(user)
-    if not wallet:
-        return jsonify({'success': False, 'message': 'Billetera no encontrada'}), 404
-
-    if wallet.is_elite:
-        tx = AITokenTransaction(
-            user_id=user.id, type='elite_scan', amount=0,
-            source='scanner_ia', description='Scan ilimitado — Plan Elite'
-        )
-        db.session.add(tx)
-        db.session.commit()
-        return jsonify({
-            'success': True, 'is_elite': True,
-            'message': 'Scan procesado (Plan Elite)',
-            'remaining': None
-        })
-
-    if not wallet.can_scan():
-        return jsonify({
-            'success': False, 'can_scan': False,
-            'message': 'Sin tokens disponibles.',
-            'remaining': 0
-        }), 402
-
-    # Descontar: primero plan_tokens, luego extra_tokens
-    if wallet.plan_tokens > 0:
-        wallet.plan_tokens -= 1
-        source_type = 'plan'
-    else:
-        wallet.extra_tokens -= 1
-        source_type = 'extra'
-
-    wallet.tokens_used_month += 1
-
-    tx = AITokenTransaction(
-        user_id=user.id, type='consume', amount=-1,
-        source='scanner_ia',
-        description=f'Análisis IA — descontado de {source_type}_tokens'
-    )
-    db.session.add(tx)
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'is_elite': False,
-        'remaining': wallet.total_available,
-        'plan_tokens': wallet.plan_tokens,
-        'extra_tokens': wallet.extra_tokens,
-        'message': f'Token consumido. Quedan {wallet.total_available} disponibles.'
-    })
-
-
-@tokens_bp.route('/api/tokens/refund', methods=['POST'])
-@csrf.exempt
-def token_refund():
-    """Reembolsar 1 token en caso de fallo técnico catastrófico."""
-    user = _get_user_from_request()
-    if not user:
-        return jsonify({'success': False, 'message': 'No autorizado'}), 401
-
-    wallet = initialize_or_reset_token_wallet(user)
-    if not wallet or wallet.is_elite:
-        return jsonify({'success': True, 'message': 'No requiere reembolso (Elite/No Wallet)'})
-
-    # Devolver 1 token al plan_tokens
-    wallet.plan_tokens += 1
-    
-    tx = AITokenTransaction(
-        user_id=user.id, type='refund', amount=1,
-        source='scanner_ia', description='Reembolso por fallo técnico OCR'
-    )
-    db.session.add(tx)
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'remaining': wallet.total_available,
-        'message': 'Token reembolsado con éxito'
     })
 
 

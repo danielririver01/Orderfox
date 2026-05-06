@@ -255,9 +255,10 @@
         </div>
 
 
-        <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
-        <script src="{{url_for('static',filename='js/public/interactions.js')}}"></script>
-        {% block extra_js %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+    <script src="{{url_for('static',filename='js/public/interactions.js')}}"></script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

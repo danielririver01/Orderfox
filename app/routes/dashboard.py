@@ -31,11 +31,46 @@ from app.utils.subscription import (
 import re
 import unicodedata
 
+import jwt
 import logging
 
 logger = logging.getLogger(__name__)
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
+
+@dashboard_bp.route('/ai-scan')
+@login_required
+def ai_scan_redirect():
+    """
+    Redirige al Scanner IA con un token JWT firmado para autenticación automática.
+    Resuelve el problema de sesión compartida entre Flask (puerto 5000) y Scanner IA (puerto 3000).
+    """
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    if not user or not user.clerk_id:
+        flash('Necesitas una cuenta vinculada a Clerk para usar el Scanner IA.', 'warning')
+        return redirect(url_for('dashboard.index'))
+    
+    scanner_url = current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000')
+    
+    # Generar token JWT con datos del usuario (expira en 5 minutos)
+    token_payload = {
+        'clerk_id': user.clerk_id,
+        'user_id': user.id,
+        'email': user.email,
+        'exp': datetime.now(timezone.utc) + timedelta(minutes=5),
+        'iat': datetime.now(timezone.utc)
+    }
+    
+    signed_token = jwt.encode(
+        token_payload,
+        current_app.config['SECRET_KEY'],
+        algorithm='HS256'
+    )
+    
+    # Redirigir a la página intermedia de autenticación en Scanner IA
+    return redirect(f'{scanner_url}/flask-auth?flask_token={signed_token}')
 
 @dashboard_bp.route('/')
 @login_required
@@ -166,35 +201,49 @@ def api_stats():
 @login_required
 @active_required
 def api_ai_stats():
-    """Puente Servidor a Servidor para traer los gastos de IA (Next.js)"""
+    """Calcula los gastos de tokens desde la tabla expense usando clerk_id"""
+    from datetime import datetime, timezone
+
     user_id = session.get('user_id')
     user = User.query.get(user_id)
-    
+
     if not user or not user.clerk_id:
-        # Si el usuario no tiene clerk_id, devolvemos 0 para no romper el panel
         return jsonify({'totalExpenses': 0, 'success': True})
 
-    range_type = request.args.get('range', 'today')
-    scanner_url = current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000')
-    api_key = current_app.config.get('SERVICE_API_KEY')
-    
-    if not api_key:
-        logger.error("Atención: SERVICE_API_KEY no está configurada en el archivo .env de Orderfox.")
-        return jsonify({'totalExpenses': 0, 'error': 'Falta API Key'}), 200
+    # Extraer el ID real del clerk_id (puede tener prefijos diferentes)
+    # users: clerk_authenticated_user_XXX o user_XXX
+    # expense: user_XXX
+    clerk_id = user.clerk_id
+    if 'user_' in clerk_id:
+        clerk_id = 'user_' + clerk_id.split('user_')[-1]
 
-    try:
-        resp = requests.get(
-            f"{scanner_url}/api/stats/summary?range={range_type}&userId={user.clerk_id}",
-            headers={'x-api-key': api_key},
-            timeout=5
-        )
-        if resp.status_code == 200:
-            return jsonify(resp.json())
+    range_type = request.args.get('range', 'today')
+    now = datetime.now(timezone.utc)
+
+    if range_type == 'today':
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        if now.month == 1:
+            start_date = now.replace(year=now.year - 1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            return jsonify({'totalExpenses': 0, 'error': f'Status {resp.status_code}'}), 200
-    except Exception as e:
-        logger.error(f"Error S2S a Next.js: {e}")
-        return jsonify({'totalExpenses': 0, 'error': 'Sin conexión IA'}), 200
+            start_date = now.replace(month=now.month - 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    query = db.text("""
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM expense
+        WHERE userId = :clerk_id AND date >= :start_date
+    """)
+
+    result = db.session.execute(query, {'clerk_id': clerk_id, 'start_date': start_date})
+    row = result.fetchone()
+    total_expenses = int(row[0]) if row else 0
+
+    logger.info(f"api_ai_stats: user={user.id}, clerk_id={clerk_id}, range={range_type}, expenses={total_expenses}")
+
+    return jsonify({
+        'totalExpenses': total_expenses,
+        'success': True
+    })
 
 @dashboard_bp.route('/Productos')
 @login_required

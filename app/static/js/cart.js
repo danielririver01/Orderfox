@@ -373,10 +373,17 @@ async function performCheckout(city = null, address = null, customerName = null,
         }
 
         let total = 0;
+        const items = [];
         for (const id in cart) {
             const item = cart[id];
             const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
             total += (item.price + extrasTotal) * item.quantity;
+            items.push({
+                productId: parseInt(id),
+                name: item.name,
+                quantity: item.quantity,
+                extras: item.extras.map(e => ({ name: e.name, price: e.price }))
+            });
         }
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -411,12 +418,9 @@ async function performCheckout(city = null, address = null, customerName = null,
             return;
         }
 
-        // --- NUEVO FLUJO: REDIRECCIÓN MERCADO PAGO O MODAL DE ÉXITO ---
         if (result.init_point) {
             showToast('¡Pedido creado! Redirigiendo al pago...', 'success');
-            // Limpiar carrito antes de irnos
             clearCart(true);
-            // Redirigir a Mercado Pago
             window.location.href = result.init_point;
         } else {
             showOrderSuccessModal(result);
@@ -485,7 +489,7 @@ function confirmAndRedirectWhatsApp() {
     const url = `https://wa.me/${businessPhone}?text=${encodeURIComponent(message)}`;
     
     window.open(url, '_blank');
-    location.reload(); // Refrescar para limpiar estado visual completo
+    location.reload();
 }
 
 function showToast(message, type = 'default') {

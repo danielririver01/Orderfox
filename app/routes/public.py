@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session
+from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session, send_from_directory
 from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table, Modifier
 from app import csrf
 from datetime import datetime, date, timedelta, timezone
@@ -6,6 +6,7 @@ from app.utils.subscription import is_subscription_active, check_feature_access
 from app.utils.rate_limiter import OrderRateLimiter
 import json
 import time
+import os
 
 public_bp = Blueprint('public', __name__)
 
@@ -317,4 +318,4 @@ def novedades(slug):
                          restaurant=restaurant,
                          categories=categories,
                          products=products,
-                         pagination=pagination)
+                          pagination=pagination)

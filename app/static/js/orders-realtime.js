@@ -13,7 +13,7 @@ let newOrdersToastVisible = false;
 let isFirstPoll = true;           // Para evitar notificar pedidos antiguos al cargar
 
 // Canal de comunicación entre pestañas para evitar duplicados
-const syncChannel = 'serviceWorker' in navigator ? new BroadcastChannel('velzia_orders_sync') : null;
+const syncChannel = new BroadcastChannel('velzia_orders_sync');
 if (syncChannel) {
     syncChannel.onmessage = (event) => {
         if (event.data && event.data.last_id > currentLastId) {
@@ -28,25 +28,9 @@ if (syncChannel) {
 document.addEventListener('DOMContentLoaded', () => {
     restoreSoundPreference();
     startPolling();
-    registerServiceWorker();
 
-    // Cualquier clic en la página habilita el contexto de audio si el sonido está activo
     document.addEventListener('click', unlockAudio, { once: true });
 });
-
-async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('/static/js/sw.js');
-
-            // Escuchar mensajes del Service Worker
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                if (event.data && event.data.action === 'REFRESH_ORDERS') {
-                    if (typeof refreshOrderList === 'function') {
-                        refreshOrderList();
-                    } else {
-                        window.location.reload();
-                    }
                 }
             });
         } catch (e) {

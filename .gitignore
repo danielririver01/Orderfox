@@ -85,8 +85,7 @@ bot_test_limiter.py
 static/uploads/
 
 #ignorar la descarga de SKILLS
-.agents/
 node_modules/
-video_presentation/
+
 
 
