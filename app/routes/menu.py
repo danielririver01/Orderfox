@@ -1,6 +1,6 @@
 # Agregar este endpoint a tu blueprint de menu (menu.py o routes/menu.py)
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from app.models import Product, Category, Restaurant
 from app.utils.subscription import is_subscription_active
 

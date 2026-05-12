@@ -31,15 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('click', unlockAudio, { once: true });
 });
-                }
-            });
-        } catch (e) {
-            console.warn('[Velzia] Error al registrar SW:', e);
-        }
-    }
-}
-
-
 
 // ─── Polling ─────────────────────────────────────────────────────────────────
 function startPolling() {

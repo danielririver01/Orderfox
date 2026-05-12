@@ -2,9 +2,9 @@
 {% block title %}Categorías{% endblock %}
 {% block content %}
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
-    <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-4 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">Categorías</h1>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Categorías</h1>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ categories|length }} categorías</p>
         </div>
         <a href="{{ url_for('dashboard.index') }}"
@@ -14,46 +14,46 @@
     </div>
 </header>
 
-<div class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-[65px] z-10 px-4 py-3">
-    <div class="max-w-md mx-auto relative">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span class="material-symbols-outlined text-gray-400 text-[20px]">search</span>
-        </span>
-        <input type="text" id="search-input"
-            class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#262626] rounded-xl leading-5 bg-gray-50 dark:bg-[#141414] text-text-main dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] sm:text-sm transition-all"
-            placeholder="Buscar categorías...">
-    </div>
-</div>
-
 {% if get_flashed_messages() %}
-<div class="max-w-md mx-auto px-4 pt-4">
+<div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 pt-4">
     {% include 'components/flash_messages.html' %}
 </div>
 {% endif %}
-<div class="max-w-md mx-auto px-4 py-6 pb-24 space-y-4">
-    {% if categories %}
-    {% for category in categories %}
-    <div class="category-card bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] shadow-sm p-5 transition-all active:scale-[0.99]"
-        data-category-id="{{ category.id }}" data-name="{{ category.name|lower }}">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4 flex-1 min-w-0 pr-4">
-                <!-- Miniatura de Imagen -->
-                <div
-                    class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
-                    {% if category.image_url %}
-                    <img src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
-                    {% else %}
-                    <div
-                        class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
-                        {{ category.name[0] }}
-                    </div>
-                    {% endif %}
-                </div>
 
-                <div class="flex-1 min-w-0">
-                    <div class="flex flex-col mb-1">
-                        <h3
-                            class="category-name font-black text-gray-900 dark:text-white tracking-tight text-base truncate">
+<div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-6 md:pb-16 overflow-x-hidden">
+    <div class="md:grid md:grid-cols-1 md:gap-6 lg:gap-8 items-start min-w-0" id="categories-grid">
+
+        <!-- LEFT COLUMN: Lista de categorías -->
+        <div class="w-full min-w-0" id="categories-column">
+            <!-- Buscador -->
+            <div class="mb-6">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-3 text-gray-400">search</span>
+                    <input type="text" id="search-input" placeholder="Buscar categorías..."
+                        class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] rounded-2xl focus:outline-none focus:border-[#f2460d] transition-colors text-sm">
+                </div>
+            </div>
+
+            <!-- Lista de categorías -->
+            <div class="space-y-3" id="categories-list">
+                {% if categories %}
+                {% for category in categories %}
+                <div class="category-card flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all min-w-0 overflow-hidden"
+                    data-category-id="{{ category.id }}" data-name="{{ category.name|lower }}">
+                    <!-- Miniatura -->
+                    <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
+                        {% if category.image_url %}
+                        <img src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
+                            {{ category.name[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="category-name font-black text-gray-900 dark:text-white tracking-tight text-base truncate">
                             {{ category.name }}</h3>
                         <div class="flex mt-1">
                             <span id="status-badge-{{ category.id }}"
@@ -61,68 +61,171 @@
                                       {{ 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' if category.is_active else 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' }}">
                                 <span id="status-dot-{{ category.id }}"
                                     class="w-1.5 h-1.5 rounded-full {{ 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' if category.is_active else 'bg-rose-500 opacity-20' }}"></span>
-                                <span id="status-text-{{ category.id }}">{{ 'Activa' if category.is_active else
-                                    'Inactiva' }}</span>
+                                <span id="status-text-{{ category.id }}">{{ 'Activa' if category.is_active else 'Inactiva' }}</span>
                             </span>
                         </div>
+                        {% if category.description %}
+                        <p class="text-[11px] text-gray-400 dark:text-gray-500 font-medium line-clamp-1 italic mt-1">"{{ category.description }}"</p>
+                        {% endif %}
                     </div>
-                    {% if category.description %}
-                    <p class="text-[11px] text-gray-400 dark:text-gray-500 font-medium line-clamp-1 italic">“{{
-                        category.description }}”</p>
-                    {% endif %}
+
+                    <!-- Acciones -->
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        <label class="relative inline-flex items-center cursor-pointer mr-2">
+                            <input type="checkbox" data-category-id="{{ category.id }}" class="sr-only peer" {% if category.is_active %}checked{% endif %}
+                                onchange="toggleCategory({{ category.id }}, this.checked, '{{ url_for('categories.update_status', id=category.id) }}')">
+                            <div class="w-11 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:shadow-[0_0_15px_rgba(16,185,129,0.4)] shadow-inner">
+                            </div>
+                        </label>
+
+                        <!-- Desktop: abre panel inline -->
+                        <button onclick="openCategoryForm({{ category.id }})"
+                            class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                            title="Editar Categoría">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <!-- Mobile: navega a página -->
+                        <a href="{{ url_for('categories.edit', id=category.id) }}"
+                            class="md:hidden w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                            title="Editar Categoría">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        </a>
+
+                        <form action="{{ url_for('categories.delete', id=category.id) }}" method="POST" class="hidden"
+                            id="delete-form-{{ category.id }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        </form>
+                        <button onclick="deleteCategory({{ category.id }}, '{{ category.name|e }}', '{{ url_for('categories.delete', id=category.id) }}')"
+                            class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                            title="Eliminar Categoría">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-20 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
+                    <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
+                    <button onclick="openCategoryForm()" class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea tu primera categoría</button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- No results -->
+            <div id="no-results" class="hidden text-center py-20">
+                <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">search_off</span>
+                <p class="text-gray-600 dark:text-gray-400 font-medium">No hay resultados para tu búsqueda</p>
+            </div>
+
+            <!-- Botón Nueva Categoría (Desktop) -->
+            <button onclick="openCategoryForm()"
+                class="hidden md:flex w-full mt-6 items-center justify-center gap-2 p-4 bg-white dark:bg-[#141414] rounded-2xl border-2 border-dashed border-gray-200 dark:border-[#262626] hover:border-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/5 transition-all cursor-pointer group">
+                <span class="material-symbols-outlined text-[#f2460d] group-hover:scale-110 transition-transform">add_circle</span>
+                <span class="text-[#f2460d] font-black text-sm uppercase tracking-widest">Nueva Categoría</span>
+            </button>
+        </div>
+
+        <!-- RIGHT COLUMN: Form Panel (Desktop/Tablet only) -->
+        <div class="hidden" id="category-form-panel-wrapper" style="z-index: 40;">
+            <div class="sticky top-24 bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col" style="max-height: calc(100vh - 8rem); overflow: hidden;">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[#262626]">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1" id="form-subtitle">Nueva Categoría</p>
+                        <h2 class="text-lg font-black text-gray-900 dark:text-white truncate" id="form-title">Crear Categoría</h2>
+                    </div>
+                    <button onclick="closeCategoryForm()" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1a1a] rounded-xl transition-all">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <!-- Form Content -->
+                <div id="form-scroll-area" class="flex-1 overflow-y-auto px-5 py-5" tabindex="-1" style="overscroll-behavior: contain;">
+                    <form id="category-form" enctype="multipart/form-data" onsubmit="saveCategory(event)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" id="form-category-id" value="">
+
+                        <!-- Imagen -->
+                        <div class="space-y-3 mb-6">
+                            <label class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">IMAGEN (OPCIONAL)</label>
+                            <div class="relative group">
+                                <input type="file" id="form-image" class="hidden" accept="image/*" onchange="previewFormImage(this)">
+                                <div id="form-image-preview" onclick="document.getElementById('form-image').click()"
+                                    class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
+                                    <div id="form-image-placeholder" class="flex flex-col items-center gap-2">
+                                        <span class="material-symbols-outlined text-4xl">add_a_photo</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-widest">Subir Imagen</span>
+                                    </div>
+                                    <img id="form-image-img" class="hidden w-full h-full object-cover absolute inset-0">
+                                </div>
+                                <button type="button" id="form-remove-image" onclick="removeFormImage()"
+                                    class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
+                                    <span class="material-symbols-outlined text-sm">close</span>
+                                </button>
+                            </div>
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1">* Recomendado: 800x800px. Máx 5MB.</p>
+                        </div>
+
+                        <!-- Nombre -->
+                        <div class="mb-5">
+                            <label class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">NOMBRE</label>
+                            <input type="text" id="form-name" required
+                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white"
+                                placeholder="Ej: Hamburguesas">
+                            <p id="form-name-error" class="hidden text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1"></p>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-5">
+                            <label class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN (OPCIONAL)</label>
+                            <textarea id="form-description" rows="3"
+                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-gray-700 dark:text-gray-300 resize-none"
+                                placeholder="Breve detalle de la categoría..."></textarea>
+                        </div>
+
+                        <!-- Toggle Activo -->
+                        <div class="flex items-center gap-3 px-1 mb-2">
+                            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                <input type="checkbox" id="form-is-active" class="sr-only peer" checked>
+                                <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner">
+                                </div>
+                            </label>
+                            <span class="ml-5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">CATEGORÍA VISIBLE</span>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Footer: Botones -->
+                <div class="px-5 py-4 border-t border-gray-100 dark:border-[#262626] space-y-3">
+                    <div class="flex gap-3">
+                        <button onclick="closeCategoryForm()"
+                            class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
+                            Cancelar
+                        </button>
+                        <button onclick="saveCategory(event)" id="form-save-btn"
+                            class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                            Guardar
+                        </button>
+                    </div>
+                    <button onclick="confirmDeleteCategory()" id="form-delete-btn"
+                        class="hidden w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                        Eliminar Categoría
+                    </button>
                 </div>
             </div>
-
-            <div class="flex items-center gap-1 flex-shrink-0">
-                <label class="relative inline-flex items-center cursor-pointer mr-2">
-                    <input type="checkbox" data-category-id="{{ category.id }}" class="sr-only peer" {% if
-                        category.is_active %}checked{% endif %}
-                        onchange="toggleCategory({{ category.id }}, this.checked, '{{ url_for('categories.update_status', id=category.id) }}')">
-                    <div
-                        class="w-11 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:shadow-[0_0_15px_rgba(16,185,129,0.4)] shadow-inner">
-                    </div>
-                </label>
-
-                <a href="{{ url_for('categories.edit', id=category.id) }}"
-                    class="w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
-                    title="Editar Categoría">
-                    <span class="material-symbols-outlined text-[20px]">edit</span>
-                </a>
-                <form action="{{ url_for('categories.delete', id=category.id) }}" method="POST" class="hidden"
-                    id="delete-form-{{ category.id }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                </form>
-                <button
-                    onclick="openDeleteModal(document.getElementById('delete-form-{{ category.id }}'), '¿Estás seguro de que deseas eliminar la categoría «{{ category.name }}»? Los productos en esta categoría no se eliminarán, pero quedarán sin categoría.', 'Eliminar Categoría')"
-                    class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-                    title="Eliminar Categoría">
-                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-            </div>
         </div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <div
-        class="text-center py-20 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
-        <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
-        <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
-        <a href="{{ url_for('categories.create') }}"
-            class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors">Crea tu primera categoría</a>
-    </div>
-    {% endif %}
 
-    <div id="no-results" class="hidden text-center py-20">
-        <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">search_off</span>
-        <p class="text-gray-600 dark:text-gray-400 font-medium">No hay resultados para tu búsqueda</p>
     </div>
 </div>
 
+<!-- FAB Mobile -->
 <a href="{{ url_for('categories.create') }}"
-    class="fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 active:scale-95 transition-all z-20">
+    class="md:hidden fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 active:scale-95 transition-all z-20">
     <span class="material-symbols-outlined text-[28px]">add</span>
 </a>
 
+<!-- Toast -->
 <div id="toast"
     class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
     <span id="toast-message"></span>
@@ -130,5 +233,7 @@
 
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}
+
 <script src="{{ url_for('static', filename='js/categories.js') }}"></script>
+<script src="{{ url_for('static', filename='js/categories-dashboard.js') }}"></script>
 {% endblock %}

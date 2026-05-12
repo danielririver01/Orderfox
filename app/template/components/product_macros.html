@@ -23,53 +23,55 @@
             </div>
             {% endif %}
 
-            <div class="product-header">
-                <div class="product-title-group">
-                    {% if show_category and product.category %}
-                    <span class="product-category-tag">{{ product.category.name }}</span>
-                    {% endif %}
-                    <h3 class="product-name">{{ product.name }}</h3>
-                </div>
-                <span class="product-price">${{ "{:,}".format(product.price) }}</span>
-            </div>
-
-            <p class="product-description">
-                {{ product.description or 'Deliciosa preparación con ingredientes de calidad.' }}
-            </p>
-
-            {% if product.modifiers %}
-            <div class="extras-container" id="extras-{{ product.id }}">
-                <span class="extras-label">Personaliza tu orden:</span>
-                {% for modifier in product.modifiers if modifier.is_active %}
-                <label class="extra-item">
-                    <div class="extra-info">
-                        <input type="checkbox" class="extra-checkbox" data-id="{{ modifier.id }}"
-                            data-name="{{ modifier.name }}" data-price="{{ modifier.extra_price }}"
-                            onchange="updateExtra({{ product.id }})" {% if ordering_disabled %}disabled{% endif %}>
-                        <span>{{ modifier.name }}</span>
+            <div class="product-info-content">
+                <div class="product-header">
+                    <div class="product-title-group">
+                        {% if show_category and product.category %}
+                        <span class="product-category-tag">{{ product.category.name }}</span>
+                        {% endif %}
+                        <h3 class="product-name">{{ product.name }}</h3>
                     </div>
-                    <b>+${{ "{:,}".format(modifier.extra_price) }}</b>
-                </label>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="product-actions">
-                {% if not ordering_disabled %}
-                <div class="quantity-controls">
-                    <button class="btn-qty" onclick="updateQty({{ product.id }}, -1)" aria-label="Disminuir">-</button>
-                    <span class="qty-display" id="qty-{{ product.id }}">0</span>
-                    <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)" aria-label="Aumentar">+</button>
+                    <span class="product-price">${{ "{:,}".format(product.price) }}</span>
                 </div>
-                {% else %}
-                <div class="view-only-badge">
-                    {% if restaurant.is_open %}
-                    Solo lectura
-                    {% else %}
-                    Cerrado
-                    {% endif %}
+
+                <p class="product-description">
+                    {{ product.description or 'Deliciosa preparación con ingredientes de calidad.' }}
+                </p>
+
+                {% if product.modifiers %}
+                <div class="extras-container" id="extras-{{ product.id }}">
+                    <span class="extras-label">Personaliza tu orden:</span>
+                    {% for modifier in product.modifiers if modifier.is_active %}
+                    <label class="extra-item">
+                        <div class="extra-info">
+                            <input type="checkbox" class="extra-checkbox" data-id="{{ modifier.id }}"
+                                data-name="{{ modifier.name }}" data-price="{{ modifier.extra_price }}"
+                                onchange="updateExtra({{ product.id }})" {% if ordering_disabled %}disabled{% endif %}>
+                            <span>{{ modifier.name }}</span>
+                        </div>
+                        <b>+${{ "{:,}".format(modifier.extra_price) }}</b>
+                    </label>
+                    {% endfor %}
                 </div>
                 {% endif %}
+
+                <div class="product-actions">
+                    {% if not ordering_disabled %}
+                    <div class="quantity-controls">
+                        <button class="btn-qty" onclick="updateQty({{ product.id }}, -1)" aria-label="Disminuir">-</button>
+                        <span class="qty-display" id="qty-{{ product.id }}">0</span>
+                        <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)" aria-label="Aumentar">+</button>
+                    </div>
+                    {% else %}
+                    <div class="view-only-badge">
+                        {% if restaurant.is_open %}
+                        Solo lectura
+                        {% else %}
+                        Cerrado
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
 

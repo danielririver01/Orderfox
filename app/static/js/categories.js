@@ -6,14 +6,12 @@ async function toggleCategory(id, newState, url = null) {
     const toggles = document.querySelectorAll(`input[data-category-id="${id}"]`);
     const endpoint = url || `/categories/${id}/status`;
     
-    // Guardar estado anterior por si falla
     let oldClasses, oldDotClasses, oldText;
     if (badge) {
         oldClasses = badge.className;
         oldDotClasses = dot.className;
         oldText = text.textContent;
 
-        // Actualización inmediata (Optimista)
         if (newState) {
             badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all duration-300 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20";
             dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]";
@@ -25,15 +23,12 @@ async function toggleCategory(id, newState, url = null) {
         }
     }
 
-    // Sincronizar toggles
     toggles.forEach(t => t.checked = newState);
 
     try {
         const response = await fetch(endpoint, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_active: newState })
         });
         
@@ -41,7 +36,6 @@ async function toggleCategory(id, newState, url = null) {
         if (!response.ok) throw new Error(data.error || 'Error al actualizar');
         
     } catch (error) {
-        // Revertir UI
         if (badge) {
             badge.className = oldClasses;
             dot.className = oldDotClasses;
@@ -58,41 +52,23 @@ async function toggleCategory(id, newState, url = null) {
     }
 }
 
-
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        const messageEl = document.getElementById('toast-message');
-        if (messageEl) messageEl.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
-}
-
 // Search and UI Functionality
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
-    const clearBtn = document.getElementById('clear-search');
     const categoryCards = document.querySelectorAll('.category-card');
     const noResults = document.getElementById('no-results');
     const messages = document.querySelectorAll('.flash-message');
 
-    // 1. Live Search
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
-            
-            if (clearBtn) {
-                clearBtn.classList.toggle('hidden', term === '');
-            }
-
             let visibleCount = 0;
 
             categoryCards.forEach(card => {
                 const name = card.dataset.name || "";
                 
                 if (name.includes(term)) {
-                    card.style.display = 'block';
+                    card.style.display = 'flex';
                     visibleCount++;
                 } else {
                     card.style.display = 'none';
@@ -105,16 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Clear Search
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            searchInput.dispatchEvent(new Event('input'));
-            searchInput.focus();
-        });
-    }
-
-    // 3. Auto-hide flash messages
     messages.forEach(msg => {
         setTimeout(() => {
             msg.style.opacity = '0';

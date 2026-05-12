@@ -15,7 +15,7 @@ from app.utils.subscription import sanitize_restaurant_limits, initialize_or_res
 
 auth_bp = Blueprint('auth', __name__)
 
-from app.extensions import csrf
+from app.csrf import csrf
 
 RESERVED_SLUGS = {
     'scanner-ia', 'admin', 'api', 'dashboard', 'velzia', 'soporte', 'help', 
@@ -275,7 +275,8 @@ def register():
         session['selected_plan'] = plan
     
     # Renderizamos la página de registro (ahora manejada por Clerk SignUp en el cliente)
-    return render_template('auth/register_verify.html', step='email')
+    selected_plan = session.get('selected_plan', 'emprendedor')
+    return render_template('auth/register_verify.html', step='email', plan=selected_plan)
 
 # Rutas de OTP legadas eliminadas - Velzia 2.0.0 usa Clerk para identidad gestionada
 

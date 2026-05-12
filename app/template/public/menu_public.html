@@ -1,65 +1,300 @@
-{% extends "public_base.html" %}
+<!DOCTYPE html>
+<html lang="es" class="dark" data-theme="dark">
 
-{% block title %}Menú - {{ restaurant.name }}{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ restaurant.name }} - Menú</title>
+    <link rel="icon"
+        href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%237c3aed'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
+        type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/public/menu_public.css') }}">
+</head>
 
-{% block content %}
-{% for category in categories %}
-<section class="category-section">
-    <h2 class="category-title">{{ category.name }}</h2>
-    {% if category.description %}
-    <p class="category-description">{{ category.description }}</p>
-    {% endif %}
+<body>
 
-    <div class="product-grid">
-        {% for product in category.products if product.is_active %}
-        <article class="product-card" data-id="{{ product.id }}" data-name="{{ product.name }}"
-            data-price="{{ product.price }}">
-            <div class="product-header">
-                <h3 class="product-name">{{ product.name }}</h3>
-                <span class="product-price">${{ "{:,}".format(product.price) }}</span>
-            </div>
-            {% if product.description %}
-            <p class="product-description">{{ product.description }}</p>
-            {% else %}
-            <p class="product-description">Preparado con ingredientes frescos y el toque artesanal que nos distingue.
-            </p>
-            {% endif %}
+<div class="menu-layout">
 
-            <span class="fresh-badge">✓ Hecho al momento</span>
+    <!-- ===== SIDEBAR IZQUIERDO: Categorías + Carrito ===== -->
+    <aside class="sidebar-left" id="sidebarLeft">
+        <div class="sidebar-logo">
+            <h2>{{ restaurant.name }}</h2>
+            <span class="restaurant-tag">Menú Digital</span>
+        </div>
 
-            {% if product.modifiers %}
-            <div class="extras-container" id="extras-{{ product.id }}">
-                <span class="extras-title">Personaliza tu pedido:</span>
-                <div class="extras-chips-grid">
-                    {% for modifier in product.modifiers if modifier.is_active %}
-                    <label class="extra-chip">
-                        <input type="checkbox" class="extra-checkbox" data-product-id="{{ product.id }}"
-                            data-name="{{ modifier.name }}" data-price="{{ modifier.extra_price }}"
-                            onchange="updateExtra({{ product.id }})">
-                        <span class="chip-check">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
-                        </span>
-                        <span class="chip-name">{{ modifier.name }}</span>
-                        <span class="chip-price">+${{ "{:,}".format(modifier.extra_price) }}</span>
-                    </label>
-                    {% endfor %}
+        <div class="sidebar-search">
+            <input type="text" class="sidebar-search-input" id="sidebarSearch" placeholder="Buscar categoría...">
+        </div>
+
+        <nav class="categories-list" id="categoriesList">
+            {% for category in categories %}
+            <a href="#cat-{{ category.id }}" class="category-item {% if loop.first %}active{% endif %}"
+               data-category-id="{{ category.id }}">
+                <div class="category-item-icon">
+                    {% if category.image_url %}
+                        <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" loading="lazy">
+                    {% else %}
+                        <span class="cat-initial">{{ category.name[0] }}</span>
+                    {% endif %}
+                </div>
+                <span class="cat-name">{{ category.name }}</span>
+                <span class="cat-count">{{ category.active_product_count }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+
+        <div class="cart-summary">
+            <div class="cart-summary-header">
+                <span class="label">Pedido actual</span>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="badge" id="cartCountBadge">0</span>
+                    <button class="btn-cancel-cart" id="btnCancelCart" onclick="cancelOrder()" title="Cancelar pedido">×</button>
                 </div>
             </div>
-            {% endif %}
+            <div class="cart-summary-total" id="cartSummaryTotal">$0</div>
+            <button class="btn-ver-pedido" id="btnVerPedido" disabled onclick="openCheckoutModal()">
+                Comprar ahora
+            </button>
+        </div>
+    </aside>
 
-            <div class="quantity-controls">
-                <button class="btn-qty btn-minus" onclick="updateQty({{ product.id }}, -1)">-</button>
-                <span class="qty-display" id="qty-{{ product.id }}">0</span>
-                <button class="btn-qty btn-plus" onclick="updateQty({{ product.id }}, 1)">+</button>
+    <!-- ===== ÁREA CENTRAL: Productos ===== -->
+    <main class="products-area" id="productsArea">
+        <!-- Banner cerrado -->
+        {% if not restaurant.is_active or ordering_disabled %}
+        <div class="mp-closed-banner">
+            <h3>{% if not restaurant.is_open %}{{ restaurant.name }} se encuentra cerrado{% else %}Pedidos desactivados{% endif %}</h3>
+            <p>Puedes explorar nuestro menú, pero los pedidos están desactivados temporalmente.</p>
+        </div>
+        {% endif %}
+
+        <!-- Header sticky con búsqueda -->
+        <div class="products-sticky-header">
+            <div class="products-header-row">
+                <h2 id="currentCategoryTitle">{{ categories[0].name if categories else 'Menú' }}</h2>
+                <div class="products-search-box">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="search" id="productSearch" placeholder="Buscar producto..." autocomplete="off">
+                </div>
             </div>
-        </article>
+        </div>
+
+        <!-- Sin resultados -->
+        <div class="no-search-results" id="noSearchResults">
+            <h3>No encontramos resultados</h3>
+            <p>Intenta buscar con otras palabras</p>
+        </div>
+
+        <!-- Secciones de productos por categoría -->
+        {% for category in categories %}
+        <section id="cat-{{ category.id }}" class="category-section" data-category-id="{{ category.id }}">
+            <div class="category-section-header">
+                <span class="category-section-title">{{ category.name }}</span>
+                <span class="category-section-count">{{ category.active_product_count }} productos</span>
+            </div>
+
+            <div class="products-grid">
+                {% for product in category.products %}
+                <article class="product-card" id="product-{{ product.id }}" data-id="{{ product.id }}"
+                    data-name="{{ product.name }}" data-price="{{ product.price }}"
+                    data-description="{{ product.description or '' }}"
+                    data-keywords="{{ product.name|lower }} {{ product.description|lower if product.description else '' }} {{ category.name|lower }}"
+                    data-modifiers='[{% for mod in product.modifiers if mod.is_active %}{"id":{{ mod.id }},"name":"{{ mod.name }}","extra_price":{{ mod.extra_price }}}{% if not loop.last %},{% endif %}{% endfor %}]'>
+
+                    <div class="product-card-inner" id="card-inner-{{ product.id }}">
+                        <!-- Cara Frontal -->
+                        <div class="product-card-front">
+                            <button class="btn-flip-card" onclick="flipCard({{ product.id }})" title="Ver info y QR">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+                                </svg>
+                            </button>
+
+                            {% if product.image_url %}
+                            <div class="product-image-wrap">
+                                <img src="{{ get_image_url(product.image_url) }}" alt="{{ product.name }}" loading="lazy">
+                            </div>
+                            {% else %}
+                            <div class="product-image-wrap">
+                                <div class="detail-image-fallback" style="aspect-ratio:4/3;height:100%;">{{ product.name[0] }}</div>
+                            </div>
+                            {% endif %}
+
+                            <div class="product-info-content">
+                                <div class="product-card-info">
+                                    <h3 class="product-card-name">{{ product.name }}</h3>
+                                    <span class="product-card-price">${{ "{:,}".format(product.price) }}</span>
+                                </div>
+
+                                <p class="product-card-desc">{{ product.description or '' }}</p>
+
+                                <div class="product-card-bottom">
+                                    {% if not ordering_disabled %}
+                                    <button class="btn-add-card" onclick="event.stopPropagation(); openProductDetail({{ product.id }})"
+                                        title="Agregar al pedido">+</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cara Trasera (QR & Share) -->
+                        <div class="product-card-back">
+                            <button class="btn-flip-card" onclick="flipCard({{ product.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <div class="qr-container">
+                                <div class="qr-loading">Generando QR...</div>
+                                <img id="qr-{{ product.id }}" class="qr-image" src="" alt="QR {{ product.name }}">
+                                <button class="btn-share-premium" onclick="shareProduct({{ product.id }}, '{{ product.name }}', '{{ category.name }}')">
+                                    Compartir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
         {% endfor %}
+    </main>
+
+    <!-- ===== PANEL DERECHO: Detalle de Producto ===== -->
+    <aside class="detail-panel" id="detailPanel">
+        <!-- Botón cerrar siempre visible -->
+        <button class="btn-close-detail" onclick="closeDetailPanel()">×</button>
+
+        <!-- Estado vacío -->
+        <div class="detail-empty" id="detailEmpty">
+            <div class="detail-empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+            </div>
+            <h3>Selecciona un producto</h3>
+            <p>Presiona "+" para ver el detalle</p>
+        </div>
+
+        <!-- Contenido del detalle (se llena con JS) -->
+        <div class="detail-content" id="detailContent">
+            <div id="detailBody"></div>
+        </div>
+    </aside>
+</div>
+
+<!-- Overlay para cerrar panel en tablet (fuera del grid) -->
+<div class="detail-panel-overlay" id="detailPanelOverlay" onclick="closeDetailPanel()"></div>
+
+<!-- Botón toggle sidebar en mobile -->
+<button class="btn-toggle-sidebar" id="btnToggleSidebar" onclick="toggleSidebar()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+</button>
+
+<!-- Overlay para sidebar en mobile -->
+<div class="mp-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Toast notification -->
+<div class="mp-toast" id="mpToast"></div>
+
+<!-- ===== MODAL DE CHECKOUT ===== -->
+<div id="address-modal" class="mp-modal">
+    <div class="mp-modal-overlay" onclick="closeAddressModal()"></div>
+    <div class="mp-modal-box">
+        <div class="mp-modal-header">
+            <div class="mp-modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+            </div>
+            <h3 class="mp-modal-title">Checkout</h3>
+            <p class="mp-modal-subtitle">Información de Envío</p>
+        </div>
+        <div class="mp-modal-body">
+            <div class="mp-form-row">
+                <div class="mp-form-group">
+                    <label class="mp-form-label">Nombre</label>
+                    <input type="text" id="delivery-name" placeholder="Tu nombre" class="mp-form-input">
+                </div>
+                <div class="mp-form-group">
+                    <label class="mp-form-label">WhatsApp</label>
+                    <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel" class="mp-form-input">
+                </div>
+            </div>
+            <div class="mp-form-group" style="margin-bottom:1.25rem;">
+                <label class="mp-form-label">Dirección de Entrega</label>
+                <input type="text" id="delivery-address" placeholder="Ej: Calle 123 #45-67" class="mp-form-input">
+            </div>
+            <div class="mp-form-actions">
+                <button onclick="closeAddressModal()" class="mp-btn-secondary">Volver</button>
+                <button onclick="processOrderWithAddress()" class="mp-btn-primary">Confirmar y Pedir</button>
+            </div>
+        </div>
     </div>
-</section>
-{% endfor %}
-{% endblock %}
+</div>
 
+<!-- Modal de Éxito -->
+<div id="order-success-modal" class="mp-modal">
+    <div class="mp-modal-overlay"></div>
+    <div class="mp-modal-box" style="max-width:24rem;">
+        <div style="padding:2.5rem 1.5rem 1.5rem;text-align:center;">
+            <div class="mp-success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <h2 style="font-size:1.5rem;font-weight:900;color:white;margin:0 0 0.5rem;letter-spacing:-0.5px;">¡Pedido Exitoso!</h2>
+            <p id="success-modal-description" style="font-size:0.85rem;color:#71717a;font-weight:500;line-height:1.5;margin:0 0 1.25rem;">
+                Tu pedido está en el sistema. <strong style="color:#a1a1aa;">Confírmalo por WhatsApp</strong> para que lo preparen más rápido.
+            </p>
+            <div class="mp-success-details">
+                <div class="mp-success-row">
+                    <span class="mp-success-label">Nº de Orden</span>
+                    <span id="success-order-number" class="mp-success-value">ORD-000</span>
+                </div>
+                <p class="mp-success-total-label">Total a Pagar</p>
+                <div id="success-order-total" class="mp-success-total">$0</div>
+            </div>
+            <button id="btn-confirm-whatsapp" onclick="confirmAndRedirectWhatsApp()" class="mp-btn-confirm-wa">
+                Confirmar WhatsApp
+            </button>
+            <button id="btn-volver-menu" onclick="location.reload()" class="mp-btn-back">
+                Volver al inicio
+            </button>
+        </div>
+    </div>
+</div>
 
+<!-- Variables globales para JS -->
+{% if restaurant %}
+<script>
+    window.businessPhone = "{{ restaurant.whatsapp_phone }}";
+    window.restaurantId = {{ restaurant.id }};
+    window.restaurantSlug = "{{ restaurant.slug }}";
+    window.menuAvailable = {% if restaurant.is_active and not ordering_disabled %}true{% else %}false{% endif %};
+    window.CART_KEY = 'velziaCart_' + window.restaurantId;
+    window.isTableOrder = {{ 'true' if session.get('table_id') else 'false' }};
+</script>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/public/menu-public.js') }}"></script>
+
+</body>
+</html>

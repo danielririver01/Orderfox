@@ -4,9 +4,9 @@
 {% block content %}
 
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
-    <div class="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="max-w-2xl md:max-w-none mx-auto px-4 md:px-10 py-4 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">Productos</h1>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Productos</h1>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ products|length }} productos</p>
         </div>
         <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white">
@@ -15,149 +15,296 @@
     </div>
 </header>
 
-<div class="max-w-2xl mx-auto px-4 py-6">
-    <!-- Buscador -->
-    <div class="mb-6">
-        <div class="relative">
-            <span class="material-symbols-outlined absolute left-3 top-3 text-gray-400">search</span>
-            <input type="text" id="searchProducts" placeholder="Buscar productos..."
-                class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] rounded-2xl focus:outline-none focus:border-[#f2460d] transition-colors text-sm">
-        </div>
-    </div>
+<div class="max-w-2xl md:max-w-none mx-auto px-4 md:px-10 py-6 md:pb-16 overflow-x-hidden">
+    <div class="md:grid md:grid-cols-1 md:gap-6 lg:gap-8 items-start min-w-0" id="products-grid">
 
-    <!-- Contenedor de resultados de búsqueda (inicialmente oculto) -->
-    <div id="searchResults" class="space-y-3 mb-8 hidden">
-        {% if products %}
-        {% for product in products %}
-        <div
-            class="product-result-item flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all">
-            <!-- Imagen -->
-            <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                {% if product.image_url %}
-                <img src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
-                {% else %}
-                <div class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">{{
-                    product.name[0] }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Info -->
-            <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-gray-900 dark:text-white truncate">{{ product.name }}</h3>
-                {% if product.description %}
-                <p class="text-xs text-gray-500 truncate">{{ product.description }}</p>
-                {% endif %}
-                <div class="mt-2">
-                    <span class="text-lg font-black text-[#f2460d] block">${{ '{:,}'.format(product.price) }}</span>
-                    <div class="flex mt-1">
-                        <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 
-                                    {% if product.is_active %}
-                                        bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20
-                                    {% else %}
-                                        bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20
-                                    {% endif %}">
-                            <div id="status-dot-{{ product.id }}"
-                                class="w-1 h-1 rounded-full {% if product.is_active %}bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]{% else %}bg-rose-500 opacity-20{% endif %}">
-                            </div>
-                            <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo'
-                                }}</span>
-                        </div>
-                    </div>
+        <!-- LEFT COLUMN: Products -->
+        <div class="md:col-span-1 w-full min-w-0" id="products-column">
+            <!-- Buscador -->
+            <div class="mb-6">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-3 text-gray-400">search</span>
+                    <input type="text" id="searchProducts" placeholder="Buscar productos..."
+                        class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] rounded-2xl focus:outline-none focus:border-[#f2460d] transition-colors text-sm">
                 </div>
             </div>
 
-            <!-- Acciones -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" data-product-id="{{ product.id }}" class="sr-only peer product-toggle" {% if
-                        product.is_active %}checked{% endif %} onchange="toggleProduct({{ product.id }}, this.checked)">
-                    <div
-                        class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]">
-                    </div>
-                </label>
-                <a href="{{ url_for('products.edit', id=product.id) }}"
-                    class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#f2460d] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
-                    <span class="material-symbols-outlined">edit</span>
-                </a>
-                <a href="{{ url_for('products.modifiers', product_id=product.id) }}"
-                    class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded-lg transition-all"
-                    title="Gestionar extras">
-                    <span class="material-symbols-outlined">tune</span>
-                </a>
-                <form action="{{ url_for('products.delete', id=product.id) }}" method="POST"
-                    id="delete-form-search-{{ product.id }}" style="display:none;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                </form>
-                <button
-                    onclick="openDeleteModal(document.getElementById('delete-form-search-{{ product.id }}'), 'Este producto se eliminará permanentemente del menú.', '¿Eliminar {{ product.name }}?')"
-                    class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 rounded-lg transition-all">
-                    <span class="material-symbols-outlined">delete</span>
-                </button>
-            </div>
-        </div>
-        {% endfor %}
-        {% endif %}
-    </div>
-
-    <!-- Grid de Categorías (se oculta cuando hay búsqueda) -->
-    <div id="categoriesGrid">
-        {% if plan_limits.max_products < 1000000 %} <div
-            class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
-            <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
-                <span class="text-blue-800 dark:text-blue-400">Plan {{ plan_limits.name }}</span>
-                <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products
-                    }} ACTIVOS</span>
-            </div>
-            <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-2">
-                <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700"
-                    style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
-            </div>
-    </div>
-    {% endif %}
-
-    <!-- Grid de Categorías -->
-    {% if categories %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for category in categories %}
-        {% set category_products = products | selectattr('category_id', 'equalto', category.id) | list %}
-
-        <a href="{{ url_for('products.by_category', category_id=category.id) }}"
-            class="category-card block bg-white dark:bg-[#141414] rounded-2xl border-2 border-gray-200 dark:border-[#262626] p-6 hover:border-[#f2460d] hover:shadow-lg hover:scale-105 transition-all">
-            <!-- Header de categoría -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3 flex-1">
-                    <div class="w-14 h-14 rounded-xl bg-[#f2460d] flex items-center justify-center flex-shrink-0">
-                        {% if category.image_url %}
-                        <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}"
-                            class="w-full h-full object-cover rounded-xl">
+            <!-- Contenedor de resultados de búsqueda (inicialmente oculto) -->
+            <div id="searchResults" class="space-y-3 mb-8 hidden">
+                {% if products %}
+                {% for product in products %}
+                <div
+                    class="product-result-item flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all min-w-0 overflow-hidden">
+                    <!-- Imagen -->
+                    <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                        {% if product.image_url %}
+                        <img src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
                         {% else %}
-                        <span class="text-white font-black text-lg">{{ category.name[0] }}</span>
+                        <div class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">{{
+                            product.name[0] }}</div>
                         {% endif %}
                     </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white">{{ category.name }}</h3>
-                        <p class="text-xs text-gray-500">{{ category_products|length }} productos</p>
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-900 dark:text-white truncate">{{ product.name }}</h3>
+                        {% if product.description %}
+                        <p class="text-xs text-gray-500 truncate">{{ product.description }}</p>
+                        {% endif %}
+                        <div class="mt-2">
+                            <span class="text-lg font-black text-[#f2460d] block">${{ '{:,}'.format(product.price) }}</span>
+                            <div class="flex mt-1">
+                                <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 
+                                            {% if product.is_active %}
+                                                bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20
+                                            {% else %}
+                                                bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20
+                                            {% endif %}">
+                                    <div id="status-dot-{{ product.id }}"
+                                        class="w-1 h-1 rounded-full {% if product.is_active %}bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]{% else %}bg-rose-500 opacity-20{% endif %}">
+                                    </div>
+                                    <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo'
+                                        }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" data-product-id="{{ product.id }}" class="sr-only peer product-toggle" {% if
+                                product.is_active %}checked{% endif %} onchange="toggleProduct({{ product.id }}, this.checked)">
+                            <div
+                                class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]">
+                            </div>
+                        </label>
+                        <a href="{{ url_for('products.edit', id=product.id) }}"
+                            class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#f2460d] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
+                            <span class="material-symbols-outlined">edit</span>
+                        </a>
+                        <button
+                            onclick="openModifiersModal({{ product.id }}, '{{ product.name|e }}')"
+                            class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded-lg transition-all"
+                            title="Gestionar extras">
+                            <span class="material-symbols-outlined">tune</span>
+                        </button>
+                        <form action="{{ url_for('products.delete', id=product.id) }}" method="POST"
+                            id="delete-form-search-{{ product.id }}" style="display:none;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        </form>
+                        <button
+                            onclick="openDeleteModal(document.getElementById('delete-form-search-{{ product.id }}'), 'Este producto se eliminará permanentemente del menú.', '¿Eliminar {{ product.name }}?')"
+                            class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 rounded-lg transition-all">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
                     </div>
                 </div>
-                <span class="material-symbols-outlined text-gray-400">arrow_forward</span>
+                {% endfor %}
+                {% endif %}
             </div>
-        </a>
-        {% endfor %}
+
+            <!-- Grid de Categorías (se oculta cuando hay búsqueda) -->
+            <div id="categoriesGrid">
+                {% if plan_limits.max_products < 1000000 %} <div
+                    class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+                    <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
+                        <span class="text-blue-800 dark:text-blue-400">Plan {{ plan_limits.name }}</span>
+                        <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products
+                            }} ACTIVOS</span>
+                    </div>
+                    <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
+                        <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700"
+                            style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
+                    </div>
+            </div>
+            {% endif %}
+
+            <!-- Grid de Categorías -->
+            {% if categories %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden">
+                {% for category in categories %}
+                {% set category_products = products | selectattr('category_id', 'equalto', category.id) | list %}
+
+                <a href="{{ url_for('products.by_category', category_id=category.id) }}"
+                    class="category-card block bg-white dark:bg-[#141414] rounded-2xl border-2 border-gray-200 dark:border-[#262626] p-6 hover:border-[#f2460d] hover:shadow-lg hover:scale-[1.02] transition-all overflow-hidden">
+                    <!-- Header de categoría -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="w-14 h-14 rounded-xl bg-[#f2460d] flex items-center justify-center flex-shrink-0">
+                                {% if category.image_url %}
+                                <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}"
+                                    class="w-full h-full object-cover rounded-xl">
+                                {% else %}
+                                <span class="text-white font-black text-lg">{{ category.name[0] }}</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 dark:text-white">{{ category.name }}</h3>
+                                <p class="text-xs text-gray-500">{{ category_products|length }} productos</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">arrow_forward</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-20">
+                <span class="material-symbols-outlined text-gray-300 text-5xl mb-4">inventory_2</span>
+                <p class="text-gray-500">No hay categorías</p>
+            </div>
+            {% endif %}
+        </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Modifiers Panel (Desktop only) -->
+        <div class="hidden" id="desktop-modifiers-panel-wrapper" style="z-index: 40;">
+            <div class="sticky top-24 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl flex flex-col relative" style="max-height: calc(100vh - 8rem);">
+
+                <!-- Header -->
+                <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Extras de</p>
+                        <h2 id="desktop-product-name" class="text-lg font-black text-white truncate">Selecciona un producto</h2>
+                    </div>
+                    <button onclick="closeModifiersModal()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all ml-3">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                {% if has_modifiers_access %}
+                <!-- Tip -->
+                <div class="flex items-start gap-2.5 px-5 py-3 bg-blue-500/5 border-b border-blue-500/10">
+                    <span class="material-symbols-outlined text-blue-400 text-[16px] mt-0.5">lightbulb</span>
+                    <p class="text-[10px] text-blue-400 font-medium leading-relaxed">Los extras aumentan el ticket promedio. Ej: "Doble Carne +$5.000"</p>
+                </div>
+
+                <!-- Modifiers List -->
+                <div id="desktop-modifiers-list" class="flex-1 overflow-y-auto px-5 py-4 space-y-2" style="overscroll-behavior: contain;">
+                    <div class="text-center py-12">
+                        <span class="material-symbols-outlined text-gray-600 text-[40px] mb-3">touch_app</span>
+                        <p class="text-gray-500 text-sm font-medium">Sin producto seleccionado</p>
+                        <p class="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-bold">Toca el ícono tune de un producto</p>
+                    </div>
+                </div>
+
+                <!-- Add Form -->
+                <div id="desktop-modifier-add-form" class="hidden border-t border-[#262626] px-5 py-4 space-y-3">
+                    <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Extra</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="desktop-modifier-name" placeholder="Ej: Doble carne"
+                            class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+                        <input type="number" id="desktop-modifier-price" placeholder="Precio" min="0"
+                            class="w-28 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+                    </div>
+                    <button id="desktop-modifier-add-btn" onclick="addModifier()"
+                        class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                        Agregar Extra
+                    </button>
+                </div>
+                {% else %}
+                <!-- Premium Lock Overlay -->
+                <div class="flex-1 flex items-center justify-center p-6">
+                    <div class="text-center max-w-[260px]">
+                        <div class="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-500 text-[32px]">workspace_premium</span>
+                        </div>
+                        <h3 class="text-lg font-black text-white mb-2 tracking-tight">Función Plan Élite</h3>
+                        <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con extras y modificadores ilimitados para tus clientes.</p>
+                        <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full bg-[#f2460d] text-white font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
+                            Desbloquear Ahora
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
     </div>
-    {% else %}
-    <div class="text-center py-20">
-        <span class="material-symbols-outlined text-gray-300 text-5xl mb-4">inventory_2</span>
-        <p class="text-gray-500">No hay categorías</p>
-    </div>
-    {% endif %}
-</div>
 </div>
 
+<!-- FAB (hidden on desktop) -->
 <a href="{{ url_for('products.create') }}"
-    class="fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl z-20">
+    class="md:hidden fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl z-20">
     <span class="material-symbols-outlined">add</span>
 </a>
 
+<!-- FAB Desktop -->
+<a href="{{ url_for('products.create') }}"
+    class="hidden md:flex fixed bottom-8 right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all z-20">
+    <span class="material-symbols-outlined text-[28px]">add</span>
+</a>
+
+<!-- Modifiers Modal (Mobile only) -->
+<div id="modifiers-modal" class="fixed inset-0 z-[9999] hidden md:hidden">
+    <style>
+        .modifiers-panel { max-width: 100%; }
+    </style>
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModifiersModal()"></div>
+
+    <!-- Panel -->
+    <div id="mobile-modifiers-panel" class="modifiers-panel absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#141414] border-l border-[#262626] shadow-2xl flex flex-col transition-transform duration-300 ease-out z-50" style="transform: translateX(100%);">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">
+            <div class="flex-1 min-w-0">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Extras de</p>
+                <h2 id="modifiers-product-name" class="text-lg font-black text-white truncate"></h2>
+            </div>
+            <button onclick="closeModifiersModal()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all ml-3">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <!-- Modifiers List -->
+        <div id="modifiers-list" class="flex-1 overflow-y-auto px-5 py-4 space-y-2">
+        </div>
+
+        {% if not has_modifiers_access %}
+        <!-- Premium Lock Overlay (Mobile) -->
+        <div id="mobile-premium-lock" class="flex-1 flex items-center justify-center p-6">
+            <div class="text-center max-w-[260px]">
+                <div class="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <span class="material-symbols-outlined text-amber-600 dark:text-amber-500 text-[32px]">workspace_premium</span>
+                </div>
+                <h3 class="text-lg font-black text-white mb-2 tracking-tight">Función Plan Élite</h3>
+                <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con extras y modificadores ilimitados para tus clientes.</p>
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full bg-[#f2460d] text-white font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
+                    Desbloquear Ahora
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Add Form -->
+        <div id="modifier-add-form" class="hidden border-t border-[#262626] px-5 py-4 space-y-3">
+            <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Extra</p>
+            <div class="flex gap-2">
+                <input type="text" id="modifier-name" placeholder="Ej: Doble carne"
+                    class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+                <input type="number" id="modifier-price" placeholder="Precio" min="0"
+                    class="w-28 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+            </div>
+            <button id="modifier-add-btn" onclick="addModifier()"
+                class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Agregar Extra
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const hasModifiersAccess = {{ has_modifiers_access|tojson }};
+</script>
 <script src="{{ url_for('static', filename='js/products-dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modifiers-modal.js') }}"></script>
 {% endblock %}

@@ -2,9 +2,9 @@
 {% block title %}Pedidos{% endblock %}
 {% block content %}
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
-  <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+  <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-4 flex justify-between items-center">
     <div>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Pedidos de Hoy</h1>
+      <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Pedidos de Hoy</h1>
       <p class="text-xs text-gray-500 dark:text-gray-400" id="orders-count">
         {{ (pending|length + confirmed|length + delivered|length) }} pedidos
       </p>
@@ -15,7 +15,6 @@
         class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:text-blue-500 transition-all border border-gray-200 dark:border-[#262626]">
         <span class="material-symbols-outlined text-[20px]" id="sort-icon">arrow_upward</span>
       </button>
-
 
       <!-- Botón de activar/silenciar notificaciones de sonido -->
       <button id="sound-toggle-btn" title="Activar alertas sonoras" onclick="toggleSound()"
@@ -33,13 +32,46 @@
 
 
 <!-- Contenedor principal de pedidos (target del AJAX refresh) -->
-<div class="max-w-md mx-auto px-4 py-6 space-y-6" id="orders-container">
-  {% include 'dashboard/_orders_list.html' %}
+<div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-6 md:pb-16" id="orders-container">
+  <!-- Mobile: Lista vertical | Desktop: Kanban 3 columnas + Detail Panel -->
+  <div class="md:flex md:gap-6" id="orders-grid">
+    <!-- Orders List -->
+    <div class="md:flex-1 space-y-6 md:grid md:grid-cols-3 md:gap-6 md:space-y-0" id="orders-list-wrapper">
+      {% include 'dashboard/_orders_list.html' %}
+    </div>
+
+    <!-- Detail Panel (Desktop only, hidden by default) -->
+    <div id="order-detail-panel" class="hidden md:w-[380px] md:flex-shrink-0" style="z-index: 40;">
+      <div class="sticky top-24 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl flex flex-col" style="max-height: calc(100vh - 8rem);">
+        <!-- Header with close button -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626] flex-shrink-0">
+          <h2 class="text-sm font-black text-white uppercase tracking-widest">Detalle del Pedido</h2>
+          <button onclick="closeOrderDetail()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <!-- Content (loaded via AJAX) -->
+        <div id="order-detail-content" class="hidden flex-col overflow-y-auto flex-1" style="min-height: 0; overscroll-behavior: contain;">
+          <!-- Content will be injected here -->
+        </div>
+        <!-- Loading State -->
+        <div id="order-detail-loading" class="hidden flex-1 flex items-center justify-center p-8">
+          <div class="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- FAB -->
+<!-- FAB (hidden on desktop, sidebar has navigation) -->
 <a href="{{ url_for('orders.create') }}"
-  class="fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 active:scale-95 transition-all z-20">
+  class="md:hidden fixed bottom-24 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 active:scale-95 transition-all z-20">
+  <span class="material-symbols-outlined text-[28px]">add</span>
+</a>
+
+<!-- FAB Desktop -->
+<a href="{{ url_for('orders.create') }}"
+  class="hidden md:flex fixed bottom-8 right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all z-20">
   <span class="material-symbols-outlined text-[28px]">add</span>
 </a>
 
@@ -96,6 +128,7 @@
   });
 </script>
 <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+<script src="{{ url_for('static', filename='js/order-detail-panel.js') }}"></script>
 
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}

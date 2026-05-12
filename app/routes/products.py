@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from app.forms import ProductForm, ModifierForm
+from app.forms import ProductForm
 from app.models import db, Product, Modifier, Category
 from app.utils.auth import login_required, active_required
 
@@ -20,7 +20,8 @@ def index():
     categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
     plan_limits = get_plan_limits(restaurant.plan_type)
     current_active_count = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).count()
-    return render_template('dashboard/products.html', products=products, categories=categories, plan_limits=plan_limits, current_active_count=current_active_count)
+    has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
+    return render_template('dashboard/products.html', products=products, categories=categories, plan_limits=plan_limits, current_active_count=current_active_count, has_modifiers_access=has_modifiers_access)
 
 @products_bp.route('/category/<int:category_id>')
 @login_required
@@ -44,13 +45,15 @@ def by_category(category_id):
 
     plan_limits = get_plan_limits(restaurant.plan_type)
     current_active_count = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).count()
+    has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
 
     return render_template('dashboard/products_category.html',
                          category=category,
                          products=pagination.items,
                          pagination=pagination,
                          plan_limits=plan_limits,
-                         current_active_count=current_active_count)
+                         current_active_count=current_active_count,
+                         has_modifiers_access=has_modifiers_access)
 
 @products_bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -275,66 +278,128 @@ def delete(id):
 
 # ===== MODIFICADORES =====
 
-@products_bp.route('/<int:product_id>/modifiers')
+# ─── Session-based API for Modifiers Modal ─────────────────────────────────
+
+@products_bp.route('/<int:product_id>/api/modifiers', methods=['GET'])
 @login_required
 @active_required
-def modifiers(product_id):
-    """Listar modificadores de un producto"""
+def api_list_modifiers(product_id):
+    """Listar modificadores de un producto (session auth)"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first()
+    if not product:
+        return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+
     modifiers = Modifier.query.filter_by(product_id=product_id, restaurant_id=restaurant.id).all()
-    
-    has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
-    
-    return render_template('dashboard/product_modifiers.html', 
-                         product=product, 
-                         modifiers=modifiers,
-                         has_modifiers_access=has_modifiers_access)
 
-@products_bp.route('/<int:product_id>/modifiers/create', methods=['GET', 'POST'])
+    return jsonify({
+        'success': True,
+        'data': {
+            'modifiers': [
+                {
+                    'id': m.id,
+                    'name': m.name,
+                    'extra_price': m.extra_price,
+                    'is_active': m.is_active
+                }
+                for m in modifiers
+            ]
+        }
+    })
+
+
+@products_bp.route('/<int:product_id>/api/modifiers', methods=['POST'])
 @login_required
 @active_required
-def create_modifier(product_id):
-    """Crear modificador para un producto"""
+def api_create_modifier(product_id):
+    """Crear modificador (session auth)"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    
-    # Security Check: Plan Élite required
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
     if not check_feature_access(restaurant, 'has_modifiers'):
-        flash(f'Tu plan {restaurant.plan_type.capitalize()} no incluye Modificadores. Actualiza a Élite para desbloquear esta función.', 'warning')
-        return redirect(url_for('products.modifiers', product_id=product_id))
+        return jsonify({'success': False, 'error': 'Tu plan no incluye Modificadores'}), 403
 
-    product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first_or_404()
-    form = ModifierForm()
-    
-    if form.validate_on_submit():
-        modifier = Modifier(
-            product_id=product_id,
-            restaurant_id=restaurant.id,
-            name=form.name.data,
-            extra_price=form.extra_price.data,
-            is_active=form.is_active.data
-        )
-        db.session.add(modifier)
-        db.session.commit()
-        flash('Modificador agregado exitosamente', 'success')
-        return redirect(url_for('products.modifiers', product_id=product_id))
-    
-    return render_template('dashboard/modifier_form.html', form=form, product=product, title='Agregar Extra')
+    product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id).first()
+    if not product:
+        return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
-@products_bp.route('/modifiers/<int:id>/delete', methods=['POST', 'DELETE'])
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Datos requeridos'}), 400
+
+    name = data.get('name', '').strip()
+    extra_price = data.get('extra_price', 0)
+
+    if not name:
+        return jsonify({'success': False, 'error': 'Nombre es requerido'}), 400
+
+    modifier = Modifier(
+        product_id=product_id,
+        restaurant_id=restaurant.id,
+        name=name,
+        extra_price=extra_price,
+        is_active=True
+    )
+
+    db.session.add(modifier)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': modifier.id,
+            'name': modifier.name,
+            'extra_price': modifier.extra_price,
+            'is_active': modifier.is_active
+        }
+    }), 201
+
+
+@products_bp.route('/api/modifiers/<int:id>/toggle', methods=['PATCH'])
 @login_required
 @active_required
-def delete_modifier(id):
-    """Eliminar modificador"""
+def api_toggle_modifier(id):
+    """Activar/desactivar modificador (session auth)"""
     restaurant = get_current_restaurant()
-    if not restaurant: abort(404)
-    modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
-    product_id = modifier.product_id
-    
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not modifier:
+        return jsonify({'success': False, 'error': 'Modifier no encontrado'}), 404
+
+    modifier.is_active = not modifier.is_active
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': modifier.id,
+            'name': modifier.name,
+            'extra_price': modifier.extra_price,
+            'is_active': modifier.is_active
+        }
+    })
+
+
+@products_bp.route('/api/modifiers/<int:id>', methods=['DELETE'])
+@login_required
+@active_required
+def api_delete_modifier(id):
+    """Eliminar modificador (session auth)"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    if not modifier:
+        return jsonify({'success': False, 'error': 'Modifier no encontrado'}), 404
+
     db.session.delete(modifier)
     db.session.commit()
-    flash('Modificador eliminado exitosamente', 'success')
-    
-    return redirect(url_for('products.modifiers', product_id=product_id))
+
+    return jsonify({'success': True, 'message': 'Modifier eliminado exitosamente'})

@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, request, session, current_app
 from datetime import datetime, timezone
 from app import db
 from app.models import User, AITokenTransaction
-from app.extensions import csrf
+from app.csrf import csrf
 from app.utils.subscription import AI_TOKEN_LIMITS, TOP_UP_PACKS, initialize_or_reset_token_wallet
 
 tokens_bp = Blueprint('tokens', __name__)

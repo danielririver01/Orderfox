@@ -314,3 +314,20 @@ class AITokenTransaction(db.Model):
 
     def __repr__(self):
         return f'<AITokenTransaction user={self.user_id} type={self.type} amount={self.amount}>'
+
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(50), default='otros')
+    date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    
+    restaurant = db.relationship('Restaurant', backref=db.backref('expenses', lazy=True, cascade='all, delete-orphan'))
+    
+    def __repr__(self):
+        return f'<Expense {self.description} ${self.amount}>'

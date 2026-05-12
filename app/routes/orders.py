@@ -171,6 +171,16 @@ def detail(id):
     order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
     return render_template('dashboard/order_detail.html', order=order)
 
+@orders_bp.route('/<int:id>/fragment')
+@login_required
+@active_required
+def detail_fragment(id):
+    """Devuelve solo el HTML del detalle del pedido para el panel lateral"""
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    return render_template('dashboard/_order_detail_fragment.html', order=order)
+
 @orders_bp.route('/<int:id>/status', methods=['PATCH'])
 @login_required
 @active_required

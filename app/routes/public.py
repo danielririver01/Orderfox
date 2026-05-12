@@ -58,82 +58,32 @@ def menu(slug=None):
     is_active_sub = restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)
     ordering_disabled = not is_active_sub
     
-    categories = Category.query.join(Product).filter(
-        Category.restaurant_id == restaurant.id,
-        Category.is_active == True,
-        Product.is_active == True
-    ).order_by(Category.sort_order).distinct().all()
-
-# Inyectar conteo real de productos activos
-    for cat in categories:
-        cat.active_product_count = Product.query.filter_by(
-            category_id=cat.id,
-            
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).count()
-    
-    # Obtener productos para el carrusel
-    # 1. Prioridad: Marcados como destacados con imagen
-    highlighted = Product.query.filter_by(
-        restaurant_id=restaurant.id, 
-        is_highlighted=True, 
-        is_active=True
-    ).filter(Product.image_url.isnot(None)).all()
-    
-    # 2. Fallback: Completar hasta 3 con los más recientes que tengan imagen
-    if len(highlighted) < 3:
-        ids_to_exclude = [p.id for p in highlighted]
-        recent = Product.query.filter_by(
-            restaurant_id=restaurant.id, 
-            is_active=True
-        ).filter(
-            Product.image_url.isnot(None),
-            ~Product.id.in_(ids_to_exclude) if ids_to_exclude else True
-        ).order_by(Product.created_at.desc()).limit(3 - len(highlighted)).all()
-        highlighted.extend(recent)
-    
-    # Limitar a 3 por si acaso
-    highlighted_products = highlighted[:3]
-    
-    # 3. Obtener los 4 productos más recientes para la sección "Productos nuevos"
-    new_products = Product.query.filter_by(
+    categories = Category.query.filter_by(
         restaurant_id=restaurant.id,
         is_active=True
-    ).order_by(Product.created_at.desc()).limit(6).all()
+    ).order_by(Category.sort_order).all()
+
+    # Inyectar productos activos y conteo por categoría
+    for cat in categories:
+        cat.products = Product.query.filter_by(
+            category_id=cat.id,
+            restaurant_id=restaurant.id,
+            is_active=True
+        ).all()
+        cat.active_product_count = len(cat.products)
     
-    return render_template('public/menu_categories.html', 
+    # Filtrar categorías sin productos activos
+    categories = [cat for cat in categories if cat.active_product_count > 0]
+    
+    return render_template('public/menu_public.html', 
                          categories=categories,
                          restaurant=restaurant,
-                         ordering_disabled=ordering_disabled,
-                         highlighted_products=highlighted_products,
-                         new_products=new_products)
+                         ordering_disabled=ordering_disabled)
 
 @public_bp.route('/menu/<string:slug>/categoria/<int:category_id>')
 def category_products(slug, category_id):
-    restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
-    
-    category = Category.query.filter_by(id=category_id, restaurant_id=restaurant.id).first_or_404()
-    
-    products = Product.query.filter_by(
-        category_id=category_id,
-        restaurant_id=restaurant.id,
-        is_active=True
-    ).all()
-    
-    # Bloqueo Radical: Si el local está cerrado por el dueño, mostramos la Landing de Cerrado
-    if not restaurant.is_open:
-        return render_template('public/store_closed.html', restaurant=restaurant)
-
-    # Lógica de "Solo Lectura" por suscripción
-    is_active_sub = restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)
-    ordering_disabled = not is_active_sub
-
-    return render_template('public/menu_category_products.html',
-                         restaurant=restaurant,
-                         category=category,
-                         products=products,
-                         ordering_disabled=ordering_disabled)
+    """Redirect a la vista unificada del menú con anclaje a la categoría."""
+    return redirect(url_for('public.menu', slug=slug) + f'#cat-{category_id}')
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():
@@ -300,22 +250,5 @@ def create_order():
 
 @public_bp.route('/menu/<string:slug>/novedades')
 def novedades(slug):
-    restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
-    categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
-    
-    # Paginación
-    page = request.args.get('page', 1, type=int)
-    per_page = 12
-    
-    pagination = Product.query.filter_by(
-        restaurant_id=restaurant.id,
-        is_active=True
-    ).order_by(Product.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    
-    products = pagination.items
-    
-    return render_template('public/menu_novedades.html',
-                         restaurant=restaurant,
-                         categories=categories,
-                         products=products,
-                          pagination=pagination)
+    """Redirect a la vista unificada del menú."""
+    return redirect(url_for('public.menu', slug=slug))

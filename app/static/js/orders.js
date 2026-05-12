@@ -14,8 +14,13 @@ async function changeStatus(orderId, newStatus) {
       throw new Error(data.error || "Error al cambiar estado");
     }
 
-    // Recargar página para ver cambios
-    location.reload();
+    // If detail panel is open for this order, refresh it
+    if (typeof refreshOrderPanel === 'function' && typeof currentOrderId !== 'undefined' && currentOrderId === orderId) {
+      // Reload the page to refresh both list and panel
+      location.reload();
+    } else {
+      location.reload();
+    }
   } catch (error) {
     showToast(error.message);
   }

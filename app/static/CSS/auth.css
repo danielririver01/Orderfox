@@ -1,0 +1,495 @@
+/* Velzia Auth - Split-Screen Layout */
+
+/* ============================================
+   SPLIT-SCREEN LAYOUT (Desktop only)
+   ============================================ */
+
+.auth-split-screen {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Left Panel - Decorative Branding */
+.auth-brand-panel {
+    display: none;
+    position: relative;
+    width: 50%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a0a 0%, #141414 40%, #1a0a00 100%);
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 3rem;
+}
+
+/* Geometric Pattern Overlay */
+.auth-brand-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* Grid Pattern */
+.auth-brand-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
+
+/* Brand Content */
+.auth-brand-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    max-width: 400px;
+}
+
+.auth-brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #f2460d 0%, #d63a0a 100%);
+    box-shadow: 0 20px 60px rgba(242, 70, 13, 0.3);
+}
+
+.auth-brand-logo .material-symbols-outlined {
+    font-size: 40px;
+    color: white;
+}
+
+.auth-brand-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.04em;
+    margin-bottom: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.auth-brand-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+}
+
+/* Mock Dashboard Cards */
+.auth-mock-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.auth-mock-card {
+    background: rgba(20, 20, 22, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 1.25rem;
+    backdrop-filter: blur(10px);
+    text-align: left;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-mock-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.auth-mock-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.auth-mock-card-title {
+    font-size: 0.625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.auth-mock-card-badge {
+    font-size: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+
+.auth-mock-card-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.04em;
+}
+
+.auth-mock-card-change {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #10b981;
+}
+
+/* Mock Bar Chart */
+.auth-mock-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 60px;
+    margin-top: 0.75rem;
+}
+
+.auth-mock-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(to top, rgba(249, 115, 22, 0.3), rgba(249, 115, 22, 0.6));
+    transition: height 0.5s ease;
+}
+
+/* Floating Particles */
+.auth-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.15);
+    pointer-events: none;
+    animation: auth-float 6s ease-in-out infinite;
+}
+
+.auth-particle:nth-child(1) {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: -50px;
+    animation-delay: 0s;
+}
+
+.auth-particle:nth-child(2) {
+    width: 150px;
+    height: 150px;
+    bottom: 20%;
+    right: -30px;
+    animation-delay: 2s;
+}
+
+.auth-particle:nth-child(3) {
+    width: 100px;
+    height: 100px;
+    top: 60%;
+    left: 20%;
+    animation-delay: 4s;
+}
+
+@keyframes auth-float {
+    0%, 100% { transform: translateY(0px) scale(1); opacity: 0.5; }
+    50% { transform: translateY(-20px) scale(1.05); opacity: 0.8; }
+}
+
+/* Right Panel - Form Area */
+.auth-form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #0a0a0a;
+    min-height: 100vh;
+}
+
+/* ============================================
+   FORM CARD STYLES
+   ============================================ */
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: #141414;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.auth-card-content {
+    padding: 2.5rem;
+}
+
+.auth-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1.5rem;
+    border-radius: 16px;
+    background: rgba(242, 70, 13, 0.1);
+}
+
+.auth-card-icon .material-symbols-outlined {
+    font-size: 28px;
+    color: #f2460d;
+}
+
+.auth-card-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.auth-card-description {
+    text-align: center;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+/* Footer */
+.auth-card-footer {
+    background: #0f0f0f;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE (keep intact)
+   ============================================ */
+
+@media (max-width: 767px) {
+    .auth-split-screen {
+        flex-direction: column;
+    }
+
+    .auth-brand-panel {
+        display: none !important;
+    }
+
+    .auth-form-panel {
+        padding: 1rem;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
+
+@media (min-width: 768px) {
+    .auth-brand-panel {
+        display: flex;
+        width: 45%;
+    }
+
+    .auth-form-panel {
+        width: 55%;
+    }
+
+    .auth-brand-title {
+        font-size: 1.75rem;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - DESKTOP
+   ============================================ */
+
+@media (min-width: 1024px) {
+    .auth-brand-panel {
+        width: 50%;
+        padding: 4rem;
+    }
+
+    .auth-brand-title {
+        font-size: 2.25rem;
+    }
+
+    .auth-mock-cards {
+        max-width: 360px;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - LARGE DESKTOP
+   ============================================ */
+
+@media (min-width: 1280px) {
+    .auth-brand-panel {
+        width: 55%;
+    }
+
+    .auth-form-panel {
+        width: 45%;
+    }
+
+    .auth-brand-title {
+        font-size: 2.5rem;
+    }
+
+    .auth-mock-cards {
+        max-width: 400px;
+    }
+}
+
+/* ============================================
+   SETUP PAGE - 2 COLUMN LAYOUT
+   ============================================ */
+
+@media (min-width: 768px) {
+    .auth-setup-layout {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+        align-items: start;
+    }
+
+    .auth-setup-info {
+        position: sticky;
+        top: 2rem;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes auth-slide-in-left {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes auth-slide-in-right {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes auth-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 768px) {
+    .auth-brand-panel {
+        animation: auth-slide-in-left 0.6s ease-out;
+    }
+
+    .auth-form-panel .auth-card {
+        animation: auth-slide-in-right 0.6s ease-out;
+    }
+}
+
+/* ============================================
+   CLERK OVERRIDES
+   ============================================ */
+
+.cl-rootBox {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.cl-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+.cl-headerTitle,
+.cl-headerSubtitle {
+    display: none !important;
+}
+
+.cl-socialButtonsBlockButton {
+    border-radius: 12px !important;
+    height: 44px !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: #1a1a1a !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+    background: #222 !important;
+}
+
+.cl-formButtonPrimary {
+    border-radius: 12px !important;
+    height: 48px !important;
+    font-weight: 700 !important;
+    font-size: 0.875rem !important;
+    background: #f2460d !important;
+}
+
+.cl-formButtonPrimary:hover {
+    background: #d63a0a !important;
+}
+
+.cl-formFieldInput {
+    background: #0f0f0f !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    color: white !important;
+}
+
+.cl-formFieldInput:focus {
+    border-color: #f2460d !important;
+    box-shadow: 0 0 0 2px rgba(242, 70, 13, 0.2) !important;
+}
+
+.cl-footer {
+    display: none !important;
+}
+
+.cl-dividerRow {
+    margin: 1.5rem 0 !important;
+}
+
+.cl-dividerText {
+    font-size: 0.625rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.15em !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.cl-otpCodeFieldInput {
+    color: white !important;
+    background-color: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    caret-color: #f2460d !important;
+    border-radius: 10px !important;
+}

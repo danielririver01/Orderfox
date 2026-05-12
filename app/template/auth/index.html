@@ -4,19 +4,16 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Velzia</title>
+    <title>Velzia - Admin Dashboard</title>
 
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="icon"
         href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
         type="image/svg+xml">
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet" />
 
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -26,140 +23,197 @@
         }
     </script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
 </head>
 
-<body
-    class="bg-background-light dark:bg-[#0a0a0a] font-display antialiased min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-[#0a0a0a] antialiased">
 
-    <main class="w-full max-w-[420px] mx-auto">
+    <div class="auth-split-screen">
 
-        <div
-            class="w-full bg-white dark:bg-[#141414] rounded-xl shadow-lg border border-gray-100 dark:border-[#262626] overflow-hidden">
+        <!-- LEFT PANEL - Branding (Desktop only) -->
+        <div class="auth-brand-panel">
+            <!-- Floating Particles -->
+            <div class="auth-particle"></div>
+            <div class="auth-particle"></div>
+            <div class="auth-particle"></div>
 
-            <div class="px-8 pt-6 pb-8 flex flex-col items-center">
-
-                <div
-                    class="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-[#f2460d]/10 dark:bg-[#f2460d]/20">
-                    <span class="material-symbols-outlined text-[#f2460d] text-[32px]">lunch_dining</span>
+            <div class="auth-brand-content">
+                <!-- Logo -->
+                <div class="auth-brand-logo">
+                    <span class="material-symbols-outlined">lunch_dining</span>
                 </div>
 
-                <div class="text-center mb-2">
-                    <h1 class="text-[#1c110d] dark:text-white text-3xl font-black tracking-tighter uppercase">
-                        Velzia
-                    </h1>
-                </div>
+                <!-- Title -->
+                <h1 class="auth-brand-title">Velzia</h1>
+                <p class="auth-brand-subtitle">
+                    Administra tu restaurante, pedidos y menú digital desde un solo lugar.
+                </p>
 
-                {% if get_flashed_messages() %}
-                <div class="max-w-md mx-auto px-4 pt-4">
-                    {% include 'components/flash_messages.html' %}
-                </div>
-                {% endif %}
+                <!-- Mock Dashboard Cards -->
+                <div class="auth-mock-cards">
+                    <!-- Revenue Card -->
+                    <div class="auth-mock-card">
+                        <div class="auth-mock-card-header">
+                            <span class="auth-mock-card-title">Ingresos Hoy</span>
+                            <span class="auth-mock-card-badge">+12%</span>
+                        </div>
+                        <div class="auth-mock-card-value">$2.450.000</div>
+                        <div class="auth-mock-card-change">
+                            <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            vs. ayer
+                        </div>
+                    </div>
 
-                <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
+                    <!-- Orders Card -->
+                    <div class="auth-mock-card">
+                        <div class="auth-mock-card-header">
+                            <span class="auth-mock-card-title">Pedidos Activos</span>
+                            <span class="auth-mock-card-badge">En vivo</span>
+                        </div>
+                        <div class="auth-mock-card-value">24</div>
+                        <!-- Bar Chart -->
+                        <div class="auth-mock-chart">
+                            <div class="auth-mock-bar" style="height: 40%"></div>
+                            <div class="auth-mock-bar" style="height: 65%"></div>
+                            <div class="auth-mock-bar" style="height: 45%"></div>
+                            <div class="auth-mock-bar" style="height: 80%"></div>
+                            <div class="auth-mock-bar" style="height: 55%"></div>
+                            <div class="auth-mock-bar" style="height: 90%"></div>
+                            <div class="auth-mock-bar" style="height: 70%"></div>
+                        </div>
+                    </div>
 
-                <div class="mt-4 w-full flex flex-col items-center gap-4">
-                    <a href="{{ url_for('auth.plans') }}"
-                        class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-primary transition-all duration-300 flex items-center gap-2 group">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-primary transition-colors"></span>
-                        Ver planes y precios
-                    </a>
-                    <a class="text-xs font-bold text-zinc-600 hover:text-white transition-colors"
-                        href="{{ url_for('auth.forgot_password') }}">
-                        ¿Olvidaste tu contraseña?
-                    </a>
+                    <!-- Status Card -->
+                    <div class="auth-mock-card">
+                        <div class="auth-mock-card-header">
+                            <span class="auth-mock-card-title">Estado del Menú</span>
+                            <span class="auth-mock-card-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Activo</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(249, 115, 22, 0.15); display: flex; align-items: center; justify-content: center;">
+                                <span class="material-symbols-outlined text-[20px]" style="color: #f97316;">qr_code_2</span>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: white;">12 mesas digitales</div>
+                                <div style="font-size: 0.625rem; color: rgba(255,255,255,0.3);">QR activos</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div
-                class="bg-gray-50 dark:bg-[#0f0f0f] border-t border-gray-100 dark:border-[#262626] py-4 px-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
-                <span>© 2026 Velzia</span>
-                <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">lock</span>
-                    Seguro
-                </span>
             </div>
         </div>
 
-        <style>
-            /* Ocultar scrollbar en Clerk container */
-            #clerk-signin::-webkit-scrollbar {
-                display: none;
-            }
+        <!-- RIGHT PANEL - Login Form -->
+        <div class="auth-form-panel">
+            <main class="w-full max-w-[420px] mx-auto">
 
-            #clerk-signin {
-                -ms-overflow-style: none;
-                scrollbar-width: none;
-            }
+                <div class="auth-card">
 
-            /* Desactivar autocompletado visual */
-            input:-webkit-autofill {
-                -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-                transition: background-color 5000s ease-in-out 0s !important;
-            }
+                    <div class="auth-card-content">
 
-            /* 1. DEFINICIÓN DE COLORES (Variables dinámicas) */
-            /* Forzar variables de modo oscuro por defecto */
-            :root {
-                --autofill-bg: #0a0a0a;
-                --autofill-text: #ffffff;
-            }
+                        <!-- Icon (Mobile only) -->
+                        <div class="auth-card-icon md:hidden">
+                            <span class="material-symbols-outlined">lunch_dining</span>
+                        </div>
 
-            /* Si usas una clase .dark (común en Tailwind/Dashboard) */
-            .dark {
-                --autofill-bg: #0a0a0a;
-                --autofill-text: #ffffff;
-            }
+                        <!-- Title (Mobile only - desktop shows it on left panel) -->
+                        <div class="text-center mb-2 md:hidden">
+                            <h1 class="text-white text-2xl font-black tracking-tighter uppercase"
+                                style="font-family: 'Outfit', sans-serif;">
+                                Velzia
+                            </h1>
+                        </div>
 
-            /* 2. APLICACIÓN DEL AUTOFILL DINÁMICO */
-            input:-webkit-autofill,
-            input:-webkit-autofill:hover,
-            input:-webkit-autofill:focus,
-            input:-webkit-autofill:active {
-                /* Usamos las variables para que el color cambie solo */
-                -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
-                -webkit-text-fill-color: var(--autofill-text) !important;
-                transition: background-color 5000s ease-in-out 0s;
-                border-radius: inherit;
-                /* Mantiene la estética de tus bordes redondeados */
-            }
+                        {% if get_flashed_messages() %}
+                        <div class="max-w-md mx-auto px-2 pt-4">
+                            {% include 'components/flash_messages.html' %}
+                        </div>
+                        {% endif %}
 
-            /* 3. LIMPIEZA DE ICONOS NATIVOS (Mantenemos tu lógica) */
-            input::-ms-reveal,
-            input::-ms-clear {
-                display: none;
-            }
+                        <!-- Clerk SignIn -->
+                        <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
 
-            input::-webkit-contacts-auto-fill-button,
-            input::-webkit-credentials-auto-fill-button {
-                visibility: hidden;
-                display: none !important;
-                pointer-events: none;
-                position: absolute;
-                right: 0;
-            }
-        </style>
+                        <!-- Links -->
+                        <div class="mt-6 w-full flex flex-col items-center gap-4">
+                            <a href="{{ url_for('auth.plans') }}"
+                                class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-[#f2460d] transition-all duration-300 flex items-center gap-2 group">
+                                <span class="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-[#f2460d] transition-colors"></span>
+                                Ver planes y precios
+                            </a>
+                            <a class="text-xs font-bold text-zinc-600 hover:text-white transition-colors"
+                                href="{{ url_for('auth.forgot_password') }}">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+                    </div>
 
-        <style>
-            /* Fix: inputs OTP de Clerk invisibles en dark mode
-               Clerk renderiza .cl-otpCodeFieldInput con estilos internos que
-               pueden no coincidir con nuestras variables de color */
-            .cl-otpCodeFieldInput {
-                color: #ffffff !important;
-                background-color: #1a1a1a !important;
-                border-color: #444444 !important;
-                caret-color: #f2460d !important;
-            }
-        </style>
+                    <!-- Footer -->
+                    <div class="auth-card-footer">
+                        <span>© 2026 Velzia</span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">lock</span>
+                            Seguro
+                        </span>
+                    </div>
+                </div>
 
-        <div class="mt-8 flex justify-center gap-6 text-sm text-gray-400 dark:text-gray-500 font-medium">
-            <a class="hover:text-primary transition-colors"
-                href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
-            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.privacy') }}">Privacidad</a>
-            <a class="hover:text-primary transition-colors" href="{{ url_for('auth.terms') }}">Términos</a>
+                <!-- Bottom Links -->
+                <div class="mt-8 flex justify-center gap-6 text-sm text-gray-500 font-medium">
+                    <a class="hover:text-[#f2460d] transition-colors"
+                        href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
+                    <a class="hover:text-[#f2460d] transition-colors" href="{{ url_for('auth.privacy') }}">Privacidad</a>
+                    <a class="hover:text-[#f2460d] transition-colors" href="{{ url_for('auth.terms') }}">Términos</a>
+                </div>
+
+            </main>
         </div>
 
-    </main>
+    </div>
+
+    <style>
+        /* Fix: inputs OTP de Clerk en dark mode */
+        .cl-otpCodeFieldInput {
+            color: #ffffff !important;
+            background-color: #1a1a1a !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            caret-color: #f2460d !important;
+        }
+
+        /* Autocomplete colors */
+        :root {
+            --autofill-bg: #0a0a0a;
+            --autofill-text: #ffffff;
+        }
+
+        .dark {
+            --autofill-bg: #0a0a0a;
+            --autofill-text: #ffffff;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+            -webkit-text-fill-color: var(--autofill-text) !important;
+            transition: background-color 5000s ease-in-out 0s;
+            border-radius: inherit;
+        }
+
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+
+        input::-webkit-contacts-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
+    </style>
 
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 
@@ -193,16 +247,15 @@
                     }
                 });
 
-                // Silent Sync: Si ya hay usuario de Clerk, sincronizar en el fondo
+                // Silent Sync
                 const hasFlashMessages = document.querySelector('.flash-message') !== null;
                 if (window.Clerk.user && !hasFlashMessages) {
                     const signInDiv = document.getElementById('clerk-signin');
 
-                    // Mostrar estado de carga elegante en lugar del formulario
                     signInDiv.innerHTML = `
                         <div class="flex flex-col items-center justify-center py-12">
                             <div class="h-10 w-10 border-4 border-[#f2460d] border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p class="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
+                            <p class="text-xs font-black text-gray-500 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
                         </div>
                     `;
 
@@ -229,21 +282,16 @@
                         }
                     } catch (error) {
                         console.error("Silent sync failed, falling back to manual sign in", error);
-                        // Si falla la sincronización silenciosa (ej. sesión de Clerk expirada),
-                        // recargar para mostrar el login normal.
                         window.location.reload();
                     }
                     return;
                 }
 
                 const signInDiv = document.getElementById('clerk-signin');
-
-                // Determinar si está en modo oscuro
-                // Forzar modo oscuro siempre para Velzia Obsidian
                 const isDarkMode = true;
 
                 window.Clerk.mountSignIn(signInDiv, {
-                    afterSignInUrl: '/', // Volver aquí para que el script detecte al usuario y haga Silent Sync
+                    afterSignInUrl: '/',
                     afterSignUpUrl: '/',
                     appearance: {
                         baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
@@ -259,15 +307,14 @@
                             card: "w-full shadow-none border-none bg-transparent p-0",
                             headerTitle: "hidden",
                             headerSubtitle: "hidden",
-                            socialButtonsBlockButton: "rounded-lg h-11 border-gray-700 bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#222] transition-all",
-                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-11 rounded-lg",
+                            socialButtonsBlockButton: "rounded-xl h-11 border-white/10 bg-[#1a1a1a] hover:bg-[#222] transition-all",
+                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-12 rounded-xl",
                             footer: "hidden",
                             dividerRow: "my-6",
                             dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
-                            formFieldInput: 'bg-[#fcf9f8] dark:bg-[#0f0f0f] border-[#e8d5ce] dark:border-[#333333] focus:ring-primary/20 focus:border-primary',
-                            // Fix: forzar color de texto en inputs OTP (Clerk los estiliza diferente)
+                            formFieldInput: 'bg-[#0f0f0f] border-white/8 focus:ring-[#f2460d]/20 focus:border-[#f2460d] rounded-xl',
                             otpCodeFieldInput: isDarkMode
-                                ? 'text-white bg-[#1a1a1a] border-[#444] caret-orange-500'
+                                ? 'text-white bg-[#1a1a1a] border-white/10 caret-orange-500'
                                 : 'text-[#1c110d] bg-white border-[#e8d5ce] caret-orange-500',
                         }
                     }

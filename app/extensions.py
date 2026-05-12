@@ -1,13 +1,11 @@
 from flask_mail import Mail
 from flask_apscheduler import APScheduler
-from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import session, request, current_app
 
 mail = Mail()
 scheduler = APScheduler()
-csrf = CSRFProtect()
 
 def get_limit_key():
     if 'user_id' in session:

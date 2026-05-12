@@ -1,20 +1,14 @@
-{% extends 'common/base.html' %}
-{% block content %}
-<title>Mi Suscripción</title>
+{% extends 'dashboard/settings_layout.html' %}
+
+{% block settings_title %}Mi Suscripción{% endblock %}
+
+{% block settings_content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/subscription.css') }}">
-<!-- Header -->
-<header class="flex items-center gap-4 p-4 mb-2">
-    <a href="{{ url_for('dashboard.settings') }}"
-        class="p-2 hover:bg-white dark:hover:bg-[#141414] rounded-full transition-all text-gray-600">
-        <span class="material-symbols-outlined">arrow_back</span>
-    </a>
-    <h1 class="text-xl font-bold dark:text-white">Mi Suscripción</h1>
-</header>
 
 <!-- Plan Actual Card -->
-<section class="px-4 mb-8">
+<section class="mb-8">
     <div
-        class="bg-white dark:bg-[#141414] p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
+        class="bg-white dark:bg-[#141414] p-6 md:p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan
                 Actual</h2>
@@ -144,7 +138,7 @@
 </section>
 
 <!-- Estado y Fechas -->
-<section class="px-4 mb-8">
+<section class="mb-8">
     <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y
         Facturación</h3>
     <div
@@ -200,7 +194,7 @@
 </section>
 
 <!-- Cambiar Plan -->
-<section class="px-4 mb-10">
+<section class="mb-10">
     <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un
         nuevo plan</h3>
     <div
@@ -257,7 +251,7 @@
 </section>
 
 <!-- Acciones Finales -->
-<section class="px-4 mb-12">
+<section class="mb-12">
     <a href="{{ url_for('auth.renew') }}"
         class="w-full bg-gray-900 hover:bg-gray-800 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs mb-6">
         <span class="material-symbols-outlined">refresh</span>
@@ -270,9 +264,6 @@
         Eliminar mi cuenta
     </button>
 </section>
-
-<!-- Bottom Navigation -->
-{% include 'common/navigation.html' %}
 
 <!-- Modal de Confirmación -->
 <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
@@ -326,6 +317,5 @@
     </div>
 </div>
 
-</div>
 <script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
 {% endblock %}

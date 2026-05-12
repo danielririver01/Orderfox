@@ -1,16 +1,18 @@
 import os
-from flask import Flask, render_template, session
+from flask import Flask, render_template, session, request
 from .models import db, migrate,User
 from flask_mail import Mail
 from flask_apscheduler import APScheduler
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
-from .extensions import mail, scheduler, csrf, limiter
+from .extensions import mail, scheduler, limiter
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from .csrf import csrf
 from .routes.tokens import tokens_bp
 
 # 2. El "Pase VIP" (Sustituto de exempt_when)
@@ -27,8 +29,9 @@ def create_app():
     app.config.from_object('settings.Config')
     db.init_app(app)
     mail.init_app(app)
-    csrf.init_app(app)
     limiter.init_app(app)
+    jwt = JWTManager(app)
+    csrf.init_app(app)
     
     # Habilitar CORS para permitir peticiones desde Scanner IA (Next.js/Node)
     CORS(app, resources={r"/api/*": {"origins": "*"}}) 
@@ -57,6 +60,14 @@ def create_app():
     from .routes.public import public_bp
     from .routes.menu import menu_bp
     from .routes.tables import tables_bp
+    from .routes.api_auth import api_auth_bp
+    from .routes.api_dashboard import api_dashboard_bp
+    from .routes.api_categories import api_categories_bp
+    from .routes.api_products import api_products_bp
+    from .routes.api_orders import api_orders_bp
+    from .routes.api_public import api_public_bp
+    from .routes.api_tables import api_tables_bp
+    from .routes.api_expenses import api_expenses_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -67,37 +78,28 @@ def create_app():
     app.register_blueprint(menu_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(tokens_bp)
+    app.register_blueprint(api_auth_bp)
+    app.register_blueprint(api_dashboard_bp)
+    app.register_blueprint(api_categories_bp)
+    app.register_blueprint(api_products_bp)
+    app.register_blueprint(api_orders_bp)
+    app.register_blueprint(api_public_bp)
+    app.register_blueprint(api_tables_bp)
+    app.register_blueprint(api_expenses_bp)
 
-    @app.errorhandler(404)
-    def page_not_found(e):
-        return render_template('errors/404.html'), 404
+    @app.before_request
+    def check_csrf_for_non_api():
+        if not request.path.startswith('/api/') and request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+            csrf.protect()
 
-    @app.errorhandler(500)
-    def internal_server_error(e):
-        return render_template('errors/500.html'), 500
-    
-    @app.errorhandler(403)
-    def forbidden(e):
-        return render_template('errors/403.html'), 403
-    
-    @app.errorhandler(429)
-    def forbidden(e):
-        return render_template('errors/429.html'), 429
-    
-    @app.errorhandler(400)
-    def bad_request(e):
-        return render_template('errors/400.html'), 400
-
-    migrate.init_app(app, db)
-    
     @app.before_request
     def block_grace_period_crud():
-        from flask import request, flash, redirect, url_for
+        from flask import flash, redirect, url_for
         from app.utils.restaurant import get_current_restaurant
         from app.utils.subscription import can_perform_crud
         
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint):
+            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint or 'api_auth.' in request.endpoint or request.path.startswith('/api/')):
                 return
                 
             restaurant = get_current_restaurant()
@@ -166,6 +168,7 @@ def create_app():
                 app.logger.error(f"Error fetching subscription status in context processor: {e}")
                 data['sub_status'] = None
             
+        data['restaurant'] = restaurant
         return data
 
     # --- Comandos CLI ---

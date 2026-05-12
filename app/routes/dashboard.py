@@ -561,3 +561,90 @@ def change_password():
             return redirect(url_for('dashboard.change_password'))
 
     return render_template('dashboard/change_password.html')
+
+
+@dashboard_bp.route('/change-email', methods=['GET', 'POST'])
+@login_required
+@active_required
+def change_email():
+    user = User.query.get(session['user_id'])
+    is_clerk_user = bool(user.clerk_id)
+    
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            new_email = data.get('new_email', '').strip().lower()
+            confirm_email = data.get('confirm_email', '').strip().lower()
+            current_password = data.get('current_password')
+        else:
+            new_email = request.form.get('new_email', '').strip().lower()
+            confirm_email = request.form.get('confirm_email', '').strip().lower()
+            current_password = request.form.get('current_password')
+
+        # Validaciones
+        if not new_email or not confirm_email:
+            msg = 'Todos los campos son requeridos.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_email'))
+
+        if new_email != confirm_email:
+            msg = 'Los correos nuevos no coinciden.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_email'))
+
+        if '@' not in new_email:
+            msg = 'Ingresa un correo valido.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_email'))
+
+        # Verificar que el nuevo email no este en uso
+        existing_user = User.query.filter(User.email == new_email, User.id != user.id).first()
+        if existing_user:
+            msg = 'Este correo ya esta registrado por otro usuario.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_email'))
+
+        # Verificar contraseña (solo para usuarios no Clerk)
+        if not is_clerk_user:
+            if not current_password:
+                msg = 'Debes ingresar tu contraseña actual.'
+                if request.is_json:
+                    return jsonify({'success': False, 'message': msg}), 400
+                flash(msg, 'error')
+                return redirect(url_for('dashboard.change_email'))
+            
+            if not user.check_password(current_password):
+                msg = 'La contraseña actual es incorrecta.'
+                if request.is_json:
+                    return jsonify({'success': False, 'message': msg}), 400
+                flash(msg, 'error')
+                return redirect(url_for('dashboard.change_email'))
+
+        # Actualizar email
+        try:
+            user.email = new_email
+            db.session.commit()
+            
+            msg = '¡Correo actualizado con exito!'
+            if request.is_json:
+                return jsonify({'success': True, 'message': msg})
+            
+            flash(msg, 'success')
+            return redirect(url_for('dashboard.settings'))
+        except Exception as e:
+            db.session.rollback()
+            msg = 'Error al intentar cambiar el correo. Intenta de nuevo.'
+            if request.is_json:
+                return jsonify({'success': False, 'message': msg}), 500
+            flash(msg, 'error')
+            return redirect(url_for('dashboard.change_email'))
+
+    return render_template('dashboard/change_email.html', user=user, is_clerk_user=is_clerk_user)

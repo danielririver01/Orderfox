@@ -183,7 +183,73 @@
         </div>
     </div>
 
-    {% block content %}{% endblock %}
+    <!-- Dashboard Layout: Sidebar (Desktop) + Content -->
+    <div class="flex min-h-screen">
+
+        <!-- Sidebar Desktop (hidden on mobile) -->
+        <aside class="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a0a0a] border-r border-white/5">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 px-6 py-6 border-b border-white/5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f2460d] to-[#d63a0a] flex items-center justify-center shadow-lg shadow-orange-500/20">
+                    <span class="material-symbols-outlined text-white text-[22px]">lunch_dining</span>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-white uppercase tracking-tight" style="font-family: 'Outfit', sans-serif;">Velzia</h2>
+                    <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1">
+                <a href="{{ url_for('dashboard.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">home</span>
+                    Inicio
+                </a>
+                <a href="{{ url_for('products.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    Stock
+                </a>
+                <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
+                    <span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                    AI Scan
+                </a>
+                <a href="{{ url_for('orders.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                    Pedidos
+                    <span id="sidebar-orders-badge"
+                        class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
+                </a>
+                <a href="{{ url_for('dashboard.settings') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">grid_view</span>
+                    Menú
+                </a>
+            </nav>
+
+            <!-- Restaurant Info (Bottom) -->
+            <div class="px-4 py-4 border-t border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20">
+                        {{ session.get('restaurant_name', 'R')[0] | upper }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
+                        <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 md:ml-[260px]">
+            {% block content %}{% endblock %}
+        </div>
+
+    </div>
     {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     {% if session.get('user_id') %}

@@ -1,0 +1,165 @@
+{% extends 'dashboard/settings_layout.html' %}
+
+{% block settings_title %}Cambiar Correo{% endblock %}
+
+{% block settings_content %}
+
+<div class="mb-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-[#141414] dark:to-[#0a0a0a] rounded-[2rem] border border-gray-800 dark:border-[#262626] shadow-xl overflow-hidden relative group">
+    <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-700"></div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-500">
+            <span class="material-symbols-outlined text-[28px]">mail</span>
+        </div>
+        <div>
+            <h2 class="text-white font-black tracking-tight">Cambiar Correo Electrónico</h2>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Actualiza tu email de acceso</p>
+        </div>
+    </div>
+</div>
+
+<form id="changeEmailForm" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors space-y-8">
+    <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="space-y-6">
+        <div>
+            <label for="current-email" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO ACTUAL</label>
+            <div class="relative group">
+                <input type="email" id="current-email" value="{{ user.email }}" class="w-full px-5 py-4 bg-gray-100 dark:bg-[#0a0a0a]/50 text-gray-500 dark:text-gray-600 rounded-2xl border border-gray-200 dark:border-[#262626] cursor-not-allowed font-medium outline-none" readonly>
+                <div class="absolute right-5 top-4.5 text-gray-300 dark:text-gray-700">
+                    <span class="material-symbols-outlined text-[20px]">lock_person</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="py-2">
+            <div class="h-px bg-gray-50 dark:bg-[#262626] w-full"></div>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NUEVO CORREO</label>
+            <input type="email" id="new_email" name="new_email" placeholder="ejemplo@correo.com" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONFIRMAR NUEVO CORREO</label>
+            <input type="email" id="confirm_email" name="confirm_email" placeholder="Repite el nuevo correo" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <p class="text-[9px] text-gray-500 dark:text-gray-500 mt-3 ml-1 flex items-center gap-1.5 font-bold uppercase tracking-widest leading-relaxed">
+                <span class="material-symbols-outlined text-[14px]">info</span>
+                Se enviará un enlace de confirmación a este correo
+            </p>
+        </div>
+
+        <div class="py-2">
+            <div class="h-px bg-gray-50 dark:bg-[#262626] w-full"></div>
+        </div>
+
+        {% if not is_clerk_user %}
+        <div>
+            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONTRASEÑA ACTUAL</label>
+            <div class="relative flex items-center">
+                <input type="password" id="current_password" name="current_password" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white pr-14" required>
+                <button type="button" onclick="togglePass('current_password', this)" class="absolute right-2 w-10 h-10 flex items-center justify-center text-gray-400 dark:text-gray-600 hover:text-[#f2460d] transition-all">
+                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-[20px] text-blue-600 dark:text-blue-400 mt-0.5">info</span>
+                <div>
+                    <p class="text-[11px] font-bold text-blue-700 dark:text-blue-300">Verificación por Clerk</p>
+                    <p class="text-[10px] text-blue-600/80 dark:text-blue-400/70 mt-1">Tu identidad ya está verificada por Clerk. Solo necesitas confirmar el nuevo correo.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="pt-6">
+        <button type="submit" id="submitBtn" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-3">
+            <span id="btnText">Enviar Enlace de Confirmación</span>
+            <span id="btnSpinner" class="hidden animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+        </button>
+    </div>
+</form>
+
+<script>
+    function togglePass(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility';
+            icon.classList.add('text-[#f2460d]');
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility_off';
+            icon.classList.remove('text-[#f2460d]');
+        }
+    }
+
+    document.getElementById('changeEmailForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const csrfToken = document.getElementById('csrf_token').value;
+        
+        const newEmail = document.getElementById('new_email').value.trim().toLowerCase();
+        const confirmEmail = document.getElementById('confirm_email').value.trim().toLowerCase();
+        
+        if (newEmail !== confirmEmail) {
+            showToast('Los correos nuevos no coinciden.', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btnText.textContent = 'Enviando...';
+        btnSpinner.classList.remove('hidden');
+        
+        const formData = {
+            new_email: newEmail,
+            confirm_email: confirmEmail
+        };
+        
+        const passwordField = document.getElementById('current_password');
+        if (passwordField) {
+            formData.current_password = passwordField.value;
+        }
+        
+        try {
+            const response = await fetch("{{ url_for('dashboard.change_email') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showToast(result.message, 'success');
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('dashboard.settings') }}";
+                }, 2000);
+            } else {
+                showToast(result.message || 'Error al procesar la solicitud', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Enviar Enlace de Confirmación';
+                btnSpinner.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            showToast('Error de conexión. Inténtalo de nuevo.', 'error');
+            btn.disabled = false;
+            btnText.textContent = 'Enviar Enlace de Confirmación';
+            btnSpinner.classList.add('hidden');
+        }
+    });
+</script>
+
+{% endblock %}

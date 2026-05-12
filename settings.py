@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,7 +10,7 @@ APP_RELEASE_DATE = '2026-04-14'
 
 class Config:
     # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'una-clave-secreta-para-desarrollo'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'una-clave-secreta-muy-larga-para-desarrollo-seguro'
     
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
@@ -54,3 +55,11 @@ class Config:
     # En producción configurar como https://velzia.co/scanner-IA
     SCANNER_IA_URL = os.environ.get('SCANNER_IA_URL') or 'http://localhost:3000'
     SERVICE_API_KEY = os.environ.get('SERVICE_API_KEY')
+
+    # JWT Configuration (Mobile API)
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
+
+    # CSRF: disable default check, we handle it manually in before_request
+    WTF_CSRF_CHECK_DEFAULT = False
