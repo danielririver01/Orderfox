@@ -189,13 +189,19 @@ function dismissNewOrdersToast() {
 }
 
 function updateNavBadge(count) {
-    const badge = document.getElementById('orders-nav-badge');
-    if (!badge) return;
-    if (count > 0) {
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
+    const badges = [
+        document.getElementById('orders-nav-badge'),
+        document.getElementById('sidebar-orders-badge'),
+        document.getElementById('mobile-orders-badge')
+    ];
+    badges.forEach(badge => {
+        if (!badge) return;
+        if (count > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    });
 }
 
 // ─── Audio ───────────────────────────────────────────────────────────────────

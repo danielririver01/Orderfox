@@ -43,7 +43,6 @@ def list_products():
                     'description': p.description,
                     'price': p.price,
                     'is_active': p.is_active,
-                    'is_highlighted': p.is_highlighted,
                     'image_url': p.image_url,
                     'category_id': p.category_id,
                     'category_name': p.category.name if p.category else None,
@@ -84,7 +83,7 @@ def get_product(id):
             'description': product.description,
             'price': product.price,
             'is_active': product.is_active,
-            'is_highlighted': product.is_highlighted,
+
             'image_url': product.image_url,
             'category_id': product.category_id,
             'category_name': product.category.name if product.category else None,
@@ -118,7 +117,6 @@ def create_product():
     price = request.form.get('price', type=int)
     category_id = request.form.get('category_id', type=int)
     is_active = request.form.get('is_active', 'true').lower() == 'true'
-    is_highlighted = request.form.get('is_highlighted', 'false').lower() == 'true'
 
     if not name or not price or not category_id:
         return jsonify({'success': False, 'error': 'Nombre, precio y categoría son requeridos'}), 400
@@ -134,7 +132,6 @@ def create_product():
         description=description,
         price=price,
         is_active=is_active,
-        is_highlighted=is_highlighted
     )
 
     image_file = request.files.get('image')
@@ -154,7 +151,7 @@ def create_product():
             'price': product.price,
             'category_id': product.category_id,
             'is_active': product.is_active,
-            'is_highlighted': product.is_highlighted,
+
             'image_url': product.image_url
         }
     }), 201
@@ -177,7 +174,6 @@ def update_product(id):
     price = request.form.get('price', type=int)
     category_id = request.form.get('category_id', type=int)
     is_active = request.form.get('is_active')
-    is_highlighted = request.form.get('is_highlighted')
 
     if name:
         product.name = name.strip()
@@ -197,8 +193,6 @@ def update_product(id):
             if not allowed:
                 return jsonify({'success': False, 'error': message}), 400
         product.is_active = desired
-    if is_highlighted is not None:
-        product.is_highlighted = is_highlighted.lower() == 'true'
 
     image_file = request.files.get('image')
     if image_file:
@@ -221,7 +215,7 @@ def update_product(id):
             'name': product.name,
             'price': product.price,
             'is_active': product.is_active,
-            'is_highlighted': product.is_highlighted,
+
             'image_url': product.image_url
         }
     })

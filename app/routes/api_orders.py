@@ -3,7 +3,7 @@ from app import db
 from app.models import Order, OrderItem, Product, Table, Modifier
 from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 
 api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
@@ -46,21 +46,78 @@ def list_orders():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
 
-    query = Order.query.filter(
+    # Pedidos activos: sin filtro de fecha
+    active_query = Order.query.filter(
         Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
+        Order.status.in_(['pending', 'confirmed'])
     )
 
-    if status_filter:
-        query = query.filter_by(status=status_filter)
+    # Pedidos completados: mostrar si fueron actualizados hoy
+    completed_query = Order.query.filter(
+        Order.restaurant_id == restaurant.id,
+        Order.status.in_(['delivered', 'cancelled']),
+        Order.updated_at >= today_start
+    )
 
-    total = query.count()
+    # Aplicar filtro de status si existe
+    if status_filter:
+        if status_filter in ['pending', 'confirmed']:
+            completed_query = completed_query.filter(Order.status == status_filter)
+            if status_filter == 'pending':
+                query = active_query.filter(Order.status == 'pending')
+            else:
+                query = active_query.filter(Order.status == 'confirmed')
+        else:
+            active_query = active_query.filter(Order.status == status_filter)
+            query = completed_query
+    else:
+        # Combinar ambas consultas
+        active_orders = active_query.all()
+        completed_orders = completed_query.all()
+        all_orders = active_orders + completed_orders
+
+        if sort_order == 'desc':
+            all_orders.sort(key=lambda o: o.created_at, reverse=True)
+        else:
+            all_orders.sort(key=lambda o: o.created_at)
+
+        total = len(all_orders)
+        start = (page - 1) * per_page
+        orders = all_orders[start:start + per_page]
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'orders': [
+                    {
+                        'id': o.id,
+                        'order_number': o.order_number,
+                        'customer_name': o.customer_name,
+                        'customer_phone': o.customer_phone,
+                        'status': o.status,
+                        'total': o.total,
+                        'notes': o.notes,
+                        'table_name': o.table.name if o.table else None,
+                        'items_count': len(o.items),
+                        'created_at': o.created_at.isoformat() if o.created_at else None
+                    }
+                    for o in orders
+                ],
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total,
+                    'pages': (total + per_page - 1) // per_page if per_page > 0 else 0
+                }
+            }
+        })
 
     if sort_order == 'desc':
         query = query.order_by(Order.created_at.desc())
     else:
         query = query.order_by(Order.created_at.asc())
 
+    total = query.count()
     orders = query.offset((page - 1) * per_page).limit(per_page).all()
 
     return jsonify({
@@ -162,6 +219,10 @@ def create_order():
 
     order_number = generate_order_number(restaurant.id)
 
+    # Calcular fecha de expiración para pedidos pendientes
+    expiry_hours = restaurant.pending_expiry_hours or 24
+    expires_at = datetime.now() + timedelta(hours=expiry_hours)
+
     order = Order(
         restaurant_id=restaurant.id,
         order_number=order_number,
@@ -170,7 +231,8 @@ def create_order():
         notes=notes,
         total=0,
         status='pending',
-        table_id=table_id
+        table_id=table_id,
+        expires_at=expires_at
     )
     db.session.add(order)
     db.session.flush()

@@ -87,3 +87,73 @@ def jwt_feature_required(feature_name):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+def flexible_login_required(f):
+    """Acepta autenticación JWT (API móvil) o por sesión Flask (dashboard web)."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Intentar JWT primero
+        try:
+            verify_jwt_in_request()
+            return f(*args, **kwargs)
+        except Exception:
+            pass
+
+        # Fallback: sesión Flask
+        from flask import session, redirect, url_for, flash
+        if 'user_id' in session:
+            return f(*args, **kwargs)
+
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'error': 'unauthorized',
+                'message': 'Por favor, inicia sesión para acceder.'
+            }), 401
+
+        flash('Por favor, inicia sesión para acceder.', 'warning')
+        return redirect(url_for('auth.login'))
+    return decorated_function
+
+
+def flexible_active_required(f):
+    """Verifica cuenta activa tanto para JWT como para sesión Flask."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from flask import session as flask_session, g
+        from app.utils.restaurant import get_current_restaurant
+        from app.utils.subscription import is_subscription_active
+
+        def return_error(message, code=401):
+            return jsonify({'success': False, 'error': message}), code
+
+        # Determinar el restaurante según el tipo de auth
+        restaurant = None
+        try:
+            verify_jwt_in_request()
+            restaurant = get_current_restaurant_jwt()
+        except Exception:
+            if 'user_id' in flask_session:
+                restaurant = get_current_restaurant()
+
+        if not restaurant:
+            return return_error('Tu cuenta no está asociada a ningún restaurante.')
+
+        if not restaurant.is_active:
+            return return_error('Tu cuenta ha sido suspendida. Contacta a soporte para más información.')
+
+        has_tokens = False
+        if restaurant.users:
+            owner = restaurant.users[0]
+            if owner.token_wallet and owner.token_wallet.can_scan():
+                has_tokens = True
+
+        if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
+            return return_error('Tu periodo de gracia ha terminado. Por favor renueva tu plan para recuperar el acceso.')
+
+        g.is_expired = not is_subscription_active(restaurant, include_grace_period=False)
+        g.has_tokens = has_tokens
+
+        return f(*args, **kwargs)
+    return decorated_function

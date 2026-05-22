@@ -30,6 +30,10 @@ function openOrderDetail(orderId) {
     panel.classList.remove('hidden');
     panel.classList.add('md:block');
 
+    // Hide FAB on desktop when panel is open
+    const fab = document.getElementById('desktop-fab');
+    if (fab) fab.classList.add('hidden');
+
     // Change grid to 2 columns when panel is open
     listWrapper.classList.remove('md:grid-cols-3');
     listWrapper.classList.add('md:grid-cols-2');
@@ -89,6 +93,10 @@ function closeOrderDetail() {
         panel.classList.add('hidden');
         panel.classList.remove('md:block');
     }
+
+    // Show FAB on desktop when panel is closed
+    const fab = document.getElementById('desktop-fab');
+    if (fab) fab.classList.remove('hidden');
     if (listWrapper) {
         listWrapper.classList.remove('md:grid-cols-2');
         listWrapper.classList.add('md:grid-cols-3');
@@ -121,9 +129,15 @@ function contactWhatsApp(phone, orderNumber) {
 
 // Cancel order from panel
 function cancelOrderPanel(orderId) {
-    if (!confirm('¿Cancelar este pedido?')) return;
-    const form = document.getElementById('cancelOrderFormPanel');
-    if (form) form.submit();
+    openDeleteModal(
+        null,
+        '¿Cancelar este pedido? El cambio de estado será visible para el cliente.',
+        'Cancelar pedido',
+        () => {
+            const form = document.getElementById('cancelOrderFormPanel');
+            if (form) form.submit();
+        }
+    );
 }
 
 // Keyboard shortcut: Escape to close panel

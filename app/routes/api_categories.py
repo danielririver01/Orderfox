@@ -1,17 +1,31 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session as flask_session
 from app import db
-from app.models import Category, Product
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, get_current_restaurant_jwt
+from app.models import Category, Product, User
+from app.utils.jwt_auth import flexible_login_required, flexible_active_required, get_current_restaurant_jwt
+from app.utils.restaurant import get_current_restaurant
 from app.utils.image_handler import save_image, delete_image
 
 api_categories_bp = Blueprint('api_categories', __name__, url_prefix='/api/categories')
 
 
+def _get_restaurant():
+    """Obtiene el restaurante actual desde JWT o sesión Flask."""
+    from flask_jwt_extended import verify_jwt_in_request
+    try:
+        verify_jwt_in_request()
+        return get_current_restaurant_jwt()
+    except Exception:
+        pass
+    if 'user_id' in flask_session:
+        return get_current_restaurant()
+    return None
+
+
 @api_categories_bp.route('', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def list_categories():
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -40,10 +54,10 @@ def list_categories():
 
 
 @api_categories_bp.route('', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def create_category():
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -89,10 +103,10 @@ def create_category():
 
 
 @api_categories_bp.route('/<int:id>', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def get_category(id):
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -114,10 +128,10 @@ def get_category(id):
 
 
 @api_categories_bp.route('/<int:id>', methods=['PUT'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def update_category(id):
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -163,10 +177,10 @@ def update_category(id):
 
 
 @api_categories_bp.route('/<int:id>', methods=['DELETE'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def delete_category(id):
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -195,10 +209,10 @@ def delete_category(id):
 
 
 @api_categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def toggle_category(id):
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -214,10 +228,10 @@ def toggle_category(id):
 
 
 @api_categories_bp.route('/<int:id>/reorder', methods=['PATCH'])
-@jwt_login_required
-@jwt_active_required
+@flexible_login_required
+@flexible_active_required
 def reorder_category(id):
-    restaurant = get_current_restaurant_jwt()
+    restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 

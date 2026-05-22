@@ -53,7 +53,7 @@ def get_menu(slug):
                 'description': p.description,
                 'price': p.price,
                 'image_url': p.image_url,
-                'is_highlighted': p.is_highlighted,
+
                 'modifiers': modifiers
             })
 
@@ -65,33 +65,6 @@ def get_menu(slug):
             'products': products_data
         })
 
-    highlighted = Product.query.filter_by(
-        restaurant_id=restaurant.id,
-        is_highlighted=True,
-        is_active=True
-    ).filter(Product.image_url.isnot(None)).all()
-
-    if len(highlighted) < 3:
-        ids_to_exclude = [p.id for p in highlighted]
-        recent = Product.query.filter_by(
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).filter(
-            Product.image_url.isnot(None),
-            ~Product.id.in_(ids_to_exclude) if ids_to_exclude else True
-        ).order_by(Product.created_at.desc()).limit(3 - len(highlighted)).all()
-        highlighted.extend(recent)
-
-    highlighted_data = [
-        {
-            'id': p.id,
-            'name': p.name,
-            'price': p.price,
-            'image_url': p.image_url,
-            'description': p.description
-        }
-        for p in highlighted[:3]
-    ]
 
     return jsonify({
         'success': True,
@@ -103,8 +76,7 @@ def get_menu(slug):
                 'is_open': restaurant.is_open,
                 'ordering_disabled': not is_active_sub
             },
-            'categories': categories_data,
-            'highlighted': highlighted_data
+            'categories': categories_data
         }
     })
 
@@ -140,7 +112,7 @@ def get_category_products(slug, category_id):
             'description': p.description,
             'price': p.price,
             'image_url': p.image_url,
-            'is_highlighted': p.is_highlighted,
+
             'modifiers': modifiers
         })
 

@@ -39,7 +39,9 @@ async function deleteAccount() {
     const checkbox = document.getElementById('confirmAccountDelete');
 
     if (!checkbox || !checkbox.checked) {
-        alert('Debes confirmar que entiendes las consecuencias de eliminar tu cuenta');
+        if (window.showToast) {
+            window.showToast('Debes confirmar que entiendes las consecuencias de eliminar tu cuenta', 'error');
+        }
         return;
     }
 
@@ -81,13 +83,17 @@ async function deleteAccount() {
                 window.location.href = '/';
             }, 1000);
         } else {
-            alert(data.message || 'Error al eliminar la cuenta. Por favor, intenta de nuevo.');
+            if (window.showToast) {
+                window.showToast(data.message || 'Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
+            }
             deleteBtn.disabled = false;
             deleteBtn.textContent = originalText;
         }
     } catch (error) {
         console.error('Error al eliminar cuenta:', error);
-        alert('Error al eliminar la cuenta. Por favor, intenta de nuevo.');
+        if (window.showToast) {
+            window.showToast('Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
+        }
         deleteBtn.disabled = false;
         deleteBtn.textContent = originalText;
     }

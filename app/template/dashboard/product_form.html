@@ -4,7 +4,7 @@ block content %}
 <header
   class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
   <div class="max-w-md md:max-w-2xl lg:max-w-3xl mx-auto px-4 md:px-10 py-4 flex items-center gap-3">
-    <a href="{{ url_for('products.index') }}"
+    <a href="{{ url_for('products.by_category', category_id=product.category_id) if product else (url_for('products.by_category', category_id=form.category_id.data) if form.category_id.data else url_for('products.index')) }}"
       class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
       <span class="material-symbols-outlined">arrow_back</span>
     </a>
@@ -36,10 +36,10 @@ block content %}
             onchange="previewImage(this)">
 
           <div id="image_preview_container" onclick="document.getElementById('product_image').click()"
-            class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (product and product.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
+            class="relative w-full aspect-square rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (product and product.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
 
             {% if product and product.image_url %}
-            <img id="original_img" src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
+            <img id="original_img" src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover object-[center_40%]">
             <div id="edit_overlay"
               class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <span class="material-symbols-outlined text-white text-3xl">edit</span>
@@ -51,7 +51,9 @@ block content %}
             </div>
             {% endif %}
 
-            <img id="new_preview" class="hidden w-full h-full object-cover absolute inset-0">
+            <img id="new_preview" class="hidden w-full h-full object-cover object-[center_40%] absolute inset-0">
+            
+            <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.4) 100%);"></div>
           </div>
 
           <input type="hidden" name="delete_image" id="delete_image_input" value="false">
@@ -206,29 +208,11 @@ block content %}
           DISPONIBLE</span>
       </div>
 
-      <!-- Destacado -->
-      <div class="flex flex-col gap-2 px-1">
-        <div class="flex items-center gap-3">
-          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
-            style="flex-shrink: 0; min-width: 48px;">
-            {{ form.is_highlighted(class="sr-only peer") }}
-            <div
-              class="w-12 h-6 bg-orange-500/10 dark:bg-orange-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 peer-checked:shadow-[0_0:15px_rgba(249,115,22,0.4)] shadow-inner"
-              style="flex-shrink: 0; min-width: 48px;"></div>
-          </label>
-          <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">DESTACAR EN
-            CARRUSEL</span>
-        </div>
-        <p class="text-[9px] text-[#f2460d] font-bold italic ml-[61px] leading-tight">
-          * Los productos destacados aparecen en la parte superior del menú. Se recomienda usar fotos horizontales de alta
-          calidad.
-        </p>
-      </div>
     </div>
 
     <!-- Botones -->
     <div class="flex gap-3 pt-4">
-      <a href="{{ url_for('products.index') }}"
+      <a href="{{ url_for('products.by_category', category_id=product.category_id) if product else (url_for('products.by_category', category_id=form.category_id.data) if form.category_id.data else url_for('products.index')) }}"
         class="flex-1 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all text-center">
         Cancelar
       </a>

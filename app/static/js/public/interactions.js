@@ -87,9 +87,10 @@ async function shareProduct(productId, productName, categoryName) {
         if (navigator.share) {
             await navigator.share(shareData);
         } else {
-            // Fallback: Copiar al portapapeles
             await navigator.clipboard.writeText(productUrl);
-            alert('¡Enlace copiado! Puedes enviarlo por WhatsApp.');
+            if (window.showToast) {
+                window.showToast('¡Enlace copiado! Puedes enviarlo por WhatsApp.', 'success');
+            }
         }
     } catch (err) {
         console.error('Error al compartir:', err);

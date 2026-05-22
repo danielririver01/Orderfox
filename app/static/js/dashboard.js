@@ -103,9 +103,10 @@ async function fetchFinancialData() {
     const utilityEl = document.getElementById('stat-utilidad');
     const loadingEl = document.getElementById('stat-gastos-loading');
 
+    if (!ventasEl || !gastosEl || !utilityEl) return;
+
     // Loading states
-    // Loading states
-    loadingEl.classList.remove('hidden');
+    if (loadingEl) loadingEl.classList.remove('hidden');
     gastosEl.textContent = '...';
     ventasEl.textContent = '$ --';
     utilityEl.textContent = '$ --';
@@ -133,7 +134,7 @@ async function fetchFinancialData() {
         }
 
         // 3. Update UI
-        loadingEl.classList.add('hidden');
+        if (loadingEl) loadingEl.classList.add('hidden');
         ventasEl.textContent = formatCurrency(sales);
         gastosEl.textContent = formatCurrency(expenses);
         
@@ -153,26 +154,36 @@ function updateUtilityCard(sales, expenses) {
     const iconEl = document.getElementById('utilidad-icon');
     const iconBg = document.getElementById('utilidad-icon-bg');
 
+    if (!utilityEl) return;
+
     utilityEl.textContent = formatCurrency(utility);
 
     if (utility >= 0) {
         // GANANCIA
-        cardEl.className = "flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-100/50 dark:border-emerald-500/10 transition-all duration-500 ring-1 ring-emerald-500/20";
-        statusEl.textContent = "Balance Positivo";
-        statusEl.className = "text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest";
+        if (cardEl) cardEl.className = "flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-100/50 dark:border-emerald-500/10 transition-all duration-500 ring-1 ring-emerald-500/20";
+        if (statusEl) {
+            statusEl.textContent = "Balance Positivo";
+            statusEl.className = "text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest";
+        }
         utilityEl.className = "text-xl font-black tracking-tighter text-emerald-600 dark:text-emerald-400";
-        iconEl.textContent = "trending_up";
-        iconEl.className = "material-symbols-outlined text-emerald-600 text-xl";
-        iconBg.className = "w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center transition-colors";
+        if (iconEl) {
+            iconEl.textContent = "trending_up";
+            iconEl.className = "material-symbols-outlined text-emerald-600 text-xl";
+        }
+        if (iconBg) iconBg.className = "w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center transition-colors";
     } else {
         // PÉRDIDA
-        cardEl.className = "flex items-center justify-between p-3 rounded-xl bg-rose-50/50 dark:bg-rose-500/5 border border-rose-100/50 dark:border-rose-500/10 transition-all duration-500 animate-[pulse_2s_infinite] ring-1 ring-rose-500/30";
-        statusEl.textContent = "Balance Negativo";
-        statusEl.className = "text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest";
+        if (cardEl) cardEl.className = "flex items-center justify-between p-3 rounded-xl bg-rose-50/50 dark:bg-rose-500/5 border border-rose-100/50 dark:border-rose-500/10 transition-all duration-500 animate-[pulse_2s_infinite] ring-1 ring-rose-500/30";
+        if (statusEl) {
+            statusEl.textContent = "Balance Negativo";
+            statusEl.className = "text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest";
+        }
         utilityEl.className = "text-xl font-black tracking-tighter text-rose-600 dark:text-rose-400";
-        iconEl.textContent = "trending_down";
-        iconEl.className = "material-symbols-outlined text-rose-600 text-xl";
-        iconBg.className = "w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center transition-colors";
+        if (iconEl) {
+            iconEl.textContent = "trending_down";
+            iconEl.className = "material-symbols-outlined text-rose-600 text-xl";
+        }
+        if (iconBg) iconBg.className = "w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center transition-colors";
     }
 }
 

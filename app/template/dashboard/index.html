@@ -6,11 +6,13 @@
 <!-- Custom Style for Dashboard -->
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
 
-<div class="px-4 pb-32 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
+<div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
     <!-- Header Premium -->
     <header class="flex justify-between items-center mb-8 md:mb-10">
         <div class="flex flex-col">
-            <h1 class="text-2xl md:text-3xl lg:text-4xl font-black tracking-[-0.06em] text-white leading-none uppercase">{{ restaurant.name }}
+            <h1
+                class="text-2xl md:text-3xl lg:text-4xl font-black tracking-[-0.06em] text-white leading-none uppercase">
+                {{ restaurant.name }}
             </h1>
             <div class="flex items-center gap-3 mt-2">
                 <span class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Workspace</span>
@@ -62,21 +64,24 @@
                 class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-orange-100 dark:border-orange-500/10 shadow-sm flex flex-col items-center">
                 <span
                     class="text-[8px] md:text-[10px] font-black uppercase text-orange-600/60 dark:text-orange-400/60 tracking-widest">Pendientes</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ pending_count }}</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ pending_count
+                    }}</span>
             </div>
             <!-- Confirmados -->
             <div
                 class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-blue-100 dark:border-blue-500/10 shadow-sm flex flex-col items-center">
                 <span
                     class="text-[8px] md:text-[10px] font-black uppercase text-blue-600/60 dark:text-blue-400/60 tracking-widest">Confirmados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ confirmed_count }}</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ confirmed_count
+                    }}</span>
             </div>
             <!-- Entregados -->
             <div
                 class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-green-100 dark:border-green-500/10 shadow-sm flex flex-col items-center">
                 <span
                     class="text-[8px] md:text-[10px] font-black uppercase text-green-600/60 dark:text-green-400/60 tracking-widest">Entregados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ delivered_count }}</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ delivered_count
+                    }}</span>
             </div>
         </div>
     </section>
@@ -86,9 +91,11 @@
 
         <!-- Centro de Control Financiero -->
         <section aria-label="Operación Matemática">
-            <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-5 md:p-6 shadow-sm h-full">
+            <div
+                class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-5 md:p-6 shadow-sm h-full">
                 <div class="flex items-center justify-between mb-4">
-                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Centro de
+                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+                        Centro de
                         Control Financiero</h4>
                     <span
                         class="material-symbols-outlined text-gray-300 dark:text-[#262626] text-lg">account_balance_wallet</span>
@@ -102,7 +109,8 @@
                                 class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
                             </div>
-                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Ingresos Menú Digital</span>
+                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Ingresos Menú
+                                Digital</span>
                         </div>
                         <span id="stat-ventas"
                             class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{{
@@ -112,10 +120,12 @@
                     <!-- Gastos (Output) -->
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-rose-600 text-sm">payments</span>
                             </div>
-                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Registros de tus gastos</span>
+                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Registros de tus
+                                gastos</span>
                         </div>
                         <div id="stat-gastos-container" class="flex items-center">
                             <div id="stat-gastos-loading"
@@ -141,7 +151,8 @@
                                 <span
                                     class="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Utilidad
                                     Operativa</span>
-                                <span id="utilidad-status" class="text-[9px] font-bold text-emerald-500 uppercase">Balance
+                                <span id="utilidad-status"
+                                    class="text-[9px] font-bold text-emerald-500 uppercase">Balance
                                     Positivo</span>
                             </div>
                         </div>
@@ -158,8 +169,10 @@
             aria-label="Menú Digital">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex flex-col">
-                    <h3 class="font-extrabold text-xl text-text-main dark:text-white tracking-tight">Tu Menú Digital</h3>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-500 font-medium uppercase tracking-widest mt-0.5">
+                    <h3 class="font-extrabold text-xl text-text-main dark:text-white tracking-tight">Tu Menú Digital
+                    </h3>
+                    <p
+                        class="text-[11px] text-gray-500 dark:text-gray-500 font-medium uppercase tracking-widest mt-0.5">
                         Visibilidad en Tiempo Real</p>
                 </div>
                 <div id="menu-status-badge"
@@ -200,9 +213,11 @@
 
             <div class="mt-6 flex flex-col items-center gap-2">
                 <div class="w-full h-px bg-gray-50 dark:bg-[#262626]"></div>
-                <span class="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest mt-2">Enlace
+                <span
+                    class="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest mt-2">Enlace
                     de tu tienda</span>
-                <span class="text-[12px] font-bold text-[#f2460d] dark:text-orange-400 break-all select-all font-mono">{{
+                <span
+                    class="text-[12px] font-bold text-[#f2460d] dark:text-orange-400 break-all select-all font-mono">{{
                     menu_url }}</span>
             </div>
         </section>

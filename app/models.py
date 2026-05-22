@@ -47,6 +47,8 @@ class Restaurant(db.Model):
     is_active = db.Column(db.Boolean, default=False, nullable=False)
     is_open = db.Column(db.Boolean, default=True, nullable=False)
     has_used_trial = db.Column(db.Boolean, default=False, nullable=False)
+    # Configuración de expiración de pedidos pendientes (en horas, default 24)
+    pending_expiry_hours = db.Column(db.Integer, default=24, nullable=False)
     created_at = db.Column(AwareDateTime, default=db.func.now())
     
     def __repr__(self):
@@ -125,7 +127,6 @@ class Product(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Integer, nullable=False)  # En pesos colombianos
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    is_highlighted = db.Column(db.Boolean, default=False, nullable=False)
     image_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
@@ -186,6 +187,8 @@ class Order(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     total = db.Column(db.Integer, nullable=False)
     notes = db.Column(db.Text)
+    # Fecha de expiración para pedidos pendientes
+    expires_at = db.Column(AwareDateTime, nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), 
                           onupdate=lambda: datetime.now(timezone.utc))

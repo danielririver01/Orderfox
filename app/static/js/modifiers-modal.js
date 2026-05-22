@@ -73,6 +73,15 @@ function closeDesktop() {
     // Restore body scroll
     document.body.style.overflow = '';
 
+    // Mostrar FABs
+    const desktopFab = document.getElementById('desktop-add-product-btn');
+    const mobileFab = document.getElementById('mobile-add-product-btn');
+    if (desktopFab) {
+        desktopFab.classList.remove('hidden');
+        desktopFab.classList.add('md:flex');
+    }
+    if (mobileFab) mobileFab.classList.remove('hidden');
+
     currentProductId = null;
     currentProductName = null;
 }
@@ -99,6 +108,15 @@ async function openDesktop(productId, productName) {
     // Lock body scroll
     document.body.style.overflow = 'hidden';
 
+    // Ocultar FABs
+    const desktopFab = document.getElementById('desktop-add-product-btn');
+    const mobileFab = document.getElementById('mobile-add-product-btn');
+    if (desktopFab) {
+        desktopFab.classList.add('hidden');
+        desktopFab.classList.remove('md:flex');
+    }
+    if (mobileFab) mobileFab.classList.add('hidden');
+
     if (typeof hasModifiersAccess !== 'undefined' && !hasModifiersAccess) return;
 
     els.nameEl.textContent = productName;
@@ -117,6 +135,10 @@ async function openMobile(productId, productName) {
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     panel.style.transform = 'translateX(0)';
+
+    // Ocultar FAB móvil
+    const mobileFab = document.getElementById('mobile-add-product-btn');
+    if (mobileFab) mobileFab.classList.add('hidden');
 
     if (typeof hasModifiersAccess !== 'undefined' && !hasModifiersAccess) return;
 
@@ -138,6 +160,11 @@ function closeMobile() {
     setTimeout(() => {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
+        
+        // Mostrar FAB móvil
+        const mobileFab = document.getElementById('mobile-add-product-btn');
+        if (mobileFab) mobileFab.classList.remove('hidden');
+
         currentProductId = null;
         currentProductName = null;
     }, 300);
@@ -163,7 +190,7 @@ async function loadModifiers() {
             els.listEl.innerHTML = `
                 <div class="text-center py-12">
                     <span class="material-symbols-outlined text-gray-600 text-[40px] mb-3">add_circle</span>
-                    <p class="text-gray-500 text-sm font-medium">Sin extras aún</p>
+                    <p class="text-gray-500 text-sm font-medium">Sin combos aún</p>
                     <p class="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-bold">Agrega el primero abajo</p>
                 </div>`;
             return;
@@ -202,7 +229,7 @@ async function toggleModifier(id, newState) {
 
         toggle.checked = data.data.is_active;
         if (window.showToast) {
-            window.showToast(data.data.is_active ? 'Extra activado' : 'Extra desactivado', 'success');
+            window.showToast(data.data.is_active ? 'Combo activado' : 'Combo desactivado', 'success');
         }
     } catch (err) {
         toggle.checked = !newState;
@@ -259,30 +286,35 @@ async function deleteModifier(id) {
     const item = document.querySelector(`.modifier-item[data-id="${id}"]`);
     const name = item.querySelector('p').textContent;
 
-    if (!confirm(`¿Eliminar "${name}"?`)) return;
+    openDeleteModal(
+        null,
+        `¿Eliminar "${name}"? Esta acción no se puede deshacer.`,
+        'Eliminar combo',
+        async () => {
+            try {
+                const res = await fetch(`/products/api/modifiers/${id}`, { method: 'DELETE' });
+                const data = await res.json();
 
-    try {
-        const res = await fetch(`/products/api/modifiers/${id}`, { method: 'DELETE' });
-        const data = await res.json();
+                if (!data.success) throw new Error(data.error);
 
-        if (!data.success) throw new Error(data.error);
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(20px)';
+                item.style.transition = 'all 0.3s ease';
 
-        item.style.opacity = '0';
-        item.style.transform = 'translateX(20px)';
-        item.style.transition = 'all 0.3s ease';
+                setTimeout(async () => {
+                    await loadModifiers();
+                }, 300);
 
-        setTimeout(async () => {
-            await loadModifiers();
-        }, 300);
-
-        if (window.showToast) {
-            window.showToast(`"${name}" eliminado`, 'success');
+                if (window.showToast) {
+                    window.showToast(`"${name}" eliminado`, 'success');
+                }
+            } catch (err) {
+                if (window.showToast) {
+                    window.showToast(err.message || 'Error al eliminar', 'error');
+                }
+            }
         }
-    } catch (err) {
-        if (window.showToast) {
-            window.showToast(err.message || 'Error al eliminar', 'error');
-        }
-    }
+    );
 }
 
 function escapeHtml(text) {

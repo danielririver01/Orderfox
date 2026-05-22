@@ -75,14 +75,13 @@
     {% endif %}
 </head>
 
-<body class="bg-[#050505] text-white antialiased min-h-screen pb-24 selection:bg-orange-500/30">
+<body class="bg-[#050505] text-white antialiased min-h-screen pb-8 md:pb-24 selection:bg-orange-500/30">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
     <div id="status-banner"
         class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
         <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div
-                    class="w-9 h-9 rounded-xl flex items-center justify-center
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center
                         {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
                         {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
                         {% else %} bg-red-900/30 text-red-400
@@ -95,8 +94,7 @@
                 </p>
             </div>
 
-            <a href="{{ url_for('dashboard.subscription') }}"
-                class="text-sm font-semibold px-4 py-2 rounded-xl
+            <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
                     {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
                     {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
                     {% else %} text-red-400 hover:bg-red-900/20
@@ -171,13 +169,17 @@
 
     <!-- Toast de nuevos pedidos (Global) -->
     <div id="new-orders-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
-        <div class="flex items-center gap-3 bg-[#0a0a0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-bounce-in">
-            <span class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
+        <div
+            class="flex items-center gap-3 bg-[#0a0a0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-bounce-in">
+            <span
+                class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
             <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
-            <button onclick="refreshOrderList()" class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
+            <button onclick="refreshOrderList()"
+                class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
                 Ver ahora
             </button>
-            <button onclick="dismissNewOrdersToast()" class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
+            <button onclick="dismissNewOrdersToast()"
+                class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
                 <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
         </div>
@@ -187,14 +189,17 @@
     <div class="flex min-h-screen">
 
         <!-- Sidebar Desktop (hidden on mobile) -->
-        <aside class="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a0a0a] border-r border-white/5">
+        <aside
+            class="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a0a0a] border-r border-white/5">
             <!-- Logo -->
             <div class="flex items-center gap-3 px-6 py-6 border-b border-white/5">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f2460d] to-[#d63a0a] flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f2460d] to-[#d63a0a] flex items-center justify-center shadow-lg shadow-orange-500/20">
                     <span class="material-symbols-outlined text-white text-[22px]">lunch_dining</span>
                 </div>
                 <div>
-                    <h2 class="text-sm font-black text-white uppercase tracking-tight" style="font-family: 'Outfit', sans-serif;">Velzia</h2>
+                    <h2 class="text-sm font-black text-white uppercase tracking-tight"
+                        style="font-family: 'Outfit', sans-serif;">Velzia</h2>
                     <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
                 </div>
             </div>
@@ -210,6 +215,16 @@
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
                     <span class="material-symbols-outlined text-[20px]">inventory_2</span>
                     Stock
+                </a>
+                <a href="{{ url_for('categories.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">category</span>
+                    Categorías
+                </a>
+                <a href="{{ url_for('tables.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
+                    Gestión de Mesas
                 </a>
                 <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
@@ -233,14 +248,34 @@
             <!-- Restaurant Info (Bottom) -->
             <div class="px-4 py-4 border-t border-white/5">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20">
                         {{ session.get('restaurant_name', 'R')[0] | upper }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
-                        <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                        <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else
+                            session.get('restaurant_name', 'Restaurante') }}</p>
+                        <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{
+                            restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
                     </div>
                 </div>
+
+                <!-- Tokens IA -->
+                <button onclick="openTokenModal()" id="sidebar-token-section"
+                    class="w-full mt-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3">
+                    <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tokens IA</span>
+                            <span id="sidebar-token-count" class="text-xs font-black text-white">--</span>
+                        </div>
+                        <div class="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div id="sidebar-token-bar" class="h-full bg-orange-500 rounded-full transition-all duration-700" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </button>
             </div>
         </aside>
 
@@ -253,9 +288,6 @@
     {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     {% if session.get('user_id') %}
-    <!-- Velzia 2.0.0 Global Token Bubble -->
-    {% from 'components/token_bubble.html' import token_bubble %}
-    {{ token_bubble() }}
     {% include 'components/modal_tokens.html' %}
     <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>
     {% endif %}
@@ -275,7 +307,7 @@
     {% endif %}
     {% endwith %}
     {% endblock %}
-    
+
     <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
 </body>
 

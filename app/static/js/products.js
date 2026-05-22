@@ -57,11 +57,8 @@ async function toggleProduct(id, newState, url = null) {
         
         toggles.forEach(t => t.checked = !newState);
         
-        // Usar el sistema de toast global de Velzia
         if (window.showToast) {
             window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
-        } else {
-            alert(error.message || 'Error de conexión. Intenta de nuevo.');
         }
     }
 }

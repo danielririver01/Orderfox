@@ -1,5 +1,6 @@
 import os
 import uuid
+import io
 from PIL import Image
 from flask import current_app
 from werkzeug.utils import secure_filename
@@ -16,16 +17,11 @@ def allowed_file(filename):
 def save_image(file, subfolder, max_size=(800, 800)):
     """
     Procesa y sube una imagen a Cloudinary.
-    - file: El objeto de archivo de Flask (request.files['image'])
-    - subfolder: 'products' o 'categories'
-    - max_size: Tupla (width, height) para redimensionar (Cloudinary lo maneja con transformaciones)
-    
-    Retorna la URL segura de Cloudinary, o None si falla.
+    Comprime la imagen para mantenerla bajo el límite de 10MB de Cloudinary Free.
     """
     if not file or not allowed_file(file.filename):
         return None
 
-    # Configurar Cloudinary
     cloudinary.config(
         cloud_name = current_app.config.get('CLOUDINARY_CLOUD_NAME'),
         api_key = current_app.config.get('CLOUDINARY_API_KEY'),
@@ -34,13 +30,22 @@ def save_image(file, subfolder, max_size=(800, 800)):
     )
 
     try:
-        # Subir directamente a Cloudinary
-        # Usamos el subfolder como parte del folder en Cloudinary
+        img = Image.open(file.stream)
+        
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        output = io.BytesIO()
+        img.save(output, format='JPEG', quality=85, optimize=True)
+        output.seek(0)
+        
         upload_result = cloudinary.uploader.upload(
-            file,
+            output,
             folder=f"velzia/{subfolder}",
+            resource_type="image",
             transformation=[
-                {"width": max_size[0], "height": max_size[1], "crop": "limit"},
                 {"quality": "auto"},
                 {"fetch_format": "auto"}
             ]

@@ -39,7 +39,9 @@ async function changeStatus(orderId, newStatus, redirectUrl) {
             location.reload();
         }
     } catch (error) {
-        alert(error.message);
+        if (window.showToast) {
+            window.showToast(error.message, 'error');
+        }
     }
 }
 // Modal de cancelación

@@ -229,9 +229,10 @@ def api_ai_stats():
             start_date = now.replace(month=now.month - 1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
     query = db.text("""
-        SELECT COALESCE(SUM(amount), 0) as total
-        FROM expense
-        WHERE userId = :clerk_id AND date >= :start_date
+        SELECT COALESCE(SUM(e.amount), 0) as total
+        FROM expenses e
+        JOIN users u ON e.restaurant_id = u.restaurant_id
+        WHERE u.clerk_id = :clerk_id AND e.date >= :start_date
     """)
 
     result = db.session.execute(query, {'clerk_id': clerk_id, 'start_date': start_date})

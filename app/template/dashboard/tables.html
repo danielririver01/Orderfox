@@ -22,73 +22,141 @@
 </header>
 
 <main class="max-w-7xl mx-auto px-4 py-8">
-  <div class="premium-lock-container min-h-[400px] relative">
-    <div class="{% if not has_table_qr_access %}blur-sm grayscale opacity-40 pointer-events-none{% endif %} transition-all duration-500">
-      {% if tables %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for table in tables %}
-        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm hover:shadow-md transition-all p-6 relative group">
-          <div class="flex justify-between items-start mb-6">
-            <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">{{ table.name }}</h3>
-                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
-                  Activa
-                </span>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- COLUMNA IZQUIERDA: LISTA DE MESAS (8 columnas) -->
+    <div class="lg:col-span-8 xl:col-span-8 premium-lock-container min-h-[400px] relative">
+      <div class="{% if not has_table_qr_access %}blur-sm grayscale opacity-40 pointer-events-none{% endif %} transition-all duration-500">
+        {% if tables %}
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+          {% for table in tables %}
+          <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm hover:shadow-md transition-all p-6 relative group flex flex-col justify-between">
+            <div class="flex justify-between items-start mb-6">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">{{ table.name }}</h3>
+                  <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                    Activa
+                  </span>
+                </div>
+                <p class="text-[10px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
               </div>
-              <p class="text-[10px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
+            </div>
+
+            <div class="flex items-center gap-3 pt-5 border-t border-gray-50 dark:border-[#262626]">
+              
+              <!-- Botón Unificado (La lógica de si es móvil o desktop se hace en JS para evitar fallos de CSS) -->
+              <button 
+                onclick="handleQRClick(event, '{{ table.id }}', '{{ table.name }}', '{{ url_for('tables.qr_image', id=table.id) }}', '{{ request.host_url.rstrip('/') }}{{ url_for('public.menu', slug=table.restaurant.slug, table=table.id) }}', '{{ url_for('tables.download_qr', id=table.id) }}', '{{ url_for('tables.qr', id=table.id) }}')"
+                class="flex-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] dark:hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-3 px-4 rounded-xl text-center shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest hover:text-[#f2460d]"
+              >
+                <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+                Ver QR
+              </button>
+
+              <button
+                onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=\'hidden\' name=\'csrf_token\' value=\'{{ csrf_token() }}\'>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?');"
+                class="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
+                title="Eliminar Mesa"
+              >
+                <span class="material-symbols-outlined text-[22px]">delete</span>
+              </button>
             </div>
           </div>
-
-          <div class="flex items-center gap-3 pt-5 border-t border-gray-50 dark:border-[#262626]">
-            <a href="{{ url_for('tables.qr', id=table.id) }}" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 px-4 rounded-xl text-center shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
-              <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
-              QR CODE
-            </a>
-
-            <button
-              onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=\'hidden\' name=\'csrf_token\' value=\'{{ csrf_token() }}\'>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?');"
-              class="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
-              title="Eliminar Mesa"
-            >
-              <span class="material-symbols-outlined text-[22px]">delete</span>
-            </button>
-          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
+        {% else %}
+        <div class="text-center py-24 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
+          <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[64px] mb-6">table_restaurant</span>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mesas</h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">Crea tu primera mesa para generar su código QR y permitir pedidos digitales.</p>
+          <button
+            {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
+            class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
+          >
+            CREAR PRIMERA MESA
+          </button>
+        </div>
+        {% endif %}
       </div>
-      {% else %}
-      <div class="text-center py-24 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
-        <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[64px] mb-6">table_restaurant</span>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mesas</h3>
-        <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">Crea tu primera mesa para generar su código QR y permitir pedidos digitales.</p>
-        <button
-          {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
-          class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
-        >
-          CREAR PRIMERA MESA
-        </button>
+
+      {% if not has_table_qr_access %}
+      <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
+        <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
+          <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span class="material-symbols-outlined text-[#f2460d] text-[32px]">verified</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Plan Crecimiento</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+            Organiza tu restaurante con códigos QR por mesa para pedidos automáticos y mayor eficiencia.
+          </p>
+          <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
+            MEJORAR MI PLAN
+          </a>
+        </div>
       </div>
       {% endif %}
     </div>
 
-    {% if not has_table_qr_access %}
-    <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
-      <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
-        <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <span class="material-symbols-outlined text-[#f2460d] text-[32px]">verified</span>
+    <!-- COLUMNA DERECHA: VISTA QR PREVIEW (4 columnas) -->
+    <div class="hidden lg:block lg:col-span-4 xl:col-span-4 sticky top-24" id="qr-section">
+      
+      <!-- Estado Inicial (Placeholder) -->
+      <div id="qr-placeholder" class="bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626] p-10 text-center shadow-sm flex flex-col items-center justify-center min-h-[400px]">
+        <div class="w-20 h-20 bg-gray-50 dark:bg-[#1a1a1a] rounded-full flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-4xl">qr_code_scanner</span>
         </div>
-        <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Plan Crecimiento</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          Organiza tu restaurante con códigos QR por mesa para pedidos automáticos y mayor eficiencia.
-        </p>
-        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
-          MEJORAR MI PLAN
-        </a>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Visor QR</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-[250px] leading-relaxed">Haz clic en el botón "Ver QR" de cualquier mesa para visualizar su código aquí.</p>
       </div>
+
+      <!-- Estado Activo (QR Display) -->
+      <div id="qr-display-card" class="hidden relative bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-sm p-6 md:p-8 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <!-- Botón Cerrar (X) -->
+        <button onclick="clearTableQR()" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#262626] rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all active:scale-90" title="Cerrar visor">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl mb-4">
+                <span class="material-symbols-outlined text-[#f2460d] text-[28px]">qr_code_2</span>
+            </div>
+            <h2 id="qr-table-name" class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Mesa: --</h2>
+            <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Código exclusivo para esta mesa</p>
+        </div>
+
+        <!-- Código QR Imagen -->
+        <div class="bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] rounded-3xl p-6 md:p-8 mb-6 flex justify-center transition-colors">
+            <div class="bg-white p-3 rounded-2xl shadow-xl transition-transform hover:scale-105 relative group">
+                <div class="absolute inset-0 bg-[#f2460d]/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <img id="qr-image" src="" alt="Código QR" class="relative w-40 h-40 md:w-48 md:h-48 rounded-lg">
+            </div>
+        </div>
+
+        <!-- URL Menú -->
+        <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors">
+            <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
+            <div class="flex items-center gap-3">
+                <input type="text" id="qr-menu-url" readonly class="bg-transparent border-none text-xs text-[#f2460d] font-bold flex-1 truncate p-0 focus:ring-0 cursor-default" value="--">
+                <button onclick="copiarURLMenu()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-[#f2460d] rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90" title="Copiar URL">
+                    <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="space-y-3">
+            <a id="qr-download-btn" href="#" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs">
+                <span class="material-symbols-outlined">download</span>
+                Descargar QR
+            </a>
+        </div>
+      </div>
+
     </div>
-    {% endif %}
+
   </div>
 </main>
 
@@ -130,7 +198,61 @@
     </div>
 </div>
 
+<style>
+  /* Forzar visibilidad exacta del panel derecho sin depender de Tailwind precompilado */
+  @media (max-width: 1023px) {
+    #qr-section { display: none !important; }
+  }
+  @media (min-width: 1024px) {
+    #qr-section { display: block !important; }
+  }
+</style>
+
 <script>
+  function handleQRClick(event, id, name, imgUrl, menuUrl, downloadUrl, mobileUrl) {
+    event.preventDefault();
+    
+    // Si la pantalla es menor a 1024px (Móvil/Tablet pequeña), hacer navegación tradicional
+    if (window.innerWidth < 1024) {
+      window.location.href = mobileUrl;
+      return;
+    }
+
+    // Si es Escritorio, mostrar en el panel lateral
+    document.getElementById('qr-placeholder').classList.add('hidden');
+    document.getElementById('qr-display-card').classList.remove('hidden');
+
+    document.getElementById('qr-table-name').textContent = 'Mesa: ' + name;
+    
+    const imgEl = document.getElementById('qr-image');
+    imgEl.style.opacity = '0';
+    imgEl.src = imgUrl + '?t=' + new Date().getTime();
+    imgEl.onload = () => imgEl.style.opacity = '1';
+
+    document.getElementById('qr-menu-url').value = menuUrl;
+    document.getElementById('qr-download-btn').href = downloadUrl;
+  }
+
+  function clearTableQR() {
+    document.getElementById('qr-display-card').classList.add('hidden');
+    document.getElementById('qr-placeholder').classList.remove('hidden');
+  }
+
+  function copiarURLMenu() {
+    const urlInput = document.getElementById('qr-menu-url');
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(urlInput.value).then(() => {
+        if (typeof showToast === 'function') {
+            showToast('¡URL copiada al portapapeles!', 'success');
+        } else {
+            alert('¡URL copiada al portapapeles!');
+        }
+    }).catch(err => {
+        console.error('Error al copiar: ', err);
+    });
+  }
 </script>
 
 {% endblock %}

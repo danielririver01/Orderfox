@@ -46,7 +46,7 @@ def create():
         db.session.add(category)
         db.session.commit()
         flash('Categoría creada exitosamente', 'success')
-        return redirect(url_for('categories.index'))
+        return redirect(url_for('products.by_category', category_id=category.id))
     
     return render_template('dashboard/category_form.html', form=form, title='Nueva Categoría')
 
@@ -81,7 +81,7 @@ def edit(id):
                 
         db.session.commit()
         flash('Categoría actualizada exitosamente', 'success')
-        return redirect(url_for('categories.index'))
+        return redirect(url_for('products.by_category', category_id=category.id))
     
     return render_template('dashboard/category_form.html', form=form, title='Editar Categoría', category=category)
 

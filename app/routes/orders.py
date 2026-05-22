@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.models import db, Order, OrderItem, Product
 from app.utils.auth import login_required, active_required
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import json
 
 from app.utils.restaurant import get_current_restaurant
@@ -37,33 +37,43 @@ def validate_status_transition(current_status, new_status):
 @login_required
 @active_required
 def index():
-    """Listar pedidos del día agrupados por estado"""
+    """Listar pedidos: activos sin filtro de fecha, completados solo hoy"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
     
-    # Obtener el orden de clasificación (default: asc para los más antiguos primero)
     sort_order = request.args.get('sort', 'asc')
     
-    query = Order.query.filter(
+    # Pedidos activos (pending/confirmed): sin filtro de fecha
+    active_orders = Order.query.filter(
         Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
+        Order.status.in_(['pending', 'confirmed'])
     )
     
-    if sort_order == 'desc':
-        orders = query.order_by(Order.created_at.desc()).all()
-    else:
-        orders = query.order_by(Order.created_at.asc()).all()
-
+    # Pedidos completados (delivered/cancelled): mostrar si fueron actualizados hoy
+    completed_orders = Order.query.filter(
+        Order.restaurant_id == restaurant.id,
+        Order.status.in_(['delivered', 'cancelled']),
+        Order.updated_at >= today_start
+    )
     
-    pending = [o for o in orders if o.status == 'pending']
-    confirmed = [o for o in orders if o.status == 'confirmed']
-    delivered = [o for o in orders if o.status == 'delivered']
-    cancelled = [o for o in orders if o.status == 'cancelled']
+    # Combinar ambas consultas
+    if sort_order == 'desc':
+        active_orders = active_orders.order_by(Order.created_at.desc()).all()
+        completed_orders = completed_orders.order_by(Order.created_at.desc()).all()
+    else:
+        active_orders = active_orders.order_by(Order.created_at.asc()).all()
+        completed_orders = completed_orders.order_by(Order.created_at.asc()).all()
+    
+    all_orders = active_orders + completed_orders
+    
+    pending = [o for o in all_orders if o.status == 'pending']
+    confirmed = [o for o in all_orders if o.status == 'confirmed']
+    delivered = [o for o in all_orders if o.status == 'delivered']
+    cancelled = [o for o in all_orders if o.status == 'cancelled']
 
-    # ID del último pedido del día para que el JS detecte nuevos pedidos via polling
-    last_order_id = orders[0].id if orders else 0
+    last_order_id = all_orders[0].id if all_orders else 0
     
     return render_template('dashboard/orders.html', 
                          pending=pending, 
@@ -82,24 +92,34 @@ def fragment():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
 
-    # Obtener el orden de clasificación para el fragmento
     sort_order = request.args.get('sort', 'asc')
     
-    query = Order.query.filter(
+    # Pedidos activos: sin filtro de fecha
+    active_orders = Order.query.filter(
         Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
+        Order.status.in_(['pending', 'confirmed'])
+    )
+    
+    # Pedidos completados: mostrar si fueron actualizados hoy
+    completed_orders = Order.query.filter(
+        Order.restaurant_id == restaurant.id,
+        Order.status.in_(['delivered', 'cancelled']),
+        Order.updated_at >= today_start
     )
     
     if sort_order == 'desc':
-        orders = query.order_by(Order.created_at.desc()).all()
+        active_orders = active_orders.order_by(Order.created_at.desc()).all()
+        completed_orders = completed_orders.order_by(Order.created_at.desc()).all()
     else:
-        orders = query.order_by(Order.created_at.asc()).all()
+        active_orders = active_orders.order_by(Order.created_at.asc()).all()
+        completed_orders = completed_orders.order_by(Order.created_at.asc()).all()
+    
+    all_orders = active_orders + completed_orders
 
-
-    pending = [o for o in orders if o.status == 'pending']
-    confirmed = [o for o in orders if o.status == 'confirmed']
-    delivered = [o for o in orders if o.status == 'delivered']
-    cancelled = [o for o in orders if o.status == 'cancelled']
+    pending = [o for o in all_orders if o.status == 'pending']
+    confirmed = [o for o in all_orders if o.status == 'confirmed']
+    delivered = [o for o in all_orders if o.status == 'delivered']
+    cancelled = [o for o in all_orders if o.status == 'cancelled']
 
     return render_template('dashboard/_orders_list.html',
                            pending=pending,
@@ -120,6 +140,10 @@ def create():
         
         order_number = generate_order_number(restaurant.id)
         
+        # Calcular fecha de expiración para pedidos pendientes
+        expiry_hours = restaurant.pending_expiry_hours or 24
+        expires_at = datetime.now() + timedelta(hours=expiry_hours)
+        
         order = Order(
             restaurant_id=restaurant.id,
             order_number=order_number,
@@ -127,7 +151,8 @@ def create():
             customer_phone=data.get('customer_phone'),
             notes=data.get('notes'),
             total=0,
-            status='pending'
+            status='pending',
+            expires_at=expires_at
         )
         db.session.add(order)
         db.session.flush()

@@ -28,7 +28,10 @@ async function toggleCategory(id, newState, url = null) {
     try {
         const response = await fetch(endpoint, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: JSON.stringify({ is_active: newState })
         });
         
@@ -46,8 +49,6 @@ async function toggleCategory(id, newState, url = null) {
         
         if (window.showToast) {
             window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
-        } else {
-            alert(error.message || 'Error de conexión. Intenta de nuevo.');
         }
     }
 }

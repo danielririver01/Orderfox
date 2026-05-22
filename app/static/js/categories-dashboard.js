@@ -22,6 +22,13 @@ function openCategoryForm(categoryId = null) {
         panelWrapper.classList.add('md:block');
     }
 
+    // Ocultar FAB de escritorio
+    const addBtn = document.getElementById('desktop-add-category-btn');
+    if (addBtn) {
+        addBtn.classList.add('hidden');
+        addBtn.classList.remove('md:flex');
+    }
+
     // Bloquear scroll del body en desktop para que no se mueva la lista de atrás
     document.body.style.overflow = 'hidden';
 
@@ -59,6 +66,13 @@ function closeCategoryForm() {
     if (panelWrapper) {
         panelWrapper.classList.add('hidden');
         panelWrapper.classList.remove('md:block');
+    }
+
+    // Mostrar FAB de escritorio
+    const addBtn = document.getElementById('desktop-add-category-btn');
+    if (addBtn) {
+        addBtn.classList.remove('hidden');
+        addBtn.classList.add('md:flex');
     }
     
     // Volver a 1 columna
@@ -108,7 +122,9 @@ async function loadCategoryData(id) {
     saveBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>';
 
     try {
-        const res = await fetch(`/api/categories/${id}`);
+        const res = await fetch(`/api/categories/${id}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
         const data = await res.json();
 
         if (!data.success) throw new Error(data.error);
@@ -180,11 +196,13 @@ async function saveCategory(e) {
         if (editingCategoryId) {
             res = await fetch(`/api/categories/${editingCategoryId}`, {
                 method: 'PUT',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
             });
         } else {
             res = await fetch('/api/categories', {
                 method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
             });
         }
@@ -344,35 +362,46 @@ function updateCategoryCount() {
 function confirmDeleteCategory() {
     if (!editingCategoryId) return;
     const name = document.getElementById('form-name').value;
-    if (confirm(`¿Eliminar "${name}"? Se eliminarán también todos los productos asociados.`)) {
-        executeDelete(editingCategoryId);
-    }
+    openDeleteModal(
+        null,
+        `¿Eliminar "${name}"? Se eliminarán también todos los productos asociados.`,
+        `Eliminar categoría`,
+        () => executeDelete(editingCategoryId)
+    );
 }
 
 async function deleteCategory(id, name, fallbackUrl) {
-    if (!confirm(`¿Eliminar "${name}"?`)) return;
+    openDeleteModal(
+        null,
+        `¿Eliminar "${name}"? Esta acción no se puede deshacer.`,
+        `Eliminar categoría`,
+        async () => {
+            try {
+                const res = await fetch(`/api/categories/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
 
-    try {
-        const res = await fetch(`/api/categories/${id}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await res.json();
+                if (!data.success) {
+                    showToast(data.error || 'Error al eliminar', 'error');
+                    return;
+                }
 
-        if (!data.success) {
-            showToast(data.error || 'Error al eliminar', 'error');
-            return;
+                removeCategoryFromList(id);
+                showToast('Categoría eliminada', 'success');
+
+                if (editingCategoryId === id) {
+                    closeCategoryForm();
+                }
+            } catch (err) {
+                window.location.href = fallbackUrl;
+            }
         }
-
-        removeCategoryFromList(id);
-        showToast('Categoría eliminada', 'success');
-
-        if (editingCategoryId === id) {
-            closeCategoryForm();
-        }
-    } catch (err) {
-        window.location.href = fallbackUrl;
-    }
+    );
 }
 
 async function executeDelete(id) {
@@ -383,7 +412,10 @@ async function executeDelete(id) {
     try {
         const res = await fetch(`/api/categories/${id}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
         const data = await res.json();
 

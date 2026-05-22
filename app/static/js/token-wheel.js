@@ -1,69 +1,46 @@
 /**
- * token-wheel.js (v2.0.0 Alpha)
- * Sistema de monitoreo global de tokens IA
+ * token-wheel.js (v3.0.0)
+ * Sistema de monitoreo de tokens IA — Integrado en navegación
  */
 document.addEventListener('DOMContentLoaded', () => {
-    const bubbleContainer = document.getElementById('token-floating-bubble');
+    const sidebarCount = document.getElementById('sidebar-token-count');
+    const sidebarBar = document.getElementById('sidebar-token-bar');
+    const mobileCount = document.getElementById('mobile-token-count');
 
-    if (!bubbleContainer) {
-        return;
-    }
-
-    const bubbleProgress = document.getElementById('token-bubble-progress');
-    const bubbleValue = document.getElementById('token-bubble-value');
-    const tooltipText = document.getElementById('token-tooltip-text');
-
-    const CIRCUMFERENCE = 150.8;
+    if (!sidebarCount && !mobileCount) return;
 
     async function updateTokenStatus() {
         try {
             const response = await fetch('/api/tokens/status');
-
             if (!response.ok) throw new Error('No autorizado');
 
             const data = await response.json();
+            const available = data.total_available || 0;
+            const limit = data.plan_limit || 10;
+            const percent = data.is_elite ? 100 : Math.max(0, Math.min(100, (available / limit) * 100));
 
-            // Mostrar el globo con una pequeña transición
-            bubbleContainer.classList.add('is-ready');
+            // Sidebar: token count
+            if (sidebarCount) sidebarCount.textContent = available;
 
-            if (data.is_elite) {
-                // Mostramos el número y le pasamos el valor de la API
-                if (bubbleValue) {
-                    bubbleValue.classList.remove('hidden');
-                    bubbleValue.textContent = data.total_available;
-                }
+            // Sidebar: progress bar
+            if (sidebarBar) {
+                sidebarBar.style.width = percent + '%';
 
-                bubbleContainer.classList.add('is-elite');
-
-                if (bubbleProgress) {
-                    bubbleProgress.classList.remove('critical', 'warning');
-                    bubbleProgress.classList.add('success');
-                    bubbleProgress.style.strokeDashoffset = 0; // Círculo completo
-                }
-
-                if (tooltipText) tooltipText.textContent = `Plan Élite: ${data.total_available} tokens disponibles`;
-            } else {
-                if (bubbleValue) bubbleValue.classList.remove('hidden');
-                bubbleContainer.classList.remove('is-elite');
-
-                const available = data.total_available;
-                const limit = data.plan_limit || 10;
-                const percent = Math.max(0, Math.min(100, (available / limit) * 100));
-
-                if (bubbleValue) bubbleValue.textContent = available;
-                if (tooltipText) tooltipText.textContent = `${available} tokens disponibles`;
-
-                if (bubbleProgress) {
-                    const offset = CIRCUMFERENCE - (percent / 100 * CIRCUMFERENCE);
-                    bubbleProgress.style.strokeDashoffset = offset;
-
-                    // Colores
-                    bubbleProgress.classList.remove('success', 'warning', 'critical');
-                    if (available < 5) bubbleProgress.classList.add('critical');
-                    else if (available < (limit * 0.3)) bubbleProgress.classList.add('warning');
-                    else bubbleProgress.classList.add('success');
+                sidebarBar.classList.remove('bg-orange-500', 'bg-yellow-500', 'bg-red-500', 'bg-emerald-500');
+                if (data.is_elite) {
+                    sidebarBar.classList.add('bg-emerald-500');
+                } else if (available < 5) {
+                    sidebarBar.classList.add('bg-red-500');
+                } else if (available < limit * 0.3) {
+                    sidebarBar.classList.add('bg-yellow-500');
+                } else {
+                    sidebarBar.classList.add('bg-orange-500');
                 }
             }
+
+            // Mobile: token count badge
+            if (mobileCount) mobileCount.textContent = available;
+
         } catch (error) {
             console.error('VELZIA: Error actualizando tokens:', error);
         }
@@ -73,12 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('focus', updateTokenStatus);
 });
 
-// Funciones para apertura de modal de compra (globale)
+// Modal de tokens — funciones globales
 window.openTokenModal = function () {
     const modal = document.getElementById('modal-tokens-recarga');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
     }
 };
 
@@ -87,6 +65,7 @@ window.closeTokenModal = function () {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        document.body.style.overflow = '';
     }
 };
 
@@ -106,18 +85,15 @@ window.initiateTokenPurchase = async function (packKey) {
         const data = await response.json();
 
         if (!response.ok) {
-            const errorMsg = data.error || 'Error al iniciar pago';
-            showToast(errorMsg, 'warning');
+            showToast(data.error || 'Error al iniciar pago', 'warning');
             return;
         }
 
         if (data.checkout_url) {
-            // Redirigir a MercadoPago
             window.location.href = data.checkout_url;
         }
 
     } catch (error) {
-        //console.error('VELZIA: Error en compra de tokens:', error);
         showToast('Error de conexión con la pasarela de pagos', 'error');
     }
 };

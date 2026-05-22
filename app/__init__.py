@@ -28,6 +28,7 @@ def create_app():
                 static_url_path='/static')
     app.config.from_object('settings.Config')
     db.init_app(app)
+    migrate.init_app(app, db)
     mail.init_app(app)
     limiter.init_app(app)
     jwt = JWTManager(app)

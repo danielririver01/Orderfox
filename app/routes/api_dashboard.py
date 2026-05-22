@@ -23,15 +23,31 @@ def overview():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
 
-    stats = db.session.query(
+    # Pedidos activos: sin filtro de fecha
+    active_stats = db.session.query(
         Order.status,
         func.count(Order.id)
     ).filter(
         Order.restaurant_id == restaurant.id,
+        Order.status.in_(['pending', 'confirmed'])
+    ).group_by(Order.status).all()
+
+    # Pedidos completados: solo hoy
+    completed_stats = db.session.query(
+        Order.status,
+        func.count(Order.id)
+    ).filter(
+        Order.restaurant_id == restaurant.id,
+        Order.status.in_(['delivered', 'cancelled']),
         Order.created_at >= today_start
     ).group_by(Order.status).all()
-    counts = {s: c for s, c in stats}
 
+    # Combinar contadores
+    counts = {}
+    for s, c in active_stats + completed_stats:
+        counts[s] = counts.get(s, 0) + c
+
+    # Ventas: solo pedidos completados hoy
     total_sales = db.session.query(func.sum(Order.total)).filter(
         Order.restaurant_id == restaurant.id,
         Order.created_at >= today_start,
@@ -91,20 +107,19 @@ def check_orders():
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
 
-    base_filter = (
-        Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
-    )
+    # Último ID: considerar todos los pedidos del restaurante
+    last_id = db.session.query(func.max(Order.id)).filter(
+        Order.restaurant_id == restaurant.id
+    ).scalar() or 0
 
-    last_id = db.session.query(func.max(Order.id)).filter(*base_filter).scalar() or 0
-
+    # Pendientes: sin filtro de fecha (pedidos activos siempre visibles)
     pending_count = Order.query.filter(
-        *base_filter,
+        Order.restaurant_id == restaurant.id,
         Order.status == 'pending'
     ).count()
 
     new_orders = Order.query.filter(
-        *base_filter,
+        Order.restaurant_id == restaurant.id,
         Order.status == 'pending'
     ).order_by(Order.created_at.desc()).limit(10).all()
 

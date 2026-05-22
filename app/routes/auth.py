@@ -383,7 +383,6 @@ def setup_account():
             if is_trial:
                 # Caso TRIAL: El usuario ya está en la sesión de Flask, actualizamos username
                 session['username'] = user.username
-                flash('¡Registro exitoso! Disfruta de tus 10 días de prueba gratuita.', 'success')
                 return redirect(url_for('dashboard.index'))
             else:
                 # Caso PAGO: Redirigir a payment

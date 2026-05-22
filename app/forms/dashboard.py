@@ -19,7 +19,6 @@ class ProductForm(FlaskForm):
     price = IntegerField('Precio', validators=[DataRequired(), NumberRange(min=1, message='El precio debe ser mayor a 0')])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activo', default=True)
-    is_highlighted = BooleanField('Destacado en carrusel', default=False)
     image = FileField('Imagen (Opcional)', validators=[
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')

@@ -72,6 +72,11 @@ def create():
     
     categories = Category.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
     form.category_id.choices = [(c.id, c.name) for c in categories]
+
+    # Pre-seleccionar categoría si viene en los argumentos
+    category_id_arg = request.args.get('category_id', type=int)
+    if category_id_arg and any(c.id == category_id_arg for c in categories):
+        form.category_id.data = category_id_arg
     
     if not categories:
         flash('Primero crea una categoría para poder agregar productos o activa una categoría existente', 'warning')
@@ -91,7 +96,6 @@ def create():
             description=form.description.data,
             price=form.price.data,
             is_active=form.is_active.data,
-            is_highlighted=form.is_highlighted.data
         )
         
         # Manejo de imagen
@@ -103,7 +107,7 @@ def create():
         db.session.add(product)
         db.session.commit()
         flash('Producto creado exitosamente', 'success')
-        return redirect(url_for('products.index'))
+        return redirect(url_for('products.by_category', category_id=product.category_id))
     
     return render_template('dashboard/product_form.html', form=form, title='Nuevo Producto')
 
@@ -136,7 +140,6 @@ def edit(id):
         product.price = form.price.data
         product.description = form.description.data
         product.is_active = form.is_active.data
-        product.is_highlighted = form.is_highlighted.data
         
         # Manejo de imagen
         if form.image.data:
@@ -154,7 +157,7 @@ def edit(id):
         
         db.session.commit()
         flash('Producto actualizado exitosamente', 'success')
-        return redirect(url_for('products.index'))
+        return redirect(url_for('products.by_category', category_id=product.category_id))
     
     return render_template('dashboard/product_form.html', form=form, title='Editar Producto', product=product)
 
@@ -270,11 +273,12 @@ def delete(id):
     if product.image_url:
         delete_image(product.image_url)
         
+    category_id = product.category_id
     db.session.delete(product)
     db.session.commit() 
     flash('Producto eliminado exitosamente', 'success')
     
-    return redirect(url_for('products.index'))
+    return redirect(url_for('products.by_category', category_id=category_id))
 
 # ===== MODIFICADORES =====
 
