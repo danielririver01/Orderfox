@@ -649,6 +649,46 @@ html, body {
     font-weight: 600;
 }
 
+/* Sin productos */
+.no-products-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    min-height: 60vh;
+}
+
+.no-products-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    color: var(--mp-primary);
+}
+
+.no-products-message h3 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--mp-text-primary);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+}
+
+.no-products-message p {
+    font-size: 0.95rem;
+    color: var(--mp-primary-light);
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 320px;
+}
+
 /* ===== PANEL DERECHO (Detalle de Producto) ===== */
 .detail-panel {
     background: var(--mp-bg-panel);

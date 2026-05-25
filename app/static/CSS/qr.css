@@ -12,3 +12,32 @@
         .animate-slide-in {
             animation: slide-in 0.3s ease-out;
         }
+
+        /* Mobile responsiveness for QR page */
+        @media (max-width: 640px) {
+            .premium-lock-container {
+                width: 100%;
+                overflow-x: hidden;
+            }
+
+            code {
+                word-break: break-all;
+                overflow-wrap: break-word;
+            }
+
+            #qrImage {
+                max-width: 100% !important;
+                max-height: 140px !important;
+            }
+
+            .text-center {
+                overflow-wrap: break-word;
+            }
+        }
+
+        @media (max-width: 374px) {
+            #qrImage {
+                max-width: 100px !important;
+                max-height: 100px !important;
+            }
+        }

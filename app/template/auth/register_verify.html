@@ -224,6 +224,8 @@
         window.addEventListener('load', async function () {
             if (window.Clerk) {
                 await window.Clerk.load({
+                    frontendApi: 'oriented-tortoise-50.clerk.accounts.dev',
+                    googleOneTap: true,
                     localization: {
                         socialButtonsBlockButton__google: "Continuar con Google",
                         socialButtonsBlockButton__facebook: "Continuar con Facebook",

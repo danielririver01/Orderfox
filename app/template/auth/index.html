@@ -229,6 +229,8 @@
         window.addEventListener('load', async function () {
             if (window.Clerk) {
                 await window.Clerk.load({
+                    frontendApi: 'oriented-tortoise-50.clerk.accounts.dev',
+                    googleOneTap: true,
                     localization: {
                         socialButtonsBlockButton__google: "Continuar con Google",
                         socialButtonsBlockButton__facebook: "Continuar con Facebook",
@@ -277,11 +279,33 @@
                         const result = await response.json();
                         if (result.success && result.redirect_url) {
                             window.location.href = result.redirect_url;
+                        } else if (result.error_code === 'USER_NOT_REGISTERED') {
+                            // Usuario no registrado en BD - cerrar sesión
+                            await window.Clerk.signOut();
+                            // Mostrar mensaje y recargar
+                            const message = result.message || 'Debe registrarse en la plataforma para poder acceder.';
+                            const signInDiv = document.getElementById('clerk-signin');
+                            signInDiv.innerHTML = `
+                                <div class="flex flex-col items-center justify-center py-12 px-6">
+                                    <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-bold text-red-500 text-center mb-4">${message}</p>
+                                    <button onclick="window.location.reload()" class="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm">
+                                        Intentar de nuevo
+                                    </button>
+                                </div>
+                            `;
+                            return;
                         } else {
-                            throw new Error("Sync failed");
+                            throw new Error(result.message || "Sync failed");
                         }
                     } catch (error) {
                         console.error("Silent sync failed, falling back to manual sign in", error);
+                        // Cerrar sesión de Clerk y recargar
+                        await window.Clerk.signOut().catch(() => {});
                         window.location.reload();
                     }
                     return;

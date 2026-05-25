@@ -96,20 +96,19 @@ def sync_clerk():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        # Si el usuario no existe, lo creamos
-        user = User(
-            email=email,
-            username=username,
-            password='clerk_authenticated',  # Password dummy
-            clerk_id=clerk_id
-        )
-        db.session.add(user)
+        # Si el usuario no existe en la base de datos, RECHAZAMOS el acceso
+        # La base de datos es la única verdad
+        return jsonify({
+            'success': False, 
+            'message': 'Debe registrarse en la plataforma para poder acceder. Por favor, complete su registro.',
+            'error_code': 'USER_NOT_REGISTERED'
+        }), 401
+    
+    # El usuario existe, continuar con el flujo normal
+    # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
+    if not user.clerk_id:
+        user.clerk_id = clerk_id
         db.session.commit()
-    else:
-        # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
-        if not user.clerk_id:
-            user.clerk_id = clerk_id
-            db.session.commit()
 
     # Inicializar wallet de tokens si no existe (Velzia 2.0.0 Alpha)
     if not user.token_wallet:

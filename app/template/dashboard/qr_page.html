@@ -3,61 +3,62 @@
 {% block settings_title %}Código QR{% endblock %}
 
 {% block settings_content %}
-<div class="premium-lock-container relative">
+<div class="premium-lock-container relative w-full max-w-lg mx-auto px-3 sm:px-4">
     <div class="{% if not has_qr_access %}premium-blur{% endif %} transition-all duration-300">
 
         <!-- QR Card -->
-        <div class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-sm p-6 md:p-8 transition-colors">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl mb-4">
-                    <span class="material-symbols-outlined text-primary text-[28px]">qr_code_2</span>
+        <div class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm p-4 sm:p-5 transition-colors w-full box-border">
+            <div class="text-center mb-5">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-orange-100 dark:bg-orange-500/10 rounded-xl mb-3">
+                    <span class="material-symbols-outlined text-primary text-[24px]">qr_code_2</span>
                 </div>
                 {% if is_table_qr %}
-                    <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Mesa: {{ table_name }}</h2>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Código QR exclusivo para esta mesa</p>
+                    <h2 class="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tight">Mesa: {{ table_name }}</h2>
+                    <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium">Código QR exclusivo para esta mesa</p>
                 {% else %}
-                    <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{{ restaurant.name }}</h2>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Comparte este código QR con tus clientes</p>
+                    <h2 class="text-lg font-black text-gray-900 dark:text-white mb-1 tracking-tight">{{ restaurant.name }}</h2>
+                    <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium">Comparte este código QR con tus clientes</p>
                 {% endif %}
             </div>
 
             <!-- QR Code Display -->
-            <div class="bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] rounded-3xl p-6 md:p-8 mb-6 flex justify-center transition-colors">
-                <div class="bg-white p-3 rounded-2xl shadow-xl transition-transform hover:scale-105">
+            <div class="bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] rounded-2xl p-4 sm:p-5 mb-5 flex justify-center items-center w-full box-border overflow-hidden">
+                <div class="bg-white p-2 rounded-xl shadow-xl">
                     <img 
                         id="qrImage" 
                         src="{{ qr_image_url }}" 
                         alt="Código QR"
-                        class="w-40 h-40 md:w-48 md:h-48 rounded-lg"
+                        class="block w-auto"
+                        style="max-width: 160px; max-height: 160px; width: auto; height: auto; border-radius: 8px; object-fit: contain;"
                     >
                 </div>
             </div>
 
             <!-- URL Display -->
-            <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors">
-                <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
-                <div class="flex items-center gap-3">
-                    <code class="text-xs text-primary dark:text-orange-400 font-bold flex-1 truncate">{{ menu_url }}</code>
-                    <button onclick="copiarURL()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
-                        <span class="material-symbols-outlined text-[18px]">content_copy</span>
+            <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl p-3 mb-5 w-full box-border overflow-x-auto">
+                <p class="text-[9px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5 whitespace-nowrap">URL de tu menú:</p>
+                <div class="flex items-center gap-2 w-full min-w-0">
+                    <code class="text-[10px] text-primary dark:text-orange-400 font-bold flex-1 break-all min-w-0 overflow-x-auto">{{ menu_url }}</code>
+                    <button onclick="copiarURL()" class="w-8 h-8 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-lg shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90 flex-shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">content_copy</span>
                     </button>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="space-y-3">
+            <div class="space-y-2 w-full">
                 {% if is_table_qr %}
                     <a href="{{ url_for('tables.download_qr', id=request.view_args.get('id')) }}" 
-                       class="w-full bg-primary hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs">
-                        <span class="material-symbols-outlined">download</span>
+                       class="w-full bg-primary hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-[10px]">
+                        <span class="material-symbols-outlined text-[18px]">download</span>
                         Descargar QR
                     </a>
                 {% else %}
                     <button 
                         onclick="descargarQR()"
-                        class="w-full bg-primary hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs"
+                        class="w-full bg-primary hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-[10px]"
                     >
-                        <span class="material-symbols-outlined">download</span>
+                        <span class="material-symbols-outlined text-[18px]">download</span>
                         Descargar QR
                     </button>
                 {% endif %}
@@ -65,9 +66,9 @@
                 {% if not is_table_qr %}
                 <button 
                     onclick="compartirQR()"
-                    class="w-full bg-success hover:bg-green-700 text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 uppercase tracking-widest text-xs"
+                    class="w-full bg-success hover:bg-green-700 text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 uppercase tracking-widest text-[10px]"
                 >
-                    <span class="material-symbols-outlined">share</span>
+                    <span class="material-symbols-outlined text-[18px]">share</span>
                     Compartir WhatsApp
                 </button>
                 {% endif %}
@@ -75,21 +76,21 @@
         </div>
 
         <!-- Tips Card -->
-        <div class="bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 p-6 mt-6 transition-colors">
-            <h3 class="font-black text-blue-900 dark:text-blue-400 text-sm mb-4 flex items-center gap-2 uppercase tracking-widest">
-                <span class="material-symbols-outlined text-[18px]">lightbulb</span>
+        <div class="bg-blue-50/50 dark:bg-blue-500/5 rounded-2xl border border-blue-100/50 dark:border-blue-500/10 p-4 mt-4 transition-colors w-full box-border">
+            <h3 class="font-black text-blue-900 dark:text-blue-400 text-xs mb-3 flex items-center gap-2 uppercase tracking-widest">
+                <span class="material-symbols-outlined text-[16px]">lightbulb</span>
                 Consejos de Impresión
             </h3>
-            <ul class="text-xs text-blue-800/80 dark:text-blue-400/80 space-y-3 font-medium">
-                <li class="flex items-start gap-3">
+            <ul class="text-[10px] text-blue-800/80 dark:text-blue-400/80 space-y-2 font-medium">
+                <li class="flex items-start gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
                     <span><strong>Tamaño mínimo:</strong> 10x10 cm para un escaneo fluido desde cualquier móvil.</span>
                 </li>
-                <li class="flex items-start gap-3">
+                <li class="flex items-start gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
                     <span><strong>Ubicación:</strong> Colócalo en un lugar con buena iluminación y sin reflejos.</span>
                 </li>
-                <li class="flex items-start gap-3">
+                <li class="flex items-start gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
                     <span><strong>Protección:</strong> Plastifica tus códigos para evitar el desgaste por limpieza.</span>
                 </li>
@@ -99,26 +100,26 @@
 
     <!-- Lock Overlay for Free/Basic Plan -->
     {% if not has_qr_access %}
-    <div class="absolute inset-0 z-20 flex items-center justify-center px-4 bg-white/10 dark:bg-[#0a0a0a]/10 backdrop-blur-md transition-colors rounded-3xl">
-        <div class="bg-white dark:bg-[#141414] p-8 rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-2xl max-w-[320px] text-center">
-            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-950/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[32px]">lock_open</span>
+    <div class="absolute inset-0 z-20 flex items-center justify-center px-3 bg-white/10 dark:bg-[#0a0a0a]/10 backdrop-blur-md transition-colors rounded-2xl">
+        <div class="bg-white dark:bg-[#141414] p-6 rounded-2xl border border-gray-100 dark:border-[#262626] shadow-2xl max-w-[280px] text-center">
+            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-950/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[24px]">lock_open</span>
             </div>
-            <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3 tracking-tight leading-tight">
+            <h3 class="text-lg font-black text-gray-900 dark:text-white mb-2 tracking-tight leading-tight">
                 {% if is_table_qr %}
                     Mesas Premium
                 {% else %}
                     QR Personalizado
                 {% endif %}
             </h3>
-            <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
+            <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium mb-6 leading-relaxed">
                 {% if is_table_qr %}
                     Gestiona pedidos individuales por mesa y automatiza tu operación. Disponible en plan Crecimiento.
                 {% else %}
                     Obtén tu código profesional y mejora la experiencia de tus clientes.
                 {% endif %}
             </p>
-            <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+            <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-3 rounded-xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[9px]">
                 ACTUALIZAR PLAN
             </a>
         </div>
@@ -141,5 +142,5 @@
     const RESTAURANT_SLUG = "{{ slug }}";
 </script>
 <script src="{{ url_for('static', filename='js/qr_pages.js') }}"></script>
-<style src="{{ url_for('static', filename='css/qr.css') }}"></style>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/qr.css') }}">
 {% endblock %}  

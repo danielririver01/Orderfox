@@ -75,7 +75,7 @@
     {% endif %}
 </head>
 
-<body class="bg-[#050505] text-white antialiased min-h-screen pb-8 md:pb-24 selection:bg-orange-500/30">
+<body class="bg-[#050505] text-white antialiased min-h-screen pb-8 md:pb-24 selection:bg-orange-500/30 overflow-x-hidden">
     {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
     <div id="status-banner"
         class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
