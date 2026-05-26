@@ -318,6 +318,18 @@ class AITokenTransaction(db.Model):
     def __repr__(self):
         return f'<AITokenTransaction user={self.user_id} type={self.type} amount={self.amount}>'
 
+class PreRegistration(db.Model):
+    __tablename__ = 'pre_registrations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False, unique=True, index=True)
+    selected_plan = db.Column(db.String(20), nullable=False, default='trial')
+    whatsapp_phone = db.Column(db.String(20), nullable=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<PreRegistration {self.email} - {self.selected_plan}>'
+
 
 class Expense(db.Model):
     __tablename__ = 'expenses'

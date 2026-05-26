@@ -4,7 +4,8 @@ from flask_mail import Message
 from app import mail, db
 from app.forms import LoginForm, ForgotPasswordForm
 from app.forms.auth import RegisterEmailForm, RegisterVerifyForm, RegisterSetupForm
-from app.models import User, Restaurant, TrialHistory
+from app.models import User, Restaurant, TrialHistory, AITokenWallet, PreRegistration
+from werkzeug.security import generate_password_hash
 import random
 import re
 import unicodedata
@@ -96,13 +97,66 @@ def sync_clerk():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        # Si el usuario no existe en la base de datos, RECHAZAMOS el acceso
-        # La base de datos es la única verdad
-        return jsonify({
-            'success': False, 
-            'message': 'Debe registrarse en la plataforma para poder acceder. Por favor, complete su registro.',
-            'error_code': 'USER_NOT_REGISTERED'
-        }), 401
+        # ✨ AUTO-CREAR USUARIO (SIN RESTAURANTE)
+        # Si el usuario viene de Clerk pero no existe en BD, lo creamos automáticamente
+        # El restaurante se crea después en setup_account con los datos completos
+        
+        try:
+            # 1. Verificar si hay pre-registración con plan elegido
+            pre_reg = PreRegistration.query.filter_by(email=email).first()
+            selected_plan = pre_reg.selected_plan if pre_reg else 'trial'
+            
+            # 2. Crear usuario vinculado a Clerk (sin restaurante aún)
+            user = User(
+                restaurant_id=None,  # Se crea en setup_account
+                username=username,
+                email=email,
+                password=generate_password_hash(str(clerk_id)),  # Placeholder
+                clerk_id=clerk_id
+            )
+            db.session.add(user)
+            db.session.flush()  # Para obtener el ID del usuario
+            
+            # 3. Crear wallet de tokens IA con plan default
+            # Solo plan trial viene con tokens preassignados
+            plan_tokens = 100 if selected_plan == 'trial' else 0
+            
+            token_wallet = AITokenWallet(
+                user_id=user.id,
+                plan_limit=plan_tokens if selected_plan == 'trial' else None,
+                plan_tokens=plan_tokens,
+                extra_tokens=0
+            )
+            db.session.add(token_wallet)
+            
+            # 4. Guardar el plan seleccionado en sesión para setup_account
+            session['selected_plan'] = selected_plan
+            
+            # 5. Limpiar pre-registración (ya no necesaria)
+            if pre_reg:
+                db.session.delete(pre_reg)
+            
+            db.session.commit()
+            
+            # ✅ Usuario creado exitosamente
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['clerk_id'] = clerk_id
+            
+            return jsonify({
+                'success': True,
+                'message': f'¡Bienvenido! Completa tu registro para activar tu plan {selected_plan}.',
+                'is_new_user': True,
+                'redirect_url': url_for('auth.setup_account')
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': f'Error al crear usuario: {str(e)}',
+                'error_code': 'REGISTRATION_ERROR'
+            }), 500
     
     # El usuario existe, continuar con el flujo normal
     # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
@@ -265,6 +319,11 @@ def terms():
 
 @auth_bp.route('/planes')
 def plans():
+    # Si el usuario ya está autenticado pero no tiene restaurante, mandarlo a completar el setup
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and not user.restaurant:
+            return redirect(url_for('auth.setup_account'))
     return render_template('auth/plans.html')
 
 @auth_bp.route('/register', methods=['GET'])
@@ -279,6 +338,59 @@ def register():
 
 # Rutas de OTP legadas eliminadas - Velzia 2.0.0 usa Clerk para identidad gestionada
 
+@auth_bp.route('/api/save-plan-selection', methods=['POST'])
+def save_plan_selection():
+    """
+    Endpoint que guarda la pre-registración cuando el usuario selecciona un plan.
+    Llamado desde plans.html cuando hace click en un plan.
+    
+    Payload: { "email": "user@example.com", "plan": "trial|emprendedor|premium|elite" }
+    """
+    data = request.get_json()
+    email = data.get('email', '').strip().lower()
+    plan = data.get('plan', '').strip()
+    
+    # Validar
+    if not email or not plan:
+        return jsonify({
+            'success': False,
+            'message': 'Email y plan son requeridos'
+        }), 400
+    
+    valid_plans = ['trial', 'emprendedor', 'premium', 'elite']
+    if plan not in valid_plans:
+        return jsonify({
+            'success': False,
+            'message': f'Plan inválido: {plan}'
+        }), 400
+    
+    try:
+        # Si ya existe una pre-registración para este email, actualizar el plan
+        pre_reg = PreRegistration.query.filter_by(email=email).first()
+        if pre_reg:
+            pre_reg.selected_plan = plan
+            pre_reg.created_at = datetime.now(timezone.utc)  # Actualizar timestamp
+        else:
+            # Crear nueva pre-registración
+            pre_reg = PreRegistration(
+                email=email,
+                selected_plan=plan
+            )
+            db.session.add(pre_reg)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Plan {plan} guardado. Redirigiendo a login...'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error al guardar: {str(e)}'
+        }), 500
 
 @auth_bp.route('/setup-account', methods=['GET', 'POST'])
 def setup_account():

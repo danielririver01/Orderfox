@@ -55,8 +55,8 @@ def active_required(f):
                 f"Acceso sin restaurante - User: {session.get('user_id', 'unknown')} - "
                 f"Ruta: {request.path}"
             )
-            # Si no hay restaurante, tal vez sea un usuario nuevo, mandar a planes
-            return return_error('Tu cuenta no está asociada a ningún restaurante.', redirect_to='auth.plans')
+            # Si no hay restaurante, el usuario está en limbo (autenticado pero sin setup completo)
+            return return_error('Completa la configuración de tu restaurante para continuar.', redirect_to='auth.setup_account')
         
         # Verificación 2: ¿Está activo el restaurante? (no suspendido)
         if not restaurant.is_active:
