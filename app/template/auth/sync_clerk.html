@@ -67,30 +67,13 @@
                 console.log("Respuesta del backend recibida:", response.status);
                 clearTimeout(syncTimeout);
 
-                const result = await response.json();
-                
-                if (!response.ok || !result.success) {
-                    // Manejar error específico de usuario no registrado
-                    if (result.error_code === 'USER_NOT_REGISTERED') {
-                        // Cerrar sesión en Clerk
-                        try {
-                            await window.Clerk.signOut();
-                        } catch(e) {
-                            console.error("Error closing Clerk session:", e);
-                        }
-                        
-                        syncMessage.innerText = result.message || 'Debe registrarse en la plataforma para poder acceder.';
-                        syncMessage.classList.add('text-red-500');
-                    } else {
-                        syncMessage.innerText = 'Error de Sincronización: ' + (result.message || `Error ${response.status}`);
-                        syncMessage.classList.add('text-red-500');
-                    }
-                    if (syncSpinner) syncSpinner.classList.add('hidden');
-                    if (errorContainer) errorContainer.classList.remove('hidden');
-                    return;
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Error del servidor (${response.status})`);
                 }
 
-                if (result.redirect_url) {
+                const result = await response.json();
+                if (result.success && result.redirect_url) {
                     console.log("Sincronización exitosa, redirigiendo a:", result.redirect_url);
                     
                     // Si es un usuario nuevo, mostrar mensaje de bienvenida

@@ -229,8 +229,6 @@
         window.addEventListener('load', async function () {
             if (window.Clerk) {
                 await window.Clerk.load({
-                    frontendApi: 'oriented-tortoise-50.clerk.accounts.dev',
-                    googleOneTap: true,
                     localization: {
                         socialButtonsBlockButton__google: "Continuar con Google",
                         socialButtonsBlockButton__facebook: "Continuar con Facebook",
@@ -278,7 +276,6 @@
 
                         const result = await response.json();
                         if (result.success && result.redirect_url) {
-                            // Si es un usuario nuevo con plan trial, mostrar mensaje de bienvenida
                             if (result.is_new_user) {
                                 const signInDiv = document.getElementById('clerk-signin');
                                 signInDiv.innerHTML = `
@@ -293,7 +290,6 @@
                                         <p class="text-xs text-gray-500 text-center">Redirigiendo...</p>
                                     </div>
                                 `;
-                                // Pequeño delay para que el usuario vea el mensaje
                                 setTimeout(() => {
                                     window.location.href = result.redirect_url;
                                 }, 1500);
@@ -301,8 +297,6 @@
                                 window.location.href = result.redirect_url;
                             }
                         } else if (result.error_code === 'USER_NOT_REGISTERED') {
-                            // Este error ya no debería ocurrir (los usuarios se crean automáticamente)
-                            // Pero lo dejamos por compatibilidad
                             await window.Clerk.signOut();
                             const message = result.message || 'Debe registrarse en la plataforma para poder acceder.';
                             const signInDiv = document.getElementById('clerk-signin');
@@ -321,12 +315,10 @@
                             `;
                             return;
                         } else {
-                            throw new Error(result.message || "Sync failed");
+                            throw new Error("Sync failed");
                         }
                     } catch (error) {
                         console.error("Silent sync failed, falling back to manual sign in", error);
-                        // Cerrar sesión de Clerk y recargar
-                        await window.Clerk.signOut().catch(() => {});
                         window.location.reload();
                     }
                     return;

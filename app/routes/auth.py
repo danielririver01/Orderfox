@@ -97,30 +97,22 @@ def sync_clerk():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        # ✨ AUTO-CREAR USUARIO (SIN RESTAURANTE)
-        # Si el usuario viene de Clerk pero no existe en BD, lo creamos automáticamente
-        # El restaurante se crea después en setup_account con los datos completos
-        
         try:
-            # 1. Verificar si hay pre-registración con plan elegido
             pre_reg = PreRegistration.query.filter_by(email=email).first()
             selected_plan = pre_reg.selected_plan if pre_reg else 'trial'
-            
-            # 2. Crear usuario vinculado a Clerk (sin restaurante aún)
+
             user = User(
-                restaurant_id=None,  # Se crea en setup_account
+                restaurant_id=None,
                 username=username,
                 email=email,
-                password=generate_password_hash(str(clerk_id)),  # Placeholder
+                password=generate_password_hash(str(clerk_id)),
                 clerk_id=clerk_id
             )
             db.session.add(user)
-            db.session.flush()  # Para obtener el ID del usuario
-            
-            # 3. Crear wallet de tokens IA con plan default
-            # Solo plan trial viene con tokens preassignados
+            db.session.flush()
+
             plan_tokens = 100 if selected_plan == 'trial' else 0
-            
+
             token_wallet = AITokenWallet(
                 user_id=user.id,
                 plan_limit=plan_tokens if selected_plan == 'trial' else None,
@@ -128,28 +120,25 @@ def sync_clerk():
                 extra_tokens=0
             )
             db.session.add(token_wallet)
-            
-            # 4. Guardar el plan seleccionado en sesión para setup_account
+
             session['selected_plan'] = selected_plan
-            
-            # 5. Limpiar pre-registración (ya no necesaria)
+
             if pre_reg:
                 db.session.delete(pre_reg)
-            
+
             db.session.commit()
-            
-            # ✅ Usuario creado exitosamente
+
             session['user_id'] = user.id
             session['username'] = user.username
             session['clerk_id'] = clerk_id
-            
+
             return jsonify({
                 'success': True,
                 'message': f'¡Bienvenido! Completa tu registro para activar tu plan {selected_plan}.',
                 'is_new_user': True,
                 'redirect_url': url_for('auth.setup_account')
             })
-            
+
         except Exception as e:
             db.session.rollback()
             return jsonify({
@@ -157,12 +146,14 @@ def sync_clerk():
                 'message': f'Error al crear usuario: {str(e)}',
                 'error_code': 'REGISTRATION_ERROR'
             }), 500
-    
-    # El usuario existe, continuar con el flujo normal
-    # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
+
     if not user.clerk_id:
         user.clerk_id = clerk_id
-        db.session.commit()
+    else:
+        # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
+        if not user.clerk_id:
+            user.clerk_id = clerk_id
+            db.session.commit()
 
     # Inicializar wallet de tokens si no existe (Velzia 2.0.0 Alpha)
     if not user.token_wallet:
