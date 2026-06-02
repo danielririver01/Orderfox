@@ -149,11 +149,7 @@ def sync_clerk():
 
     if not user.clerk_id:
         user.clerk_id = clerk_id
-    else:
-        # Actualizar clerk_id si no estaba guardado (usuarios anteriores a v2.0.0)
-        if not user.clerk_id:
-            user.clerk_id = clerk_id
-            db.session.commit()
+        db.session.commit()
 
     # Inicializar wallet de tokens si no existe (Velzia 2.0.0 Alpha)
     if not user.token_wallet:
