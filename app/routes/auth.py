@@ -302,11 +302,15 @@ def reset_password(token):
 
 @auth_bp.route('/privacy')
 def privacy():
-    return render_template('auth/privacy.html')
+    return redirect(url_for('auth.legal'))
 
 @auth_bp.route('/terms')
 def terms():
-    return render_template('auth/terms.html')
+    return redirect(url_for('auth.legal'))
+
+@auth_bp.route('/legal')
+def legal():
+    return render_template('dashboard/legal.html')
 
 @auth_bp.route('/planes')
 def plans():

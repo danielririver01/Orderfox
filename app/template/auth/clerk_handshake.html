@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sincronizando con Velzia...</title>
+    <script crossorigin="anonymous" data-clerk-publishable-key="{{ CLERK_PUBLISHABLE_KEY }}" src="{{ clerk_js_url }}"
+        type="text/javascript"></script>
+</head>
+
+<body
+    style="background-color: #0f0f0f; color: #ffffff; font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+
+    <div style="text-align: center;">
+        <div
+            style="border: 3px solid #1a1a1a; border-top: 3px solid #f2460d; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto;">
+        </div>
+        <p id="status-text" style="font-size: 14px; color: #a3a3a3;">Estableciendo conexión segura...</p>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script>
+        window.addEventListener('load', async () => {
+            const statusText = document.getElementById('status-text');
+            try {
+                statusText.innerText = "Sincronizando credenciales locales...";
+                await Clerk.load();
+
+                // 🚀 LA MAGIA: Verificamos si Clerk reconoció el inicio de sesión del usuario
+                if (Clerk.session) {
+                    statusText.innerText = "Generando token de acceso firmado...";
+
+                    // Le pedimos explícitamente el token JWT estructurado (con sus 3 segmentos)
+                    const realJwt = await Clerk.session.getToken();
+
+                    if (realJwt) {
+                        statusText.innerText = "Autorizando ingreso a Velzia...";
+                        // Redirigimos pasándole el JWT real en la URL. Adiós problemas de cookies en localhost.
+                        window.location.href = "{{ url_for('auth.clerk_callback') }}?jwt=" + realJwt;
+                        return;
+                    }
+                }
+
+                // Si llegó aquí es porque cargó pero no encontró ninguna sesión activa en Clerk
+                console.warn("Clerk cargó pero no detectó una sesión activa.");
+                window.location.href = "{{ url_for('auth.login') }}";
+
+            } catch (err) {
+                console.error("Error crítico en el puente de Clerk:", err);
+                statusText.innerText = "Error de sincronización. Redirigiendo...";
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('auth.login') }}";
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -2,6 +2,13 @@
 {% block content %}
 <title>{% block settings_title %}Ajustes{% endblock %} - Velzia</title>
 
+<style>
+    /* Ocultar botón hamburguesa en páginas de settings porque ya tienen su propia navegación */
+    #mobile-nav-toggle {
+        display: none !important;
+    }
+</style>
+
 <!-- Header -->
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
     <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-4 flex items-center gap-3">

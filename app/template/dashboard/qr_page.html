@@ -3,42 +3,42 @@
 {% block settings_title %}Código QR{% endblock %}
 
 {% block settings_content %}
-<div class="premium-lock-container relative">
-    <div class="{% if not has_qr_access %}premium-blur{% endif %} transition-all duration-300">
+<div class="premium-lock-container relative max-w-full overflow-hidden">
+    <div class="{% if not has_qr_access %}premium-blur{% endif %} transition-all duration-300 max-w-full">
 
         <!-- QR Card -->
-        <div class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-sm p-6 md:p-8 transition-colors">
+        <div class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-sm p-3 sm:p-5 md:p-8 transition-colors w-full max-w-full overflow-hidden">
             <div class="text-center mb-6">
                 <div class="inline-flex items-center justify-center w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl mb-4">
                     <span class="material-symbols-outlined text-primary text-[28px]">qr_code_2</span>
                 </div>
                 {% if is_table_qr %}
-                    <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Mesa: {{ table_name }}</h2>
+                    <h2 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight break-words px-2">Mesa: {{ table_name }}</h2>
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Código QR exclusivo para esta mesa</p>
                 {% else %}
-                    <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{{ restaurant.name }}</h2>
+                    <h2 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight break-words px-2">{{ restaurant.name }}</h2>
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Comparte este código QR con tus clientes</p>
                 {% endif %}
             </div>
 
             <!-- QR Code Display -->
-            <div class="bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] rounded-3xl p-6 md:p-8 mb-6 flex justify-center transition-colors">
-                <div class="bg-white p-3 rounded-2xl shadow-xl transition-transform hover:scale-105">
+            <div class="bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] rounded-3xl p-3 sm:p-4 md:p-8 mb-6 flex justify-center items-center transition-colors w-full overflow-hidden">
+                <div class="bg-white p-2 sm:p-3 rounded-2xl shadow-xl transition-transform hover:scale-105 w-[140px] sm:w-[160px] md:w-[180px] flex justify-center items-center">
                     <img 
                         id="qrImage" 
                         src="{{ qr_image_url }}" 
                         alt="Código QR"
-                        class="w-40 h-40 md:w-48 md:h-48 rounded-lg"
+                        class="w-full h-auto aspect-square rounded-lg max-w-full object-contain"
                     >
                 </div>
             </div>
 
             <!-- URL Display -->
-            <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors">
+            <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors w-full overflow-hidden">
                 <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
-                <div class="flex items-center gap-3">
-                    <code class="text-xs text-primary dark:text-orange-400 font-bold flex-1 truncate">{{ menu_url }}</code>
-                    <button onclick="copiarURL()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
+                <div class="flex items-center gap-2 sm:gap-3 w-full">
+                    <code class="text-[10px] sm:text-xs text-primary dark:text-orange-400 font-bold flex-1 min-w-0 break-words" style="word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">{{ menu_url }}</code>
+                    <button onclick="copiarURL()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
                         <span class="material-symbols-outlined text-[18px]">content_copy</span>
                     </button>
                 </div>
@@ -75,7 +75,7 @@
         </div>
 
         <!-- Tips Card -->
-        <div class="bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 p-6 mt-6 transition-colors">
+        <div class="bg-blue-50/50 dark:bg-blue-500/5 rounded-3xl border border-blue-100/50 dark:border-blue-500/10 p-5 md:p-6 mt-6 transition-colors w-full overflow-hidden">
             <h3 class="font-black text-blue-900 dark:text-blue-400 text-sm mb-4 flex items-center gap-2 uppercase tracking-widest">
                 <span class="material-symbols-outlined text-[18px]">lightbulb</span>
                 Consejos de Impresión
@@ -83,15 +83,15 @@
             <ul class="text-xs text-blue-800/80 dark:text-blue-400/80 space-y-3 font-medium">
                 <li class="flex items-start gap-3">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
-                    <span><strong>Tamaño mínimo:</strong> 10x10 cm para un escaneo fluido desde cualquier móvil.</span>
+                    <span class="break-words"><strong>Tamaño mínimo:</strong> 10x10 cm para un escaneo fluido desde cualquier móvil.</span>
                 </li>
                 <li class="flex items-start gap-3">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
-                    <span><strong>Ubicación:</strong> Colócalo en un lugar con buena iluminación y sin reflejos.</span>
+                    <span class="break-words"><strong>Ubicación:</strong> Colócalo en un lugar con buena iluminación y sin reflejos.</span>
                 </li>
                 <li class="flex items-start gap-3">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
-                    <span><strong>Protección:</strong> Plastifica tus códigos para evitar el desgaste por limpieza.</span>
+                    <span class="break-words"><strong>Protección:</strong> Plastifica tus códigos para evitar el desgaste por limpieza.</span>
                 </li>
             </ul>
         </div>
@@ -99,8 +99,8 @@
 
     <!-- Lock Overlay for Free/Basic Plan -->
     {% if not has_qr_access %}
-    <div class="absolute inset-0 z-20 flex items-center justify-center px-4 bg-white/10 dark:bg-[#0a0a0a]/10 backdrop-blur-md transition-colors rounded-3xl">
-        <div class="bg-white dark:bg-[#141414] p-8 rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-2xl max-w-[320px] text-center">
+    <div class="absolute inset-0 z-20 flex items-center justify-center px-4 bg-white/10 dark:bg-[#0a0a0a]/10 backdrop-blur-md transition-colors rounded-3xl overflow-hidden">
+        <div class="bg-white dark:bg-[#141414] p-6 md:p-8 rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-2xl max-w-[320px] w-[calc(100%-2rem)] text-center">
             <div class="w-16 h-16 bg-blue-100 dark:bg-blue-950/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[32px]">lock_open</span>
             </div>

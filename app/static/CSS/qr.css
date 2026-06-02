@@ -1,14 +1,180 @@
-   @keyframes slide-in {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        .animate-slide-in {
-            animation: slide-in 0.3s ease-out;
-        }
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+}
+
+/* Prevent horizontal overflow globally */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* QR Image - completely fluid */
+#qrImage {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .premium-lock-container {
+        max-width: 100vw;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Reduce padding on small screens */
+    .premium-lock-container > div:first-child {
+        padding: 1rem;
+    }
+    
+    /* Adjust QR card padding */
+    .bg-white.dark\:bg-\[\#141414\] {
+        padding: 1.5rem !important;
+    }
+    
+    /* Make QR image container fluid */
+    .bg-gray-50.dark\:bg-\[\#0a0a0a\] {
+        padding: 1rem !important;
+    }
+    
+    /* Adjust text sizes */
+    h2.text-xl {
+        font-size: 1.25rem !important;
+    }
+    
+    p.text-xs {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Adjust button sizes */
+    button.py-4, a.w-full.py-4 {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Ensure URL text wraps */
+    code.text-\[10px\].sm\:text-xs {
+        font-size: 0.75rem !important;
+        word-break: break-all !important;
+        hyphens: auto !important;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 320px) {
+    .premium-lock-container > div:first-child {
+        padding: 0.75rem;
+    }
+    
+    .bg-white.dark\:bg-\[\#141414\] {
+        padding: 1rem !important;
+    }
+    
+    .bg-gray-50.dark\:bg-\[\#0a0a0a\] {
+        padding: 0.75rem !important;
+    }
+    
+    h2.text-xl {
+        font-size: 1.125rem !important;
+    }
+    
+    p.text-xs {
+        font-size: 0.65rem !important;
+    }
+    
+    /* Lock overlay adjustments */
+    .absolute.inset-0.z-20 {
+        padding: 0.5rem;
+    }
+    
+    .bg-white.dark\:bg-\[\#141414\]\[p-6\] {
+        padding: 1rem !important;
+    }
+    
+    h3.text-xl {
+        font-size: 1.125rem !important;
+    }
+    
+    a.block.py-4 {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+        font-size: 0.65rem !important;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 481px) and (max-width: 768px) {
+    .premium-lock-container > div:first-child {
+        padding: 1.5rem;
+    }
+    
+    .bg-white.dark\:bg-\[\#141414\] {
+        padding: 2rem !important;
+    }
+    
+    .bg-gray-50.dark\:bg-\[\#0a0a0a\] {
+        padding: 1.5rem !important;
+    }
+}
+
+/* Desktop adjustments */
+@media (min-width: 769px) {
+    .premium-lock-container {
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Ensure QR image doesn't grow too large */
+    #qrImage {
+        max-width: 150px;
+    }
+}
+
+/* Fix for lock overlay width calculation */
+.absolute.inset-0.z-20.flex.items-center.justify-center.px-4 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+.bg-white.dark\:bg-\[\#141414\]\[p-6\] {
+    max-width: 100% !important;
+    width: auto !important;
+}
+
+/* Fix for text truncation and wrapping */
+code.text-\[10px\].sm\:text-xs {
+    word-break: break-all;
+    hyphens: auto;
+    overflow-wrap: anywhere;
+}
+
+/* Improve touch targets on mobile */
+@media (hover: none) {
+    button.w-9.h-9,
+    a.w-full.py-4 {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    button.w-full.py-4, a.w-full.py-4 {
+        min-height: 48px;
+    }
+}
