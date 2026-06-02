@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordatorio de Suscripcion</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        .header {
+            background-color: #1c1917;
+            padding: 30px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .h1 {
+            color: #1c1917;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .text {
+            color: #4b5563;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #f97316;
+            color: #ffffff !important;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #ea580c;
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+        .restaurant-name {
+            font-size: 18px;
+            color: #f97316;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Velzia</div>
+        </div>
+        <div class="content">
+            <p class="restaurant-name">{{ restaurant_name }}</p>
+            <h1 class="h1">{{ title }}</h1>
+            <p class="text">{{ message }}</p>
+            <a href="{{ renew_url }}" class="btn" style="color: #ffffff; text-decoration: none;">Renovar ahora</a>
+            <p class="text" style="font-size: 14px; margin-top: 30px; margin-bottom: 0;">
+                Tu plan actual: {{ plan_name }} &mdash; ${{ plan_price }}/mes
+            </p>
+        </div>
+        <div class="footer">
+            &copy; 2026 Velzia Platform. Todos los derechos reservados.<br>
+            Si ya renovaste, ignora este mensaje.
+        </div>
+    </div>
+</body>
+</html>
