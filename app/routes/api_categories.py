@@ -1,25 +1,20 @@
-from flask import Blueprint, jsonify, request, session as flask_session
-from app import db
-from app.models import Category, Product, User
+from flask import Blueprint, jsonify, request, session as flask_session, current_app
+from flask_jwt_extended import verify_jwt_in_request
 from app.utils.jwt_auth import flexible_login_required, flexible_active_required, get_current_restaurant_jwt
 from app.utils.restaurant import get_current_restaurant
-from app.utils.image_handler import save_image, delete_image
+from app.services.category_service import CategoryService
 
 api_categories_bp = Blueprint('api_categories', __name__, url_prefix='/api/categories')
 
-
 def _get_restaurant():
-    """Obtiene el restaurante actual desde JWT o sesión Flask."""
-    from flask_jwt_extended import verify_jwt_in_request
     try:
         verify_jwt_in_request()
         return get_current_restaurant_jwt()
-    except Exception:
-        pass
+    except Exception as e:
+        current_app.logger.warning(f"JWT verification failed in _get_restaurant: {e}")
     if 'user_id' in flask_session:
         return get_current_restaurant()
     return None
-
 
 @api_categories_bp.route('', methods=['GET'])
 @flexible_login_required
@@ -28,11 +23,7 @@ def list_categories():
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    categories = Category.query.filter_by(
-        restaurant_id=restaurant.id
-    ).order_by(Category.sort_order).all()
-
+    categories = CategoryService.get_categories(restaurant.id)
     return jsonify({
         'success': True,
         'data': {
@@ -44,14 +35,13 @@ def list_categories():
                     'sort_order': c.sort_order,
                     'is_active': c.is_active,
                     'image_url': c.image_url,
-                    'product_count': Product.query.filter_by(category_id=c.id, restaurant_id=restaurant.id).count(),
+                    'product_count': CategoryService.get_product_count(restaurant.id, c.id),
                     'created_at': c.created_at.isoformat() if c.created_at else None
                 }
                 for c in categories
             ]
         }
     })
-
 
 @api_categories_bp.route('', methods=['POST'])
 @flexible_login_required
@@ -60,35 +50,18 @@ def create_category():
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
     name = request.form.get('name', '').strip()
-    description = request.form.get('description', '').strip()
-    is_active = request.form.get('is_active', 'true').lower() == 'true'
-
     if not name:
         return jsonify({'success': False, 'error': 'Nombre es requerido'}), 400
-
-    max_order = db.session.query(db.func.max(Category.sort_order)).filter_by(
-        restaurant_id=restaurant.id
-    ).scalar() or 0
-
-    category = Category(
+    category, error = CategoryService.create_category(
         restaurant_id=restaurant.id,
         name=name,
-        description=description,
-        is_active=is_active,
-        sort_order=max_order + 1
+        description=request.form.get('description', '').strip(),
+        is_active=request.form.get('is_active', 'true').lower() == 'true',
+        image_file=request.files.get('image')
     )
-
-    image_file = request.files.get('image')
-    if image_file:
-        image_url = save_image(image_file, 'categories')
-        if image_url:
-            category.image_url = image_url
-
-    db.session.add(category)
-    db.session.commit()
-
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
     return jsonify({
         'success': True,
         'data': {
@@ -101,7 +74,6 @@ def create_category():
         }
     }), 201
 
-
 @api_categories_bp.route('/<int:id>', methods=['GET'])
 @flexible_login_required
 @flexible_active_required
@@ -109,11 +81,9 @@ def get_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    category = CategoryService.get_category(restaurant.id, id)
     if not category:
         return jsonify({'success': False, 'error': 'Categoría no encontrada'}), 404
-
     return jsonify({
         'success': True,
         'data': {
@@ -126,7 +96,6 @@ def get_category(id):
         }
     })
 
-
 @api_categories_bp.route('/<int:id>', methods=['PUT'])
 @flexible_login_required
 @flexible_active_required
@@ -134,36 +103,19 @@ def update_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    category = CategoryService.get_category(restaurant.id, id)
     if not category:
         return jsonify({'success': False, 'error': 'Categoría no encontrada'}), 404
-
-    name = request.form.get('name')
-    description = request.form.get('description')
-    is_active = request.form.get('is_active')
-
-    if name:
-        category.name = name.strip()
-    if description is not None:
-        category.description = description.strip()
-    if is_active is not None:
-        category.is_active = is_active.lower() == 'true'
-
-    image_file = request.files.get('image')
-    if image_file:
-        if category.image_url:
-            delete_image(category.image_url)
-        image_url = save_image(image_file, 'categories')
-        if image_url:
-            category.image_url = image_url
-    elif request.form.get('delete_image') == 'true':
-        if category.image_url:
-            delete_image(category.image_url)
-        category.image_url = None
-
-    db.session.commit()
-
+    category, error = CategoryService.update_category(
+        category=category,
+        name=request.form.get('name'),
+        description=request.form.get('description'),
+        is_active=request.form.get('is_active').lower() == 'true' if request.form.get('is_active') is not None else None,
+        image_file=request.files.get('image'),
+        delete_image_flag=request.form.get('delete_image') == 'true'
+    )
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
     return jsonify({
         'success': True,
         'data': {
@@ -175,7 +127,6 @@ def update_category(id):
         }
     })
 
-
 @api_categories_bp.route('/<int:id>', methods=['DELETE'])
 @flexible_login_required
 @flexible_active_required
@@ -183,30 +134,13 @@ def delete_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    category = CategoryService.get_category(restaurant.id, id)
     if not category:
         return jsonify({'success': False, 'error': 'Categoría no encontrada'}), 404
-
-    product_count = Product.query.filter_by(
-        category_id=id,
-        restaurant_id=restaurant.id
-    ).count()
-
-    if product_count > 0:
-        return jsonify({
-            'success': False,
-            'error': f'No se puede eliminar porque tiene {product_count} producto(s) asociado(s)'
-        }), 400
-
-    if category.image_url:
-        delete_image(category.image_url)
-
-    db.session.delete(category)
-    db.session.commit()
-
+    success, error = CategoryService.delete_category(category)
+    if not success:
+        return jsonify({'success': False, 'error': error}), 400
     return jsonify({'success': True, 'message': 'Categoría eliminada exitosamente'})
-
 
 @api_categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
 @flexible_login_required
@@ -215,17 +149,12 @@ def toggle_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    category = CategoryService.get_category(restaurant.id, id)
     if not category:
         return jsonify({'success': False, 'error': 'Categoría no encontrada'}), 404
-
     data = request.get_json()
-    category.is_active = data.get('is_active', not category.is_active)
-    db.session.commit()
-
+    CategoryService.toggle_category(category, data.get('is_active'))
     return jsonify({'success': True, 'data': {'id': category.id, 'is_active': category.is_active}})
-
 
 @api_categories_bp.route('/<int:id>/reorder', methods=['PATCH'])
 @flexible_login_required
@@ -234,17 +163,11 @@ def reorder_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
-
-    category = Category.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    category = CategoryService.get_category(restaurant.id, id)
     if not category:
         return jsonify({'success': False, 'error': 'Categoría no encontrada'}), 404
-
     data = request.get_json()
-    new_order = data.get('sort_order')
-
-    if new_order is not None:
-        category.sort_order = new_order
-        db.session.commit()
-        return jsonify({'success': True, 'data': {'id': category.id, 'sort_order': category.sort_order}})
-
-    return jsonify({'success': False, 'error': 'sort_order requerido'}), 400
+    success, error = CategoryService.reorder_category(category, data.get('sort_order'))
+    if not success:
+        return jsonify({'success': False, 'error': error}), 400
+    return jsonify({'success': True, 'data': {'id': category.id, 'sort_order': category.sort_order}})

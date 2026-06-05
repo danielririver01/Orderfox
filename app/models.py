@@ -187,6 +187,8 @@ class Order(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     total = db.Column(db.Integer, nullable=False)
     notes = db.Column(db.Text)
+    # IP del cliente para rate limiting (P4)
+    ip_address = db.Column(db.String(45), nullable=True, index=True)
     # Fecha de expiración para pedidos pendientes
     expires_at = db.Column(AwareDateTime, nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
@@ -271,7 +273,7 @@ class AITokenWallet(db.Model):
     def total_available(self):
         """Tokens disponibles para usar ahora mismo."""
         if self.is_elite:
-            return 3000  # Simulado como ilimitado
+            return float('inf')  # Elite: tokens ilimitados
         return self.plan_tokens + self.extra_tokens
 
     @property
@@ -329,6 +331,23 @@ class PreRegistration(db.Model):
 
     def __repr__(self):
         return f'<PreRegistration {self.email} - {self.selected_plan}>'
+
+
+class OrderCounter(db.Model):
+    """Atomic counter for order numbers per restaurant per day (P5)."""
+    __tablename__ = 'order_counters'
+
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    counter = db.Column(db.Integer, nullable=False, default=0)
+    __table_args__ = (db.UniqueConstraint('restaurant_id', 'date', name='uq_restaurant_date'),)
+
+    restaurant = db.relationship('Restaurant', backref=db.backref('order_counters', lazy=True,
+                                                                   cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<OrderCounter restaurant={self.restaurant_id} date={self.date} count={self.counter}>'
 
 
 class Expense(db.Model):

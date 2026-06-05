@@ -162,7 +162,7 @@
         <div class="flex items-center gap-4">
           <span class="text-sm font-black text-gray-500 dark:text-gray-400">${{ '{:,}'.format(order.total) }}</span>
           <button onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-            class="w-8 h-8 flex items-center justify-center text-gray-400 dark:text-gray-600 hover:text-green-600 rounded-lg transition-all">
+            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-green-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all">
             <span class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
         </div>
@@ -207,14 +207,14 @@
           <p class="text-[10px] text-gray-500 dark:text-gray-500">{{ order.customer_name }}</p>
           {% endif %}
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <span class="text-sm font-black text-gray-400 dark:text-gray-500 line-through">${{ '{:,}'.format(order.total) }}</span>
           <button onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'pending')"
-            class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-orange-600 bg-orange-50 dark:bg-orange-500/10 rounded-lg transition-all" title="Restaurar a pendientes">
+            class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-orange-600 bg-orange-50 dark:bg-orange-500/10 rounded-lg transition-all flex-shrink-0" title="Restaurar a pendientes">
             <span class="material-symbols-outlined text-[18px]">undo</span>
           </button>
           <button onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-            class="w-8 h-8 flex items-center justify-center text-gray-400 dark:text-gray-600 hover:text-red-600 rounded-lg transition-all">
+            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0">
             <span class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
         </div>

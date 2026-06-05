@@ -10,7 +10,11 @@ APP_RELEASE_DATE = '2026-04-14'
 
 class Config:
     # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'una-clave-secreta-muy-larga-para-desarrollo-seguro'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        # ⚠️ Este valor seguro SOLO debe usarse en desarrollo.
+        # En producción, configurar SECRET_KEY como variable de entorno.
+        SECRET_KEY = 'una-clave-secreta-muy-larga-para-desarrollo-seguro'
     
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
@@ -61,5 +65,5 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
 
-    # CSRF: disable default check, we handle it manually in before_request
-    WTF_CSRF_CHECK_DEFAULT = False
+    # CSRF: enable default check; API routes exempted via before_request
+    WTF_CSRF_CHECK_DEFAULT = True

@@ -11,6 +11,8 @@ import cloudinary.api
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
 def allowed_file(filename):
+    if not filename:
+        return False
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -54,7 +56,7 @@ def save_image(file, subfolder, max_size=(800, 800)):
         return upload_result.get('secure_url')
         
     except Exception as e:
-        print(f"Error al subir imagen a Cloudinary: {e}")
+        current_app.logger.error(f"Error al subir imagen a Cloudinary: {e}")
         return None
 
 def delete_image(image_url):
@@ -96,7 +98,7 @@ def delete_image(image_url):
                 public_id = image_url[start_index:].rsplit('.', 1)[0]
                 cloudinary.uploader.destroy(public_id)
         except Exception as e:
-            print(f"Error al eliminar imagen de Cloudinary: {e}")
+            current_app.logger.error(f"Error al eliminar imagen de Cloudinary: {e}")
     else:
         # Construir ruta completa para eliminación local (compatibilidad con imágenes viejas)
         full_path = os.path.join(current_app.root_path, 'static', image_url)
@@ -105,4 +107,4 @@ def delete_image(image_url):
             try:
                 os.remove(full_path)
             except Exception as e:
-                print(f"Error al eliminar imagen local {full_path}: {e}")
+                current_app.logger.error(f"Error al eliminar imagen local {full_path}: {e}")

@@ -18,7 +18,7 @@ class OrderRateLimiter:
         since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
         return Order.query.filter(
             Order.restaurant_id == restaurant_id,
-            Order.notes.ilike(f"%IP:{client_ip}%"),
+            Order.ip_address == client_ip,
             Order.created_at >= since,
             Order.status.in_(['pending', 'completed'])
         ).count()
@@ -53,10 +53,4 @@ class OrderRateLimiter:
 
         return False, None, None
     
-    @staticmethod
-    def log_order_attempt(restaurant_id, order, client_ip):
-        """Registra la IP en las notas del pedido para el seguimiento del rate limit."""
-        if order.notes:
-            order.notes += f" | IP:{client_ip}"
-        else:
-            order.notes = f"IP:{client_ip}"
+

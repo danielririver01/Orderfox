@@ -20,12 +20,6 @@
     </div>
 </header>
 
-{% if get_flashed_messages() %}
-<div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 pt-4">
-    {% include 'components/flash_messages.html' %}
-</div>
-{% endif %}
-
 <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-6 md:pb-16 overflow-x-hidden">
     <div class="md:grid md:grid-cols-1 md:gap-6 lg:gap-8 items-start min-w-0" id="categories-grid">
 
@@ -262,12 +256,6 @@
     class="hidden md:flex fixed bottom-8 right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all z-20">
     <span class="material-symbols-outlined text-[28px]">add</span>
 </button>
-
-<!-- Toast -->
-<div id="toast"
-    class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
-    <span id="toast-message"></span>
-</div>
 
 <!-- Bottom Navigation -->
 {% include 'common/navigation.html' %}

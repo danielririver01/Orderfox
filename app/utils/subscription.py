@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from app.models import db, Product
+from datetime import datetime, timedelta, timezone
+from flask import current_app
+from app.models import db, Product, AITokenWallet, AITokenTransaction
 
 PLAN_LIMITS = {
     'emprendedor': {
@@ -9,7 +10,9 @@ PLAN_LIMITS = {
         'has_modifiers': False,
         'has_status_management': False,
         'has_ai_tokens': True,
-        'name': 'Emprendedor'
+        'name': 'Emprendedor',
+        'price_cop': 30000,
+        'duration_days': 30
     },
     'crecimiento': {
         'max_products': 100,
@@ -18,7 +21,9 @@ PLAN_LIMITS = {
         'has_modifiers': False,
         'has_status_management': True,
         'has_ai_tokens': True,
-        'name': 'Crecimiento'
+        'name': 'Crecimiento',
+        'price_cop': 40000,
+        'duration_days': 30
     },
     'elite': {
         'max_products': float('inf'),
@@ -27,7 +32,9 @@ PLAN_LIMITS = {
         'has_modifiers': True,
         'has_status_management': True,
         'has_ai_tokens': True,
-        'name': 'Élite'
+        'name': 'Élite',
+        'price_cop': 50000,
+        'duration_days': 30
     },
     'trial': {
         'max_products': float('inf'),
@@ -36,7 +43,9 @@ PLAN_LIMITS = {
         'has_modifiers': True,
         'has_status_management': True,
         'has_ai_tokens': True,
-        'name': 'Prueba Gratuita Premium'
+        'name': 'Prueba Gratuita Premium',
+        'price_cop': 0,
+        'duration_days': 10
     }
 }
 
@@ -96,7 +105,6 @@ def is_subscription_active(restaurant, include_grace_period=False):
     if expires_at > now:
         return True
     if include_grace_period:
-        from datetime import timedelta
         grace_end = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
         return now <= grace_end
         
@@ -199,7 +207,7 @@ def get_subscription_status(restaurant):
                 'expires_at': expires_at,
                 'formatted_expiration': formatted_expiration,
                 'can_crud': True,
-                'message': f'Tu acceso a Pedidos Digitales vence en {days_remaining} días. Mantén el control de tu negocio.',
+                'message': f'Tu acceso a la plataforma vence en {days_remaining} días. Renueva hoy y evita la suspensión de tu menú digital.',
                 'badge_class': 'bg-gray-100 text-gray-700',
                 'badge_text': 'Vence pronto',
                 'plan': restaurant.plan_type
@@ -244,7 +252,6 @@ def get_subscription_status(restaurant):
             'plan': restaurant.plan_type
         }
     
-    from datetime import timedelta
     grace_end = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
     
     if now <= grace_end:
@@ -318,27 +325,24 @@ def sanitize_restaurant_limits(restaurant):
             for prod in products_to_deactivate:
                 prod.is_active = False
             
-            print(f"SANEAMIENTO: Desactivados {len(products_to_deactivate)} productos por límite de plan.")
+            current_app.logger.info(f"SANEAMIENTO: Desactivados {len(products_to_deactivate)} productos por límite de plan.")
 
     if not limits.get('has_status_management', False):
         if not restaurant.is_open:
             restaurant.is_open = True
-            print("SANEAMIENTO: Restaurante forzado a ABIERTO por restricción de plan.")
+            current_app.logger.info("SANEAMIENTO: Restaurante forzado a ABIERTO por restricción de plan.")
 
     try:
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en sanitize_restaurant_limits: {e}")
+        current_app.logger.error(f"ERROR en sanitize_restaurant_limits: {e}")
 
 def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
     """
     Sincroniza el wallet de tokens IA con el plan actual del restaurante.
     Punto Central de Verdad para Velzia 2.0.0.
     """
-    from app.models import AITokenWallet, AITokenTransaction
-    from datetime import datetime, timezone
-
     if not user or not user.restaurant:
         return None
 
@@ -362,7 +366,6 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
     if not wallet:
         try:
             # Re-verificar dentro del bloque para evitar race conditions
-            from app.models import AITokenWallet
             wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
             if not wallet:
                 # Para Elite: plan_limit es NULL (ilimitado)
@@ -389,20 +392,20 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 )
                 db.session.add(tx)
                 db.session.commit()
-                print(f"WALLET: Creado para usuario {user.id} ({plan_type})")
+                current_app.logger.info(f"WALLET: Creado para usuario {user.id} ({plan_type})")
         except Exception as e:
             db.session.rollback()
             # Si falló por concurrencia, lo buscamos de nuevo
             wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
             if not wallet:
-                print(f"ERROR CRÍTICO WALLET: No se pudo crear ni recuperar: {e}")
+                current_app.logger.error(f"ERROR CRÍTICO WALLET: No se pudo crear ni recuperar: {e}")
                 return None
         return wallet
 
     # 2. Verificar Reset automático (si ya pasó la fecha de reset)
     if wallet.reset_at and now >= wallet.reset_at:
         is_reset = True
-        print(f"WALLET: Detectado reset automático necesario para {user.id}")
+        current_app.logger.info(f"WALLET: Detectado reset automático necesario para {user.id}")
 
     # 3. Executar Reset (por renovación o cambio de mes)
     if is_reset:
@@ -413,7 +416,7 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 type='topup_plan'
             ).first()
             if already:
-                print(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
+                current_app.logger.info(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
                 return wallet
 
         # Para Elite: plan_limit es NULL (ilimitado)
@@ -436,6 +439,6 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
         )
         db.session.add(tx)
         db.session.commit()
-        print(f"WALLET: Reset completo para usuario {user.id}")
+        current_app.logger.info(f"WALLET: Reset completo para usuario {user.id}")
 
     return wallet

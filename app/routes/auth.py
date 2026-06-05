@@ -1,28 +1,17 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify
-from datetime import datetime, timedelta, timezone
-from flask_mail import Message
-from app import mail, db
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, current_app
+from app import db
 from app.forms import LoginForm, ForgotPasswordForm
-from app.forms.auth import RegisterEmailForm, RegisterVerifyForm, RegisterSetupForm
-from app.models import User, Restaurant, TrialHistory, AITokenWallet, PreRegistration
-from werkzeug.security import generate_password_hash
-import random
-import re
-import unicodedata
+from app.forms.auth import RegisterSetupForm
+from app.models import User, Restaurant
+from app.utils.subscription import initialize_or_reset_token_wallet
+from app.services.auth_service import AuthService
+from app.utils.restaurant import get_current_restaurant
+import requests
 import mercadopago
-from flask import current_app
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from app.utils.subscription import sanitize_restaurant_limits, initialize_or_reset_token_wallet, get_plan_limits, AI_TOKEN_LIMITS
 
 auth_bp = Blueprint('auth', __name__)
 
 from app.csrf import csrf
-
-RESERVED_SLUGS = {
-    'scanner-ia', 'admin', 'api', 'dashboard', 'velzia', 'soporte', 'help', 
-    'billing', 'account', 'login', 'register', 'auth', 'public', 'menu', 
-    'order', 'status', 'health', 'test', 'scanner', 'ia', 'ai', 'bot'
-}
 
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 @csrf.exempt
@@ -35,134 +24,82 @@ def sync_clerk():
     clerk_id = data.get('clerk_id')
     email = data.get('email')
     session_id = data.get('session_id')
-    
+
     # 1. Verificación en el backend contra Clerk
     clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
     if not clerk_secret:
         return jsonify({'success': False, 'message': 'Clerk secret not configured'}), 500
-        
+
     try:
-        import requests
-        # Verificar la sesión activa primero
         session_resp = requests.get(
             f"https://api.clerk.com/v1/sessions/{session_id}",
             headers={"Authorization": f"Bearer {clerk_secret}"},
             timeout=5
         )
-        
+
         if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
-             return jsonify({'success': False, 'message': 'Invalid or inactive session'}), 401
-             
-        # Verificar los datos del usuario
+            return jsonify({'success': False, 'message': 'Invalid or inactive session'}), 401
+
         response = requests.get(
             f"https://api.clerk.com/v1/users/{clerk_id}",
             headers={"Authorization": f"Bearer {clerk_secret}"},
             timeout=5
         )
-        
+
         if response.status_code != 200:
-             return jsonify({'success': False, 'message': 'Invalid Clerk user'}), 401
-             
+            return jsonify({'success': False, 'message': 'Invalid Clerk user'}), 401
+
         clerk_user_data = response.json()
-        
-        # Buscar el email primario por ID
+
         verified_email = next(
-            (e['email_address'] for e in clerk_user_data.get('email_addresses', []) 
-             if e['id'] == clerk_user_data.get('primary_email_address_id')), 
+            (e['email_address'] for e in clerk_user_data.get('email_addresses', [])
+             if e['id'] == clerk_user_data.get('primary_email_address_id')),
             None
         )
-        
-        # Fallback: para usuarios OAuth (Google/Facebook) buscar el email en toda la lista
+
         if not verified_email:
             all_emails = [e['email_address'] for e in clerk_user_data.get('email_addresses', [])]
             if email.lower() in [e.lower() for e in all_emails]:
-                verified_email = email  # El email existe y viene del JWT de Clerk
-        
-        # Seguridad: Comparar el email del cliente con el verificado por Clerk (case-insensitive)
+                verified_email = email
+
         if not verified_email or verified_email.lower() != email.lower():
-             return jsonify({'success': False, 'message': 'Email mismatch or not verified'}), 401
-        
-        # Normalizar email al verificado por Clerk
+            return jsonify({'success': False, 'message': 'Email mismatch or not verified'}), 401
+
         email = verified_email
-             
+
     except Exception as e:
         current_app.logger.error(f"Error verifying Clerk user: {e}")
         return jsonify({'success': False, 'message': 'Verification failed'}), 500
 
     username = data.get('username') or email.split('@')[0]
 
-    if not email or not clerk_id:
-        return jsonify({'success': False, 'message': 'Identification is required'}), 400
+    # 2. Delegar sync / creación de usuario al servicio
+    user, is_new, plan_or_error = AuthService.sync_or_create_user(
+        clerk_id, email, username
+    )
 
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        try:
-            pre_reg = PreRegistration.query.filter_by(email=email).first()
-            selected_plan = pre_reg.selected_plan if pre_reg else 'trial'
-
-            user = User(
-                restaurant_id=None,
-                username=username,
-                email=email,
-                password=generate_password_hash(str(clerk_id)),
-                clerk_id=clerk_id
-            )
-            db.session.add(user)
-            db.session.flush()
-
-            plan_tokens = 100 if selected_plan == 'trial' else 0
-
-            token_wallet = AITokenWallet(
-                user_id=user.id,
-                plan_limit=plan_tokens if selected_plan == 'trial' else None,
-                plan_tokens=plan_tokens,
-                extra_tokens=0
-            )
-            db.session.add(token_wallet)
-
-            session['selected_plan'] = selected_plan
-
-            if pre_reg:
-                db.session.delete(pre_reg)
-
-            db.session.commit()
-
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['clerk_id'] = clerk_id
-
-            return jsonify({
-                'success': True,
-                'message': f'¡Bienvenido! Completa tu registro para activar tu plan {selected_plan}.',
-                'is_new_user': True,
-                'redirect_url': url_for('auth.setup_account')
-            })
-
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({
-                'success': False,
-                'message': f'Error al crear usuario: {str(e)}',
-                'error_code': 'REGISTRATION_ERROR'
-            }), 500
-
-    if not user.clerk_id:
-        user.clerk_id = clerk_id
-        db.session.commit()
-
-    # Inicializar wallet de tokens si no existe (Velzia 2.0.0 Alpha)
-    if not user.token_wallet:
-        initialize_or_reset_token_wallet(user)
+    if user is None:
+        return jsonify({
+            'success': False,
+            'message': plan_or_error.get('message', 'Error de registro'),
+            'error_code': plan_or_error.get('error_code', 'REGISTRATION_ERROR')
+        }), 500
 
     session['user_id'] = user.id
     session['username'] = user.username
     session['clerk_id'] = clerk_id
 
-    # Redirección lógica: si es nuevo y no tiene restaurante, ir a configuración de cuenta
+    if is_new:
+        session['selected_plan'] = plan_or_error  # plan string
+        return jsonify({
+            'success': True,
+            'message': f'¡Bienvenido! Completa tu registro para activar tu plan {plan_or_error}.',
+            'is_new_user': True,
+            'redirect_url': url_for('auth.setup_account')
+        })
+
     redirect_url = url_for('dashboard.index')
     if not user.restaurant:
-        # Si viene de registro silencioso, mandarlo a configurar su restaurante
         redirect_url = url_for('auth.setup_account')
 
     return jsonify({
@@ -170,20 +107,10 @@ def sync_clerk():
         'redirect_url': redirect_url
     })
 
+
 @auth_bp.route('/api/sync-clerk-redirect')
 def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
-
-def send_otp_email(email, otp):
-    try:
-        msg = Message('Código de Verificación - Velzia',
-                      recipients=[email])
-        msg.html = render_template('email/otp.html', otp=otp)
-        msg.body = f'Tu código de verificación para Velzia es: {otp}'
-        mail.send(msg)
-        return True
-    except Exception as e:
-        return False
 
 
 @auth_bp.route('/', methods=['GET', 'POST'])
@@ -192,469 +119,343 @@ def login():
         return redirect(url_for('dashboard.index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and user.check_password(form.password.data):
+        user, error = AuthService.authenticate(
+            form.email.data, form.password.data
+        )
+        if user:
             session['user_id'] = user.id
             session['username'] = user.username
-            
+
             if user.restaurant and not user.restaurant.is_active:
                 session['pending_restaurant_id'] = user.restaurant.id
                 flash('Tu suscripción está pendiente de pago.', 'info')
                 return redirect(url_for('auth.payment'))
-                
+
             return redirect(url_for('dashboard.index'))
         else:
             flash('Email o contraseña incorrectos')
     return render_template('auth/index.html', form=form)
 
+
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     form = ForgotPasswordForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            # Generar token seguro (expira en 20 mins)
-            s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-            token = s.dumps(user.email, salt='recover-key')
+        token, user_email = AuthService.create_password_reset_token(
+            form.email.data
+        )
+
+        if token and user_email:
             reset_url = url_for('auth.reset_password', token=token, _external=True)
-            
-            try:
-                msg = Message('Restablecer Contraseña - Velzia', recipients=[user.email])
-                msg.html = render_template('email/reset_password.html', reset_url=reset_url)
-                msg.body = f'Para restablecer tu contraseña, visita: {reset_url}'
-                mail.send(msg)
+            sent = AuthService.send_password_reset_email(user_email, reset_url)
+            if sent:
                 flash('Te hemos enviado un correo con las instrucciones.', 'success')
                 return redirect(url_for('auth.login'))
-            except Exception as e:
+            else:
                 flash('Hubo un error al enviar el correo. Inténtalo más tarde.', 'error')
         else:
             flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'info')
-        
-        # PRG Pattern: Redirigir siempre después de un POST para evitar reenvío
+
         return redirect(url_for('auth.forgot_password'))
-            
+
     return render_template('auth/forgot_password.html', form=form)
+
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    try:
-        email = s.loads(token, salt='recover-key', max_age=3600)
-    except SignatureExpired:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'El enlace ha expirado. Por favor solicita uno nuevo.'})
-        flash('El enlace ha expirado. Por favor solicita uno nuevo.', 'error')
+    email, error = AuthService.verify_reset_token(token)
+
+    if error:
+        is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if is_xhr:
+            return jsonify({'success': False, 'message': error['message']})
+        flash(error['message'], 'error')
+        if error.get('error_code') == 'TOKEN_EXPIRED':
+            return redirect(url_for('auth.forgot_password'))
         return redirect(url_for('auth.forgot_password'))
-    except BadSignature:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'El enlace no es válido.'})
-        flash('El enlace no es válido.', 'error')
-        return redirect(url_for('auth.forgot_password'))
-    except Exception as e:
-        print(f"Error en reset_password: {e}")
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'Ocurrió un error inesperado.'})
-        return redirect(url_for('auth.forgot_password'))
-    
+
     if request.method == 'GET':
         return render_template('auth/reset_password.html')
-    
+
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
-    
+    is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if password != confirm_password:
         msg = 'Las contraseñas no coinciden.'
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if is_xhr:
             return jsonify({'success': False, 'message': msg})
         flash(msg, 'error')
         return render_template('auth/reset_password.html')
 
-    # Validaciones de complejidad adicionales
-    if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
-        msg = 'La contraseña no cumple con los requisitos de seguridad (mín. 8 caracteres, una mayúscula y un número).'
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': msg})
-        flash(msg, 'error')
+    pwd_error = AuthService.validate_password(password)
+    if pwd_error:
+        if is_xhr:
+            return jsonify({'success': False, 'message': pwd_error})
+        flash(pwd_error, 'error')
         return render_template('auth/reset_password.html')
 
-    user = User.query.filter_by(email=email).first()
-    if user and password:
-        user.set_password(password)
-        db.session.commit()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    user, err = AuthService.set_new_password(email, password)
+    if user:
+        if is_xhr:
             return jsonify({
-                'success': True, 
-                'redirect': url_for('auth.login'), 
+                'success': True,
+                'redirect': url_for('auth.login'),
                 'message': '¡Contraseña actualizada exitosamente! Redirigiendo...'
             })
-
         flash('¡Contraseña actualizada! Ya puedes iniciar sesión.')
         return redirect(url_for('auth.login'))
-        
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+
+    if is_xhr:
         return jsonify({'success': False, 'message': 'No se pudo actualizar la contraseña.'})
     return render_template('auth/reset_password.html')
+
 
 @auth_bp.route('/privacy')
 def privacy():
     return redirect(url_for('auth.legal'))
 
+
 @auth_bp.route('/terms')
 def terms():
     return redirect(url_for('auth.legal'))
+
 
 @auth_bp.route('/legal')
 def legal():
     return render_template('dashboard/legal.html')
 
+
 @auth_bp.route('/planes')
 def plans():
-    # Si el usuario ya está autenticado pero no tiene restaurante, mandarlo a completar el setup
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         if user and not user.restaurant:
             return redirect(url_for('auth.setup_account'))
     return render_template('auth/plans.html')
 
+
 @auth_bp.route('/register', methods=['GET'])
 def register():
     plan = request.args.get('plan')
     if plan:
         session['selected_plan'] = plan
-    
-    # Renderizamos la página de registro (ahora manejada por Clerk SignUp en el cliente)
+
     selected_plan = session.get('selected_plan', 'emprendedor')
     return render_template('auth/register_verify.html', step='email', plan=selected_plan)
 
-# Rutas de OTP legadas eliminadas - Velzia 2.0.0 usa Clerk para identidad gestionada
 
 @auth_bp.route('/api/save-plan-selection', methods=['POST'])
 def save_plan_selection():
     """
     Endpoint que guarda la pre-registración cuando el usuario selecciona un plan.
-    Llamado desde plans.html cuando hace click en un plan.
-    
-    Payload: { "email": "user@example.com", "plan": "trial|emprendedor|premium|elite" }
     """
     data = request.get_json()
     email = data.get('email', '').strip().lower()
     plan = data.get('plan', '').strip()
-    
-    # Validar
+
     if not email or not plan:
         return jsonify({
             'success': False,
             'message': 'Email y plan son requeridos'
         }), 400
-    
-    valid_plans = ['trial', 'emprendedor', 'premium', 'elite']
-    if plan not in valid_plans:
+
+    result, error = AuthService.save_plan_selection(email, plan)
+    if error:
         return jsonify({
             'success': False,
-            'message': f'Plan inválido: {plan}'
+            'message': error['message']
         }), 400
-    
-    try:
-        # Si ya existe una pre-registración para este email, actualizar el plan
-        pre_reg = PreRegistration.query.filter_by(email=email).first()
-        if pre_reg:
-            pre_reg.selected_plan = plan
-            pre_reg.created_at = datetime.now(timezone.utc)  # Actualizar timestamp
-        else:
-            # Crear nueva pre-registración
-            pre_reg = PreRegistration(
-                email=email,
-                selected_plan=plan
-            )
-            db.session.add(pre_reg)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Plan {plan} guardado. Redirigiendo a login...'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error al guardar: {str(e)}'
-        }), 500
+
+    return jsonify({
+        'success': True,
+        'message': f'Plan {plan} guardado. Redirigiendo a login...'
+    })
+
 
 @auth_bp.route('/setup-account', methods=['GET', 'POST'])
 def setup_account():
-    # El usuario debe estar autenticado (vía Clerk o tradicional)
     if 'user_id' not in session:
         return redirect(url_for('auth.register'))
-    
-    from app.forms.auth import RegisterSetupForm
+
     form = RegisterSetupForm()
-    
+
     user = User.query.get(session['user_id'])
     if not user:
         return redirect(url_for('auth.register'))
-        
-    # Si ya tiene restaurante, no debería estar aquí
+
     if user.restaurant:
         return redirect(url_for('dashboard.index'))
 
     email = user.email
 
-    # Si es usuario de Clerk, relajamos la validación de campos que ya no necesitamos
     if user.clerk_id:
         form.admin_name.validators = []
         form.password.validators = []
         form.confirm_password.validators = []
 
     if form.validate_on_submit():
-
-        # Validar abuso de Trial por Teléfono y Email (Tenant Check)
-        past_active_trial = Restaurant.query.filter_by(whatsapp_phone=form.phone.data, has_used_trial=True).first()
-        past_history_trial = TrialHistory.query.filter(
-            db.or_(TrialHistory.email == email, TrialHistory.whatsapp_phone == form.phone.data)
-        ).first()
-        
         selected_plan = session.get('selected_plan', 'emprendedor')
         is_trial = selected_plan == 'trial'
 
-        if is_trial and (past_active_trial or past_history_trial):
-            flash('Este correo o número ya disfrutó de una prueba gratuita. Por favor elige un plan pago para tu nueva sucursal.', 'warning')
-            return render_template('auth/register_setup.html', form=form, plan=selected_plan)
-
-        restaurant_name = form.restaurant_name.data
-        slug = unicodedata.normalize('NFKD', restaurant_name).encode('ascii', 'ignore').decode('ascii')
-        slug = re.sub(r'[^\w\s-]', '', slug).strip().lower()
-        slug = re.sub(r'[-\s]+', '-', slug)
-        
-        # Validación de Nombres Reservados y Originalidad
-        if slug in RESERVED_SLUGS:
-            flash(f'El nombre "{restaurant_name}" está reservado para el sistema. Por favor elige uno más original para tu negocio.', 'warning')
-            return render_template('auth/register_setup.html', form=form, plan=selected_plan, user=user)
-
-        base_slug = slug
-        counter = 1
-        while Restaurant.query.filter_by(slug=slug).first():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-
-        selected_plan = session.get('selected_plan', 'emprendedor')
-        is_trial = selected_plan == 'trial'
-        
+        # Trial eligibility check
         if is_trial:
-            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=10)
-            is_active_val = True
-            expires_at_val = trial_expires_at
-            plan_type_val = 'trial'
-            has_used_trial_val = False
-        else:
-            is_active_val = False
-            expires_at_val = None
-            plan_type_val = selected_plan
-            has_used_trial_val = False
+            blocked, msg = AuthService.check_trial_eligibility(
+                email, form.phone.data
+            )
+            if blocked:
+                flash(msg, 'warning')
+                return render_template('auth/register_setup.html', form=form,
+                                       plan=selected_plan)
 
-        new_restaurant = Restaurant(
-            name=restaurant_name,
-            slug=slug,
-            whatsapp_phone=form.phone.data,
-            plan_type=plan_type_val,
-            is_active=is_active_val,
-            subscription_expires_at=expires_at_val,
-            is_open=True,
-            has_used_trial=has_used_trial_val
+        restaurant, error_msg = AuthService.create_restaurant_from_setup(
+            user=user,
+            email=email,
+            restaurant_name=form.restaurant_name.data,
+            phone=form.phone.data,
+            selected_plan=selected_plan,
+            admin_name=form.admin_name.data,
+            password=form.password.data,
         )
-        db.session.add(new_restaurant)
-        db.session.flush()
 
-        # Vinculamos al usuario existente con el nuevo restaurante
-        user.restaurant_id = new_restaurant.id
-        
-        # Si NO es Clerk, actualizamos identidad (tradicional)
-        if not user.clerk_id:
-            user.username = form.admin_name.data.strip()
-            user.set_password(form.password.data)
-        
+        if error_msg:
+            flash(error_msg)
+            return render_template('auth/register_setup.html', form=form,
+                                   plan=selected_plan, user=user)
+
         if is_trial:
-            new_history_record = TrialHistory(email=email, whatsapp_phone=form.phone.data)
-            db.session.add(new_history_record)
+            session['username'] = user.username
+            return redirect(url_for('dashboard.index'))
+        else:
+            session['pending_restaurant_id'] = restaurant.id
+            return redirect(url_for('auth.payment'))
 
-        try:
-            db.session.commit()
-            
-            if is_trial:
-                # Caso TRIAL: El usuario ya está en la sesión de Flask, actualizamos username
-                session['username'] = user.username
-                return redirect(url_for('dashboard.index'))
-            else:
-                # Caso PAGO: Redirigir a payment
-                session['pending_restaurant_id'] = new_restaurant.id
-                return redirect(url_for('auth.payment'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error al crear la cuenta. Inténtalo de nuevo.')
-            print(f"Error en setup_account: {e}")
+    return render_template('auth/register_setup.html', form=form,
+                           plan=session.get('selected_plan'), user=user)
 
-    return render_template('auth/register_setup.html', form=form, plan=session.get('selected_plan'), user=user)
 
 @auth_bp.route('/renew', methods=['GET'])
 def renew():
     """
     Ruta de renovación para usuarios ya autenticados.
-    Permite ir directo al pago sin pasar por registro y verificación.
     """
     if 'user_id' not in session:
         flash('Debes iniciar sesión para renovar tu suscripción.')
         return redirect(url_for('auth.login'))
-    
+
     user = User.query.get(session['user_id'])
     if not user or not user.restaurant:
         flash('No se encontró información de tu cuenta.')
         return redirect(url_for('dashboard.index'))
-    
+
     restaurant = user.restaurant
-    
+
     plan = request.args.get('plan')
-    if plan and plan in ['emprendedor', 'crecimiento', 'elite']:
+    if plan and plan in ('emprendedor', 'crecimiento', 'elite'):
         session['selected_plan'] = plan
         session['pending_plan_change'] = plan
     else:
-        session['selected_plan'] = restaurant.plan_type
+        current_plan = restaurant.plan_type
+        if current_plan == 'trial':
+            flash('Selecciona un plan de pago para continuar.')
+            return redirect(url_for('auth.plans'))
+        session['selected_plan'] = current_plan
         session['pending_plan_change'] = None
-    
+
     session['pending_restaurant_id'] = restaurant.id
     session['is_renewal'] = True
-    
+
     return redirect(url_for('auth.payment'))
+
 
 @auth_bp.route('/payment', methods=['GET', 'POST'])
 def payment():
     restaurant_id = session.get('pending_restaurant_id')
-    
-    # Si no hay un ID pendiente pero el usuario está logueado, usar su restaurante actual (Upgrade)
+
     if not restaurant_id and 'user_id' in session:
-        from app.utils.restaurant import get_current_restaurant
         current_res = get_current_restaurant()
         if current_res:
             restaurant_id = current_res.id
             session['pending_restaurant_id'] = restaurant_id
-    
+
     if not restaurant_id:
         return redirect(url_for('auth.register'))
-    
+
     restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         return redirect(url_for('auth.register'))
 
-    # Datos dinámicos del plan
-    plans_data = {
-        'emprendedor': {'name': 'Plan Emprendedor', 'price': '30.000'},
-        'crecimiento': {'name': 'Plan Crecimiento', 'price': '40.000'},
-        'elite': {'name': 'Plan Élite', 'price': '50.000'}
-    }
-    
     selected_plan_key = session.get('selected_plan', 'crecimiento')
-    plan_info = plans_data.get(selected_plan_key, plans_data['crecimiento'])
+    plan_info = AuthService.get_plan_info(selected_plan_key)
 
-    plan_limits = get_plan_limits(selected_plan_key)
-    plan_info['has_ai_tokens'] = plan_limits.get('has_ai_tokens', False)
-    plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(selected_plan_key, 0)
-
-    sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
-    price_val = float(plan_info['price'].replace('.', ''))
+    if plan_info['price_raw'] <= 0:
+        flash('Plan inválido para pago. Por favor selecciona un plan de pago.')
+        return redirect(url_for('auth.plans'))
 
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-    
-    preference_data = {
-        "items": [
-            {
-                "title": f"Suscripción Velzia - {plan_info['name']}",
-                "quantity": 1,
-                "unit_price": price_val,
-                "currency_id": "COP"
-            }
-        ],
-        "back_urls": {
-            "success": f"{base_url}/payment-callback",
-            "failure": f"{base_url}/payment",
-            "pending": f"{base_url}/payment-callback"
-        },
-        "auto_return": "approved",
-        "external_reference": f"{restaurant_id}:{selected_plan_key}",
-        "notification_url": f"{base_url}/webhook",
-        "payment_methods": {
-            "excluded_payment_types": [
-                {"id": "ticket"} # Opcional: excluir efectivo para activación inmediata
-            ],
-            "installments": 1
-        }
-    }
+    preference_data, _ = AuthService.build_mp_preference_data(
+        selected_plan_key, restaurant_id, base_url
+    )
 
-    try:
-        preference_response = sdk.preference().create(preference_data)
-        preference = preference_response["response"]
-        
-        if "init_point" not in preference:
-            print(f"MP ERROR RAW: {preference_response}")
-        
-        checkout_url = preference["init_point"]
-    except Exception as e:
-        print(f"Error creando preferencia MP: {e}")
-        # Si hay una respuesta previa con error, intentalo imprimir
-        try:
-             print(f"MP DETAILED ERROR: {preference_response}")
-        except:
-             pass
-        checkout_url = "#"
-        flash("Error al conectar con la pasarela de pago. Inténtalo de nuevo.")
+    sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
+    checkout_url, error_msg = AuthService.create_mp_preference(sdk, preference_data)
 
-    return render_template('auth/payment.html', restaurant=restaurant, plan_info=plan_info, checkout_url=checkout_url)
+    if error_msg:
+        flash(error_msg)
+
+    return render_template('auth/payment.html', restaurant=restaurant,
+                           plan_info=plan_info, checkout_url=checkout_url)
+
 
 @auth_bp.route('/payment-callback')
 def payment_callback():
     status = request.args.get('status')
-    restaurant_id = request.args.get('external_reference')
-    
-    if status in ['approved', 'pending']:
-        restaurant = Restaurant.query.get(restaurant_id)
-        if restaurant:
-            if status == 'approved':
-                restaurant.is_active = True
-                db.session.commit()
-            
-            is_renewal = session.get('is_renewal', False)
+    ext_ref = request.args.get('external_reference', '')
 
-            sanitize_restaurant_limits(restaurant)
-            
-            # Reset de tokens IA al activar/renovar plan (Fase 1 Velzia 2.0.0)
-            from app.models import User
-            user = User.query.filter_by(restaurant_id=restaurant.id).first()
-            if user:
-                mp_payment_id = request.args.get('payment_id')
-                initialize_or_reset_token_wallet(user, is_reset=True, mp_payment_id=mp_payment_id)
+    restaurant_id = None
+    plan_type = None
+    if ':' in ext_ref:
+        parts = ext_ref.split(':', 1)
+        try:
+            restaurant_id = int(parts[0])
+            plan_type = parts[1]
+        except (ValueError, IndexError):
+            restaurant_id = None
 
-            session.pop('otp', None)
-            session.pop('register_email', None)
-            session.pop('otp_verified', None)
-            session.pop('pending_restaurant_id', None)
-            session.pop('selected_plan', None)
-            session.pop('is_renewal', None)
-            session.pop('pending_plan_change', None)
-            
-            if status == 'approved':
-                if is_renewal:
-                    return redirect(url_for('dashboard.subscription'))
-                else:
-                    return redirect(url_for('auth.login'))
-            else:
-                flash('Tu pago está pendiente de aprobación. Hemos activado tu acceso temporalmente.')
-                if is_renewal:
-                    return redirect(url_for('dashboard.subscription'))
-                else:
-                    return redirect(url_for('auth.login'))
-    
-    flash('No pudimos confirmar tu pago. Regresa e inténtalo de nuevo.')
-    return redirect(url_for('auth.payment'))
+    restaurant, user, _ = AuthService.process_payment_callback(
+        status, restaurant_id, plan_type
+    )
+
+    if not restaurant:
+        flash('No pudimos confirmar tu pago. Regresa e inténtalo de nuevo.')
+        return redirect(url_for('auth.payment'))
+
+    is_renewal = session.get('is_renewal', False)
+
+    # Reset tokens on approved payment
+    if status == 'approved' and user:
+        mp_payment_id = request.args.get('payment_id')
+        initialize_or_reset_token_wallet(user, is_reset=True, mp_payment_id=mp_payment_id)
+
+    # Clean up session
+    session.pop('otp', None)
+    session.pop('register_email', None)
+    session.pop('otp_verified', None)
+    session.pop('pending_restaurant_id', None)
+    session.pop('selected_plan', None)
+    session.pop('is_renewal', None)
+    session.pop('pending_plan_change', None)
+
+    if status == 'approved':
+        if is_renewal:
+            return redirect(url_for('dashboard.subscription'))
+        return redirect(url_for('auth.login'))
+    else:
+        flash('Tu pago está pendiente de aprobación. Hemos activado tu acceso temporalmente.')
+        if is_renewal:
+            return redirect(url_for('dashboard.subscription'))
+        return redirect(url_for('auth.login'))
+
 
 @auth_bp.route('/webhook', methods=['POST'])
 @csrf.exempt
@@ -665,97 +466,31 @@ def webhook():
     try:
         data = request.get_json()
 
-        
-        if not data:
-             # Mercado Pago sometimes sends data in form-data or other ways, but usually JSON
-             # If data is None, try request.args for 'topic' and 'id'
-             pass
-
-        # Validar tipo de notificación (nos interesa 'payment')
-        # MP puede enviar notification type 'payment' o 'topic' -> 'payment' en query params
         payment_id = None
-        
-        # Caso 1: JSON body
+
         if data and data.get("type") == "payment":
-             payment_id = data.get("data", {}).get("id")
-        
-        # Caso 2: Query params (topic=payment&id=123)
+            payment_id = data.get("data", {}).get("id")
+
         if not payment_id:
             topic = request.args.get('topic') or request.args.get('type')
             if topic == 'payment':
                 payment_id = request.args.get('id') or request.args.get('data.id')
 
         if payment_id:
-            # Consultar estado del pago directamente a la API de MP
-            sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
-            payment_info = sdk.payment().get(payment_id)
-            payment = payment_info.get("response")
-            
-            if payment and payment.get("status") == "approved":
-                external_ref = payment.get("external_reference")
-                if external_ref:
-                    # Parsear restaurant_id y plan desde external_reference (formato: "id:plan")
-                    try:
-                        if ':' in external_ref:
-                            restaurant_id_str, plan_type = external_ref.split(':', 1)
-                            restaurant_id = int(restaurant_id_str)
-                        else:
-                            restaurant_id = int(external_ref)
-                            plan_type = None
-                    except (ValueError, TypeError):
-                        return "OK", 200
+            access_token = current_app.config.get('MP_ACCESS_TOKEN')
+            result = AuthService.process_mp_webhook_payment(payment_id, access_token)
+            if result:
+                current_app.logger.info(
+                    f"WEBHOOK: Activated restaurant {result['restaurant_id']}"
+                )
 
-                    # Log minimal para producción (sin datos sensibles)
-                    current_app.logger.info(f"WEBHOOK: Activating restaurant {restaurant_id}")
-                    
-                    # Activar restaurante
-                    restaurant = Restaurant.query.get(restaurant_id)
-                    if restaurant:
-                        restaurant.is_active = True
-                        
-                        # Actualizar plan desde external_reference
-                        if plan_type and plan_type in ['emprendedor', 'crecimiento', 'elite']:
-                            restaurant.plan_type = plan_type
-
-                        # Extender suscripción (Solo Webhook + Protección Anti-Duplicados)
-                        from datetime import timezone
-                        now_utc = datetime.now(timezone.utc)
-                        
-                        expires_at = restaurant.subscription_expires_at
-                        if expires_at and expires_at.tzinfo is None:
-                            expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-                        # PROTECCIÓN: Si la suscripción expira en más de 35 días, ignoramos el webhook (Bounce de MP)
-                        if expires_at and (expires_at - now_utc).days > 35:
-                            pass
-                        else:
-                            if expires_at and expires_at > now_utc:
-                                restaurant.subscription_expires_at = expires_at + timedelta(days=30)
-                            else:
-                                restaurant.subscription_expires_at = now_utc + timedelta(days=30)
-
-                            db.session.commit()
-
-                        # Aplicar límites del nuevo plan inmediatamente
-                        try:
-                            sanitize_restaurant_limits(restaurant)
-                            # Reset de tokens IA vía Webhook
-                            user = User.query.filter_by(restaurant_id=restaurant.id).first()
-                            if user:
-                                initialize_or_reset_token_wallet(user, is_reset=True, mp_payment_id=payment_id)
-                        except Exception as e:
-                            pass
-
-                        return "OK", 200
-        
-        return "OK", 200  
+        return "OK", 200
     except Exception as e:
-        # print(f"WEBHOOK ERROR: {e}")
+        current_app.logger.error(f"WEBHOOK ERROR: {e}", exc_info=True)
         return "ERROR", 500
+
 
 @auth_bp.route('/logout')
 def logout():
     session.clear()
     return render_template('auth/logout_clerk.html')
-
-        

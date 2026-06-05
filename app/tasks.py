@@ -17,8 +17,8 @@ def delete_inactive_accounts():
 
 def _perform_cleanup():
     try:
-        cutoff_time = datetime.now() - timedelta(hours=24)
-        print(f"[{datetime.now()}] Checking cleanup... Cutoff: {cutoff_time}")
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+        current_app.logger.info(f"[{datetime.now(timezone.utc)}] Checking cleanup... Cutoff: {cutoff_time}")
         
         inactive_restaurants = Restaurant.query.filter(
             Restaurant.is_active == False,
@@ -26,26 +26,26 @@ def _perform_cleanup():
         ).all()
         
         if inactive_restaurants:
-            print(f"[{datetime.now()}] Found {len(inactive_restaurants)} inactive restaurants. Deleting...")
+            current_app.logger.info(f"[{datetime.now(timezone.utc)}] Found {len(inactive_restaurants)} inactive restaurants. Deleting...")
             count = 0
             for restaurant in inactive_restaurants:
                 try:
                     db.session.delete(restaurant)
                     count += 1
                 except Exception as e:
-                    print(f"Error deleting restaurant {restaurant.id}: {e}")
+                    current_app.logger.error(f"Error deleting restaurant {restaurant.id}: {e}")
             
             try:
                 db.session.commit()
-                print(f"[{datetime.now()}] Cleanup complete. Deleted {count} records.")
+                current_app.logger.info(f"[{datetime.now(timezone.utc)}] Cleanup complete. Deleted {count} records.")
             except Exception as e:
                 db.session.rollback()
-                print(f"[{datetime.now()}] Commit failed: {e}")
+                current_app.logger.error(f"[{datetime.now(timezone.utc)}] Commit failed: {e}")
         else:
-            print(f"[{datetime.now()}] No inactive accounts found.")
+            current_app.logger.info(f"[{datetime.now(timezone.utc)}] No inactive accounts found.")
 
     except Exception as e:
-        print(f"CRITICAL ERROR in cleanup task: {e}")
+        current_app.logger.error(f"CRITICAL ERROR in cleanup task: {e}")
 
 
 def expire_pending_orders():
@@ -61,8 +61,8 @@ def expire_pending_orders():
 
 def _perform_expiry():
     try:
-        now = datetime.now()
-        print(f"[{now}] Checking pending order expiry...")
+        now = datetime.now(timezone.utc)
+        current_app.logger.info(f"[{now}] Checking pending order expiry...")
         
         # Buscar pedidos pendientes que han expirado
         expired_orders = Order.query.filter(
@@ -72,26 +72,26 @@ def _perform_expiry():
         ).all()
         
         if expired_orders:
-            print(f"[{now}] Found {len(expired_orders)} expired pending orders. Expiring...")
+            current_app.logger.info(f"[{now}] Found {len(expired_orders)} expired pending orders. Expiring...")
             count = 0
             for order in expired_orders:
                 try:
                     order.status = 'expired'
                     count += 1
                 except Exception as e:
-                    print(f"Error expiring order {order.id}: {e}")
+                    current_app.logger.error(f"Error expiring order {order.id}: {e}")
             
             try:
                 db.session.commit()
-                print(f"[{now}] Expiry complete. Expired {count} orders.")
+                current_app.logger.info(f"[{now}] Expiry complete. Expired {count} orders.")
             except Exception as e:
                 db.session.rollback()
-                print(f"[{now}] Commit failed: {e}")
+                current_app.logger.error(f"[{now}] Commit failed: {e}")
         else:
-            print(f"[{now}] No expired pending orders found.")
+            current_app.logger.info(f"[{now}] No expired pending orders found.")
 
     except Exception as e:
-        print(f"CRITICAL ERROR in expiry task: {e}")
+        current_app.logger.error(f"CRITICAL ERROR in expiry task: {e}")
 
 
 def send_subscription_reminders():
@@ -163,12 +163,12 @@ def _perform_reminders():
                 mail.send(msg)
                 sent += 1
             except Exception as e:
-                print(f"[{datetime.now()}] Error sending reminder to {user.email}: {e}")
+                current_app.logger.error(f"[{datetime.now()}] Error sending reminder to {user.email}: {e}")
 
-        print(f"[{datetime.now()}] Subscription reminders sent: {sent}")
+        current_app.logger.info(f"[{datetime.now()}] Subscription reminders sent: {sent}")
 
     except Exception as e:
-        print(f"CRITICAL ERROR in subscription reminders: {e}")
+        current_app.logger.error(f"CRITICAL ERROR in subscription reminders: {e}")
 
 
 def init_tasks(scheduler):

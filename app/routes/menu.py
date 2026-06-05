@@ -1,8 +1,5 @@
-# Agregar este endpoint a tu blueprint de menu (menu.py o routes/menu.py)
-
-from flask import Blueprint, jsonify, request
-from app.models import Product, Category, Restaurant
-from app.utils.subscription import is_subscription_active
+from flask import Blueprint, jsonify, request, current_app
+from app.services.public_menu_service import PublicMenuService
 
 menu_bp = Blueprint('menu', __name__, url_prefix='/menu')
 
@@ -13,43 +10,24 @@ def search_products(slug):
     Retorna TODOS los productos activos del restaurante con su categoría
     """
     try:
+        restaurant, error = PublicMenuService.get_restaurant_by_slug(slug)
+        if error:
+            return jsonify({'success': False, 'error': 'Restaurante no encontrado', 'products': []}), 404
 
-        restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
-        
         if not restaurant.is_active:
             return jsonify({'success': False, 'error': 'Restaurante inactivo', 'products': []}), 403
-        
-        categories = Category.query.filter_by(
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).all()
-        
-        products_list = []
-        
-        for category in categories:
-            products = Product.query.filter_by(
-                category_id=category.id,
-                is_active=True
-            ).all()
-            
-            for product in products:
-                products_list.append({
-                    'id': product.id,
-                    'name': product.name,
-                    'description': product.description,
-                    'price': product.price,
-                    'category_id': category.id,
-                    'category_name': category.name,
-                    'has_modifiers': len(product.modifiers) > 0 if hasattr(product, 'modifiers') else False
-                })
-        
-        return jsonify({'success': True,'products': products_list,'total': len(products_list)})
-        
+
+        products_list, search_error = PublicMenuService.search_products_data(restaurant)
+        if search_error:
+            return jsonify({'success': False, 'error': search_error['message'], 'products': []}), 500
+
+        return jsonify({'success': True, 'products': products_list, 'total': len(products_list)})
+
     except Exception as e:
-        return jsonify({'success': False,'error': str(e),'products': []}), 500
+        current_app.logger.error(f"Error in search_products: {e}")
+        return jsonify({'success': False, 'error': 'Error interno del servidor', 'products': []}), 500
 
 
-# ALTERNATIVA: Si quieres búsqueda con query string
 @menu_bp.route('/<slug>/search')
 def search_by_query(slug):
     """
@@ -57,49 +35,29 @@ def search_by_query(slug):
     Ejemplo: /menu/mi-restaurante/search?q=hamburguesa
     """
     try:
-        restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
-        
+        restaurant, error = PublicMenuService.get_restaurant_by_slug(slug)
+        if error:
+            return jsonify({'success': False, 'error': 'Restaurante no encontrado', 'products': []}), 404
+
         if not restaurant.is_active:
             return jsonify({'success': False, 'error': 'Restaurante inactivo', 'products': []}), 403
-        
+
         query = request.args.get('q', '').lower().strip()
-        
+
         if not query:
-            return jsonify({'success': True,'products': [],'query': query})
-        
-        categories = Category.query.filter_by(
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).all()
-        
-        matching_products = []
-        
-        for category in categories:
-            products = Product.query.filter_by(
-                category_id=category.id,
-                is_active=True
-            ).all()
-            
-            for product in products:
-                searchable_text = f"{product.name} {product.description or ''} {category.name}".lower()
-                
-                if query in searchable_text:
-                    matching_products.append({
-                        'id': product.id,
-                        'name': product.name,
-                        'description': product.description,
-                        'price': product.price,
-                        'category_id': category.id,
-                        'category_name': category.name,
-                        'has_modifiers': len(product.modifiers) > 0 if hasattr(product, 'modifiers') else False
-                    })
-        
+            return jsonify({'success': True, 'products': [], 'query': query})
+
+        matching_products, search_error = PublicMenuService.search_products_by_query(restaurant, query)
+        if search_error:
+            return jsonify({'success': False, 'error': search_error['message'], 'products': []}), 500
+
         return jsonify({
             'success': True,
             'products': matching_products,
             'query': query,
             'total': len(matching_products)
         })
-        
+
     except Exception as e:
-        return jsonify({'success': False,'error': str(e),'products': []}), 500
+        current_app.logger.error(f"Error in search_by_query: {e}")
+        return jsonify({'success': False, 'error': 'Error interno del servidor', 'products': []}), 500

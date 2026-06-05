@@ -59,21 +59,6 @@
         </div>
     </form>
 
-    <script>
-        // Detectar mensajes flash y convertirlos en Toasts Premium
-        document.addEventListener('DOMContentLoaded', function () {
-            {% with messages = get_flashed_messages(with_categories = true) %}
-            {% if messages %}
-            {% for category, message in messages %}
-            // Pequeño delay para que la transición sea suave tras cargar la página
-            setTimeout(() => {
-                showToast("{{ message }}", "{{ 'success' if category == 'success' else 'error' }}");
-            }, 500);
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
-        });
-    </script>
 </div>
 {% endblock %}
 
@@ -128,18 +113,7 @@
                 </div>
                 <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>
-            <a href="{{ url_for('dashboard.change_password') }}" class="flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[20px]">lock_reset</span>
-                    </div>
-                    <span class="font-bold text-sm dark:text-white">Cambiar Contraseña</span>
-                </div>
-                <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
-            </a>
-        </div>
-    </div>
-
+            
     <!-- Logout (Mobile) -->
     <div class="px-4">
         <a href="{{ url_for('auth.logout') }}" class="w-full bg-red-500/10 text-red-500 font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-red-500/20 uppercase tracking-widest text-xs">
