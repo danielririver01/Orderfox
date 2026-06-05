@@ -43,7 +43,7 @@ html, body {
 /* ===== LAYOUT PRINCIPAL ===== */
 .menu-layout {
     display: grid;
-    grid-template-columns: var(--mp-sidebar-w) 1fr var(--mp-panel-w);
+    grid-template-columns: var(--mp-sidebar-w) 1fr;
     height: 100vh;
     overflow: hidden;
     background: var(--mp-bg-dark);
@@ -625,6 +625,48 @@ html, body {
     font-weight: 600;
 }
 
+/* Estado vacío: menú sin productos */
+.empty-menu-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    height: 100%;
+    min-height: 50vh;
+}
+
+.empty-menu-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--mp-bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    color: var(--mp-primary);
+    opacity: 0.6;
+}
+
+.empty-menu-state h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--mp-text-primary);
+    margin: 0 0 0.5rem;
+    line-height: 1.4;
+}
+
+.empty-menu-state p {
+    font-size: 0.85rem;
+    color: var(--mp-primary-light);
+    font-weight: 500;
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
 /* Sin resultados de búsqueda */
 .no-search-results {
     display: none;
@@ -651,15 +693,27 @@ html, body {
 
 /* ===== PANEL DERECHO (Detalle de Producto) ===== */
 .detail-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--mp-panel-w);
     background: var(--mp-bg-panel);
     border-left: 1px solid var(--mp-border);
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: relative;
+    z-index: 100;
     display: flex;
     flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+.detail-panel.open {
+    transform: translateX(0);
 }
 
 .detail-panel::-webkit-scrollbar {
@@ -745,6 +799,19 @@ html, body {
 .btn-close-detail:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--mp-text-primary);
+}
+
+/* Overlay para el panel de detalle */
+.detail-panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+}
+
+.detail-panel-overlay.active {
+    display: block;
 }
 
 /* Imagen del detalle */
@@ -1064,46 +1131,18 @@ html, body {
     border-radius: 4px;
 }
 
+/* ===== RESPONSIVE: DESKTOP (>1024px) ===== */
+@media (min-width: 1025px) {
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 /* ===== RESPONSIVE: TABLET (<=1200px) ===== */
 @media (max-width: 1200px) {
     :root {
         --mp-panel-w: 360px;
         --mp-sidebar-w: 230px;
-    }
-}
-
-/* ===== RESPONSIVE: TABLET PEQUEÑA (<=1024px) ===== */
-@media (max-width: 1024px) {
-    .menu-layout {
-        grid-template-columns: var(--mp-sidebar-w) 1fr;
-    }
-
-    .detail-panel {
-        position: fixed;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: var(--mp-panel-w);
-        z-index: 100;
-        transform: translateX(100%);
-        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .detail-panel.open {
-        transform: translateX(0);
-    }
-
-    .detail-panel-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 99;
-    }
-
-    .detail-panel-overlay.active {
-        display: block;
     }
 }
 

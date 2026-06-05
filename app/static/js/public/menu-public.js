@@ -282,10 +282,12 @@ function updateCartSummaryDisplay() {
     const badge = document.getElementById('cartCountBadge');
     const totalEl = document.getElementById('cartSummaryTotal');
     const btn = document.getElementById('btnVerPedido');
+    const cancelBtn = document.getElementById('btnCancelCart');
 
     if (badge) badge.textContent = count;
     if (totalEl) totalEl.textContent = `$${total.toLocaleString('es-CO')}`;
     if (btn) btn.disabled = count === 0;
+    if (cancelBtn) cancelBtn.classList.toggle('hidden', count === 0);
 }
 
 function updateQtyBadges() {

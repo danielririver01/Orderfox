@@ -20,12 +20,6 @@
     </div>
 </header>
 
-{% if get_flashed_messages() %}
-<div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 pt-4">
-    {% include 'components/flash_messages.html' %}
-</div>
-{% endif %}
-
 <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-6 md:pb-16 overflow-x-hidden">
     <div class="md:grid md:grid-cols-1 md:gap-6 lg:gap-8 items-start min-w-0" id="categories-grid">
 
@@ -265,7 +259,7 @@
 
 <!-- Toast -->
 <div id="toast"
-    class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
+    class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
     <span id="toast-message"></span>
 </div>
 

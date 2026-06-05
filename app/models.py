@@ -331,9 +331,7 @@ class PreRegistration(db.Model):
         return f'<PreRegistration {self.email} - {self.selected_plan}>'
 
 
-class Expense(db.Model):
-    __tablename__ = 'expenses'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
     description = db.Column(db.String(200), nullable=False)

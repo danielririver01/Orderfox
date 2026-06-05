@@ -68,7 +68,6 @@ def create_app():
     from .routes.api_orders import api_orders_bp
     from .routes.api_public import api_public_bp
     from .routes.api_tables import api_tables_bp
-    from .routes.api_expenses import api_expenses_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -86,7 +85,6 @@ def create_app():
     app.register_blueprint(api_orders_bp)
     app.register_blueprint(api_public_bp)
     app.register_blueprint(api_tables_bp)
-    app.register_blueprint(api_expenses_bp)
 
     @app.before_request
     def check_csrf_for_non_api():
