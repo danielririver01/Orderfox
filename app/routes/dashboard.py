@@ -12,11 +12,9 @@ from flask import (
     session,
     current_app
 )
-import requests
 from app.utils.auth import login_required, active_required
-from app.models import db, Order, Restaurant, User
-from datetime import date, datetime, timezone, timedelta
-from sqlalchemy import func
+from app.models import db, Restaurant, User, TrialHistory
+from datetime import datetime, timezone, timedelta
 import qrcode 
 from io import BytesIO
 from PIL import Image
@@ -33,6 +31,7 @@ import unicodedata
 
 import jwt
 import logging
+from app.services.dashboard_service import DashboardService
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +68,10 @@ def ai_scan_redirect():
         algorithm='HS256'
     )
     
-    # Redirigir a la página intermedia de autenticación en Scanner IA
-    return redirect(f'{scanner_url}/flask-auth?flask_token={signed_token}')
+    # Redirigir a una página intermedia que envía el token por POST
+    return render_template('dashboard/ai_scan_redirect.html',
+        scanner_url=scanner_url,
+        flask_token=signed_token)
 
 @dashboard_bp.route('/')
 @login_required
@@ -80,31 +81,14 @@ def index():
     if not restaurant: abort(404)
     
     menu_url = url_for('public.menu', slug=restaurant.slug, _external=True)
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    stats = db.session.query(
-        Order.status, 
-        func.count(Order.id)
-    ).filter(
-        Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
-    ).group_by(Order.status).all()
-    counts = {s: c for s, c in stats}
-    pending_count = counts.get('pending', 0)
-    confirmed_count = counts.get('confirmed', 0)
-    delivered_count = counts.get('delivered', 0)
-    total_sales = db.session.query(func.sum(Order.total)).filter(
-        Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start,
-        Order.status.in_(['confirmed', 'delivered'])
-    ).scalar() or 0
+    stats = DashboardService.get_today_overview(restaurant.id)
      
     return render_template('dashboard/index.html', 
                          restaurant=restaurant,
-                         pending_count=pending_count,
-                         confirmed_count=confirmed_count,
-                         delivered_count=delivered_count,
-                         total_sales=f"{int(total_sales):,}",
+                         pending_count=stats['pending'],
+                         confirmed_count=stats['confirmed'],
+                         delivered_count=stats['delivered'],
+                         total_sales=f"{stats['today_sales_cop']:,}",
                          is_open=restaurant.is_open,
                          menu_url=menu_url)
 
@@ -127,10 +111,8 @@ def toggle_status():
     data = request.get_json()
     new_status = data.get('is_open', True)
     
-    restaurant.is_open = new_status
-    db.session.commit()
-    
-    return jsonify({'success': True, 'is_open': restaurant.is_open})
+    is_open = DashboardService.toggle_status(restaurant, new_status)
+    return jsonify({'success': True, 'is_open': is_open})
 
 @dashboard_bp.route('/api/check-orders')
 @login_required
@@ -139,33 +121,16 @@ def api_check_orders():
     """
     Endpoint ligero para el polling de nuevos pedidos (JS polling cada 15s).
     Devuelve: { new_orders: bool, last_id: int, pending_count: int }
-    Usa dos queries simples — compatible con MariaDB/MySQL (sin FILTER clause).
     """
     restaurant = get_current_restaurant()
     if not restaurant:
         return jsonify({'error': 'not found'}), 404
 
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-
-    base_filter = (
-        Order.restaurant_id == restaurant.id,
-        Order.created_at >= today_start
-    )
-
-    # Query 1: ID del pedido más reciente del día
-    last_id = db.session.query(func.max(Order.id)).filter(*base_filter).scalar() or 0
-
-    # Query 2: Conteo de pedidos pendientes del día
-    pending_count = Order.query.filter(
-        *base_filter,
-        Order.status == 'pending'
-    ).count()
-
+    data = DashboardService.get_order_polling(restaurant.id)
     return jsonify({
-        'last_id': last_id,
-        'pending_count': pending_count,
-        'new_orders': pending_count > 0
+        'last_id': data['last_id'],
+        'pending_count': data['pending_count'],
+        'new_orders': data['pending_count'] > 0
     })
 
 @dashboard_bp.route('/api/stats')
@@ -177,23 +142,11 @@ def api_stats():
     if not restaurant: return jsonify({'error': 'not found'}), 404
 
     range_type = request.args.get('range', 'today')
-    today = date.today()
-    
-    if range_type == 'month':
-        start_date = datetime.combine(today.replace(day=1), datetime.min.time())
-    else:
-        start_date = datetime.combine(today, datetime.min.time())
-
-    # Ventas totales confirmadas/entregadas
-    total_sales = db.session.query(func.sum(Order.total)).filter(
-        Order.restaurant_id == restaurant.id,
-        Order.created_at >= start_date,
-        Order.status.in_(['confirmed', 'delivered'])
-    ).scalar() or 0
+    data = DashboardService.get_extended_stats(restaurant.id, range_type)
 
     return jsonify({
         'success': True,
-        'total_sales': int(total_sales),
+        'total_sales': data['total_sales_cop'],
         'range': range_type
     })
 
@@ -201,8 +154,6 @@ def api_stats():
 @login_required
 @active_required
 def api_ai_stats():
-    from datetime import datetime, timezone
-
     user_id = session.get('user_id')
     user = User.query.get(user_id)
 
@@ -220,15 +171,20 @@ def api_ai_stats():
         else:
             start_date = now.replace(month=now.month - 1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    query = db.text("""
-        SELECT COALESCE(SUM(amount), 0) as total
-        FROM velzia_expense
-        WHERE userId = :clerk_id AND date >= :start_date
-    """)
+    try:
+        query = db.text("""
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM velzia_expense
+            WHERE userId = :clerk_id AND date >= :start_date
+        """)
 
-    result = db.session.execute(query, {'clerk_id': user.clerk_id, 'start_date': start_date})
-    row = result.fetchone()
-    total_expenses = float(row[0]) if row else 0
+        result = db.session.execute(query, {'clerk_id': user.clerk_id, 'start_date': start_date})
+        row = result.fetchone()
+        total_expenses = int(row[0]) if row else 0
+    except Exception:
+        total_expenses = 0
+
+    logger.info(f"api_ai_stats: user={user.id}, clerk_id={user.clerk_id}, range={range_type}, expenses={total_expenses}")
 
     return jsonify({
         'totalExpenses': total_expenses,
@@ -464,14 +420,27 @@ def profile():
             return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
         
         try:
-            existing_restaurant = Restaurant.query.filter(
-                Restaurant.name == restaurant_name, 
-                Restaurant.id != restaurant.id
-            ).first()
-            
-            if existing_restaurant:
-                flash('Este nombre de negocio ya está en uso. Por favor, elige otro.', 'error')
-                return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
+            if restaurant_name != restaurant.name:
+                existing_restaurant = Restaurant.query.filter(
+                    Restaurant.name == restaurant_name, 
+                    Restaurant.id != restaurant.id
+                ).first()
+                if existing_restaurant:
+                    flash('No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.', 'error')
+                    return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
+
+            if whatsapp_phone != restaurant.whatsapp_phone:
+                phone_in_trial = TrialHistory.query.filter(
+                    TrialHistory.whatsapp_phone == whatsapp_phone
+                ).first()
+                phone_in_other_restaurant = Restaurant.query.filter(
+                    Restaurant.whatsapp_phone == whatsapp_phone,
+                    Restaurant.id != restaurant.id,
+                    Restaurant.has_used_trial == True
+                ).first()
+                if phone_in_trial or phone_in_other_restaurant:
+                    flash('No es posible usar este número. Intenta con otro.', 'error')
+                    return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
 
             restaurant.name = restaurant_name
             restaurant.whatsapp_phone = whatsapp_phone
@@ -480,78 +449,13 @@ def profile():
             db.session.commit()
             flash('¡Perfil actualizado correctamente!', 'success')
             return redirect(url_for('dashboard.profile'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            flash('Error al actualizar el perfil. Intenta de nuevo.', 'error')
-            print(f"Error updating profile: {e}")
+            flash('No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.', 'error')
             
     return render_template('dashboard/profile_form.html', 
                          restaurant=restaurant, 
                          user=user)
-
-@dashboard_bp.route('/change-password', methods=['GET', 'POST'])
-@login_required
-@active_required
-def change_password():
-    if request.method == 'POST':
-        # Detectar si es una petición JSON (Fetch API) o Formulario estándar
-        if request.is_json:
-            data = request.get_json()
-            current_password = data.get('current_password')
-            new_password = data.get('new_password')
-            confirm_password = data.get('confirm_password')
-        else:
-            current_password = request.form.get('current_password')
-            new_password = request.form.get('new_password')
-            confirm_password = request.form.get('confirm_password')
-
-        user = User.query.get(session['user_id'])
-        
-        # 1. Validar Contraseña Actual
-        if not user.check_password(current_password):
-            msg = 'La contraseña actual es incorrecta.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_password'))
-        
-        # 2. Validar Coincidencia
-        if new_password != confirm_password:
-            msg = 'Las nuevas contraseñas no coinciden.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_password'))
-            
-        # 3. Validar Complejidad Senior (8 chars + 1 número)
-        if len(new_password) < 8 or not any(char.isdigit() for char in new_password):
-            msg = 'La contraseña debe tener al menos 8 caracteres y un número.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_password'))
-
-        # 4. Guardar
-        try:
-            user.set_password(new_password)
-            db.session.commit()
-            
-            msg = '¡Contraseña actualizada con éxito!'
-            if request.is_json:
-                return jsonify({'success': True, 'message': msg})
-            
-            flash(msg, 'success')
-            return redirect(url_for('dashboard.settings'))
-        except Exception as e:
-            db.session.rollback()
-            msg = 'Error al intentar cambiar la contraseña. Intenta de nuevo.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 500
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_password'))
-
-    return render_template('dashboard/change_password.html')
-
 
 @dashboard_bp.route('/change-email', methods=['GET', 'POST'])
 @login_required

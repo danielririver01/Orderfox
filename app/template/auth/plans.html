@@ -70,7 +70,7 @@
 
 
         <!-- Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-stretch">
+        <div class="grid grid-cols-1 {% if session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial' %}md:grid-cols-3{% else %}md:grid-cols-4{% endif %} gap-6 items-stretch">
 
             {% if not (session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial')
             %}

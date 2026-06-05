@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session, send_from_directory
-from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table, Modifier
+from app.models import db, Restaurant, Table
 from app import csrf
-from datetime import datetime, date, timedelta, timezone
-from app.utils.subscription import is_subscription_active, check_feature_access
+from datetime import datetime
 from app.utils.rate_limiter import OrderRateLimiter
-import json
+from app.services.order_service import OrderService
+from app.services.public_menu_service import PublicMenuService
 import time
 import os
 
@@ -20,10 +20,6 @@ def init_checkout():
     session['checkout_start_time'] = time.time()
     return jsonify({'success': True})
 
-def generate_order_number(restaurant_id):
-    count = Order.query.filter_by(restaurant_id=restaurant_id).count()
-    return f"ORD-{count + 1:03d}"
-
 @public_bp.route('/menu/<string:slug>')
 @public_bp.route('/menu')
 def menu(slug=None):
@@ -33,49 +29,29 @@ def menu(slug=None):
         if not restaurant:
             abort(404)
         return redirect(url_for('public.menu', slug=restaurant.slug, **request.args))
-    
-    restaurant = Restaurant.query.filter_by(slug=slug).first_or_404()
+
+    restaurant, error = PublicMenuService.get_restaurant_by_slug(slug)
+    if error:
+        abort(404)
 
     table_id = request.args.get('table')
     if table_id:
-        has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
-
-        if has_table_qr_access:
-            table = Table.query.filter_by(id=table_id, restaurant_id=restaurant.id).first()
-            if table and table.is_active:
-                session['table_id'] = table.id
-                session['restaurant_id'] = restaurant.id # Por seguridad
-            else:
-                session.pop('table_id', None)
+        table, _ = PublicMenuService.get_restaurant_table(restaurant, table_id)
+        if table:
+            session['table_id'] = table.id
+            session['restaurant_id'] = restaurant.id
         else:
             session.pop('table_id', None)
-    
+            session.pop('restaurant_id', None)
+
     # Bloqueo Radical: Si el local está cerrado por el dueño, mostramos la Landing de Cerrado
     if not restaurant.is_open:
         return render_template('public/store_closed.html', restaurant=restaurant)
 
-    # Lógica de "Solo Lectura" por suscripción
-    is_active_sub = restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)
-    ordering_disabled = not is_active_sub
-    
-    categories = Category.query.filter_by(
-        restaurant_id=restaurant.id,
-        is_active=True
-    ).order_by(Category.sort_order).all()
+    ordering_disabled = not PublicMenuService.is_ordering_enabled(restaurant)
+    categories = PublicMenuService.get_menu_categories_with_products(restaurant)
 
-    # Inyectar productos activos y conteo por categoría
-    for cat in categories:
-        cat.products = Product.query.filter_by(
-            category_id=cat.id,
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).all()
-        cat.active_product_count = len(cat.products)
-    
-    # Filtrar categorías sin productos activos
-    categories = [cat for cat in categories if cat.active_product_count > 0]
-    
-    return render_template('public/menu_public.html', 
+    return render_template('public/menu_public.html',
                          categories=categories,
                          restaurant=restaurant,
                          ordering_disabled=ordering_disabled)
@@ -93,15 +69,13 @@ def create_order():
 
     # 1. Validación de Honeypot (Anti-Bots)
     if data.get('user_secondary_email'):
-        # Si el campo trampa está lleno, es un bot. Bloqueo silencioso o error de seguridad.
         return jsonify({'success': False, 'error': 'Actividad sospechosa detectada.'}), 403
 
     # 2. Validación de Tiempo (Time-to-Submit)
-    # Un humano tarda al menos 3 segundos en llenar el formulario.
     start_time = session.get('checkout_start_time', 0)
     if time.time() - start_time < 3.0:
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': '¡Uy, vas muy rápido! Tómate un segundo para revisar tus datos.'
         }), 429
 
@@ -111,31 +85,26 @@ def create_order():
 
     if not restaurant.is_open:
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': 'Estamos cerrados en este momento. ¡Vuelve pronto!'
         }), 403
-    
+
     # Validación estricta de suscripción (Backend)
-    if not (restaurant.is_active and is_subscription_active(restaurant, include_grace_period=True)):
+    if not PublicMenuService.is_ordering_enabled(restaurant):
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': 'Pedidos temporalmente desactivados.'
         }), 403
 
-    expiration_limit = datetime.now(timezone.utc) - timedelta(minutes=30)
-    Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status == 'pending',
-        Order.created_at < expiration_limit
-    ).update({Order.status: 'expired'})
-    db.session.commit()
+    # Expirar pedidos pendientes antiguos
+    PublicMenuService.expire_old_pending_orders(restaurant.id, minutes=30)
 
     client_ip = request.remote_addr
-    
+
     should_block, error_message, wait_time = OrderRateLimiter.should_block_request(
         restaurant.id, client_ip
     )
-    
+
     if should_block:
         return jsonify({
             'success': False,
@@ -143,14 +112,14 @@ def create_order():
             'retry_after': wait_time
         }), 429
 
-    order_number = generate_order_number(restaurant.id)
-    
+    order_number = OrderService.generate_order_number(restaurant.id)
+
     notes = data.get('notes', 'Pedido realizado desde el menú digital.')
     customer_name = data.get('customer_name', 'Cliente Web')
     customer_phone = data.get('customer_phone', '')
     city = data.get('city')
     address = data.get('address')
-    
+
     # Obtener información de la mesa si existe
     table_id = session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
     table_name = None
@@ -159,89 +128,38 @@ def create_order():
         if table:
             table_name = table.name
 
-    if table_name:
-        notes = f"MESA: {table_name.upper()}\nTeléfono: {customer_phone}\n---\n{notes}"
-    elif city and address:
-        notes = f"ENTREGA EN: {city.upper()} - {address}\nTeléfono: {customer_phone}\n---\n{notes}"
-    else:
-        notes = f"Teléfono de Contacto: {customer_phone}\n---\n{notes}"
+    # Construir notas del pedido
+    notes = PublicMenuService.build_order_notes(
+        customer_phone=customer_phone,
+        table_name=table_name,
+        city=city,
+        address=address,
+        notes=notes,
+    )
 
-    # Creamos la orden con total 0 inicialmente, lo calcularemos en el servidor
-    order = Order(
-        restaurant_id=restaurant.id,
-        order_number=order_number,
-        status='pending',
-        total=0, 
+    # Crear el pedido con los items del carrito
+    order, validated_items, total_or_error = PublicMenuService.create_order_from_cart(
+        restaurant=restaurant,
+        cart=data['cart'],
         customer_name=customer_name,
         customer_phone=customer_phone,
         notes=notes,
-        table_id=table_id
+        table_id=table_id,
+        ip_address=client_ip,
+        order_number=order_number,
     )
-    db.session.add(order)
-    db.session.flush()
-    
-    OrderRateLimiter.log_order_attempt(restaurant.id, order, client_ip)
 
-    cart = data['cart']
-    order_total = 0
-    validated_items = []
+    if order is None:
+        return jsonify({
+            'success': False,
+            'error': total_or_error.get('message', 'Error al crear el pedido.')
+        }), 500
 
-    for product_id, item in cart.items():
-        # 1. Validar Producto en DB
-        product = Product.query.filter_by(id=product_id, restaurant_id=restaurant.id, is_active=True).first()
-        if not product:
-            continue # O manejar error si el producto ya no existe
-
-        item_price = product.price
-        extras_price = 0
-        modifiers_data = []
-
-        # 2. Validar Modificadores en DB
-        for extra in item.get('extras', []):
-            modifier_id = extra.get('id')
-            if not modifier_id: continue
-            
-            modifier = Modifier.query.filter_by(id=modifier_id, product_id=product.id, is_active=True).first()
-            if modifier:
-                extras_price += modifier.extra_price
-                modifiers_data.append({
-                    'name': modifier.name,
-                    'price': modifier.extra_price
-                })
-
-        subtotal = (item_price + extras_price) * item['quantity']
-        order_total += subtotal
-
-        order_item = OrderItem(
-            order_id=order.id,
-            restaurant_id=restaurant.id,
-            product_name=product.name,
-            product_price=item_price,
-            quantity=item['quantity'],
-            modifiers_snapshot=json.dumps(modifiers_data),
-            subtotal=subtotal
-        )
-        db.session.add(order_item)
-        
-        validated_items.append({
-            'name': product.name,
-            'qty': item['quantity'],
-            'extras': [m['name'] for m in modifiers_data]
-        })
-
-    # 3. Actualizar total final validado
-    order.total = order_total
-    db.session.commit()
-    
-    # 3. Actualizar total final validado
-    order.total = order_total
-    db.session.commit()
-    
     return jsonify({
-        'success': True, 
+        'success': True,
         'order_number': order_number,
         'order_id': order.id,
-        'total': order_total,
+        'total': total_or_error,
         'items': validated_items,
         'customer_name': customer_name,
         'address_full': f"{address}, {city}" if address and city else None,

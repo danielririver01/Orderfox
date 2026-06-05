@@ -76,94 +76,6 @@
 </head>
 
 <body class="bg-[#050505] text-white antialiased min-h-screen pb-8 md:pb-24 selection:bg-orange-500/30">
-    {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
-    <div id="status-banner"
-        class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
-        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center
-                        {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
-                        {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
-                        {% else %} bg-red-900/30 text-red-400
-                        {% endif %}">
-                    <span class="material-symbols-outlined text-[20px]">schedule</span>
-                </div>
-
-                <p class="text-sm font-medium text-slate-300">
-                    {{ sub_status.message }}
-                </p>
-            </div>
-
-            <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
-                    {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
-                    {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
-                    {% else %} text-red-400 hover:bg-red-900/20
-                    {% endif %} transition-all">
-                Renovar
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if sub_status.status == 'grace_period' %}
-    <div id="status-banner"
-        class="relative w-full z-40 bg-red-950/20 border-b border-red-900/50 transition-transform duration-300">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[22px]">error</span>
-                </div>
-
-                <div class="flex flex-col">
-                    <span class="text-sm font-semibold text-red-700">
-                        Suscripción vencida
-                    </span>
-                    <span class="text-xs text-red-600">
-                        Te quedan {{ sub_status.days_grace_remaining }} días antes de desactivar tu menú.
-                    </span>
-                </div>
-            </div>
-
-            <a href="{{ url_for('dashboard.subscription') }}"
-                class="bg-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-red-700 transition">
-                Reactivar
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if sub_status.status == 'expired' %}
-    <div class="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800">
-        <div class="max-w-3xl mx-auto px-6 py-10 text-center flex flex-col gap-5">
-
-            <div class="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center">
-                <span class="material-symbols-outlined text-red-500 text-[36px]">lock</span>
-            </div>
-
-            <h2 class="text-2xl font-bold tracking-tight">
-                Tu menú está temporalmente inactivo
-            </h2>
-
-            <p class="text-sm text-slate-400">
-                Reactiva tu suscripción para que tus clientes vuelvan a realizar pedidos.
-            </p>
-
-            <div class="flex gap-3 justify-center pt-4">
-                <a href="{{ url_for('auth.plans') }}"
-                    class="bg-[#141414] text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-[#1a1a1a] transition">
-                    Reactivar ahora
-                </a>
-
-                <a href="mailto:soporte@tuemail.com"
-                    class="border border-slate-600 px-6 py-3 rounded-xl text-sm hover:bg-slate-800 transition">
-                    Contactar soporte
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Toast Notifications Container (Global) -->
     <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
 
@@ -281,6 +193,93 @@
 
         <!-- Main Content Area -->
         <div class="flex-1 md:ml-[260px]">
+            {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
+            <div id="status-banner"
+                class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
+                <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center
+                                {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
+                                {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
+                                {% else %} bg-red-900/30 text-red-400
+                                {% endif %}">
+                            <span class="material-symbols-outlined text-[20px]">schedule</span>
+                        </div>
+
+                        <p class="text-sm font-medium text-slate-300">
+                            {{ sub_status.message }}
+                        </p>
+                    </div>
+
+                    <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
+                            {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
+                            {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
+                            {% else %} text-red-400 hover:bg-red-900/20
+                            {% endif %} transition-all">
+                        Renovar
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if sub_status.status == 'grace_period' %}
+            <div id="status-banner"
+                class="relative w-full z-40 bg-red-950/20 border-b border-red-900/50 transition-transform duration-300">
+                <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[22px]">error</span>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-red-700">
+                                Suscripción vencida
+                            </span>
+                            <span class="text-xs text-red-600">
+                                Te quedan {{ sub_status.days_grace_remaining }} días antes de desactivar tu menú.
+                            </span>
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('dashboard.subscription') }}"
+                        class="bg-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-red-700 transition">
+                        Reactivar
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if sub_status.status == 'expired' %}
+            <div class="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800">
+                <div class="max-w-3xl mx-auto px-6 py-10 text-center flex flex-col gap-5">
+
+                    <div class="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-red-500 text-[36px]">lock</span>
+                    </div>
+
+                    <h2 class="text-2xl font-bold tracking-tight">
+                        Tu menú está temporalmente inactivo
+                    </h2>
+
+                    <p class="text-sm text-slate-400">
+                        Reactiva tu suscripción para que tus clientes vuelvan a realizar pedidos.
+                    </p>
+
+                    <div class="flex gap-3 justify-center pt-4">
+                        <a href="{{ url_for('auth.plans') }}"
+                            class="bg-[#141414] text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-[#1a1a1a] transition">
+                            Reactivar ahora
+                        </a>
+
+                        <a href="mailto:soporte@tuemail.com"
+                            class="border border-slate-600 px-6 py-3 rounded-xl text-sm hover:bg-slate-800 transition">
+                            Contactar soporte
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             {% block content %}{% endblock %}
         </div>
 

@@ -4,14 +4,6 @@
 
 {% block settings_content %}
 
-<div class="mb-6">
-    {% if get_flashed_messages() %}
-    <div class="px-2 pt-4">
-        {% include 'components/flash_messages.html' %}
-    </div>
-    {% endif %}
-</div>
-
 <form action="{{ url_for('dashboard.profile') }}" method="POST" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors space-y-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     

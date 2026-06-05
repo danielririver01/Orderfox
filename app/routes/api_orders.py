@@ -1,33 +1,11 @@
 from flask import Blueprint, jsonify, request
 from app import db
-from app.models import Order, OrderItem, Product, Table, Modifier
+from app.models import Order, Table
 from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
-from datetime import date, datetime, timedelta
-import json
+from app.services.order_service import OrderService
 
 api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
-
-
-def generate_order_number(restaurant_id):
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    count = Order.query.filter(
-        Order.restaurant_id == restaurant_id,
-        Order.created_at >= today_start
-    ).count()
-    return f"ORD-{count + 1:03d}"
-
-
-def validate_status_transition(current_status, new_status):
-    valid_transitions = {
-        'pending': ['confirmed', 'cancelled', 'expired'],
-        'confirmed': ['delivered', 'cancelled'],
-        'delivered': [],
-        'cancelled': ['pending'],
-        'expired': []
-    }
-    return new_status in valid_transitions.get(current_status, [])
 
 
 @api_orders_bp.route('', methods=['GET'])
@@ -43,21 +21,9 @@ def list_orders():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
 
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-
-    # Pedidos activos: sin filtro de fecha
-    active_query = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['pending', 'confirmed'])
-    )
-
-    # Pedidos completados: mostrar si fueron actualizados hoy
-    completed_query = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['delivered', 'cancelled']),
-        Order.updated_at >= today_start
-    )
+    # Obtener queries base del servicio
+    active_query = OrderService.get_active_orders_query(restaurant.id)
+    completed_query = OrderService.get_today_completed_orders_query(restaurant.id)
 
     # Aplicar filtro de status si existe
     if status_filter:
@@ -70,74 +36,26 @@ def list_orders():
         else:
             active_query = active_query.filter(Order.status == status_filter)
             query = completed_query
-    else:
-        # Combinar ambas consultas
-        active_orders = active_query.all()
-        completed_orders = completed_query.all()
-        all_orders = active_orders + completed_orders
 
         if sort_order == 'desc':
-            all_orders.sort(key=lambda o: o.created_at, reverse=True)
+            query = query.order_by(Order.created_at.desc())
         else:
-            all_orders.sort(key=lambda o: o.created_at)
+            query = query.order_by(Order.created_at.asc())
+
+        total = query.count()
+        orders = query.offset((page - 1) * per_page).limit(per_page).all()
+    else:
+        # Combinar ambas consultas con el servicio
+        all_orders = OrderService.get_combined_orders(restaurant.id, sort_order)
 
         total = len(all_orders)
         start = (page - 1) * per_page
         orders = all_orders[start:start + per_page]
 
-        return jsonify({
-            'success': True,
-            'data': {
-                'orders': [
-                    {
-                        'id': o.id,
-                        'order_number': o.order_number,
-                        'customer_name': o.customer_name,
-                        'customer_phone': o.customer_phone,
-                        'status': o.status,
-                        'total': o.total,
-                        'notes': o.notes,
-                        'table_name': o.table.name if o.table else None,
-                        'items_count': len(o.items),
-                        'created_at': o.created_at.isoformat() if o.created_at else None
-                    }
-                    for o in orders
-                ],
-                'pagination': {
-                    'page': page,
-                    'per_page': per_page,
-                    'total': total,
-                    'pages': (total + per_page - 1) // per_page if per_page > 0 else 0
-                }
-            }
-        })
-
-    if sort_order == 'desc':
-        query = query.order_by(Order.created_at.desc())
-    else:
-        query = query.order_by(Order.created_at.asc())
-
-    total = query.count()
-    orders = query.offset((page - 1) * per_page).limit(per_page).all()
-
     return jsonify({
         'success': True,
         'data': {
-            'orders': [
-                {
-                    'id': o.id,
-                    'order_number': o.order_number,
-                    'customer_name': o.customer_name,
-                    'customer_phone': o.customer_phone,
-                    'status': o.status,
-                    'total': o.total,
-                    'notes': o.notes,
-                    'table_name': o.table.name if o.table else None,
-                    'items_count': len(o.items),
-                    'created_at': o.created_at.isoformat() if o.created_at else None
-                }
-                for o in orders
-            ],
+            'orders': [OrderService.serialize_order(o) for o in orders],
             'pagination': {
                 'page': page,
                 'per_page': per_page,
@@ -156,7 +74,7 @@ def get_order(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
@@ -203,10 +121,7 @@ def create_order():
     if not data:
         return jsonify({'success': False, 'error': 'Datos requeridos'}), 400
 
-    customer_name = data.get('customer_name', 'Cliente')
-    customer_phone = data.get('customer_phone', '')
     table_id = data.get('table_id')
-    notes = data.get('notes', '')
     items_data = data.get('items', [])
 
     if not items_data:
@@ -217,69 +132,16 @@ def create_order():
         if not table:
             return jsonify({'success': False, 'error': 'Mesa no encontrada'}), 404
 
-    order_number = generate_order_number(restaurant.id)
+    order_data = {
+        'customer_name': data.get('customer_name', 'Cliente'),
+        'customer_phone': data.get('customer_phone', ''),
+        'notes': data.get('notes', ''),
+        'table_id': table_id,
+        'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
+    }
 
-    # Calcular fecha de expiración para pedidos pendientes
-    expiry_hours = restaurant.pending_expiry_hours or 24
-    expires_at = datetime.now() + timedelta(hours=expiry_hours)
-
-    order = Order(
-        restaurant_id=restaurant.id,
-        order_number=order_number,
-        customer_name=customer_name,
-        customer_phone=customer_phone,
-        notes=notes,
-        total=0,
-        status='pending',
-        table_id=table_id,
-        expires_at=expires_at
-    )
-    db.session.add(order)
-    db.session.flush()
-
-    total = 0
-
-    for item_data in items_data:
-        product = Product.query.filter_by(
-            id=item_data.get('product_id'),
-            restaurant_id=restaurant.id,
-            is_active=True
-        ).first()
-        if not product:
-            continue
-
-        quantity = item_data.get('quantity', 1)
-        modifiers_snapshot = None
-        extras_price = 0
-
-        modifier_ids = item_data.get('modifier_ids', [])
-        if modifier_ids:
-            modifiers = Modifier.query.filter(
-                Modifier.id.in_(modifier_ids),
-                Modifier.product_id == product.id,
-                Modifier.is_active == True
-            ).all()
-            if modifiers:
-                modifiers_snapshot = json.dumps([
-                    {'name': m.name, 'price': m.extra_price} for m in modifiers
-                ])
-                extras_price = sum(m.extra_price for m in modifiers)
-
-        subtotal = (product.price + extras_price) * quantity
-
-        order_item = OrderItem(
-            order_id=order.id,
-            restaurant_id=restaurant.id,
-            product_name=product.name,
-            product_price=product.price,
-            quantity=quantity,
-            modifiers_snapshot=modifiers_snapshot,
-            subtotal=subtotal
-        )
-        db.session.add(order_item)
-        total += subtotal
-
-    order.total = total
+    order = OrderService.create_order(restaurant.id, order_data)
+    total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
     db.session.commit()
 
     return jsonify({
@@ -313,11 +175,11 @@ def change_status(id):
             'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite marcar pedidos como Entregados.'
         }), 403
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
-    if not validate_status_transition(order.status, new_status):
+    if not OrderService.validate_status_transition(order.status, new_status):
         return jsonify({
             'success': False,
             'error': f'No se puede cambiar de {order.status} a {new_status}'
@@ -344,7 +206,7 @@ def cancel_order(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
@@ -374,7 +236,7 @@ def get_receipt(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
@@ -410,7 +272,7 @@ def delete_order(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 

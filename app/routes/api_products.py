@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
-from app import db
-from app.models import Product, Modifier, Category
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
-from app.utils.subscription import check_product_limit
-from app.utils.image_handler import save_image, delete_image
+from app.utils.jwt_auth import (
+    jwt_login_required, jwt_active_required, jwt_feature_required,
+    get_current_restaurant_jwt
+)
+from app.services.product_service import ProductService
 
 api_products_bp = Blueprint('api_products', __name__, url_prefix='/api/products')
 
@@ -21,17 +21,13 @@ def list_products():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
 
-    query = Product.query.filter_by(restaurant_id=restaurant.id)
-
-    if category_id:
-        query = query.filter_by(category_id=category_id)
-    if active_only:
-        query = query.filter_by(is_active=True)
-
-    query = query.order_by(Product.category_id, Product.name)
-
-    total = query.count()
-    products = query.offset((page - 1) * per_page).limit(per_page).all()
+    products, total = ProductService.get_products_for_restaurant(
+        restaurant.id,
+        category_id=category_id,
+        active_only=active_only,
+        page=page,
+        per_page=per_page,
+    )
 
     return jsonify({
         'success': True,
@@ -46,8 +42,10 @@ def list_products():
                     'image_url': p.image_url,
                     'category_id': p.category_id,
                     'category_name': p.category.name if p.category else None,
-                    'modifiers_count': Modifier.query.filter_by(product_id=p.id, restaurant_id=restaurant.id).count(),
-                    'created_at': p.created_at.isoformat() if p.created_at else None
+                    'modifiers_count': ProductService.get_modifier_count(
+                        restaurant.id, p.id
+                    ),
+                    'created_at': p.created_at.isoformat() if p.created_at else None,
                 }
                 for p in products
             ],
@@ -55,8 +53,8 @@ def list_products():
                 'page': page,
                 'per_page': per_page,
                 'total': total,
-                'pages': (total + per_page - 1) // per_page if per_page > 0 else 0
-            }
+                'pages': (total + per_page - 1) // per_page if per_page > 0 else 0,
+            },
         }
     })
 
@@ -69,11 +67,11 @@ def get_product(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
-    modifiers = Modifier.query.filter_by(product_id=id, restaurant_id=restaurant.id).all()
+    modifiers = ProductService.get_modifiers_for_product(restaurant.id, id)
 
     return jsonify({
         'success': True,
@@ -83,7 +81,6 @@ def get_product(id):
             'description': product.description,
             'price': product.price,
             'is_active': product.is_active,
-
             'image_url': product.image_url,
             'category_id': product.category_id,
             'category_name': product.category.name if product.category else None,
@@ -92,10 +89,10 @@ def get_product(id):
                     'id': m.id,
                     'name': m.name,
                     'extra_price': m.extra_price,
-                    'is_active': m.is_active
+                    'is_active': m.is_active,
                 }
                 for m in modifiers
-            ]
+            ],
         }
     })
 
@@ -108,40 +105,27 @@ def create_product():
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    allowed, message = check_product_limit(restaurant)
-    if not allowed:
-        return jsonify({'success': False, 'error': message}), 400
-
     name = request.form.get('name', '').strip()
-    description = request.form.get('description', '').strip()
     price = request.form.get('price', type=int)
     category_id = request.form.get('category_id', type=int)
-    is_active = request.form.get('is_active', 'true').lower() == 'true'
 
     if not name or not price or not category_id:
-        return jsonify({'success': False, 'error': 'Nombre, precio y categoría son requeridos'}), 400
+        return jsonify({
+            'success': False,
+            'error': 'Nombre, precio y categoría son requeridos'
+        }), 400
 
-    category = Category.query.filter_by(id=category_id, restaurant_id=restaurant.id).first()
-    if not category:
-        return jsonify({'success': False, 'error': 'Categoría inválida'}), 400
-
-    product = Product(
+    product, error = ProductService.create_product(
         restaurant_id=restaurant.id,
         category_id=category_id,
         name=name,
-        description=description,
         price=price,
-        is_active=is_active,
+        description=request.form.get('description', '').strip(),
+        is_active=request.form.get('is_active', 'true').lower() == 'true',
+        image_file=request.files.get('image'),
     )
-
-    image_file = request.files.get('image')
-    if image_file:
-        image_url = save_image(image_file, 'products')
-        if image_url:
-            product.image_url = image_url
-
-    db.session.add(product)
-    db.session.commit()
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
 
     return jsonify({
         'success': True,
@@ -151,8 +135,7 @@ def create_product():
             'price': product.price,
             'category_id': product.category_id,
             'is_active': product.is_active,
-
-            'image_url': product.image_url
+            'image_url': product.image_url,
         }
     }), 201
 
@@ -165,48 +148,37 @@ def update_product(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
+    # Parse form fields (partial update — None means skip)
     name = request.form.get('name')
     description = request.form.get('description')
     price = request.form.get('price', type=int)
     category_id = request.form.get('category_id', type=int)
     is_active = request.form.get('is_active')
 
-    if name:
-        product.name = name.strip()
-    if description is not None:
-        product.description = description.strip()
-    if price is not None:
-        product.price = price
-    if category_id:
-        category = Category.query.filter_by(id=category_id, restaurant_id=restaurant.id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Categoría inválida'}), 400
-        product.category_id = category_id
+    # Convert is_active string to bool
+    is_active_bool = None
     if is_active is not None:
-        desired = is_active.lower() == 'true'
-        if desired and not product.is_active:
-            allowed, message = check_product_limit(restaurant)
-            if not allowed:
-                return jsonify({'success': False, 'error': message}), 400
-        product.is_active = desired
+        is_active_bool = is_active.lower() == 'true'
 
     image_file = request.files.get('image')
-    if image_file:
-        if product.image_url:
-            delete_image(product.image_url)
-        image_url = save_image(image_file, 'products')
-        if image_url:
-            product.image_url = image_url
-    elif request.form.get('delete_image') == 'true':
-        if product.image_url:
-            delete_image(product.image_url)
-        product.image_url = None
+    delete_image_flag = request.form.get('delete_image') == 'true'
 
-    db.session.commit()
+    product, error = ProductService.update_product(
+        product=product,
+        name=name.strip() if name else None,
+        description=description.strip() if description is not None else None,
+        price=price,
+        category_id=category_id,
+        is_active=is_active_bool,
+        image_file=image_file,
+        delete_image_flag=delete_image_flag,
+    )
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
 
     return jsonify({
         'success': True,
@@ -215,8 +187,7 @@ def update_product(id):
             'name': product.name,
             'price': product.price,
             'is_active': product.is_active,
-
-            'image_url': product.image_url
+            'image_url': product.image_url,
         }
     })
 
@@ -229,17 +200,16 @@ def delete_product(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
-    if product.image_url:
-        delete_image(product.image_url)
+    ProductService.delete_product(product)
 
-    db.session.delete(product)
-    db.session.commit()
-
-    return jsonify({'success': True, 'message': 'Producto eliminado exitosamente'})
+    return jsonify({
+        'success': True,
+        'message': 'Producto eliminado exitosamente'
+    })
 
 
 @api_products_bp.route('/<int:id>/toggle', methods=['PATCH'])
@@ -250,24 +220,29 @@ def toggle_product(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
     data = request.get_json()
-    desired = data.get('is_active')
-    if desired is None:
-        desired = not product.is_active
+    desired = data.get('is_active') if data else None
 
-    if desired and not product.is_active:
-        allowed, message = check_product_limit(restaurant)
-        if not allowed:
-            return jsonify({'success': False, 'error': message}), 400
+    product, error, limit_blocked = ProductService.toggle_product(
+        product, desired
+    )
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
 
-    product.is_active = desired
-    db.session.commit()
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': product.id,
+            'is_active': product.is_active,
+        }
+    })
 
-    return jsonify({'success': True, 'data': {'id': product.id, 'is_active': product.is_active}})
+
+# ── Modifier Endpoints ────────────────────────────────────────────────────
 
 
 @api_products_bp.route('/<int:id>/modifiers', methods=['GET'])
@@ -278,11 +253,11 @@ def list_modifiers(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
-    modifiers = Modifier.query.filter_by(product_id=id, restaurant_id=restaurant.id).all()
+    modifiers = ProductService.get_modifiers_for_product(restaurant.id, id)
 
     return jsonify({
         'success': True,
@@ -292,7 +267,7 @@ def list_modifiers(id):
                     'id': m.id,
                     'name': m.name,
                     'extra_price': m.extra_price,
-                    'is_active': m.is_active
+                    'is_active': m.is_active,
                 }
                 for m in modifiers
             ]
@@ -309,7 +284,7 @@ def create_modifier(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    product = Product.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    product = ProductService.get_product(restaurant.id, id)
     if not product:
         return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
 
@@ -323,16 +298,14 @@ def create_modifier(id):
     if not name:
         return jsonify({'success': False, 'error': 'Nombre es requerido'}), 400
 
-    modifier = Modifier(
-        product_id=id,
+    modifier, error = ProductService.create_modifier(
         restaurant_id=restaurant.id,
+        product_id=id,
         name=name,
         extra_price=extra_price,
-        is_active=True
     )
-
-    db.session.add(modifier)
-    db.session.commit()
+    if error:
+        return jsonify({'success': False, 'error': error}), 400
 
     return jsonify({
         'success': True,
@@ -340,7 +313,7 @@ def create_modifier(id):
             'id': modifier.id,
             'name': modifier.name,
             'extra_price': modifier.extra_price,
-            'is_active': modifier.is_active
+            'is_active': modifier.is_active,
         }
     }), 201
 
@@ -353,12 +326,11 @@ def toggle_modifier(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    modifier = ProductService.get_modifier(restaurant.id, id)
     if not modifier:
         return jsonify({'success': False, 'error': 'Modifier no encontrado'}), 404
 
-    modifier.is_active = not modifier.is_active
-    db.session.commit()
+    ProductService.toggle_modifier(modifier)
 
     return jsonify({
         'success': True,
@@ -366,7 +338,7 @@ def toggle_modifier(id):
             'id': modifier.id,
             'name': modifier.name,
             'extra_price': modifier.extra_price,
-            'is_active': modifier.is_active
+            'is_active': modifier.is_active,
         }
     })
 
@@ -379,12 +351,13 @@ def delete_modifier(id):
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    modifier = Modifier.query.filter_by(id=id, restaurant_id=restaurant.id).first()
+    modifier = ProductService.get_modifier(restaurant.id, id)
     if not modifier:
         return jsonify({'success': False, 'error': 'Modifier no encontrado'}), 404
 
-    product_id = modifier.product_id
-    db.session.delete(modifier)
-    db.session.commit()
+    ProductService.delete_modifier(modifier)
 
-    return jsonify({'success': True, 'message': 'Modifier eliminado exitosamente'})
+    return jsonify({
+        'success': True,
+        'message': 'Modifier eliminado exitosamente'
+    })

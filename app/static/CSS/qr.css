@@ -144,7 +144,7 @@ html, body {
     
     /* Ensure QR image doesn't grow too large */
     #qrImage {
-        max-width: 150px;
+        max-width: 120px;
     }
 }
 

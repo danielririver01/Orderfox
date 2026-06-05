@@ -481,20 +481,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    const msgEl = document.getElementById('toast-message');
-    if (toast && msgEl) {
-        msgEl.textContent = message;
-        toast.classList.remove('hidden');
-        toast.classList.add('flex');
-        setTimeout(() => {
-            toast.classList.add('hidden');
-            toast.classList.remove('flex');
-        }, 3000);
-    }
-}
-
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const panel = document.getElementById('category-form-panel-wrapper');

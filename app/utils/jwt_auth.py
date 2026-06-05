@@ -1,8 +1,9 @@
 from functools import wraps
-from flask import g, request, jsonify, current_app
+from flask import g, request, jsonify, current_app, session, redirect, url_for, flash
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from app.models import User, Restaurant
 from app.utils.subscription import is_subscription_active, check_feature_access
+from app.utils.restaurant import get_current_restaurant
 import logging
 
 logger = logging.getLogger(__name__)
@@ -97,11 +98,10 @@ def flexible_login_required(f):
         try:
             verify_jwt_in_request()
             return f(*args, **kwargs)
-        except Exception:
-            pass
+        except Exception as e:
+            current_app.logger.warning(f"JWT verification failed, falling back to session auth: {e}")
 
         # Fallback: sesión Flask
-        from flask import session, redirect, url_for, flash
         if 'user_id' in session:
             return f(*args, **kwargs)
 
@@ -121,10 +121,6 @@ def flexible_active_required(f):
     """Verifica cuenta activa tanto para JWT como para sesión Flask."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        from flask import session as flask_session, g
-        from app.utils.restaurant import get_current_restaurant
-        from app.utils.subscription import is_subscription_active
-
         def return_error(message, code=401):
             return jsonify({'success': False, 'error': message}), code
 
@@ -133,8 +129,9 @@ def flexible_active_required(f):
         try:
             verify_jwt_in_request()
             restaurant = get_current_restaurant_jwt()
-        except Exception:
-            if 'user_id' in flask_session:
+        except Exception as e:
+            current_app.logger.warning(f"JWT verification failed in active_required: {e}")
+            if 'user_id' in session:
                 restaurant = get_current_restaurant()
 
         if not restaurant:

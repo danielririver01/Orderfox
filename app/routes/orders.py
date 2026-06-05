@@ -1,37 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
-from app.models import db, Order, OrderItem, Product
+from app.models import db, Product
 from app.utils.auth import login_required, active_required
-from datetime import datetime, date, timedelta
 import json
 
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
+from app.services.order_service import OrderService
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
-
-def generate_order_number(restaurant_id):
-    """Generar número de orden secuencial para el día (ORD-001, ORD-002...)"""
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    
-    count = Order.query.filter(
-        Order.restaurant_id == restaurant_id,
-        Order.created_at >= today_start
-    ).count()
-    
-    return f"ORD-{count + 1:03d}"
-
-def validate_status_transition(current_status, new_status):
-    """Validar que la transición de estado sea válida"""
-    valid_transitions = {
-        'pending': ['confirmed', 'cancelled', 'expired'],
-        'confirmed': ['delivered', 'cancelled'],
-        'delivered': [],  
-        'cancelled': ['pending'],
-        'expired': []
-    }
-    
-    return new_status in valid_transitions.get(current_status, [])
 
 @orders_bp.route('/')
 @login_required
@@ -40,34 +16,11 @@ def index():
     """Listar pedidos: activos sin filtro de fecha, completados solo hoy"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    
+
     sort_order = request.args.get('sort', 'asc')
-    
-    # Pedidos activos (pending/confirmed): sin filtro de fecha
-    active_orders = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['pending', 'confirmed'])
-    )
-    
-    # Pedidos completados (delivered/cancelled): mostrar si fueron actualizados hoy
-    completed_orders = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['delivered', 'cancelled']),
-        Order.updated_at >= today_start
-    )
-    
-    # Combinar ambas consultas
-    if sort_order == 'desc':
-        active_orders = active_orders.order_by(Order.created_at.desc()).all()
-        completed_orders = completed_orders.order_by(Order.created_at.desc()).all()
-    else:
-        active_orders = active_orders.order_by(Order.created_at.asc()).all()
-        completed_orders = completed_orders.order_by(Order.created_at.asc()).all()
-    
-    all_orders = active_orders + completed_orders
-    
+
+    all_orders = OrderService.get_combined_orders(restaurant.id, sort_order)
+
     pending = [o for o in all_orders if o.status == 'pending']
     confirmed = [o for o in all_orders if o.status == 'confirmed']
     delivered = [o for o in all_orders if o.status == 'delivered']
@@ -89,32 +42,10 @@ def fragment():
     """Devuelve solo el HTML de la lista de pedidos para actualizaciones AJAX."""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
 
     sort_order = request.args.get('sort', 'asc')
-    
-    # Pedidos activos: sin filtro de fecha
-    active_orders = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['pending', 'confirmed'])
-    )
-    
-    # Pedidos completados: mostrar si fueron actualizados hoy
-    completed_orders = Order.query.filter(
-        Order.restaurant_id == restaurant.id,
-        Order.status.in_(['delivered', 'cancelled']),
-        Order.updated_at >= today_start
-    )
-    
-    if sort_order == 'desc':
-        active_orders = active_orders.order_by(Order.created_at.desc()).all()
-        completed_orders = completed_orders.order_by(Order.created_at.desc()).all()
-    else:
-        active_orders = active_orders.order_by(Order.created_at.asc()).all()
-        completed_orders = completed_orders.order_by(Order.created_at.asc()).all()
-    
-    all_orders = active_orders + completed_orders
+
+    all_orders = OrderService.get_combined_orders(restaurant.id, sort_order)
 
     pending = [o for o in all_orders if o.status == 'pending']
     confirmed = [o for o in all_orders if o.status == 'confirmed']
@@ -137,49 +68,19 @@ def create():
     if not restaurant: abort(404)
     if request.method == 'POST':
         data = request.form
-        
-        order_number = generate_order_number(restaurant.id)
-        
-        # Calcular fecha de expiración para pedidos pendientes
-        expiry_hours = restaurant.pending_expiry_hours or 24
-        expires_at = datetime.now() + timedelta(hours=expiry_hours)
-        
-        order = Order(
-            restaurant_id=restaurant.id,
-            order_number=order_number,
-            customer_name=data.get('customer_name'),
-            customer_phone=data.get('customer_phone'),
-            notes=data.get('notes'),
-            total=0,
-            status='pending',
-            expires_at=expires_at
-        )
-        db.session.add(order)
-        db.session.flush()
-        
+
+        order_data = {
+            'customer_name': data.get('customer_name'),
+            'customer_phone': data.get('customer_phone', ''),
+            'notes': data.get('notes', ''),
+            'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
+        }
+
+        order = OrderService.create_order(restaurant.id, order_data)
+
         items_data = json.loads(data.get('items', '[]'))
-        total = 0
-        
-        for item_data in items_data:
-            product = Product.query.filter_by(id=item_data['product_id'], restaurant_id=restaurant.id).first()
-            if not product:
-                continue
-            
-            subtotal = product.price * item_data.get('quantity', 1)
-            
-            order_item = OrderItem(
-                order_id=order.id,
-                restaurant_id=restaurant.id,
-                product_name=product.name,
-                product_price=product.price,
-                quantity=item_data.get('quantity', 1),
-                modifiers_snapshot=None,
-                subtotal=subtotal
-            )
-            db.session.add(order_item)
-            total += subtotal
-        
-        order.total = total
+        total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+
         db.session.commit()
         return redirect(url_for('orders.index'))
     
@@ -193,7 +94,8 @@ def detail(id):
     """Ver detalle de un pedido"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     return render_template('dashboard/order_detail.html', order=order)
 
 @orders_bp.route('/<int:id>/fragment')
@@ -203,7 +105,8 @@ def detail_fragment(id):
     """Devuelve solo el HTML del detalle del pedido para el panel lateral"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     return render_template('dashboard/_order_detail_fragment.html', order=order)
 
 @orders_bp.route('/<int:id>/status', methods=['PATCH'])
@@ -223,9 +126,10 @@ def change_status(id):
             'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite marcar pedidos como Entregados. ¡Actualiza a Crecimiento para control total!'
         }), 403
 
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     
-    if not validate_status_transition(order.status, new_status):
+    if not OrderService.validate_status_transition(order.status, new_status):
         return jsonify({
             'success': False, 
             'error': f'No se puede cambiar de {order.status} a {new_status}'
@@ -243,7 +147,8 @@ def cancel(id):
     """Cancelar pedido"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     
     if order.status in ['delivered', 'cancelled']:
         flash('No se puede cancelar un pedido entregado o ya cancelado', 'error')
@@ -261,7 +166,8 @@ def receipt(id):
     """Generar vista de recibo para impresión"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     return render_template('dashboard/receipt.html', order=order, restaurant=restaurant)
 
 @orders_bp.route('/<int:id>/delete', methods=['POST'])
@@ -271,7 +177,8 @@ def delete(id):
     """Eliminar pedido permanentemente"""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    order = Order.query.filter_by(id=id, restaurant_id=restaurant.id).first_or_404()
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
     
     # Solo permitir eliminar si está cancelado (regla de negocio sugerida)
     if order.status != 'cancelled':
