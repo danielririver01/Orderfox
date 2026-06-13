@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="es" class="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -64,9 +64,6 @@
             right: 0;
         }
     </style>
-    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
-
     <!-- Clerk SDK -->
     {% if config.CLERK_PUBLISHABLE_KEY %}
     <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
@@ -86,11 +83,11 @@
             <span
                 class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
             <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
-            <button onclick="refreshOrderList()"
+            <button data-action="refreshOrderList"
                 class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
                 Ver ahora
             </button>
-            <button onclick="dismissNewOrdersToast()"
+            <button data-action="dismissNewOrdersToast"
                 class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
                 <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -173,7 +170,7 @@
                 </div>
 
                 <!-- Tokens IA -->
-                <button onclick="openTokenModal()" id="sidebar-token-section"
+                <button data-action="openTokenModal" id="sidebar-token-section"
                     class="w-full mt-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3">
                     <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
                         <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
@@ -285,7 +282,11 @@
 
     </div>
     {% include 'components/modal_delete.html' %}
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/event-delegation.js') }}"></script>
     {% if session.get('user_id') %}
     {% include 'components/modal_tokens.html' %}
     <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>

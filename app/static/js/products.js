@@ -33,10 +33,14 @@ async function toggleProduct(id, newState, url = null) {
     toggles.forEach(t => t.checked = newState);
 
     try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
         const response = await fetch(endpoint, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ is_active: newState })
         });
@@ -44,7 +48,7 @@ async function toggleProduct(id, newState, url = null) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Error al actualizar');
+            throw new Error(data.error || data.message || 'Error al actualizar');
         }
         
     } catch (error) {
@@ -57,9 +61,7 @@ async function toggleProduct(id, newState, url = null) {
         
         toggles.forEach(t => t.checked = !newState);
         
-        if (window.showToast) {
-            window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
-        }
+        window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
     }
 }
 
@@ -73,16 +75,6 @@ function closeDeleteModal() {
     }
 }
 
-// Show Toast Notification
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        const messageEl = document.getElementById('toast-message');
-        if (messageEl) messageEl.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
-}
 
 // Live Search Functionality
 document.addEventListener('DOMContentLoaded', () => {

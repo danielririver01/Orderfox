@@ -42,10 +42,7 @@ function startPolling() {
 
 async function checkForNewOrders() {
     try {
-        const res = await fetch('/dashboard/api/check-orders');
-        if (!res.ok) return;
-
-        const data = await res.json();
+        const data = await apiFetch('/dashboard/api/check-orders');
 
         // Inicialización del ID en la primera carga si no fue inyectado por el template
         if (isFirstPoll) {
@@ -156,9 +153,7 @@ async function refreshOrderList() {
             countEl.textContent = `${cards} pedidos`;
         }
 
-        if (typeof showToast === 'function') {
-            showToast(' Pedidos actualizados', 'success');
-        }
+        window.showToast(' Pedidos actualizados', 'success');
     } catch (err) {
         container.style.opacity = '1';
         location.reload();
@@ -271,18 +266,14 @@ async function toggleSound() {
         }
 
         playNotificationSound();
-        if (typeof showToast === 'function') {
-            showToast(' Alertas y notificaciones activadas', 'success');
-        }
+        window.showToast(' Alertas y notificaciones activadas', 'success');
     } else {
         if (icon) icon.textContent = 'notifications_off';
         if (btn) {
             btn.classList.remove('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
             btn.classList.add('text-gray-400', 'dark:text-gray-500');
         }
-        if (typeof showToast === 'function') {
-            showToast(' Alertas desactivadas', 'default');
-        }
+        window.showToast(' Alertas desactivadas', 'default');
     }
 }
 
@@ -299,3 +290,9 @@ function restoreSoundPreference() {
         }
     }
 }
+
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.refreshOrderList = refreshOrderList;
+window.actionHandlers.dismissNewOrdersToast = dismissNewOrdersToast;
+window.actionHandlers.toggleSound = toggleSound;

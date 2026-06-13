@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, request, session, current_app, redirect, u
 from app import db
 from app.models import User, AITokenTransaction
 from app.csrf import csrf
-from app.utils.subscription import TOP_UP_PACKS
+from app.utils.subscription import TOP_UP_PACKS, can_perform_crud
 import mercadopago
 from app.services.token_service import TokenService
 
@@ -124,6 +124,11 @@ def topup_initiate():
     if plan_type == 'trial':
         return jsonify({
             'error': 'Los usuarios en trial no pueden comprar tokens. Elige un plan.',
+        }), 403
+
+    if user.restaurant and not can_perform_crud(user.restaurant):
+        return jsonify({
+            'error': 'Tu suscripción ha vencido. Renueva tu plan para poder recargar tokens.',
         }), 403
 
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))

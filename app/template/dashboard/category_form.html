@@ -32,14 +32,14 @@ block content %}
           DE LA CATEGORÍA (OPCIONAL)</label>
 
         <div class="relative group">
-          <input type="file" name="image" id="category_image" class="hidden" accept="image/*"
+          <input type="file" name="image" id="category_image" class="image-upload-input hidden" accept="image/*"
             onchange="previewImage(this)">
 
-          <div id="image_preview_container" onclick="document.getElementById('category_image').click()"
+          <div id="image_preview_container" data-action="formImagePreview"
             class="relative w-full aspect-square rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not (category and category.image_url) else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
 
             {% if category and category.image_url %}
-            <img id="original_img" src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
+            <img id="original_img" src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" class="w-full h-full object-cover">
             <div id="edit_overlay"
               class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <span class="material-symbols-outlined text-white text-3xl">edit</span>
@@ -56,7 +56,7 @@ block content %}
 
           <input type="hidden" name="delete_image" id="delete_image_input" value="false">
 
-          <button type="button" id="remove_image_btn" onclick="removeImage()"
+          <button type="button" id="remove_image_btn" data-action="removeImage"
             class="{{ 'hidden' if not (category and category.image_url) else '' }} absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
             <span class="material-symbols-outlined text-sm">close</span>
           </button>
@@ -125,64 +125,14 @@ block content %}
     </div>
   </form>
 
-  <script>
-    function previewImage(input) {
-      const container = document.getElementById('image_preview_container');
-      const placeholder = document.getElementById('placeholder_icon');
-      const preview = document.getElementById('new_preview');
-      const removeBtn = document.getElementById('remove_image_btn');
-      const deleteInput = document.getElementById('delete_image_input');
-      const originalImg = document.getElementById('original_img');
-      const editOverlay = document.getElementById('edit_overlay');
-
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          preview.src = e.target.result;
-          preview.classList.remove('hidden');
-          if (placeholder) placeholder.classList.add('hidden');
-          if (originalImg) originalImg.classList.add('hidden');
-          if (editOverlay) editOverlay.classList.add('hidden');
-          removeBtn.classList.remove('hidden');
-          container.classList.remove('border-dashed');
-          deleteInput.value = 'false';
-        }
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
-
-    function removeImage() {
-      const input = document.getElementById('category_image');
-      const preview = document.getElementById('new_preview');
-      const placeholder = document.getElementById('placeholder_icon');
-      const removeBtn = document.getElementById('remove_image_btn');
-      const deleteInput = document.getElementById('delete_image_input');
-      const originalImg = document.getElementById('original_img');
-      const editOverlay = document.getElementById('edit_overlay');
-      const container = document.getElementById('image_preview_container');
-
-      input.value = '';
-      preview.classList.add('hidden');
-      preview.src = '';
-
-      if (originalImg) {
-        originalImg.classList.add('hidden');
-        if (editOverlay) editOverlay.classList.add('hidden');
-        deleteInput.value = 'true';
-      }
-
-      if (placeholder) placeholder.classList.remove('hidden');
-      removeBtn.classList.add('hidden');
-      container.classList.add('border-dashed');
-    }
-  </script>
+  <script src="{{ url_for('static', filename='js/image-preview.js') }}"></script>
 
   <!-- Botón de Eliminar (solo en edición) -->
   {% if category %}
   <form id="deleteCategoryForm" method="POST" action="{{ url_for('categories.delete', id=category.id) }}" class="mt-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <button type="button"
-      onclick="openDeleteModal(document.getElementById('deleteCategoryForm'), 'Se eliminarán también todos los productos asociados a esta categoría de forma permanente.', '¿Eliminar «{{ category.name }}»?')"
+      data-action="openDeleteModal" data-form="deleteCategoryForm" data-message="Se eliminarán también todos los productos asociados a esta categoría de forma permanente." data-title="¿Eliminar «{{ category.name }}»?"
       class="w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
       Eliminar Categoría
     </button>

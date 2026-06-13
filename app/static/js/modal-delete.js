@@ -60,3 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.closeDeleteModal = closeDeleteModal;

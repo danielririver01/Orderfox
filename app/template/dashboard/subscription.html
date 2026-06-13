@@ -258,7 +258,7 @@
         Renovar mi Plan
     </a>
 
-    <button onclick="openAccountDeleteModal()"
+    <button data-action="openAccountDeleteModal"
         class="w-full text-red-600 dark:text-red-400 font-medium py-2 flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs hover:underline">
         <span class="material-symbols-outlined text-[14px]">delete_forever</span>
         Eliminar mi cuenta
@@ -267,7 +267,7 @@
 
 <!-- Modal de Confirmación -->
 <div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountDeleteModal()">
+    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" data-action="closeAccountDeleteModal">
     </div>
     <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4">
         <div
@@ -303,11 +303,11 @@
                 </label>
 
                 <div class="flex flex-col gap-3">
-                    <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled
+                    <button id="confirmAccountDeleteBtn" data-action="deleteAccount" disabled
                         class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
                         ELIMINAR DEFINITIVAMENTE
                     </button>
-                    <button onclick="closeAccountDeleteModal()"
+                    <button data-action="closeAccountDeleteModal"
                         class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
                         CANCELAR
                     </button>

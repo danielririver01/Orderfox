@@ -146,3 +146,10 @@ document.addEventListener('keydown', (e) => {
         closeOrderDetail();
     }
 });
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.closeOrderDetail = closeOrderDetail;
+window.actionHandlers.contactWhatsApp = (p) => contactWhatsApp(p.phone, p.number);
+window.actionHandlers.openReceipt = (p) => window.open(p.url, '_blank');
+window.actionHandlers.openDeleteModal = (p) => openDeleteModal(document.getElementById(p.form), p.message, p.title);

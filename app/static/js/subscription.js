@@ -39,9 +39,7 @@ async function deleteAccount() {
     const checkbox = document.getElementById('confirmAccountDelete');
 
     if (!checkbox || !checkbox.checked) {
-        if (window.showToast) {
-            window.showToast('Debes confirmar que entiendes las consecuencias de eliminar tu cuenta', 'error');
-        }
+        window.showToast('Debes confirmar que entiendes las consecuencias de eliminar tu cuenta', 'error');
         return;
     }
 
@@ -83,17 +81,13 @@ async function deleteAccount() {
                 window.location.href = '/';
             }, 1000);
         } else {
-            if (window.showToast) {
-                window.showToast(data.message || 'Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
-            }
+            window.showToast(data.message || 'Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
             deleteBtn.disabled = false;
             deleteBtn.textContent = originalText;
         }
     } catch (error) {
         console.error('Error al eliminar cuenta:', error);
-        if (window.showToast) {
-            window.showToast('Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
-        }
+        window.showToast('Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
         deleteBtn.disabled = false;
         deleteBtn.textContent = originalText;
     }
@@ -121,3 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.openAccountDeleteModal = openAccountDeleteModal;
+window.actionHandlers.closeAccountDeleteModal = closeAccountDeleteModal;
+window.actionHandlers.deleteAccount = deleteAccount;

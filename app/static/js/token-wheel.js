@@ -11,10 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function updateTokenStatus() {
         try {
-            const response = await fetch('/api/tokens/status');
-            if (!response.ok) throw new Error('No autorizado');
-
-            const data = await response.json();
+            const data = await apiFetch('/api/tokens/status');
             const available = data.total_available || 0;
             const limit = data.plan_limit || 10;
             const percent = data.is_elite ? 100 : Math.max(0, Math.min(100, (available / limit) * 100));
@@ -74,26 +71,23 @@ window.closeTokenModal = function () {
  */
 window.initiateTokenPurchase = async function (packKey) {
     try {
-        showToast('Iniciando pago seguro...', 'info');
-
-        const response = await fetch('/api/tokens/topup/initiate', {
+        const data = await apiFetch('/api/tokens/topup/initiate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pack: packKey })
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            showToast(data.error || 'Error al iniciar pago', 'warning');
-            return;
-        }
-
         if (data.checkout_url) {
-            window.location.href = data.checkout_url;
+            showToast('Iniciando pago seguro...', 'info');
+            setTimeout(() => { window.location.href = data.checkout_url; }, 800);
         }
 
     } catch (error) {
-        showToast('Error de conexión con la pasarela de pagos', 'error');
+        showToast(error.message || 'Error de conexión con la pasarela de pagos', 'error');
     }
 };
+
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.closeTokenModal = window.closeTokenModal;
+window.actionHandlers.openTokenModal = window.openTokenModal;
+window.actionHandlers.initiateTokenPurchase = function(p) { window.initiateTokenPurchase(p.pack); };

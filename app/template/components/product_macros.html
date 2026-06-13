@@ -8,7 +8,7 @@
         <!-- Cara Frontal -->
         <div class="product-card-front">
             {% if is_3d %}
-            <button class="btn-flip" onclick="flipCard({{ product.id }})" title="Ver info y QR">
+            <button class="btn-flip" data-action="flipCard" data-id="{{ product.id }}" title="Ver info y QR">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
@@ -58,9 +58,9 @@
                 <div class="product-actions">
                     {% if not ordering_disabled %}
                     <div class="quantity-controls">
-                        <button class="btn-qty" onclick="updateQty({{ product.id }}, -1)" aria-label="Disminuir">-</button>
+                        <button class="btn-qty" data-action="updateQty" data-id="{{ product.id }}" data-delta="-1" aria-label="Disminuir">-</button>
                         <span class="qty-display" id="qty-{{ product.id }}">0</span>
-                        <button class="btn-qty" onclick="updateQty({{ product.id }}, 1)" aria-label="Aumentar">+</button>
+                        <button class="btn-qty" data-action="updateQty" data-id="{{ product.id }}" data-delta="1" aria-label="Aumentar">+</button>
                     </div>
                     {% else %}
                     <div class="view-only-badge">
@@ -78,7 +78,7 @@
         <!-- Cara Trasera (QR & Share) - Solo si is_3d es True -->
         {% if is_3d %}
         <div class="product-card-back">
-            <button class="btn-flip-back" onclick="flipCard({{ product.id }})">
+            <button class="btn-flip-back" data-action="flipCard" data-id="{{ product.id }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -93,7 +93,7 @@
 
             <div class="share-actions">
                 <button class="btn-share-premium"
-                    onclick="shareProduct({{ product.id }}, '{{ product.name }}', '{{ product.category.name if product.category else '' }}')">
+                    data-action="shareProduct" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name if product.category else '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />

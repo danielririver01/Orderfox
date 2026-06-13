@@ -310,8 +310,6 @@ See `settings.py` for full list. Key ones:
 | **Rate Limiting** | Flask-Limiter (intelligent) |
 | **Job Scheduling** | APScheduler |
 | **Frontend CSS** | Tailwind CSS 4.2.4 |
-| **PWA** | Workbox service workers |
-| **Offline DB** | Dexie (IndexedDB) |
 | **Templating** | Jinja2 |
 | **JavaScript** | Vanilla (no framework) |
 

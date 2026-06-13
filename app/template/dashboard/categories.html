@@ -44,7 +44,7 @@
                     <div
                         class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
                         {% if category.image_url %}
-                        <img src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
+                        <img src="{{ get_image_url(category.image_url) }}" alt="{{ category.name }}" class="w-full h-full object-cover">
                         {% else %}
                         <div
                             class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
@@ -86,7 +86,7 @@
                         </label>
 
                         <!-- Desktop: abre panel inline -->
-                        <button onclick="openCategoryForm({{ category.id }})"
+                        <button data-action="openCategoryForm" data-id="{{ category.id }}"
                             class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                             title="Editar Categoría">
                             <span class="material-symbols-outlined text-[20px]">edit</span>
@@ -103,7 +103,7 @@
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         </form>
                         <button
-                            onclick="deleteCategory({{ category.id }}, '{{ category.name|e }}', '{{ url_for('categories.delete', id=category.id) }}')"
+                            data-action="deleteCategory" data-id="{{ category.id }}" data-name="{{ category.name|e }}" data-url="{{ url_for('categories.delete', id=category.id) }}"
                             class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
                             title="Eliminar Categoría">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
@@ -117,7 +117,7 @@
                     <span
                         class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
                     <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
-                    <button onclick="openCategoryForm()"
+                    <button data-action="openCategoryForm"
                         class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea
                         tu primera categoría</button>
                 </div>
@@ -146,7 +146,7 @@
                         <h2 class="text-lg font-black text-gray-900 dark:text-white truncate" id="form-title">Crear
                             Categoría</h2>
                     </div>
-                    <button onclick="closeCategoryForm()"
+                    <button data-action="closeCategoryForm"
                         class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1a1a] rounded-xl transition-all">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
@@ -167,7 +167,7 @@
                             <div class="relative group">
                                 <input type="file" id="form-image" class="hidden" accept="image/*"
                                     onchange="previewFormImage(this)">
-                                <div id="form-image-preview" onclick="document.getElementById('form-image').click()"
+                                <div id="form-image-preview" data-action="formImagePreview"
                                     class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
                                     <div id="form-image-placeholder" class="flex flex-col items-center gap-2">
                                         <span class="material-symbols-outlined text-4xl">add_a_photo</span>
@@ -176,7 +176,7 @@
                                     </div>
                                     <img id="form-image-img" class="hidden w-full h-full object-cover absolute inset-0">
                                 </div>
-                                <button type="button" id="form-remove-image" onclick="removeFormImage()"
+                                <button type="button" id="form-remove-image" data-action="removeFormImage"
                                     class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
                                     <span class="material-symbols-outlined text-sm">close</span>
                                 </button>
@@ -225,16 +225,16 @@
                 <!-- Footer: Botones -->
                 <div class="px-5 py-4 border-t border-gray-100 dark:border-[#262626] space-y-3">
                     <div class="flex gap-3">
-                        <button onclick="closeCategoryForm()"
+                        <button data-action="closeCategoryForm"
                             class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
                             Cancelar
                         </button>
-                        <button onclick="saveCategory(event)" id="form-save-btn"
+                        <button data-action="saveCategory" id="form-save-btn"
                             class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
                             Guardar
                         </button>
                     </div>
-                    <button onclick="confirmDeleteCategory()" id="form-delete-btn"
+                    <button data-action="confirmDeleteCategory" id="form-delete-btn"
                         class="hidden w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
                         Eliminar Categoría
                     </button>
@@ -252,7 +252,7 @@
 </a>
 
 <!-- FAB Desktop -->
-<button id="desktop-add-category-btn" onclick="openCategoryForm()"
+<button id="desktop-add-category-btn" data-action="openCategoryForm"
     class="hidden md:flex fixed bottom-8 right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all z-20">
     <span class="material-symbols-outlined text-[28px]">add</span>
 </button>

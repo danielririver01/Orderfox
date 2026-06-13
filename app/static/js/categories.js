@@ -26,10 +26,13 @@ async function toggleCategory(id, newState, url = null) {
     toggles.forEach(t => t.checked = newState);
 
     try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
         const response = await fetch(endpoint, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ is_active: newState })
@@ -47,9 +50,7 @@ async function toggleCategory(id, newState, url = null) {
         
         toggles.forEach(t => t.checked = !newState);
         
-        if (window.showToast) {
-            window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
-        }
+        window.showToast(error.message || 'Error de conexión. Intenta de nuevo.', 'error');
     }
 }
 

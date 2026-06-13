@@ -63,33 +63,12 @@ async function compartirQR() {
     // 3. Fallback final: WhatsApp Directo (Escritorio Legacy)
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto)}`;
     window.open(whatsappUrl, '_blank');
-    mostrarToast('Abriendo WhatsApp...');
+    showToast('Abriendo WhatsApp...', 'success');
 }
 
 function volverAtras() {
     window.location.href = "/dashboard/";
 }
-
-        function mostrarToast(mensaje, tipo = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            
-            // Cambiar color del borde según tipo
-            if (tipo === 'error') {
-                toast.classList.remove('border-success');
-                toast.classList.add('border-red-500');
-            } else {
-                toast.classList.remove('border-red-500');
-                toast.classList.add('border-success');
-            }
-            
-            toastMessage.textContent = mensaje;
-            toast.classList.remove('hidden');
-            
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
 
         // Animación de entrada del QR
         document.addEventListener('DOMContentLoaded', () => {
@@ -111,3 +90,9 @@ function volverAtras() {
                 qrImage.style.transform = 'scale(1)';
             }
         });
+
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.copiarURL = copiarURL;
+window.actionHandlers.descargarQR = descargarQR;
+window.actionHandlers.compartirQR = function() { compartirQR(); };

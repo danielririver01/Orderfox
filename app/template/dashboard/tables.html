@@ -8,7 +8,7 @@
     </div>
     <div class="flex items-center gap-2">
       <button
-        {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
+        {% if has_table_qr_access %}data-action="showModal" data-modal="createTableModal"{% else %}disabled{% endif %}
         class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 {% if not has_table_qr_access %}opacity-50 cursor-not-allowed grayscale{% endif %}"
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
@@ -48,7 +48,7 @@
               
               <!-- Botón Unificado (La lógica de si es móvil o desktop se hace en JS para evitar fallos de CSS) -->
               <button 
-                onclick="handleQRClick(event, '{{ table.id }}', '{{ table.name }}', '{{ url_for('tables.qr_image', id=table.id) }}', '{{ request.host_url.rstrip('/') }}{{ url_for('public.menu', slug=table.restaurant.slug, table=table.id) }}', '{{ url_for('tables.download_qr', id=table.id) }}', '{{ url_for('tables.qr', id=table.id) }}')"
+                data-action="handleQRClick" data-id="{{ table.id }}" data-name="{{ table.name }}" data-img-url="{{ url_for('tables.qr_image', id=table.id) }}" data-menu-url="{{ request.host_url.rstrip('/') }}{{ url_for('public.menu', slug=table.restaurant.slug, table=table.id) }}" data-download-url="{{ url_for('tables.download_qr', id=table.id) }}" data-mobile-url="{{ url_for('tables.qr', id=table.id) }}"
                 class="flex-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] dark:hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-3 px-4 rounded-xl text-center shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest hover:text-[#f2460d]"
               >
                 <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
@@ -56,7 +56,7 @@
               </button>
 
               <button
-                onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=\'hidden\' name=\'csrf_token\' value=\'{{ csrf_token() }}\'>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?');"
+                data-action="deleteTable" data-id="{{ table.id }}" data-name="{{ table.name }}" data-url="{{ url_for('tables.delete', id=table.id) }}" data-csrf="{{ csrf_token() }}"
                 class="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
                 title="Eliminar Mesa"
               >
@@ -72,7 +72,7 @@
           <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mesas</h3>
           <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">Crea tu primera mesa para generar su código QR y permitir pedidos digitales.</p>
           <button
-            {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
+            {% if has_table_qr_access %}data-action="showModal" data-modal="createTableModal"{% else %}disabled{% endif %}
             class="bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}"
           >
             CREAR PRIMERA MESA
@@ -115,7 +115,7 @@
       <div id="qr-display-card" class="hidden relative bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] shadow-sm p-6 md:p-8 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         <!-- Botón Cerrar (X) -->
-        <button onclick="clearTableQR()" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#262626] rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all active:scale-90" title="Cerrar visor">
+        <button data-action="clearTableQR" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#262626] rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all active:scale-90" title="Cerrar visor">
             <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
 
@@ -140,7 +140,7 @@
             <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
             <div class="flex items-center gap-3">
                 <input type="text" id="qr-menu-url" readonly class="bg-transparent border-none text-xs text-[#f2460d] font-bold flex-1 truncate p-0 focus:ring-0 cursor-default" value="--">
-                <button onclick="copiarURLMenu()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-[#f2460d] rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90" title="Copiar URL">
+                <button data-action="copiarURLMenu" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-[#f2460d] rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90" title="Copiar URL">
                     <span class="material-symbols-outlined text-[18px]">content_copy</span>
                 </button>
             </div>
@@ -161,7 +161,7 @@
 </main>
 
 <div id="createTableModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="document.getElementById('createTableModal').classList.add('hidden')"></div>
+    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" data-action="hideModal" data-modal="createTableModal"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#141414] text-left shadow-2xl transition-all sm:w-full sm:max-w-md border border-gray-100 dark:border-[#262626]">
@@ -184,7 +184,7 @@
                         </div>
                         
                         <div class="flex gap-3 mt-10">
-                            <button type="button" onclick="document.getElementById('createTableModal').classList.add('hidden')" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-600 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
+                            <button type="button" data-action="hideModal" data-modal="createTableModal" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-600 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
                                 Cancelar
                             </button>
                             <button type="submit" class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 transition-all active:scale-95">
@@ -253,6 +253,22 @@
         console.error('Error al copiar: ', err);
     });
   }
+
+  // Event delegation handlers
+  window.actionHandlers = window.actionHandlers || {};
+  window.actionHandlers.handleQRClick = (p, el, e) => handleQRClick(e, p.id, p.name, p.imgUrl, p.menuUrl, p.downloadUrl, p.mobileUrl);
+  window.actionHandlers.clearTableQR = clearTableQR;
+  window.actionHandlers.copiarURLMenu = copiarURLMenu;
+  window.actionHandlers.showModal = (p) => document.getElementById(p.modal)?.classList.remove('hidden');
+  window.actionHandlers.hideModal = (p) => document.getElementById(p.modal)?.classList.add('hidden');
+  window.actionHandlers.deleteTable = (p) => {
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = p.url;
+    f.innerHTML = `<input type="hidden" name="csrf_token" value="${p.csrf}">`;
+    document.body.appendChild(f);
+    openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', `¿Eliminar «${p.name}»?`);
+  };
 </script>
 
 {% endblock %}

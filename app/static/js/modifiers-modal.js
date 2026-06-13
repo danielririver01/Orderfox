@@ -228,14 +228,10 @@ async function toggleModifier(id, newState) {
         if (!data.success) throw new Error(data.error);
 
         toggle.checked = data.data.is_active;
-        if (window.showToast) {
-            window.showToast(data.data.is_active ? 'Combo activado' : 'Combo desactivado', 'success');
-        }
+        window.showToast(data.data.is_active ? 'Combo activado' : 'Combo desactivado', 'success');
     } catch (err) {
         toggle.checked = !newState;
-        if (window.showToast) {
-            window.showToast(err.message || 'Error al actualizar', 'error');
-        }
+        window.showToast(err.message || 'Error al actualizar', 'error');
     }
 }
 
@@ -269,13 +265,9 @@ async function addModifier() {
 
         await loadModifiers();
 
-        if (window.showToast) {
-            window.showToast(`"${name}" agregado`, 'success');
-        }
+        window.showToast(`"${name}" agregado`, 'success');
     } catch (err) {
-        if (window.showToast) {
-            window.showToast(err.message || 'Error al crear', 'error');
-        }
+        window.showToast(err.message || 'Error al crear', 'error');
     } finally {
         els.addBtn.disabled = false;
         els.addBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add</span>';
@@ -305,13 +297,9 @@ async function deleteModifier(id) {
                     await loadModifiers();
                 }, 300);
 
-                if (window.showToast) {
-                    window.showToast(`"${name}" eliminado`, 'success');
-                }
+                window.showToast(`"${name}" eliminado`, 'success');
             } catch (err) {
-                if (window.showToast) {
-                    window.showToast(err.message || 'Error al eliminar', 'error');
-                }
+                window.showToast(err.message || 'Error al eliminar', 'error');
             }
         }
     );
@@ -335,3 +323,10 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.openModifiersModal = (p) => openModifiersModal(parseInt(p.id), p.name);
+window.actionHandlers.closeModifiersModal = closeModifiersModal;
+window.actionHandlers.addModifier = addModifier;
+window.actionHandlers.openDeleteModal = (p) => openDeleteModal(document.getElementById(p.form), p.message, p.title);

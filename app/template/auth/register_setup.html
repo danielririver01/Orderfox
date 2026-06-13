@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="es" class="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -166,16 +166,16 @@
 
                             <div class="flex flex-col gap-4">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-gray-300 text-xs font-bold uppercase tracking-widest">
+                                    <label for="restaurant_name" class="text-gray-300 text-xs font-bold uppercase tracking-widest">
                                         Nombre del Restaurante
                                     </label>
-                                    {{ form.restaurant_name(class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="Ej: Pizzería Roma") }}
+                                    {{ form.restaurant_name(id="restaurant_name", class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="Ej: Pizzería Roma") }}
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-gray-300 text-xs font-bold uppercase tracking-widest">
+                                    <label for="phone" class="text-gray-300 text-xs font-bold uppercase tracking-widest">
                                         WhatsApp del Negocio
                                     </label>
-                                    {{ form.phone(class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="573...") }}
+                                    {{ form.phone(id="phone", class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="573...") }}
                                 </div>
                             </div>
 
@@ -207,10 +207,10 @@
                             <!-- Admin Name + Phone -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-gray-300 text-xs font-bold uppercase tracking-widest" for="admin_name">
+                                    <label for="admin_name" class="text-gray-300 text-xs font-bold uppercase tracking-widest">
                                         Tu Nombre
                                     </label>
-                                    {{ form.admin_name(class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="Ej: Juan Pérez") }}
+                                    {{ form.admin_name(id="admin_name", class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white px-4 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="Ej: Juan Pérez") }}
                                 </div>
 
                                 <div class="flex flex-col gap-2">
@@ -238,7 +238,7 @@
                                 </label>
                                 <div class="relative">
                                     {{ form.password(id="password", class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white pl-4 pr-10 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="••••••••") }}
-                                    <button type="button" onclick="togglePass('password', 'eyeIcon')"
+                                    <button type="button" data-action="togglePass" data-field="password" data-icon="eyeIcon"
                                         class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#f2460d] transition-colors">
                                         <span class="material-symbols-outlined text-[20px]" id="eyeIcon">visibility</span>
                                     </button>
@@ -252,7 +252,7 @@
                                 </label>
                                 <div class="relative">
                                     {{ form.confirm_password(id="confirm_password", class="w-full rounded-xl border border-white/8 bg-[#0f0f0f] text-white pl-4 pr-10 py-3.5 text-sm focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] transition-all", placeholder="••••••••") }}
-                                    <button type="button" onclick="togglePass('confirm_password', 'eyeIcon2')"
+                                    <button type="button" data-action="togglePass" data-field="confirm_password" data-icon="eyeIcon2"
                                         class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#f2460d] transition-colors">
                                         <span class="material-symbols-outlined text-[20px]" id="eyeIcon2">visibility</span>
                                     </button>
@@ -367,6 +367,18 @@
                 icon.innerText = 'visibility';
             }
         }
+
+        // Event delegation handler for data-action attributes
+        window.actionHandlers = window.actionHandlers || {};
+        window.actionHandlers.togglePass = function(p) { togglePass(p.field, p.icon); };
+        document.addEventListener('click', function(e) {
+            var el = e.target.closest('[data-action]');
+            if (!el) return;
+            var action = el.dataset.action;
+            if (window.actionHandlers[action]) {
+                window.actionHandlers[action](el.dataset, el, e);
+            }
+        });
     </script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 </body>

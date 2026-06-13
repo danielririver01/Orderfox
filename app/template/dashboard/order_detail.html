@@ -69,7 +69,7 @@
                             {% endif %}
                         </div>
                         {% if order.customer_phone %}
-                        <button onclick="contactWhatsApp('{{ order.customer_phone }}', '{{ order.order_number }}')"
+                        <button data-action="contactWhatsApp" data-phone="{{ order.customer_phone }}" data-number="{{ order.order_number }}"
                             class="bg-[#25D366] hover:bg-[#20ba5a] text-white p-3 rounded-2xl transition-all shadow-lg shadow-green-500/20 active:scale-95">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor"
                                 viewBox="0 0 24 24">
@@ -155,7 +155,7 @@
 
                 <!-- Imprimir -->
                 {% if order.status != 'cancelled' %}
-                <button onclick="window.open('{{ url_for('orders.receipt', id=order.id) }}', '_blank')"
+                <button data-action="openReceipt" data-url="{{ url_for('orders.receipt', id=order.id) }}"
                     class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[20px]">print</span>
                     Imprimir Pedido
@@ -166,7 +166,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
                 <button
-                    onclick="openDeleteModal(document.getElementById('deleteOrderForm'), '¿Deseas eliminar permanentemente este registro de la base de datos?', 'Eliminar pedido cancelado')"
+                    data-action="openDeleteModal" data-form="deleteOrderForm" data-message="¿Deseas eliminar permanentemente este registro de la base de datos?" data-title="Eliminar pedido cancelado"
                     class="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[20px]">delete_forever</span>
                     Eliminar Pedido
@@ -178,14 +178,14 @@
                 <div class="space-y-3">
                     {% if order.status == 'pending' %}
                     <button
-                        onclick="changeStatus({{ order.id }}, 'confirmed', '{{ url_for('orders.detail', id=order.id) }}')"
+                        data-action="changeStatusDetail" data-id="{{ order.id }}" data-status="confirmed" data-url="{{ url_for('orders.detail', id=order.id) }}"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-[20px]">check_circle</span>
                         Confirmar Pedido
                     </button>
                     {% elif order.status == 'confirmed' %}
                     <button
-                        onclick="changeStatus({{ order.id }}, 'delivered', '{{ url_for('orders.detail', id=order.id) }}')"
+                        data-action="changeStatusDetail" data-id="{{ order.id }}" data-status="delivered" data-url="{{ url_for('orders.detail', id=order.id) }}"
                         class="w-full bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-green-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-[20px]">delivery_dining</span>
                         Marcar como Entregado
@@ -194,7 +194,7 @@
 
                     <form id="cancelOrderForm" method="POST" action="{{ url_for('orders.cancel', id=order.id) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="button" onclick="showCancelModal()"
+                        <button type="button" data-action="showCancelModal"
                             class="w-full bg-white dark:bg-transparent text-red-600 dark:text-red-500 font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl border-2 border-red-50 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/5 transition-all">
                             Cancelar Pedido
                         </button>
@@ -226,11 +226,11 @@
         </div>
 
         <div class="p-6 bg-gray-50/50 dark:bg-[#0a0a0a]/50 border-t border-gray-100 dark:border-[#262626] flex gap-3">
-            <button onclick="hideCancelModal()"
+            <button data-action="hideCancelModal"
                 class="flex-1 px-4 py-4 bg-white dark:bg-[#262626] hover:bg-gray-50 dark:hover:bg-[#333333] text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest rounded-2xl border border-gray-200 dark:border-[#262626] transition-all active:scale-95">
                 No, mantener
             </button>
-            <button onclick="confirmCancelOrder()"
+            <button data-action="confirmCancelOrder"
                 class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-lg shadow-red-500/20 transition-all active:scale-95">
                 Sí, cancelar
             </button>

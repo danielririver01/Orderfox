@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template, session, request, flash, redirect, url_for
+import logging
+from flask import Flask, render_template, session, request, flash, redirect, url_for, jsonify
 from .models import db, migrate,User
 from flask_mail import Mail
 from flask_apscheduler import APScheduler
@@ -107,11 +108,15 @@ def create_app():
     @app.before_request
     def block_grace_period_crud():
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint or 'api_auth.' in request.endpoint or request.path.startswith('/api/')):
+            endpoint = request.endpoint or ''
+            blocked = endpoint.startswith(('products.', 'categories.', 'modifiers.', 'tables.', 'api_products.', 'api_categories.', 'api_modifiers.', 'api_tables.', 'api_dashboard.', 'tokens.'))
+            if not blocked:
                 return
-                
+
             restaurant = get_current_restaurant()
             if restaurant and not can_perform_crud(restaurant):
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'error_code': 'SUBSCRIPTION_EXPIRED', 'error': 'Tu suscripción ha vencido. No puedes realizar cambios hasta que renueves tu plan.', 'message': 'Tu suscripción ha vencido. No puedes realizar cambios hasta que renueves tu plan.'}), 403
                 flash('Tu suscripción ha vencido. No puedes realizar cambios hasta que renueves tu plan.', 'warning')
                 return redirect(request.referrer or url_for('dashboard.index'))
 

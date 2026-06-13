@@ -1,0 +1,61 @@
+<!-- Modifiers Modal (Mobile only) -->
+<div id="modifiers-modal" class="fixed inset-0 z-[9999] hidden md:hidden">
+    <style>
+        .modifiers-panel { max-width: 100%; }
+    </style>
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-action="closeModifiersModal"></div>
+
+    <!-- Panel -->
+    <div id="mobile-modifiers-panel" class="modifiers-panel absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#141414] border-l border-[#262626] shadow-2xl flex flex-col transition-transform duration-300 ease-out z-50" style="transform: translateX(100%);">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">
+            <div class="flex-1 min-w-0">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Combos de</p>
+                <h2 id="modifiers-product-name" class="text-lg font-black text-white truncate"></h2>
+            </div>
+            <button data-action="closeModifiersModal" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all ml-3">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <!-- Modifiers List -->
+        <div id="modifiers-list" class="flex-1 overflow-y-auto px-5 py-4 space-y-2">
+        </div>
+
+        {% if not has_modifiers_access %}
+        <!-- Premium Lock Overlay (Mobile) -->
+        <div id="mobile-premium-lock" class="flex-1 flex items-center justify-center p-6">
+            <div class="text-center max-w-[260px]">
+                <div class="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <span class="material-symbols-outlined text-amber-600 dark:text-amber-500 text-[32px]">workspace_premium</span>
+                </div>
+                <h3 class="text-lg font-black text-white mb-2 tracking-tight">Función Plan Élite</h3>
+                <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con combos y modificadores ilimitados para tus clientes.</p>
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full bg-[#f2460d] text-white font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
+                    Desbloquear Ahora
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Add Form -->
+        <div id="modifier-add-form" class="hidden border-t border-[#262626] px-5 py-4 space-y-3">
+            <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
+            <div class="flex gap-2">
+                <input type="text" id="modifier-name" placeholder="Ej: Doble carne"
+                    class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+                <input type="number" id="modifier-price" placeholder="Precio" min="0"
+                    class="w-28 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
+            </div>
+            <button id="modifier-add-btn" data-action="addModifier"
+                class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Agregar Combo
+            </button>
+        </div>
+    </div>
+</div>

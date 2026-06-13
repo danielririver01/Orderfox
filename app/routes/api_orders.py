@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from app import db
 from app.models import Order, Table
 from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
@@ -169,7 +169,7 @@ def change_status(id):
 
     new_status = data.get('status')
 
-    if not check_feature_access(restaurant, 'has_status_management') and new_status not in ['confirmed', 'cancelled', 'pending']:
+    if not getattr(g, 'is_expired', False) and not check_feature_access(restaurant, 'has_status_management') and new_status not in ['confirmed', 'cancelled', 'pending']:
         return jsonify({
             'success': False,
             'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite marcar pedidos como Entregados.'

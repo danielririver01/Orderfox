@@ -21,10 +21,10 @@
                 <div class="flex items-center bg-[#0f0f10] p-1 rounded-xl border border-white/5">
                     <button id="range-today"
                         class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all bg-white text-black shadow-lg"
-                        onclick="setDashboardRange('today')">Hoy</button>
+                        data-action="setDashboardRange" data-range="today">Hoy</button>
                     <button id="range-month"
                         class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300"
-                        onclick="setDashboardRange('month')">Mes</button>
+                        data-action="setDashboardRange" data-range="month">Mes</button>
                 </div>
             </div>
         </div>
@@ -197,7 +197,7 @@
 
                 <button
                     class="relative z-0 w-full bg-gradient-to-br from-[#f2460d] to-[#d63a0a] hover:from-[#d63a0a] hover:to-[#f2460d] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-orange-500/30 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
-                    onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('¡Link copiado con éxito!', 'success')">
+                    data-action="copyMenuUrl" data-url="{{ menu_url }}">
 
                     <div class="absolute inset-x-0 top-0 h-px bg-white/20"></div>
 

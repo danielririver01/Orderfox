@@ -1,0 +1,81 @@
+<!-- Nueva Estructura de Carrito Vertical Premium -->
+<!-- Botón Flotante (Trigger) — visible solo en mobile -->
+<button id="cart-toggle-btn" class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#F2460D] shadow-xl shadow-[#F2460D]/25 flex items-center justify-center lg:hidden transition-all active:scale-90 hover:bg-[#d43d0a]" data-action="toggleCart">
+    <span class="material-symbols-outlined text-2xl text-white">shopping_bag</span>
+    <span id="cart-count-badge" class="absolute -top-1 -right-1 bg-white text-[#F2460D] text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#F2460D] leading-none">0</span>
+</button>
+
+<!-- Sidebar Drawer -->
+<div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full max-w-md bg-[#171A21] z-[2000] transform translate-x-full transition-transform duration-500 ease-in-out border-l border-[#242833] shadow-2xl flex flex-col">
+    <!-- Header -->
+    <div class="flex-shrink-0 px-5 py-4 border-b border-[#242833] flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-[#F2460D] text-xl">shopping_bag</span>
+            <h2 class="text-base font-bold text-white">Tu Pedido</h2>
+            <span id="cart-count-badge-v2" class="hidden text-[0.55rem] font-bold bg-[#F2460D] text-white px-1.5 py-0.5 rounded-full leading-none">0</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <button data-action="clearCart" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-zinc-500 hover:text-zinc-300 transition-colors" title="Vaciar carrito">
+                <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+            <button data-action="toggleCart" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-zinc-500 hover:text-zinc-300 transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+    </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Scrollable Items List -->
+    <div id="cart-items-list" class="flex-grow overflow-y-auto custom-scrollbar">
+        <!-- Renderizado dinámicamente por cart.js -->
+        <div class="flex flex-col items-center justify-center h-full text-center px-6">
+            <span class="material-symbols-outlined text-3xl text-zinc-700 mb-3">shopping_bag</span>
+            <p class="text-sm font-medium text-zinc-500">Carrito vacío</p>
+            <p class="text-xs text-zinc-700 mt-1">Agrega productos del menú</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex-shrink-0 border-t border-[#242833]">
+        <!-- Summary -->
+        <div class="px-5 py-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-zinc-500 font-medium">Subtotal</span>
+                <span id="sidebar-cart-subtotal" class="text-xs font-bold text-zinc-300">$0</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-zinc-500 font-medium">Delivery</span>
+                <span class="text-xs font-bold text-zinc-300">$0</span>
+            </div>
+            <div class="flex items-center justify-between pt-1.5 border-t border-[#242833]">
+                <span class="text-sm font-bold text-white">Total</span>
+                <span id="sidebar-cart-total" class="text-lg font-bold text-[#F2460D]">$0</span>
+            </div>
+        </div>
+
+        <!-- CTAs -->
+        <div class="px-5 pb-3 space-y-2">
+            <button data-action="sendWhatsApp" id="checkout-btn-v2"
+                    class="w-full py-3 rounded-xl bg-[#F2460D] hover:bg-[#d43d0a] text-white text-sm font-bold transition-all active:scale-[0.98] shadow-lg shadow-[#F2460D]/20 disabled:opacity-40 disabled:cursor-not-allowed">
+                Ir a pagar
+            </button>
+            <button data-action="toggleCart"
+                    class="w-full py-2.5 rounded-xl bg-transparent border border-[#242833] text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 text-xs font-semibold transition-all active:scale-[0.98]">
+                Seguir comprando
+            </button>
+        </div>
+
+        <!-- Trust footer -->
+        <div class="px-5 pb-4 flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-[0.6rem] text-zinc-700">lock</span>
+            <span class="text-[0.55rem] text-zinc-700 font-medium">Pago 100% seguro</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay -->
+<div id="cart-overlay" class="fixed inset-0 bg-black/50 z-[1999] opacity-0 pointer-events-none transition-opacity duration-500" data-action="toggleCart"></div>

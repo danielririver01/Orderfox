@@ -38,7 +38,7 @@
                 <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
                 <div class="flex items-center gap-2 sm:gap-3 w-full">
                     <code class="text-[10px] sm:text-xs text-primary dark:text-orange-400 font-bold flex-1 min-w-0 break-words" style="word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">{{ menu_url }}</code>
-                    <button onclick="copiarURL()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
+                    <button data-action="copiarURL" class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
                         <span class="material-symbols-outlined text-[18px]">content_copy</span>
                     </button>
                 </div>
@@ -54,7 +54,7 @@
                     </a>
                 {% else %}
                     <button 
-                        onclick="descargarQR()"
+                        data-action="descargarQR"
                         class="w-full bg-primary hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 uppercase tracking-widest text-xs"
                     >
                         <span class="material-symbols-outlined">download</span>
@@ -64,7 +64,7 @@
 
                 {% if not is_table_qr %}
                 <button 
-                    onclick="compartirQR()"
+                    data-action="compartirQR"
                     class="w-full bg-success hover:bg-green-700 text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 uppercase tracking-widest text-xs"
                 >
                     <span class="material-symbols-outlined">share</span>

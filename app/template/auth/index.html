@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Velzia - Admin Dashboard</title>
+    <title>Velzia</title>
 
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
@@ -216,6 +216,20 @@
 
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 
+    <!-- Minimal data-action handler for auth pages -->
+    <script>
+        window.actionHandlers = window.actionHandlers || {};
+        window.actionHandlers.reloadPage = function() { location.reload(); };
+        document.addEventListener('click', function(e) {
+            var el = e.target.closest('[data-action]');
+            if (!el) return;
+            var action = el.dataset.action;
+            if (window.actionHandlers[action]) {
+                window.actionHandlers[action](el.dataset, el, e);
+            }
+        });
+    </script>
+
     <!-- Clerk Themes -->
     <script src="https://cdn.jsdelivr.net/npm/@clerk/themes@latest/dist/index.browser.js"></script>
 
@@ -307,7 +321,7 @@
                                         </svg>
                                     </div>
                                     <p class="text-sm font-bold text-red-500 text-center mb-4">${message}</p>
-                                    <button onclick="window.location.reload()" class="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm">
+                                    <button data-action="reloadPage" class="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm">
                                         Intentar de nuevo
                                     </button>
                                 </div>

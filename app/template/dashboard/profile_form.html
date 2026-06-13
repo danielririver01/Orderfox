@@ -19,14 +19,14 @@
     <div class="space-y-6">
         <!-- Nombre del Negocio -->
         <div>
-            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL ESTABLECIMIENTO</label>
-            <input type="text" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <label for="restaurant_name" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL ESTABLECIMIENTO</label>
+            <input type="text" id="restaurant_name" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
         </div>
 
         <!-- WhatsApp -->
         <div>
-            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">WHATSAPP DE PEDIDOS</label>
-            <input type="text" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <label for="whatsapp_phone" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">WHATSAPP DE PEDIDOS</label>
+            <input type="text" id="whatsapp_phone" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
         </div>
 
         <div class="py-2">
@@ -35,15 +35,15 @@
 
         <!-- Usuario -->
         <div>
-            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DE USUARIO</label>
-            <input type="text" name="username" value="{{ user.username }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <label for="username" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DE USUARIO</label>
+            <input type="text" id="username" name="username" value="{{ user.username }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
         </div>
 
         <!-- Email -->
         <div>
-            <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO DE ACCESO</label>
+            <label for="user_email" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO DE ACCESO</label>
             <div class="relative group">
-                <input type="email" value="{{ user.email }}" class="w-full px-5 py-4 bg-gray-100 dark:bg-[#0a0a0a]/50 text-gray-500 dark:text-gray-600 rounded-2xl border border-gray-200 dark:border-[#262626] cursor-not-allowed font-medium outline-none" readonly>
+                <input type="email" id="user_email" value="{{ user.email }}" class="w-full px-5 py-4 bg-gray-100 dark:bg-[#0a0a0a]/50 text-gray-500 dark:text-gray-600 rounded-2xl border border-gray-200 dark:border-[#262626] cursor-not-allowed font-medium outline-none" readonly>
                 <div class="absolute right-5 top-4.5 text-gray-300 dark:text-gray-700">
                     <span class="material-symbols-outlined text-[20px]">lock_person</span>
                 </div>

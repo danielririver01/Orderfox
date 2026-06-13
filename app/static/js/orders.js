@@ -1,27 +1,24 @@
 async function changeStatus(orderId, newStatus) {
   try {
-    const response = await fetch(`/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": "{{ csrf_token() }}"
-      },
+    await apiFetch(`/orders/${orderId}/status`, {
+      method: 'PATCH',
       body: JSON.stringify({ status: newStatus }),
     });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Error al cambiar estado");
-    }
-
-    // If detail panel is open for this order, refresh it
-    if (typeof refreshOrderPanel === 'function' && typeof currentOrderId !== 'undefined' && currentOrderId === orderId) {
-      // Reload the page to refresh both list and panel
-      location.reload();
-    } else {
-      location.reload();
-    }
+    location.reload();
   } catch (error) {
-    showToast(error.message);
+    showToast(error.message, 'error');
   }
+}
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.openOrderDetail = (p) => openOrderDetail(parseInt(p.id));
+window.actionHandlers.changeOrderStatus = (p) => changeStatus(parseInt(p.id), p.status);
+window.actionHandlers.showAllPending = showAllPending;
+window.actionHandlers.toggleSort = toggleSort;
+if (typeof toggleSound !== 'undefined') {
+  window.actionHandlers.toggleSound = toggleSound;
+}
+if (typeof closeOrderDetail !== 'undefined') {
+  window.actionHandlers.closeOrderDetail = closeOrderDetail;
 }

@@ -50,11 +50,15 @@
                 <span class="label">Pedido actual</span>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                     <span class="badge" id="cartCountBadge">0</span>
-                    <button class="btn-cancel-cart" id="btnCancelCart" onclick="cancelOrder()" title="Cancelar pedido">×</button>
+                    <button class="btn-cancel-cart hidden" id="btnCancelCart" data-action="cancelOrder" title="Cancelar pedido">×</button>
+                    <button class="btn-edit-cart hidden" id="btnEditCart" data-action="openCartEditor" title="Editar pedido">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </button>
                 </div>
             </div>
             <div class="cart-summary-total" id="cartSummaryTotal">$0</div>
-            <button class="btn-ver-pedido" id="btnVerPedido" disabled onclick="openCheckoutModal()">
+            <div class="cart-items" id="cartItems"></div>
+            <button class="btn-ver-pedido" id="btnVerPedido" disabled data-action="openCheckoutModal">
                 Comprar ahora
             </button>
         </div>
@@ -110,7 +114,7 @@
                     <div class="product-card-inner" id="card-inner-{{ product.id }}">
                         <!-- Cara Frontal -->
                         <div class="product-card-front">
-                            <button class="btn-flip-card" onclick="flipCard({{ product.id }})" title="Ver info y QR">
+                            <button class="btn-flip-card" data-action="flipCard" data-id="{{ product.id }}" title="Ver info y QR">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
@@ -137,7 +141,7 @@
 
                                 <div class="product-card-bottom">
                                     {% if not ordering_disabled %}
-                                    <button class="btn-add-card" onclick="event.stopPropagation(); openProductDetail({{ product.id }})"
+                                    <button class="btn-add-card" data-action="openProductDetail" data-id="{{ product.id }}" data-action-stop="true"
                                         title="Agregar al pedido">+</button>
                                     {% endif %}
                                 </div>
@@ -146,7 +150,7 @@
 
                         <!-- Cara Trasera (QR & Share) -->
                         <div class="product-card-back">
-                            <button class="btn-flip-card" onclick="flipCard({{ product.id }})">
+                            <button class="btn-flip-card" data-action="flipCard" data-id="{{ product.id }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -155,7 +159,7 @@
                             <div class="qr-container">
                                 <div class="qr-loading">Generando QR...</div>
                                 <img id="qr-{{ product.id }}" class="qr-image" src="" alt="QR {{ product.name }}">
-                                <button class="btn-share-premium" onclick="shareProduct({{ product.id }}, '{{ product.name }}', '{{ category.name }}')">
+                                <button class="btn-share-premium" data-action="shareProduct" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ category.name }}">
                                     Compartir
                                 </button>
                             </div>
@@ -171,7 +175,7 @@
     <!-- ===== PANEL DERECHO: Detalle de Producto ===== -->
     <aside class="detail-panel" id="detailPanel">
         <!-- Botón cerrar siempre visible -->
-        <button class="btn-close-detail" onclick="closeDetailPanel()">×</button>
+        <button class="btn-close-detail" data-action="closeDetailPanel">×</button>
 
         <!-- Estado vacío -->
         <div class="detail-empty" id="detailEmpty">
@@ -195,10 +199,10 @@
 </div>
 
 <!-- Overlay para cerrar panel en tablet (fuera del grid) -->
-<div class="detail-panel-overlay" id="detailPanelOverlay" onclick="closeDetailPanel()"></div>
+<div class="detail-panel-overlay" id="detailPanelOverlay" data-action="closeDetailPanel"></div>
 
 <!-- Botón toggle sidebar en mobile -->
-<button class="btn-toggle-sidebar" id="btnToggleSidebar" onclick="toggleSidebar()">
+<button class="btn-toggle-sidebar" id="btnToggleSidebar" data-action="toggleSidebar">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -208,14 +212,14 @@
 </button>
 
 <!-- Overlay para sidebar en mobile -->
-<div class="mp-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="mp-overlay" id="sidebarOverlay" data-action="toggleSidebar"></div>
 
 <!-- Toast notification -->
 <div class="mp-toast" id="mpToast"></div>
 
 <!-- ===== MODAL DE CHECKOUT ===== -->
 <div id="address-modal" class="mp-modal">
-    <div class="mp-modal-overlay" onclick="closeAddressModal()"></div>
+    <div class="mp-modal-overlay" data-action="closeAddressModal"></div>
     <div class="mp-modal-box">
         <div class="mp-modal-header">
             <div class="mp-modal-icon">
@@ -230,21 +234,26 @@
         <div class="mp-modal-body">
             <div class="mp-form-row">
                 <div class="mp-form-group">
-                    <label class="mp-form-label">Nombre</label>
+                    <label for="delivery-name" class="mp-form-label">Nombre</label>
                     <input type="text" id="delivery-name" placeholder="Tu nombre" class="mp-form-input">
                 </div>
                 <div class="mp-form-group">
-                    <label class="mp-form-label">WhatsApp</label>
+                    <label for="delivery-phone" class="mp-form-label">WhatsApp</label>
                     <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel" class="mp-form-input">
                 </div>
             </div>
             <div class="mp-form-group" style="margin-bottom:1.25rem;">
-                <label class="mp-form-label">Dirección de Entrega</label>
-                <input type="text" id="delivery-address" placeholder="Ej: Calle 123 #45-67" class="mp-form-input">
+                <label for="delivery-address" class="mp-form-label">Dirección de Entrega</label>
+                <div class="mp-address-row">
+                    <input type="text" id="delivery-address" placeholder="Ej: Calle 123 #45-67" class="mp-form-input">
+                    <button type="button" id="btn-use-location" data-action="useCurrentLocation" class="mp-btn-location" title="Usar mi ubicación actual">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="mp-form-actions">
-                <button onclick="closeAddressModal()" class="mp-btn-secondary">Volver</button>
-                <button onclick="processOrderWithAddress()" class="mp-btn-primary">Confirmar y Pedir</button>
+                <button data-action="closeAddressModal" class="mp-btn-secondary">Volver</button>
+                <button data-action="processOrderWithAddress" class="mp-btn-primary">Confirmar y Pedir</button>
             </div>
         </div>
     </div>
@@ -272,10 +281,10 @@
                 <p class="mp-success-total-label">Total a Pagar</p>
                 <div id="success-order-total" class="mp-success-total">$0</div>
             </div>
-            <button id="btn-confirm-whatsapp" onclick="confirmAndRedirectWhatsApp()" class="mp-btn-confirm-wa">
+            <button id="btn-confirm-whatsapp" data-action="confirmAndRedirectWhatsApp" class="mp-btn-confirm-wa">
                 Confirmar WhatsApp
             </button>
-            <button id="btn-volver-menu" onclick="location.reload()" class="mp-btn-back">
+            <button id="btn-volver-menu" data-action="reloadPage" class="mp-btn-back">
                 Volver al inicio
             </button>
         </div>
@@ -294,6 +303,12 @@
 </script>
 {% endif %}
 
+<!-- Módulos JS: load order matters -->
+<script src="{{ url_for('static', filename='js/event-delegation.js') }}"></script>
+<script src="{{ url_for('static', filename='js/public/interactions.js') }}"></script>
+<script src="{{ url_for('static', filename='js/public/cart-core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/public/detail-panel.js') }}"></script>
+<script src="{{ url_for('static', filename='js/public/checkout.js') }}"></script>
 <script src="{{ url_for('static', filename='js/public/menu-public.js') }}"></script>
 
 </body>

@@ -190,21 +190,16 @@ function updateDisplay() {
 
     if (itemsArray.length === 0) {
         cartList.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <p class="font-bold uppercase tracking-widest text-xs">El carrito está vacío</p>
+            <div class="flex flex-col items-center justify-center h-full text-center px-6">
+                <span class="material-symbols-outlined text-3xl text-zinc-700 mb-3">shopping_bag</span>
+                <p class="text-sm font-medium text-zinc-500">Carrito vacío</p>
+                <p class="text-xs text-zinc-700 mt-1">Agrega productos del menú</p>
             </div>
         `;
         if (cartBtn) cartBtn.classList.add('hidden');
         if (sidebarTotal) sidebarTotal.textContent = '$0';
-        
-        // Cerrar sidebar si se vacía y está abierto
-        const sidebar = document.getElementById('cart-sidebar');
-        if (sidebar && sidebar.classList.contains('open')) {
-            // toggleCart(); // Comentado para no molestar al usuario si lo acaba de vaciar
-        }
+        const badgeV2 = document.getElementById('cart-count-badge-v2');
+        if (badgeV2) badgeV2.classList.add('hidden');
     } else {
         if (cartBtn) cartBtn.classList.remove('hidden');
 
@@ -218,7 +213,7 @@ function updateDisplay() {
             total += itemSubtotal;
             itemCount += item.quantity;
 
-            // Generar Iniciales para fallback
+            // Iniciales para fallback
             const initials = item.name.substring(0, 2).toUpperCase();
 
             // Renderizar Item en la lista
@@ -228,29 +223,39 @@ function updateDisplay() {
                 <div class="cart-item-icon">
                     ${item.imageUrl ? `<img src="${item.imageUrl}" class="cart-item-image" alt="${item.name}">` : `<span class="cart-item-letters">${initials}</span>`}
                     <button onclick="removeFromCart(${id})" class="cart-item-delete">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <span class="material-symbols-outlined" style="font-size:0.7rem">close</span>
                     </button>
                 </div>
                 <div class="cart-item-info">
-                    <h4 class="cart-item-name">${item.name}</h4>
+                    <div class="flex items-center justify-between">
+                        <h4 class="cart-item-name">${item.name}</h4>
+                        <span class="cart-item-price">$${itemSubtotal.toLocaleString('es-CO')}</span>
+                    </div>
                     <div class="cart-item-meta">
                         <div class="sidebar-qty-controls">
-                            <button class="btn-sidebar-qty" onclick="updateQty(${id}, -1)">-</button>
+                            <button class="btn-sidebar-qty" onclick="updateQty(${id}, -1)">
+                                <span class="material-symbols-outlined" style="font-size:0.75rem">remove</span>
+                            </button>
                             <span class="sidebar-qty-num">${item.quantity}</span>
-                            <button class="btn-sidebar-qty" onclick="updateQty(${id}, 1)">+</button>
+                            <button class="btn-sidebar-qty" onclick="updateQty(${id}, 1)">
+                                <span class="material-symbols-outlined" style="font-size:0.75rem">add</span>
+                            </button>
                         </div>
-                        <span class="cart-item-price">$${itemSubtotal.toLocaleString('es-CO')}</span>
                     </div>
                 </div>
             `;
             cartList.appendChild(itemEl);
-
         });
 
         if (sidebarTotal) sidebarTotal.textContent = `$${total.toLocaleString('es-CO')}`;
         if (cartBadge) cartBadge.textContent = itemCount;
+        const sidebarSubtotal = document.getElementById('sidebar-cart-subtotal');
+        if (sidebarSubtotal) sidebarSubtotal.textContent = `$${total.toLocaleString('es-CO')}`;
+        const badgeV2 = document.getElementById('cart-count-badge-v2');
+        if (badgeV2) {
+            badgeV2.textContent = itemCount;
+            badgeV2.classList.remove('hidden');
+        }
     }
 }
 
@@ -492,20 +497,10 @@ function confirmAndRedirectWhatsApp() {
     location.reload();
 }
 
-function showToast(message, type = 'default') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<span>${message}</span>`;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-20px)';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.toggleCart = toggleCart;
+window.actionHandlers.clearCart = () => clearCart(true);
+window.actionHandlers.sendWhatsApp = sendWhatsApp;
+window.actionHandlers.reloadPage = () => location.reload();
+

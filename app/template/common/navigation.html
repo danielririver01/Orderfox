@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════ #}
 
 {# Overlay #}
-<div id="mobile-nav-overlay" onclick="closeMobileNav()"
+<div id="mobile-nav-overlay" data-action="closeMobileNav"
     class="md:hidden fixed inset-0 z-[998] hidden opacity-0 transition-opacity duration-300"
     style="background: rgba(0,0,0,0.7);"></div>
 
@@ -20,7 +20,7 @@
             </div>
             <span class="text-xs font-black text-white uppercase tracking-tight">Velzia</span>
         </div>
-        <button onclick="closeMobileNav()" aria-label="Cerrar menú"
+        <button data-action="closeMobileNav" aria-label="Cerrar menú"
             class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
             <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -30,24 +30,24 @@
     <nav class="flex-1 overflow-y-auto py-3 px-2">
         {# Primary actions #}
         <div class="space-y-0.5">
-            <a href="{{ url_for('dashboard.index') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('dashboard.index') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">home</span>
                 Inicio
             </a>
-            <a href="{{ url_for('products.index') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('products.index') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">inventory_2</span>
                 Stock
             </a>
-            <a href="{{ url_for('dashboard.ai_scan_redirect') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('dashboard.ai_scan_redirect') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
                 <span class="material-symbols-outlined text-[20px]">document_scanner</span>
                 AI Scan
             </a>
-            <a href="{{ url_for('orders.index') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('orders.index') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">receipt_long</span>
@@ -62,19 +62,19 @@
         {# Management #}
         <div class="space-y-0.5">
             <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em] px-3 mb-1.5">Gestión</p>
-            <a href="{{ url_for('categories.index') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('categories.index') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">category</span>
                 Categorías
             </a>
-            <a href="{{ url_for('tables.index') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('tables.index') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
                 Gestión de Mesas
             </a>
-            <button onclick="closeMobileNav(); openTokenModal()" id="mobile-token-link"
+            <button data-action="closeMobileNavAndTokens" id="mobile-token-link"
                 class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
                 <span class="material-symbols-outlined text-[20px] text-orange-500">bolt</span>
                 <span class="flex-1 text-left">Tokens IA</span>
@@ -86,7 +86,7 @@
 
         {# Settings #}
         <div class="space-y-0.5">
-            <a href="{{ url_for('dashboard.settings') }}" onclick="closeMobileNav()"
+            <a href="{{ url_for('dashboard.settings') }}" data-action="closeMobileNav"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                 <span class="material-symbols-outlined text-[20px]">settings</span>
@@ -106,7 +106,7 @@
                 <p class="text-[9px] text-gray-600 font-medium">Plan {{ restaurant.plan_type if restaurant else 'emprendedor' }}</p>
             </div>
         </div>
-        <a href="{{ url_for('auth.logout') }}" onclick="closeMobileNav()"
+        <a href="{{ url_for('auth.logout') }}" data-action="closeMobileNav"
             class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-[11px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/[0.04] hover:border-red-500/10 transition-colors uppercase tracking-widest">
             <span class="material-symbols-outlined text-[16px]">logout</span>
             Cerrar Sesión
@@ -115,7 +115,7 @@
 </aside>
 
 {# Hamburger button — visible only when menu is CLOSED #}
-<button id="mobile-nav-toggle" onclick="openMobileNav()" aria-label="Abrir menú"
+<button id="mobile-nav-toggle" data-action="openMobileNav" aria-label="Abrir menú"
     class="md:hidden fixed top-4 right-4 z-[1000] w-10 h-10 bg-[#0a0a0a]/90 border border-white/[0.08] rounded-xl flex items-center justify-center transition-all hover:bg-[#141414] active:scale-90">
     <span class="material-symbols-outlined text-gray-300 text-[22px]">menu</span>
 </button>
@@ -147,5 +147,14 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeMobileNav();
         });
+
+        // Event delegation handlers
+        window.actionHandlers = window.actionHandlers || {};
+        window.actionHandlers.closeMobileNav = window.closeMobileNav;
+        window.actionHandlers.openMobileNav = window.openMobileNav;
+        window.actionHandlers.closeMobileNavAndTokens = function() {
+            window.closeMobileNav();
+            window.openTokenModal();
+        };
     })();
 </script>

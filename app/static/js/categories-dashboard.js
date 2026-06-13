@@ -6,6 +6,7 @@
 let editingCategoryId = null;
 let formImageData = null;
 let formDeleteImage = false;
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 function openCategoryForm(categoryId = null) {
     const grid = document.getElementById('categories-grid');
@@ -179,6 +180,7 @@ async function saveCategory(e) {
 
     try {
         const formData = new FormData();
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         formData.append('name', name);
         formData.append('description', description);
         formData.append('is_active', isActive);
@@ -273,7 +275,7 @@ function addCategoryToList(cat) {
                 <div class="w-11 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:shadow-[0_0_15px_rgba(16,185,129,0.4)] shadow-inner">
                 </div>
             </label>
-            <button onclick="openCategoryForm(${cat.id})"
+            <button data-action="openCategoryForm" data-id="${cat.id}"
                 class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                 title="Editar Categoría">
                 <span class="material-symbols-outlined text-[20px]">edit</span>
@@ -286,7 +288,7 @@ function addCategoryToList(cat) {
             <form action="/categories/${cat.id}/delete" method="POST" class="hidden" id="delete-form-${cat.id}">
                 <input type="hidden" name="csrf_token" value="${csrfToken}">
             </form>
-            <button onclick="deleteCategory(${cat.id}, '${escapeHtml(cat.name)}', '/categories/${cat.id}/delete')"
+            <button data-action="deleteCategory" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-url="/categories/${cat.id}/delete"
                 class="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
                 title="Eliminar Categoría">
                 <span class="material-symbols-outlined text-[20px]">delete</span>
@@ -346,7 +348,7 @@ function removeCategoryFromList(id) {
                 <div class="text-center py-20 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
                     <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
                     <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
-                    <button onclick="openCategoryForm()" class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea tu primera categoría</button>
+                    <button data-action="openCategoryForm" class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea tu primera categoría</button>
                 </div>`;
             }
         }, 300);
@@ -398,7 +400,12 @@ async function deleteCategory(id, name, fallbackUrl) {
                     closeCategoryForm();
                 }
             } catch (err) {
-                window.location.href = fallbackUrl;
+                const form = document.getElementById(`delete-form-${id}`);
+                if (form) {
+                    form.submit();
+                } else {
+                    showToast('Error de conexión. Intenta de nuevo.', 'error');
+                }
             }
         }
     );
@@ -489,3 +496,13 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.openCategoryForm = (p) => openCategoryForm(p.id ? parseInt(p.id) : null);
+window.actionHandlers.closeCategoryForm = closeCategoryForm;
+window.actionHandlers.saveCategory = (p, el, e) => saveCategory(e);
+window.actionHandlers.confirmDeleteCategory = confirmDeleteCategory;
+window.actionHandlers.deleteCategory = (p) => deleteCategory(parseInt(p.id), p.name, p.url);
+window.actionHandlers.formImagePreview = () => document.getElementById('form-image')?.click();
+window.actionHandlers.removeFormImage = removeFormImage;

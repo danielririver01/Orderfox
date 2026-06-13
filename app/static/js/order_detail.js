@@ -19,10 +19,14 @@ function contactWhatsApp(phone, orderNumber, restaurantName) {
 // Función para cambiar el estado de un pedido con redirección
 async function changeStatus(orderId, newStatus, redirectUrl) {
     try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
         const response = await fetch(`/orders/${orderId}/status`, {
             method: 'PATCH',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ status: newStatus })
         });
@@ -30,7 +34,7 @@ async function changeStatus(orderId, newStatus, redirectUrl) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Error al cambiar estado');
+            throw new Error(data.message || 'Error al cambiar estado');
         }
 
         if (redirectUrl) {
@@ -39,9 +43,7 @@ async function changeStatus(orderId, newStatus, redirectUrl) {
             location.reload();
         }
     } catch (error) {
-        if (window.showToast) {
-            window.showToast(error.message, 'error');
-        }
+        window.showToast(error.message, 'error');
     }
 }
 // Modal de cancelación
@@ -65,3 +67,13 @@ function confirmCancelOrder() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideCancelModal();
 });
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.contactWhatsApp = (p) => contactWhatsApp(p.phone, p.number);
+window.actionHandlers.openReceipt = (p) => window.open(p.url, '_blank');
+window.actionHandlers.changeStatusDetail = (p) => changeStatus(parseInt(p.id), p.status, p.url);
+window.actionHandlers.showCancelModal = showCancelModal;
+window.actionHandlers.hideCancelModal = hideCancelModal;
+window.actionHandlers.confirmCancelOrder = confirmCancelOrder;
+window.actionHandlers.openDeleteModal = (p) => openDeleteModal(document.getElementById(p.form), p.message, p.title);

@@ -88,9 +88,7 @@ async function shareProduct(productId, productName, categoryName) {
             await navigator.share(shareData);
         } else {
             await navigator.clipboard.writeText(productUrl);
-            if (window.showToast) {
-                window.showToast('¡Enlace copiado! Puedes enviarlo por WhatsApp.', 'success');
-            }
+            window.showToast('¡Enlace copiado! Puedes enviarlo por WhatsApp.', 'success');
         }
     } catch (err) {
         console.error('Error al compartir:', err);
@@ -147,3 +145,9 @@ function checkDeepLink() {
         }
     }
 }
+
+// ===== EVENT DELEGATION HANDLERS =====
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.flipCard = function (p) { flipCard(parseInt(p.id)); };
+window.actionHandlers.shareProduct = function (p) { shareProduct(parseInt(p.id), p.name, p.category); };
+window.actionHandlers.updateQty = function (p) { updateQty(parseInt(p.id), parseInt(p.delta)); };

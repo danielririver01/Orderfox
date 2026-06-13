@@ -14,7 +14,7 @@
 
         <!-- Header -->
         <div style="padding: 40px 30px 20px; text-align: center; position: relative; z-index: 2;">
-            <button onclick="closeTokenModal()" 
+            <button data-action="closeTokenModal" 
                     style="position: absolute; top: 0px; right: 0px; width: 36px; height: 36px; background: rgba(255,255,255,0.05); border: none; border-radius: 50%; color: #888; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#888'">
@@ -33,7 +33,7 @@
         <div style="padding: 0 25px 30px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 2;">
             
             <!-- Pack Básico -->
-            <div onclick="initiateTokenPurchase('5k')" 
+            <div data-action="initiateTokenPurchase" data-pack="5k"
                  style="background: #141416; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;"
                  onmouseover="this.style.borderColor='rgba(242, 70, 13, 0.4)'; this.style.background='#18181b'; this.style.transform='translateY(-2px)'"
                  onmouseout="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.background='#141416'; this.style.transform='translateY(0)'">
@@ -54,7 +54,7 @@
             </div>
 
             <!-- Pack Pro -->
-            <div onclick="initiateTokenPurchase('10k')" 
+            <div data-action="initiateTokenPurchase" data-pack="10k"
                  style="position: relative; background: #141416; border: 2px solid rgba(99, 102, 241, 0.3); border-radius: 24px; padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;"
                  onmouseover="this.style.borderColor='rgba(99, 102, 241, 0.6)'; this.style.background='#18181b'; this.style.transform='translateY(-2px)'"
                  onmouseout="this.style.borderColor='rgba(99, 102, 241, 0.3)'; this.style.background='#141416'; this.style.transform='translateY(0)'">
@@ -88,7 +88,7 @@
                     <span class="material-symbols-outlined" style="font-size: 14px; color: #f97316;">history</span> Sin Expiración
                 </div>
             </div>
-            <button onclick="closeTokenModal()" 
+            <button data-action="closeTokenModal" 
                     style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; color: #888; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.color='#888'">

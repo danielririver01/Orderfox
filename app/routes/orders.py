@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort, g
 from app.models import db, Product
 from app.utils.auth import login_required, active_required
 import json
@@ -120,7 +120,7 @@ def change_status(id):
     data = request.get_json()
     new_status = data.get('status')
 
-    if not check_feature_access(restaurant, 'has_status_management') and new_status not in ['confirmed', 'cancelled', 'pending']:
+    if not getattr(g, 'is_expired', False) and not check_feature_access(restaurant, 'has_status_management') and new_status not in ['confirmed', 'cancelled', 'pending']:
          return jsonify({
             'success': False, 
             'error': f'Tu plan {restaurant.plan_type.capitalize()} no permite marcar pedidos como Entregados. ¡Actualiza a Crecimiento para control total!'

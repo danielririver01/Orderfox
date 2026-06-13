@@ -4,7 +4,7 @@ window.tailwind.config = {
     theme: {
         extend: {
             colors: {
-                "primary": "#f97316",
+                "primary": "#f2460d",
                 "accent-cyan": "#06b6d4",
                 "accent-purple": "#a855f7",
                 "bg-deep": "#050505",

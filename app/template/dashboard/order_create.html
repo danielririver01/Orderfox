@@ -43,11 +43,11 @@
                                 <p class="text-sm font-black text-[#f2460d]">${{ '{:,}'.format(product.price) }}</p>
                             </div>
                             <div class="flex items-center gap-4">
-                                <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
+                                <button type="button" data-action="updateQty" data-id="{{ product.id }}" data-delta="-1" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
                                     <span class="material-symbols-outlined text-[18px]">remove</span>
                                 </button>
                                 <span id="qty-{{ product.id }}" class="w-6 text-center font-black dark:text-white">0</span>
-                                <button type="button" onclick="updateQty('{{ product.id }}', 1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
+                                <button type="button" data-action="updateQty" data-id="{{ product.id }}" data-delta="1" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
                                     <span class="material-symbols-outlined text-[18px]">add</span>
                                 </button>
                                 <input type="hidden" class="product-qty-input" data-id="{{ product.id }}" data-price="{{ product.price }}" value="0">
@@ -90,18 +90,18 @@
                     </div>
                     
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
-                        <input type="text" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
+                        <label for="customer_name" class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
+                        <input type="text" id="customer_name" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
                     </div>
                     
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
-                        <input type="tel" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
+                        <label for="customer_phone" class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
+                        <input type="tel" id="customer_phone" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
                     </div>
                     
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
+                        <label for="notes" class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
+                        <textarea id="notes" name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
                     </div>
 
                     <!-- Total y Acción -->

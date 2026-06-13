@@ -20,28 +20,16 @@ function initStoreToggle() {
     storeToggle.addEventListener('change', async (e) => {
         const isOpen = e.target.checked;
         try {
-            const response = await fetch("/dashboard/toggle-status", {
+            const data = await apiFetch('/dashboard/toggle-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ is_open: isOpen })
             });
-            
-            const data = await response.json();
-            
-            if (response.status === 403 && data.error === 'upgrade_required') {
-                e.target.checked = !isOpen;
-                showToast(data.message, 'error');
-                return;
-            }
 
-            if (!data.success) throw new Error();
-
-            // Sincronizar Badge de Menú Digital
             updateMenuStatusBadge(isOpen);
 
         } catch (error) {
             e.target.checked = !isOpen;
-            showToast('Error al cambiar estado', 'error');
+            showToast(error.message || 'Error al cambiar estado', 'error');
         }
     });
 }
@@ -114,20 +102,14 @@ async function fetchFinancialData() {
 
     try {
         // 1. Fetch Ventas desde Flask API
-        const salesResp = await fetch(`/dashboard/api/stats?range=${currentRange}`);
-        const salesData = await salesResp.json();
+        const salesData = await apiFetch(`/dashboard/api/stats?range=${currentRange}`);
         const sales = salesData.total_sales || 0;
 
         // 2. Fetch Gastos desde Flask API (S2S Puente)
         let expenses = 0;
         try {
-            const expResp = await fetch(`/dashboard/api/ai-stats?range=${currentRange}`);
-            if (expResp.ok) {
-                const expData = await expResp.json();
-                expenses = expData.totalExpenses || 0;
-            } else {
-                gastosEl.textContent = 'N/A';
-            }
+            const expData = await apiFetch(`/dashboard/api/ai-stats?range=${currentRange}`);
+            expenses = expData.totalExpenses || 0;
         } catch (e) {
             console.error('S2S API unreachable:', e);
             gastosEl.textContent = 'Sin conexión IA';
@@ -194,3 +176,11 @@ function formatCurrency(value) {
         maximumFractionDigits: 0
     }).format(value);
 }
+
+// Event delegation handlers
+window.actionHandlers = window.actionHandlers || {};
+window.actionHandlers.setDashboardRange = (p) => setDashboardRange(p.range);
+window.actionHandlers.copyMenuUrl = (p) => {
+    navigator.clipboard.writeText(p.url);
+    showToast('¡Link copiado con éxito!', 'success');
+};
