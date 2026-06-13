@@ -154,19 +154,11 @@ def api_stats():
 @login_required
 @active_required
 def api_ai_stats():
-    """Calcula los gastos de tokens desde la tabla expense usando clerk_id"""
     user_id = session.get('user_id')
     user = User.query.get(user_id)
 
     if not user or not user.clerk_id:
         return jsonify({'totalExpenses': 0, 'success': True})
-
-    # Extraer el ID real del clerk_id (puede tener prefijos diferentes)
-    # users: clerk_authenticated_user_XXX o user_XXX
-    # expense: user_XXX
-    clerk_id = user.clerk_id
-    if 'user_' in clerk_id:
-        clerk_id = 'user_' + clerk_id.split('user_')[-1]
 
     range_type = request.args.get('range', 'today')
     now = datetime.now(timezone.utc)
@@ -181,19 +173,18 @@ def api_ai_stats():
 
     try:
         query = db.text("""
-            SELECT COALESCE(SUM(e.amount), 0) as total
-            FROM expenses e
-            JOIN users u ON e.restaurant_id = u.restaurant_id
-            WHERE u.clerk_id = :clerk_id AND e.date >= :start_date
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM velzia_expense
+            WHERE userId = :clerk_id AND date >= :start_date
         """)
 
-        result = db.session.execute(query, {'clerk_id': clerk_id, 'start_date': start_date})
+        result = db.session.execute(query, {'clerk_id': user.clerk_id, 'start_date': start_date})
         row = result.fetchone()
         total_expenses = int(row[0]) if row else 0
     except Exception:
         total_expenses = 0
 
-    logger.info(f"api_ai_stats: user={user.id}, clerk_id={clerk_id}, range={range_type}, expenses={total_expenses}")
+    logger.info(f"api_ai_stats: user={user.id}, clerk_id={user.clerk_id}, range={range_type}, expenses={total_expenses}")
 
     return jsonify({
         'totalExpenses': total_expenses,

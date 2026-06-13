@@ -104,7 +104,6 @@ def create_app():
     app.register_blueprint(api_orders_bp)
     app.register_blueprint(api_public_bp)
     app.register_blueprint(api_tables_bp)
-
     @app.before_request
     def block_grace_period_crud():
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:

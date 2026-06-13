@@ -95,6 +95,21 @@
             <p>Intenta buscar con otras palabras</p>
         </div>
 
+        <!-- Estado vacío: sin productos -->
+        {% if not categories %}
+        <div class="empty-menu-state">
+            <div class="empty-menu-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                    <path d="M7 2v20"/>
+                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                </svg>
+            </div>
+            <h3>{{ restaurant.name }} está preparando su menú</h3>
+            <p>Pronto podrás ver todos los productos disponibles. ¡Vuelve en un momento!</p>
+        </div>
+        {% endif %}
+
         <!-- Secciones de productos por categoría -->
         {% for category in categories %}
         <section id="cat-{{ category.id }}" class="category-section" data-category-id="{{ category.id }}">

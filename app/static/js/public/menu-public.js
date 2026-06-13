@@ -34,6 +34,7 @@ function cacheAllProducts() {
     });
 }
 
+
 // ===== NAVEGACIÓN POR CATEGORÍAS =====
 function initCategoryNavigation() {
     document.querySelectorAll('.category-item').forEach(function (item) {
