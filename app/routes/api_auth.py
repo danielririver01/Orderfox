@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import create_access_token, create_refresh_token
 from app.utils.jwt_auth import jwt_login_required, jwt_active_required, get_current_user_jwt, get_current_restaurant_jwt
 from app.services.auth_service import AuthService
+from app.services.token_service import TokenService
+from app.models import User
 import mercadopago
 
 api_auth_bp = Blueprint('api_auth', __name__, url_prefix='/api/auth')
@@ -202,6 +205,39 @@ def initiate_payment():
             'plan': {
                 'name': plan_info['name'],
                 'price': plan_info['price_raw']
+            }
+        }
+    }), 200
+
+
+@api_auth_bp.route('/mobile-sync', methods=['POST'])
+def mobile_sync():
+    data = request.get_json()
+    if not data or not data.get('clerk_token'):
+        return jsonify({'success': False, 'error': 'clerk_token requerido'}), 400
+
+    clerk_token = data.get('clerk_token')
+    clerk_id = TokenService.verify_clerk_jwt(clerk_token)
+    if not clerk_id:
+        return jsonify({'success': False, 'error': 'Token de Clerk inválido o expirado'}), 401
+
+    user = User.query.filter_by(clerk_id=clerk_id).first()
+    if not user:
+        return jsonify({'success': False, 'error': 'Usuario no encontrado. Completa el registro en la web primero.'}), 404
+
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'restaurant_id': user.restaurant_id,
             }
         }
     }), 200

@@ -14,6 +14,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from .csrf import csrf
 from .routes.tokens import tokens_bp
+from .routes.api_docs import api_docs_bp
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import can_perform_crud, get_subscription_status
 
@@ -96,6 +97,7 @@ def create_app():
     app.register_blueprint(menu_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(tokens_bp)
+    app.register_blueprint(api_docs_bp)
     app.register_blueprint(api_auth_bp)
     app.register_blueprint(api_dashboard_bp)
     app.register_blueprint(api_categories_bp)
