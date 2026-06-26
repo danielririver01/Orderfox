@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+.env
+.git
+.gitignore
+*.md
+docs
+node_modules
+npm-debug.log
