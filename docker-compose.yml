@@ -1,0 +1,88 @@
+services:
+  mysql:
+    image: mariadb:11
+    container_name: orderfox-db
+    restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-orderfox}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orderfox-net
+
+  orderfox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orderfox-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-orderfox}
+      FLASK_DEBUG: "False"
+      FLASK_APP: run.py
+      SCANNER_IA_URL: http://receipt-scanner:3000
+    env_file:
+      - .env
+    networks:
+      - orderfox-net
+    ports:
+      - "5000:5000"
+    command: ["sh", "-c", "flask db upgrade && gunicorn --bind 0.0.0.0:5000 --workers 3 --timeout 120 run:app"]
+
+  orderfox-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orderfox-scheduler
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-orderfox}
+      FLASK_DEBUG: "False"
+      FLASK_APP: run.py
+    env_file:
+      - .env
+    command: ["python", "run_scheduler.py"]
+    networks:
+      - orderfox-net
+
+  receipt-scanner:
+    build:
+      context: ../Receipt-Scanner-AI
+      dockerfile: Dockerfile
+    container_name: receipt-scanner
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-orderfox}
+      DIRECT_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-orderfox}
+      ORDERFOX_URL: http://orderfox:5000
+      NODE_ENV: production
+    env_file:
+      - ../Receipt-Scanner-AI/.env
+    networks:
+      - orderfox-net
+    ports:
+      - "3000:3000"
+    command: ["sh", "-c", "npx prisma db push && pnpm start"]
+
+volumes:
+  mysql-data:
+
+networks:
+  orderfox-net:
+    name: orderfox-net
+    driver: bridge

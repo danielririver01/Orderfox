@@ -1,0 +1,42 @@
+services:
+  mysql:
+    ports:
+      - "3306:3306"
+
+  orderfox:
+    build:
+      dockerfile: Dockerfile.dev
+    container_name: orderfox-app-dev
+    volumes:
+      - .:/app
+    environment:
+      FLASK_DEBUG: "True"
+      FLASK_APP: run.py
+    ports:
+      - "5000:5000"
+    command: ["sh", "-c", "flask db upgrade && python run.py"]
+
+  orderfox-scheduler:
+    build:
+      dockerfile: Dockerfile.dev
+    container_name: orderfox-scheduler-dev
+    volumes:
+      - .:/app
+    environment:
+      FLASK_DEBUG: "True"
+      FLASK_APP: run.py
+    command: ["python", "run_scheduler.py"]
+
+  receipt-scanner:
+    build:
+      dockerfile: Dockerfile.dev
+    container_name: receipt-scanner-dev
+    volumes:
+      - ../Receipt-Scanner-AI:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    command: ["sh", "-c", "npx prisma db push && pnpm dev"]
