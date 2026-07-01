@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, current_app
 from app import db
-from app.forms import LoginForm, ForgotPasswordForm
+from app.forms import LoginForm
 from app.forms.auth import RegisterSetupForm
 from app.models import User, Restaurant
 from app.utils.subscription import initialize_or_reset_token_wallet
@@ -135,80 +135,6 @@ def login():
         else:
             flash('Email o contraseña incorrectos')
     return render_template('auth/index.html', form=form)
-
-
-@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    form = ForgotPasswordForm()
-    if form.validate_on_submit():
-        token, user_email = AuthService.create_password_reset_token(
-            form.email.data
-        )
-
-        if token and user_email:
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            sent = AuthService.send_password_reset_email(user_email, reset_url)
-            if sent:
-                flash('Te hemos enviado un correo con las instrucciones.', 'success')
-                return redirect(url_for('auth.login'))
-            else:
-                flash('Hubo un error al enviar el correo. Inténtalo más tarde.', 'error')
-        else:
-            flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'info')
-
-        return redirect(url_for('auth.forgot_password'))
-
-    return render_template('auth/forgot_password.html', form=form)
-
-
-@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    email, error = AuthService.verify_reset_token(token)
-
-    if error:
-        is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        if is_xhr:
-            return jsonify({'success': False, 'message': error['message']})
-        flash(error['message'], 'error')
-        if error.get('error_code') == 'TOKEN_EXPIRED':
-            return redirect(url_for('auth.forgot_password'))
-        return redirect(url_for('auth.forgot_password'))
-
-    if request.method == 'GET':
-        return render_template('auth/reset_password.html')
-
-    password = request.form.get('password')
-    confirm_password = request.form.get('confirm_password')
-    is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-
-    if password != confirm_password:
-        msg = 'Las contraseñas no coinciden.'
-        if is_xhr:
-            return jsonify({'success': False, 'message': msg})
-        flash(msg, 'error')
-        return render_template('auth/reset_password.html')
-
-    pwd_error = AuthService.validate_password(password)
-    if pwd_error:
-        if is_xhr:
-            return jsonify({'success': False, 'message': pwd_error})
-        flash(pwd_error, 'error')
-        return render_template('auth/reset_password.html')
-
-    user, err = AuthService.set_new_password(email, password)
-    if user:
-        if is_xhr:
-            return jsonify({
-                'success': True,
-                'redirect': url_for('auth.login'),
-                'message': '¡Contraseña actualizada exitosamente! Redirigiendo...'
-            })
-        flash('¡Contraseña actualizada! Ya puedes iniciar sesión.')
-        return redirect(url_for('auth.login'))
-
-    if is_xhr:
-        return jsonify({'success': False, 'message': 'No se pudo actualizar la contraseña.'})
-    return render_template('auth/reset_password.html')
 
 
 @auth_bp.route('/privacy')

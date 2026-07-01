@@ -1,0 +1,59 @@
+{% extends 'dashboard/settings_layout.html' %}
+
+{% block settings_title %}Notificaciones{% endblock %}
+
+{% block settings_content %}
+
+<div class="mb-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-[#141414] dark:to-[#0a0a0a] rounded-[2rem] border border-gray-800 dark:border-[#262626] shadow-xl overflow-hidden relative group">
+    <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-700"></div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-500">
+            <span class="material-symbols-outlined text-[28px]">notifications_active</span>
+        </div>
+        <div>
+            <h2 class="text-white font-black tracking-tight">Notificaciones en Tiempo Real</h2>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Recibe tus pedidos al instante</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors">
+    <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-1">Notificaciones en Tiempo Real</h3>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Recibe notificaciones al instante cuando llegue un nuevo pedido, directo a tu celular. Sin instalar nada adicional: usa la app ntfy.</p>
+    
+    <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] mb-5">
+        <div class="w-11 h-11 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[22px]">notifications_active</span>
+        </div>
+        <div class="min-w-0">
+            <p class="text-[10px] font-black text-gray-500 dark:text-gray-500 uppercase tracking-widest mb-0.5">Tu topic personal</p>
+            <div class="flex items-center gap-2">
+                <code class="text-sm font-bold text-[#f2460d] bg-orange-50 dark:bg-orange-500/10 px-3 py-1 rounded-lg">{{ restaurant.ntfy_topic }}</code>
+                <button onclick="navigator.clipboard.writeText('{{ restaurant.ntfy_topic }}'); this.textContent='Copiado'; setTimeout(()=>this.textContent='Copiar', 2000)" class="text-[10px] font-black text-gray-400 hover:text-[#f2460d] uppercase tracking-widest transition-colors shrink-0">
+                    Copiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <ol class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+        <li class="flex items-start gap-3">
+            <span class="w-6 h-6 bg-[#f2460d] text-white rounded-full flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5">1</span>
+            <span>Descarga la app <a href="https://ntfy.sh" target="_blank" class="text-[#f2460d] font-bold hover:underline">ntfy</a> en tu celular (iOS / Android)</span>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-6 h-6 bg-[#f2460d] text-white rounded-full flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5">2</span>
+            <span>Abre la app y toca el <span class="font-bold text-gray-800 dark:text-gray-200">+</span> para suscribirte a un topic nuevo</span>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-6 h-6 bg-[#f2460d] text-white rounded-full flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5">3</span>
+            <span>Ingresa tu topic personal: <code class="font-bold text-[#f2460d] bg-orange-50 dark:bg-orange-500/10 px-2 py-0.5 rounded text-xs">{{ restaurant.ntfy_topic }}</code></span>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5">✓</span>
+            <span class="font-bold text-gray-800 dark:text-gray-200">¡Listo! Recibirás una notificación al instante cada vez que llegue un nuevo pedido.</span>
+        </li>
+    </ol>
+</div>
+
+{% endblock %}

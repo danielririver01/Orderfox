@@ -12,6 +12,7 @@ services:
     environment:
       FLASK_DEBUG: "True"
       FLASK_APP: run.py
+      SCANNER_IA_URL: http://localhost:3000
     ports:
       - "5000:5000"
     command: ["sh", "-c", "flask db upgrade && python run.py"]
@@ -39,4 +40,4 @@ services:
       NODE_ENV: development
     ports:
       - "3000:3000"
-    command: ["sh", "-c", "npx prisma db push && pnpm dev"]
+    command: ["sh", "-c", "npx prisma db push --accept-data-loss && npx next dev --hostname 0.0.0.0"]

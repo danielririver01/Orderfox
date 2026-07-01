@@ -5,16 +5,13 @@ Shared by web routes (auth_bp) and API routes (api_auth_bp).
 Pattern: @staticmethod methods returning (result, None) / (None, error_dict).
 """
 from datetime import datetime, timedelta, timezone
-import random
 import re
+import secrets
 import unicodedata
-from flask import current_app, render_template
-from flask_mail import Message
+from flask import current_app
 from werkzeug.security import generate_password_hash
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
 from app.models import db, User, Restaurant, TrialHistory, AITokenWallet, PreRegistration
-from app.extensions import mail
 from app.utils.subscription import (
     sanitize_restaurant_limits,
     initialize_or_reset_token_wallet,
@@ -31,11 +28,6 @@ class AuthService:
     """Business logic for authentication and account operations."""
 
     # ── Helpers ─────────────────────────────────────────────
-
-    @staticmethod
-    def generate_otp():
-        """Generate a random 6-digit OTP code."""
-        return str(random.randint(100000, 999999))
 
     @staticmethod
     def generate_slug(name):
@@ -59,48 +51,6 @@ class AuthService:
     def is_reserved_slug(slug):
         """Return True if slug is a reserved system name."""
         return slug in RESERVED_SLUGS
-
-    @staticmethod
-    def validate_password(password):
-        """
-        Check password complexity.
-        Returns error message string or None if valid.
-        """
-        if len(password) < 8:
-            return 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.'
-        if not any(c.isupper() for c in password):
-            return 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.'
-        if not any(c.isdigit() for c in password):
-            return 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.'
-        return None
-
-    # ── Email ───────────────────────────────────────────────
-
-    @staticmethod
-    def send_otp_email(email, otp):
-        """Send OTP verification email. Returns True on success."""
-        try:
-            msg = Message('Código de Verificación - Velzia', recipients=[email])
-            msg.html = render_template('email/otp.html', otp=otp)
-            msg.body = f'Tu código de verificación para Velzia es: {otp}'
-            mail.send(msg)
-            return True
-        except Exception as e:
-            current_app.logger.error(f"Error sending OTP email: {e}")
-            return False
-
-    @staticmethod
-    def send_password_reset_email(user_email, reset_url):
-        """Send password reset email. Returns True on success."""
-        try:
-            msg = Message('Restablecer Contraseña - Velzia', recipients=[user_email])
-            msg.html = render_template('email/reset_password.html', reset_url=reset_url)
-            msg.body = f'Para restablecer tu contraseña, visita: {reset_url}'
-            mail.send(msg)
-            return True
-        except Exception as e:
-            current_app.logger.error(f"Error sending password reset email: {e}")
-            return False
 
     # ── Clerk Sync ──────────────────────────────────────────
 
@@ -167,68 +117,6 @@ class AuthService:
             initialize_or_reset_token_wallet(user)
 
         return user, False, None
-
-    # ── Traditional Auth ────────────────────────────────────
-
-    @staticmethod
-    def authenticate(email, password):
-        """
-        Authenticate user with email and password.
-        Returns (user, None) or (None, error_dict).
-        """
-        user = User.query.filter_by(email=email).first()
-        if not user or not user.check_password(password):
-            return None, {'error_code': 'INVALID_CREDENTIALS',
-                          'message': 'Email o contraseña incorrectos'}
-        return user, None
-
-    @staticmethod
-    def create_password_reset_token(email):
-        """
-        Generate a timed password-reset token for the user.
-        Returns (token, user_email) or (None, None) if user not found (silent).
-        """
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return None, None
-        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        token = s.dumps(user.email, salt='recover-key')
-        return token, user.email
-
-    @staticmethod
-    def verify_reset_token(token):
-        """
-        Verify a password-reset token and extract the email.
-        Returns (email, None) or (None, error_dict).
-        """
-        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        try:
-            email = s.loads(token, salt='recover-key', max_age=3600)
-            return email, None
-        except SignatureExpired:
-            return None, {'error_code': 'TOKEN_EXPIRED',
-                          'message': 'El enlace ha expirado. Por favor solicita uno nuevo.'}
-        except BadSignature:
-            return None, {'error_code': 'INVALID_TOKEN',
-                          'message': 'El enlace no es válido.'}
-        except Exception as e:
-            current_app.logger.error(f"Error verifying reset token: {e}")
-            return None, {'error_code': 'TOKEN_ERROR',
-                          'message': 'Ocurrió un error inesperado.'}
-
-    @staticmethod
-    def set_new_password(email, password):
-        """
-        Set a new password for the given email.
-        Returns (user, None) or (None, error_dict).
-        """
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return None, {'error_code': 'USER_NOT_FOUND',
-                          'message': 'Usuario no encontrado.'}
-        user.set_password(password)
-        db.session.commit()
-        return user, None
 
     # ── Plan Selection ──────────────────────────────────────
 
@@ -313,6 +201,7 @@ class AuthService:
                 subscription_expires_at=trial_expires_at,
                 is_open=True,
                 has_used_trial=False,
+                ntfy_topic=secrets.token_hex(16),
             )
         else:
             restaurant = Restaurant(
@@ -324,6 +213,7 @@ class AuthService:
                 subscription_expires_at=None,
                 is_open=True,
                 has_used_trial=False,
+                ntfy_topic=secrets.token_hex(16),
             )
 
         db.session.add(restaurant)
@@ -558,225 +448,6 @@ class AuthService:
                 'restaurant_id': user.restaurant_id,
             },
             'restaurant': restaurant_data,
-        }, None
-
-    @staticmethod
-    def api_register(email, plan_type):
-        """
-        Initiate a registration flow — creates a JWT with OTP embedded.
-
-        Returns:
-            (data_dict, None) or (None, error_dict)
-        """
-        if not email:
-            return None, {'error_code': 'MISSING_EMAIL', 'message': 'Email es requerido'}
-
-        valid_plans = ('trial', 'emprendedor', 'crecimiento', 'elite')
-        if plan_type not in valid_plans:
-            return None, {'error_code': 'INVALID_PLAN', 'message': 'Plan inválido'}
-
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user and existing_user.restaurant:
-            return None, {
-                'error_code': 'ACCOUNT_EXISTS',
-                'message': 'Este email ya tiene una cuenta activa. Por favor inicia sesión.',
-            }
-
-        otp = AuthService.generate_otp()
-
-        if existing_user:
-            otp_data = {
-                'otp': otp,
-                'email': email,
-                'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-                'plan_type': plan_type,
-            }
-            temp_token = create_access_token(
-                identity=str(existing_user.id),
-                additional_claims={'type': 'register_verify', 'otp_data': otp_data},
-            )
-        else:
-            temp_token_data = {
-                'email': email,
-                'plan_type': plan_type,
-                'otp': otp,
-                'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-            }
-            temp_token = create_access_token(
-                identity='register_temp',
-                additional_claims={'type': 'register_temp', 'data': temp_token_data},
-                expires_delta=timedelta(minutes=10),
-            )
-
-        AuthService.send_otp_email(email, otp)
-
-        return {
-            'message': 'Se ha enviado un código de verificación a tu email',
-            'temp_token': temp_token,
-            'existing_user': bool(existing_user),
-        }, None
-
-    @staticmethod
-    def verify_otp(temp_token, otp_code):
-        """
-        Verify an OTP code embedded in a JWT token.
-
-        Returns:
-            (data_dict, None) or (None, error_dict)
-            data_dict contains: message, verified_token, email, plan_type
-        """
-        if not temp_token or not otp_code:
-            return None, {'error_code': 'MISSING_FIELDS',
-                          'message': 'Token y código OTP son requeridos'}
-
-        try:
-            decoded = decode_token(temp_token)
-
-            # Determine token type and extract data
-            if decoded.get('sub') == 'register_temp':
-                token_data = decoded.get('data', {})
-            elif decoded.get('type') == 'register_verify':
-                token_data = decoded.get('otp_data', {})
-            else:
-                token_data = decoded.get('data', decoded.get('otp_data', {}))
-                if not token_data.get('otp'):
-                    return None, {'error_code': 'INVALID_TOKEN',
-                                  'message': 'Token inválido'}
-
-            expires_at = datetime.fromisoformat(token_data['expires_at'])
-            if datetime.now(timezone.utc) > expires_at:
-                return None, {'error_code': 'OTP_EXPIRED',
-                              'message': 'El código ha expirado'}
-
-            if str(token_data.get('otp')) != str(otp_code):
-                return None, {'error_code': 'INVALID_OTP',
-                              'message': 'Código incorrecto'}
-
-            email = token_data['email']
-            plan_type = token_data['plan_type']
-
-            verify_token = create_access_token(
-                identity='register_verified',
-                additional_claims={
-                    'type': 'register_verified',
-                    'data': {'email': email, 'plan_type': plan_type},
-                },
-                expires_delta=timedelta(minutes=30),
-            )
-
-            return {
-                'message': 'Código verificado exitosamente',
-                'verified_token': verify_token,
-                'email': email,
-                'plan_type': plan_type,
-            }, None
-
-        except Exception as e:
-            current_app.logger.error(f"OTP verification error: {e}")
-            return None, {'error_code': 'TOKEN_ERROR',
-                          'message': 'Token inválido o expirado'}
-
-    @staticmethod
-    def api_setup_account(verified_token, account_data):
-        """
-        Complete account setup via API after OTP verification.
-
-        account_data: { restaurant_name, whatsapp_phone, username, password }
-
-        Returns:
-            (data_dict, None) or (None, error_dict)
-        """
-        if not verified_token:
-            return None, {'error_code': 'MISSING_TOKEN',
-                          'message': 'Token de verificación requerido'}
-
-        try:
-            decoded = decode_token(verified_token)
-            if decoded.get('type') != 'register_verified':
-                return None, {'error_code': 'INVALID_TOKEN',
-                              'message': 'Token inválido'}
-            token_data = decoded.get('data', {})
-            email = token_data.get('email')
-            plan_type = token_data.get('plan_type')
-        except Exception:
-            return None, {'error_code': 'INVALID_TOKEN',
-                          'message': 'Token inválido o expirado'}
-
-        restaurant_name = (account_data.get('restaurant_name') or '').strip()
-        whatsapp_phone = (account_data.get('whatsapp_phone') or '').strip()
-        username = (account_data.get('username') or '').strip()
-        password = account_data.get('password', '')
-
-        if not restaurant_name or not whatsapp_phone or not username or not password:
-            return None, {'error_code': 'MISSING_FIELDS',
-                          'message': 'Todos los campos son requeridos'}
-
-        pwd_error = AuthService.validate_password(password)
-        if pwd_error:
-            return None, {'error_code': 'WEAK_PASSWORD', 'message': pwd_error}
-
-        slug = AuthService.generate_slug(restaurant_name)
-        if AuthService.is_reserved_slug(slug):
-            return None, {
-                'error_code': 'RESERVED_NAME',
-                'message': f'El nombre "{restaurant_name}" está reservado. Elige otro nombre.',
-            }
-
-        slug = AuthService.ensure_unique_slug(slug)
-        is_trial = (plan_type == 'trial')
-
-        if is_trial:
-            blocked, msg = AuthService.check_trial_eligibility(email, whatsapp_phone)
-            if blocked:
-                return None, {'error_code': 'TRIAL_USED', 'message': msg}
-
-            trial_expires = datetime.now(timezone.utc) + timedelta(days=10)
-            restaurant = Restaurant(
-                name=restaurant_name, slug=slug, whatsapp_phone=whatsapp_phone,
-                plan_type='trial', is_active=True,
-                subscription_expires_at=trial_expires, is_open=True,
-                has_used_trial=False,
-            )
-        else:
-            restaurant = Restaurant(
-                name=restaurant_name, slug=slug, whatsapp_phone=whatsapp_phone,
-                plan_type=plan_type, is_active=False,
-                subscription_expires_at=None, is_open=True,
-                has_used_trial=False,
-            )
-
-        db.session.add(restaurant)
-        db.session.flush()
-
-        user = User(email=email, username=username, restaurant_id=restaurant.id)
-        user.set_password(password)
-        db.session.add(user)
-
-        if is_trial:
-            db.session.add(TrialHistory(email=email, whatsapp_phone=whatsapp_phone))
-
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"API setup account error: {e}")
-            return None, {'error_code': 'SETUP_ERROR',
-                          'message': 'Error al crear la cuenta. Inténtalo de nuevo.'}
-
-        if is_trial:
-            initialize_or_reset_token_wallet(user)
-
-        access_token = create_access_token(identity=str(user.id))
-        refresh_token = create_refresh_token(identity=str(user.id))
-
-        return {
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'user': {'id': user.id, 'username': user.username, 'email': user.email},
-            'restaurant': {
-                'id': restaurant.id, 'name': restaurant.name,
-                'slug': restaurant.slug, 'plan_type': restaurant.plan_type,
-            },
         }, None
 
     @staticmethod

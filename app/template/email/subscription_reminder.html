@@ -87,7 +87,7 @@
             <p class="text">{{ message }}</p>
             <a href="{{ renew_url }}" class="btn" style="color: #ffffff; text-decoration: none;">Renovar ahora</a>
             <p class="text" style="font-size: 14px; margin-top: 30px; margin-bottom: 0;">
-                Tu plan actual: {{ plan_name }} &mdash; ${{ plan_price }}/mes
+                Tu plan actual: {{ plan_name }}{% if plan_price != 'Gratis' %} &mdash; ${{ plan_price }}/mes{% endif %}
             </p>
         </div>
         <div class="footer">

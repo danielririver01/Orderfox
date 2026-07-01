@@ -542,3 +542,13 @@ def change_email():
             return redirect(url_for('dashboard.change_email'))
 
     return render_template('dashboard/change_email.html', user=user, is_clerk_user=is_clerk_user)
+
+
+@dashboard_bp.route('/notifications')
+@login_required
+@active_required
+def notifications():
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        abort(404)
+    return render_template('dashboard/notifications.html', restaurant=restaurant)

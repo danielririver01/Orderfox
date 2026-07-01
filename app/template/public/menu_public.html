@@ -250,7 +250,8 @@
                 </div>
                 <div class="mp-form-group">
                     <label class="mp-form-label">WhatsApp</label>
-                    <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel" class="mp-form-input">
+                    <input type="tel" id="delivery-phone" placeholder="300..." autocomplete="tel" class="mp-form-input" maxlength="10" oninput="updatePhoneCounter()">
+                    <div id="phone-counter" class="mp-phone-counter">10</div>
                 </div>
             </div>
             <div class="mp-form-group" style="margin-bottom:1.25rem;">
@@ -306,6 +307,15 @@
     window.menuAvailable = {% if restaurant.is_active and not ordering_disabled %}true{% else %}false{% endif %};
     window.CART_KEY = 'velziaCart_' + window.restaurantId;
     window.isTableOrder = {{ 'true' if session.get('table_id') else 'false' }};
+
+    function updatePhoneCounter() {
+        var input = document.getElementById('delivery-phone');
+        var counter = document.getElementById('phone-counter');
+        if (!input || !counter) return;
+        var remaining = 10 - input.value.length;
+        counter.textContent = remaining;
+        counter.classList.toggle('low', remaining <= 2);
+    }
 </script>
 {% endif %}
 

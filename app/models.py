@@ -49,6 +49,7 @@ class Restaurant(db.Model):
     has_used_trial = db.Column(db.Boolean, default=False, nullable=False)
     # Configuración de expiración de pedidos pendientes (en horas, default 24)
     pending_expiry_hours = db.Column(db.Integer, default=24, nullable=False)
+    ntfy_topic = db.Column(db.String(64), unique=True, nullable=True)
     created_at = db.Column(AwareDateTime, default=db.func.now())
     
     def __repr__(self):

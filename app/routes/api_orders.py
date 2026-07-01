@@ -4,6 +4,7 @@ from app.models import Order, Table
 from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
 from app.services.order_service import OrderService
+from app.services.notification_service import notify_new_order
 
 api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
 
@@ -144,10 +145,13 @@ def create_order():
     total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
     db.session.commit()
 
+    order_id = order.id
+    notify_new_order(order_id)
+
     return jsonify({
         'success': True,
         'data': {
-            'id': order.id,
+            'id': order_id,
             'order_number': order.order_number,
             'total': total,
             'status': order.status

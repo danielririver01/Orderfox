@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "Conexion_MYSQL": {
+      "type": "local",
+      "command": ["opencode", "x", "@f4ww4z/mcp-mysql-server"],
+      "enabled": true,
+      "env": {
+        "MYSQL_HOST": "localhost",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "root",
+        "MYSQL_DATABASE": "orderfox"
+      }
+    }
+  }
+}

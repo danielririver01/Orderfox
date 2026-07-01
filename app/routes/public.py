@@ -5,6 +5,7 @@ from datetime import datetime
 from app.utils.rate_limiter import OrderRateLimiter
 from app.services.order_service import OrderService
 from app.services.public_menu_service import PublicMenuService
+from app.services.notification_service import notify_new_order
 import time
 import os
 
@@ -155,10 +156,13 @@ def create_order():
             'error': total_or_error.get('message', 'Error al crear el pedido.')
         }), 500
 
+    order_id = order.id
+    notify_new_order(order_id)
+
     return jsonify({
         'success': True,
         'order_number': order_number,
-        'order_id': order.id,
+        'order_id': order_id,
         'total': total_or_error,
         'items': validated_items,
         'customer_name': customer_name,

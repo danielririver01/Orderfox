@@ -1,10 +1,8 @@
-from flask_mail import Mail
 from flask_apscheduler import APScheduler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import session, request, current_app
 
-mail = Mail()
 scheduler = APScheduler()
 
 def get_limit_key():

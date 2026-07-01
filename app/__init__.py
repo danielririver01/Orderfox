@@ -1,7 +1,6 @@
 import os
 from flask import Flask, render_template, session, request, flash, redirect, url_for
 from .models import db, migrate,User
-from flask_mail import Mail
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import generate_csrf
 from flask_limiter import Limiter
@@ -9,7 +8,7 @@ from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import session
-from .extensions import mail, scheduler, limiter
+from .extensions import scheduler, limiter
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from .csrf import csrf
@@ -32,7 +31,6 @@ def create_app():
     app.config.from_object('settings.Config')
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
     limiter.init_app(app)
     jwt = JWTManager(app)
 
@@ -88,6 +86,7 @@ def create_app():
     from .routes.api_orders import api_orders_bp
     from .routes.api_public import api_public_bp
     from .routes.api_tables import api_tables_bp
+    from .routes.api_email import api_email_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -105,6 +104,8 @@ def create_app():
     app.register_blueprint(api_orders_bp)
     app.register_blueprint(api_public_bp)
     app.register_blueprint(api_tables_bp)
+    app.register_blueprint(api_email_bp)
+    csrf.exempt(api_email_bp)
     @app.before_request
     def block_grace_period_crud():
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:

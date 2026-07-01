@@ -77,7 +77,7 @@ services:
       - orderfox-net
     ports:
       - "3000:3000"
-    command: ["sh", "-c", "npx prisma db push && pnpm start"]
+    command: ["sh", "-c", "npx prisma db push --accept-data-loss && npx next start"]
 
 volumes:
   mysql-data:

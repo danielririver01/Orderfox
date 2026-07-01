@@ -16,15 +16,9 @@
     <div class="card">
         <div class="spinner"></div>
         <p>Redirigiendo al Scanner IA...</p>
-        <noscript>
-            <p>Si no eres redirigido automáticamente, <a href="{{ scanner_url }}/flask-auth?flask_token={{ flask_token }}">haz clic aquí</a>.</p>
-        </noscript>
-    </div>
-    <form id="scanner-form" action="{{ scanner_url }}/flask-auth" method="POST" style="display:none">
-        <input type="hidden" name="flask_token" value="{{ flask_token }}">
-    </form>
+        </div>
     <script>
-        document.getElementById('scanner-form').submit();
+        window.location.href = '{{ scanner_url }}/flask-auth?flask_token={{ flask_token }}';
     </script>
 </body>
 </html>

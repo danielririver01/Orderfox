@@ -58,8 +58,8 @@
             </button>
         </div>
     </form>
-
 </div>
+
 {% endblock %}
 
 {% block mobile_menu %}
@@ -88,12 +88,21 @@
                 </div>
                 <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>
-            <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+            <a href="{{ url_for('dashboard.menu_qr', slug=restaurant.slug) }}" class="flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] border-b border-gray-50 dark:border-[#262626]">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
                         <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
                     </div>
                     <span class="font-bold text-sm dark:text-white">Código QR de tu Menú</span>
+                </div>
+                <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+            </a>
+            <a href="{{ url_for('dashboard.notifications') }}" class="flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] border-b border-gray-50 dark:border-[#262626]">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px]">notifications_active</span>
+                    </div>
+                    <span class="font-bold text-sm dark:text-white">Notificaciones</span>
                 </div>
                 <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
             </a>

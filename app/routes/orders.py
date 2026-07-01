@@ -6,6 +6,7 @@ import json
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
 from app.services.order_service import OrderService
+from app.services.notification_service import notify_new_order
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 
@@ -82,6 +83,7 @@ def create():
         total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
 
         db.session.commit()
+        notify_new_order(order.id)
         return redirect(url_for('orders.index'))
     
     products = Product.query.filter_by(restaurant_id=restaurant.id, is_active=True).all()
