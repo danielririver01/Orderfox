@@ -224,6 +224,19 @@ def create_app():
             app.logger.error(f"Error in 403 handler: {e}")
         return render_template('errors/403.html', user=user, is_admin=is_admin), 403
 
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        user = None
+        is_admin = False
+        try:
+            if 'user_id' in session:
+                user = User.query.get(session['user_id'])
+                if user:
+                    is_admin = user.restaurant is not None
+        except Exception as e:
+            app.logger.error(f"Error in 429 handler: {e}")
+        return render_template('errors/429.html', user=user, is_admin=is_admin), 429
+
     return app
 
     

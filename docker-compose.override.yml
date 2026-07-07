@@ -40,4 +40,4 @@ services:
       NODE_ENV: development
     ports:
       - "3000:3000"
-    command: ["sh", "-c", "npx prisma db push --accept-data-loss && npx next dev --hostname 0.0.0.0"]
+    command: ["sh", "-c", "pnpm prisma generate && pnpm dev"]

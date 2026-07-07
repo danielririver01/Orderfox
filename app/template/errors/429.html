@@ -1,36 +1,115 @@
 {% extends "errors/layout.html" %}
-{% block title %}Demasiadas peticiones{% endblock %}
+{% block title %}Demasiadas solicitudes — Velzia{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
+    <!-- Icon: Elegant hourglass with subtle animation -->
     <div class="flex justify-center mb-6">
-        <div
-            class="w-24 h-24 bg-yellow-100 dark:bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-600 transition-colors duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-12 h-12">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-            </svg>
+        <div class="relative w-28 h-28">
+            <!-- Glow behind icon -->
+            <div class="absolute inset-0 rounded-full bg-gradient-to-br from-orange-400/20 via-amber-400/10 to-transparent blur-xl animate-pulse"></div>
+            <!-- Main circle -->
+            <div class="relative w-full h-full rounded-full bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-500/20 dark:to-amber-500/10 flex items-center justify-center text-orange-500 dark:text-orange-400 shadow-inner shadow-orange-200/50 dark:shadow-orange-500/10">
+                <!-- Custom hourglass SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14">
+                    <line x1="6" y1="6" x2="42" y2="6" stroke-width="2"/>
+                    <line x1="6" y1="42" x2="42" y2="42" stroke-width="2"/>
+                    <line x1="10" y1="6" x2="10" y2="42"/>
+                    <line x1="38" y1="6" x2="38" y2="42"/>
+                    <path d="M10 12c0 4 4 8 14 12" stroke-width="1.8"/>
+                    <path d="M38 12c0 4-4 8-14 12" stroke-width="1.8"/>
+                    <path d="M10 36c0-4 4-8 14-12" stroke-width="1.8"/>
+                    <path d="M38 36c0-4-4-8-14-12" stroke-width="1.8"/>
+                    <line x1="24" y1="24" x2="24" y2="26" stroke-width="1.5"/>
+                    <circle cx="24" cy="27" r="1" fill="currentColor" stroke="none" class="animate-ping" style="animation-duration: 2s;"/>
+                    <circle cx="23.5" cy="28.5" r="0.8" fill="currentColor" stroke="none" class="animate-ping" style="animation-duration: 2.5s; animation-delay: 0.5s;"/>
+                    <path d="M16 34c0 0 2 2.5 8 2.5s8-2.5 8-2.5" stroke-width="1.2" stroke-dasharray="2 1"/>
+                    <path d="M14 14c0 0 2-1.5 10-1.5s10 1.5 10 1.5" stroke-width="1.2" stroke-dasharray="2 1"/>
+                </svg>
+            </div>
         </div>
     </div>
 
-    <h1 class="text-6xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors duration-300">429</h1>
-    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 transition-colors duration-300">Demasiadas
-        peticiones</h2>
+    <!-- Error code -->
+    <h1 class="text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-600 dark:from-orange-400 dark:to-amber-500">
+        429
+    </h1>
 
-    <p class="text-gray-600 dark:text-gray-400 leading-relaxed transition-colors duration-300">
-        Has realizado demasiadas peticiones en poco tiempo. Por favor, espera unos minutos y vuelve a intentarlo.
+    <!-- Title -->
+    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+        Demasiadas solicitudes
+    </h2>
+
+    <!-- Subtitle -->
+    <p class="text-base font-medium text-orange-600 dark:text-orange-400/80">
+        Un momento, estás yendo muy rápido
     </p>
 
-    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-        <a href="{{ url_for('dashboard.index') }}"
-            class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-orange-600 transition-colors shadow-sm">
-            Volver al Dashboard
-        </a>
-        <a href="{{ url_for('auth.login') }}"
-            class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 dark:border-[#262626] text-base font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-[#141414] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors duration-300 shadow-sm">
-            Iniciar Sesión
+    <!-- Message -->
+    <div class="space-y-3 max-w-md mx-auto">
+        <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Has realizado muchas solicitudes en poco tiempo. Para garantizar la estabilidad del servicio
+            y ofrecer una experiencia fluida a todos los usuarios, hemos pausado temporalmente las peticiones.
+        </p>
+        <p class="text-gray-500 dark:text-gray-500 text-sm leading-relaxed">
+            Esto se resolverá automáticamente.
+            <span class="inline-flex items-center gap-1 ml-1 text-orange-500 dark:text-orange-400">
+                <svg class="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+                <span id="retry-text">Reintentando...</span>
+            </span>
+        </p>
+    </div>
+
+    <!-- Cooldown visual indicator -->
+    <div class="flex items-center justify-center gap-3 py-2">
+        <span class="w-2 h-2 rounded-full bg-orange-400 dark:bg-orange-500 animate-pulse" style="animation-duration: 1.2s;"></span>
+        <span class="w-2 h-2 rounded-full bg-orange-400/70 dark:bg-orange-500/70 animate-pulse" style="animation-duration: 1.2s; animation-delay: 0.3s;"></span>
+        <span class="w-2 h-2 rounded-full bg-orange-400/40 dark:bg-orange-500/40 animate-pulse" style="animation-duration: 1.2s; animation-delay: 0.6s;"></span>
+        <span class="text-xs font-medium text-gray-400 dark:text-gray-500 ml-1">esperando...</span>
+    </div>
+
+    <!-- Only action: Contact support -->
+    <div class="flex justify-center mt-4">
+        <a href="mailto:{{ SUPPORT_EMAIL or 'soporte@velzia.com' }}?subject=Error%20429%20-%20Demasiadas%20solicitudes"
+           class="group inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 dark:border-[#262626] text-base font-semibold rounded-2xl text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-[#141414]/80 hover:bg-white dark:hover:bg-[#1a1a1a] hover:border-gray-300 dark:hover:border-[#333333] active:scale-[0.97] transition-all duration-200 backdrop-blur-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+            </svg>
+            Contactar soporte
         </a>
     </div>
 </div>
+
+<script>
+(function() {
+    var baseDelay = 30000;
+    var maxDelay = 120000;
+    var attempt = 0;
+
+    function tryRedirect() {
+        fetch('/', { method: 'HEAD', cache: 'no-store' })
+            .then(function(r) {
+                if (r.status !== 429) {
+                    window.location.href = '/';
+                } else {
+                    scheduleRetry();
+                }
+            })
+            .catch(function() {
+                scheduleRetry();
+            });
+    }
+
+    function scheduleRetry() {
+        var delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+        attempt++;
+        document.getElementById('retry-text').textContent = 'Reintentando en ' + Math.round(delay / 1000) + 's';
+        setTimeout(tryRedirect, delay);
+    }
+
+    scheduleRetry();
+})();
+</script>
 {% endblock %}

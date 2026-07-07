@@ -56,7 +56,7 @@ AI_TOKEN_LIMITS = {
     'trial':       10,
     'emprendedor': 150,
     'crecimiento': 500,
-    'elite':       3000,   # Número alto parasimular ilimitado
+    'elite':       3000,   # Límite mensual del plan Elite
 }
 
 # Paquetes de recarga (Top-ups)

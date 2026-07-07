@@ -141,14 +141,24 @@ def api_stats():
     restaurant = get_current_restaurant()
     if not restaurant: return jsonify({'error': 'not found'}), 404
 
-    range_type = request.args.get('range', 'today')
-    data = DashboardService.get_extended_stats(restaurant.id, range_type)
+    try:
+        range_type = request.args.get('range', 'today')
+        data = DashboardService.get_extended_stats(restaurant.id, range_type)
 
-    return jsonify({
-        'success': True,
-        'total_sales': data['total_sales_cop'],
-        'range': range_type
-    })
+        return jsonify({
+            'success': True,
+            'total_sales': data['total_sales_cop'],
+            'total_orders': data['total_orders'],
+            'avg_order_value': data['avg_order_value_cop'],
+            'range': range_type
+        })
+    except Exception as e:
+        logger.exception(f"Error en api_stats: {e}")
+        return jsonify({
+            'success': False,
+            'error_code': 'STATS_ERROR',
+            'message': 'Error al obtener estadísticas'
+        }), 500
 
 @dashboard_bp.route('/api/ai-stats')
 @login_required

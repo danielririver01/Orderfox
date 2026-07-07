@@ -8,18 +8,18 @@ class DashboardService:
 
     @staticmethod
     def _get_today_start():
-        today = date.today()
-        return datetime.combine(today, datetime.min.time())
+        now = datetime.now(timezone.utc)
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     @staticmethod
     def _get_date_range(range_type):
         """Return (start_date,) based on range_type. Supported: today, week, month."""
-        today = date.today()
+        now = datetime.now(timezone.utc)
         if range_type == 'month':
-            return datetime.combine(today.replace(day=1), datetime.min.time())
+            return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         elif range_type == 'week':
-            return datetime.combine(today - timedelta(days=today.weekday()), datetime.min.time())
-        return datetime.combine(today, datetime.min.time())
+            return (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     @staticmethod
     def get_today_overview(restaurant_id):

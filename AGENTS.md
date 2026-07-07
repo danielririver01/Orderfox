@@ -95,10 +95,10 @@ expires = datetime.now() + timedelta(days=7)
 
 **Database is source of truth.** If user is in Clerk but NOT in DB → auto-create with trial plan.
 
-- New users get 7-day trial + 100 AI tokens automatically
+- New users get 10-day trial + 10 AI tokens automatically
 - No implicit user creation without database record
 - Error code for rejected access: `USER_NOT_REGISTERED`
-- **Reference:** [docs/01-ARCHITECTURE/ARCH-03_Autenticacion.md](docs/01-ARCHITECTURE/ARCH-03_Autenticacion.md)
+- **Reference:** [docs/TIMEZONE_HANDLING.md](docs/TIMEZONE_HANDLING.md)
 
 ### 3. **Subscription State** 💳
 
@@ -112,10 +112,10 @@ expires = datetime.now() + timedelta(days=7)
 
 ### 4. **Rate Limiting** 🚨 Intelligent
 
-- **Old:** Blanket 90-second punishment
-- **New:** Smart detection of spam vs. legitimate users
-  - Normal user: 12 seconds minimum between orders
-  - Spam pattern (3+ failed attempts in 2 min): 30 seconds
+- **Max:** 3 orders per minute per IP
+- **Ban:** 10 minutes if limit exceeded
+- **Honeypot:** Hidden field in order form traps bots
+- **Time-to-submit:** Minimum 3 seconds between checkout start and order
 - **Exemption:** `SERVICE_API_KEY` header (server-to-server)
 - **Reference:** [docs/02-GUIDES/GUIDE-02_Rate_Limiting.md](docs/02-GUIDES/GUIDE-02_Rate_Limiting.md)
 
@@ -213,9 +213,9 @@ See `settings.py` for full list. Key ones:
 ```
 
 ### 2. **Trial Period Hard-Coded**
-- 7 days, not configurable per request
+- 10 days, not configurable per request
 - Stored in `TrialHistory` table
-- Grace period after expiry: 14 days (users can't create/edit content)
+- Grace period after expiry: 10 days (users can't create/edit content)
 
 ### 3. **Static Files in Production**
 - WhiteNoise serves `app/static/` as `/static/`
@@ -289,11 +289,9 @@ See `settings.py` for full list. Key ones:
 
 ## Related Documentation
 
-- [Índice completo de documentación](docs/README.md) — Mapa de navegación documental
-- [GUIDE-02: Rate Limiting Inteligente](docs/02-GUIDES/GUIDE-02_Rate_Limiting.md) — Spam detection algorithm
-- [GUIDE-01: Timezone Handling](docs/02-GUIDES/GUIDE-01_Timezone_Handling.md) — UTC philosophy & implementation
-- [ARCH-03: Política de Autenticación](docs/01-ARCHITECTURE/ARCH-03_Autenticacion.md) — Trial auto-create flow
-- [ARCH-01: Visión General de Arquitectura](docs/01-ARCHITECTURE/ARCH-01_Visión_General.md) — Detailed architecture reference
+- [Rate Limiting System Design](docs/RATE_LIMITING_INTEL.md) — Spam detection algorithm
+- [Timezone Handling Strategy](docs/TIMEZONE_HANDLING.md) — UTC philosophy & implementation
+- [SWOT Analysis](docs/DOFA.md) — Business strengths, weaknesses, opportunities, threats
 
 ---
 
@@ -311,8 +309,6 @@ See `settings.py` for full list. Key ones:
 | **Rate Limiting** | Flask-Limiter (intelligent) |
 | **Job Scheduling** | APScheduler |
 | **Frontend CSS** | Tailwind CSS 4.2.4 |
-| **PWA** | Workbox service workers |
-| **Offline DB** | Dexie (IndexedDB) |
 | **Templating** | Jinja2 |
 | **JavaScript** | Vanilla (no framework) |
 
