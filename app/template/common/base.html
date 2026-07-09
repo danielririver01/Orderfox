@@ -14,9 +14,7 @@
         }
     </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon"
-        href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%2048%2048'%3E%3Cpath%20d%3D'M24%2042L8%2022L16%2010L20%2016H28L32%2010L40%2022L24%2042Z'%20fill%3D'%23f97316'%2F%3E%3Cpath%20d%3D'M24%2042L18%2030L24%2035L30%2030L24%2042Z'%20fill%3D'%23fff'%2F%3E%3Cpath%20d%3D'M24%2038L23%2039.5L24%2041L25%2039.5L24%2038Z'%20fill%3D'%231c1917'%2F%3E%3C/svg%3E"
-        type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('static', filename='img/Zorro.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link crossorigin=" href=" https://fonts.gstatic.com" rel="preconnect" />
     <link
@@ -105,15 +103,14 @@
             class="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a0a0a] border-r border-white/5">
             <!-- Logo -->
             <div class="flex items-center gap-3 px-6 py-6 border-b border-white/5">
-                <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f2460d] to-[#d63a0a] flex items-center justify-center shadow-lg shadow-orange-500/20">
-                    <span class="material-symbols-outlined text-white text-[22px]">lunch_dining</span>
-                </div>
-                <div>
-                    <h2 class="text-sm font-black text-white uppercase tracking-tight"
-                        style="font-family: 'Outfit', sans-serif;">Velzia</h2>
-                    <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
-                </div>
+                <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-3">
+                    <img src="{{ url_for('static', filename='img/Zorro.png') }}" alt="Orderfox" class="w-10 h-10">
+                    <div>
+                        <h2 class="text-sm font-black text-white uppercase tracking-tight"
+                            style="font-family: 'Outfit', sans-serif;">Velzia</h2>
+                        <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
+                    </div>
+                </a>
             </div>
 
             <!-- Navigation -->

@@ -107,14 +107,35 @@ class OrderService:
         total = 0
         validated_items = []
 
+        product_ids = [item.get('product_id') for item in items_data if item.get('product_id')]
+        if not product_ids:
+            return 0, []
+
+        products = Product.query.filter(
+            Product.id.in_(product_ids),
+            Product.restaurant_id == restaurant_id,
+            Product.is_active == True
+        ).all()
+        products_map = {p.id: p for p in products}
+
+        all_modifier_ids = []
+        for item in items_data:
+            all_modifier_ids.extend(item.get('modifier_ids', []))
+
+        modifiers_map = {}
+        if all_modifier_ids:
+            modifiers = Modifier.query.filter(
+                Modifier.id.in_(all_modifier_ids),
+                Modifier.is_active == True
+            ).all()
+            modifiers_map = {m.id: m for m in modifiers}
+
         for item_data in items_data:
             product_id = item_data.get('product_id')
             if not product_id:
                 continue
 
-            product = Product.query.filter_by(
-                id=product_id, restaurant_id=restaurant_id, is_active=True
-            ).first()
+            product = products_map.get(product_id)
             if not product:
                 continue
 
@@ -124,10 +145,8 @@ class OrderService:
 
             modifier_ids = item_data.get('modifier_ids', [])
             for mid in modifier_ids:
-                modifier = Modifier.query.filter_by(
-                    id=mid, product_id=product.id, is_active=True
-                ).first()
-                if modifier:
+                modifier = modifiers_map.get(mid)
+                if modifier and modifier.product_id == product.id:
                     extras_price += modifier.extra_price
                     modifiers_data.append({
                         'name': modifier.name,
@@ -157,6 +176,56 @@ class OrderService:
 
         order.total = total
         return total, validated_items
+
+    @staticmethod
+    def validate_table(restaurant_id, table_id):
+        """Validate that a table belongs to a restaurant. Returns Table or None."""
+        from app.models import Table
+        return Table.query.filter_by(id=table_id, restaurant_id=restaurant_id).first()
+
+    @staticmethod
+    def get_active_products(restaurant_id):
+        """Return all active products for a restaurant."""
+        return Product.query.filter_by(restaurant_id=restaurant_id, is_active=True).all()
+
+    @staticmethod
+    def change_order_status(order, new_status):
+        """
+        Change an order's status and commit.
+
+        Returns the updated order.
+        """
+        order.status = new_status
+        db.session.commit()
+        return order
+
+    @staticmethod
+    def cancel_order(order):
+        """
+        Cancel an order (set status to 'cancelled') and commit.
+
+        Returns (True, None) or (False, error_message).
+        Skips if already delivered/cancelled.
+        """
+        if order.status in ['delivered', 'cancelled']:
+            return False, 'No se puede cancelar un pedido entregado o ya cancelado'
+        order.status = 'cancelled'
+        db.session.commit()
+        return True, None
+
+    @staticmethod
+    def delete_order(order):
+        """
+        Delete an order permanently.
+
+        Returns (True, None) or (False, error_message).
+        Only allows deletion of cancelled orders.
+        """
+        if order.status != 'cancelled':
+            return False, 'Solo se pueden eliminar pedidos que ya han sido cancelados'
+        db.session.delete(order)
+        db.session.commit()
+        return True, None
 
     @staticmethod
     def serialize_order(order):

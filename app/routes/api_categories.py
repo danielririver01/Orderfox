@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, session as flask_session, current_app
 from flask_jwt_extended import verify_jwt_in_request
-from app.utils.jwt_auth import flexible_login_required, flexible_active_required, get_current_restaurant_jwt
+from app.utils.auth import require_auth, require_active
+from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.utils.restaurant import get_current_restaurant
 from app.services.category_service import CategoryService
 
@@ -17,8 +18,8 @@ def _get_restaurant():
     return None
 
 @api_categories_bp.route('', methods=['GET'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def list_categories():
     restaurant = _get_restaurant()
     if not restaurant:
@@ -44,8 +45,8 @@ def list_categories():
     })
 
 @api_categories_bp.route('', methods=['POST'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def create_category():
     restaurant = _get_restaurant()
     if not restaurant:
@@ -75,8 +76,8 @@ def create_category():
     }), 201
 
 @api_categories_bp.route('/<int:id>', methods=['GET'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def get_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
@@ -97,8 +98,8 @@ def get_category(id):
     })
 
 @api_categories_bp.route('/<int:id>', methods=['PUT'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def update_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
@@ -128,8 +129,8 @@ def update_category(id):
     })
 
 @api_categories_bp.route('/<int:id>', methods=['DELETE'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def delete_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
@@ -143,8 +144,8 @@ def delete_category(id):
     return jsonify({'success': True, 'message': 'Categoría eliminada exitosamente'})
 
 @api_categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def toggle_category(id):
     restaurant = _get_restaurant()
     if not restaurant:
@@ -157,8 +158,8 @@ def toggle_category(id):
     return jsonify({'success': True, 'data': {'id': category.id, 'is_active': category.is_active}})
 
 @api_categories_bp.route('/<int:id>/reorder', methods=['PATCH'])
-@flexible_login_required
-@flexible_active_required
+@require_auth
+@require_active
 def reorder_category(id):
     restaurant = _get_restaurant()
     if not restaurant:

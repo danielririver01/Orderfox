@@ -12,12 +12,10 @@ from flask import (
     session,
     current_app
 )
-from app.utils.auth import login_required, active_required
-from app.models import db, Restaurant, User, TrialHistory
+from app.utils.auth import require_auth, require_active
+from app.models import db, Restaurant, User
 from datetime import datetime, timezone, timedelta
-import qrcode 
-from io import BytesIO
-from PIL import Image
+import qrcode
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import (
     check_feature_access,
@@ -29,44 +27,31 @@ from app.utils.subscription import (
 import re
 import unicodedata
 
-import jwt
 import logging
 from app.services.dashboard_service import DashboardService
+from app.services.auth_service import AuthService
+from app.services.qr_service import QRService
 
 logger = logging.getLogger(__name__)
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 @dashboard_bp.route('/ai-scan')
-@login_required
+@require_auth
 def ai_scan_redirect():
     """
     Redirige al Scanner IA con un token JWT firmado para autenticación automática.
     Resuelve el problema de sesión compartida entre Flask (puerto 5000) y Scanner IA (puerto 3000).
     """
     user_id = session.get('user_id')
-    user = User.query.get(user_id)
+    user = DashboardService.get_user(user_id)
     
     if not user or not user.clerk_id:
         flash('Necesitas una cuenta vinculada a Clerk para usar el Scanner IA.', 'warning')
         return redirect(url_for('dashboard.index'))
     
     scanner_url = current_app.config.get('SCANNER_IA_URL', 'http://localhost:3000')
-    
-    # Generar token JWT con datos del usuario (expira en 5 minutos)
-    token_payload = {
-        'clerk_id': user.clerk_id,
-        'user_id': user.id,
-        'email': user.email,
-        'exp': datetime.now(timezone.utc) + timedelta(minutes=5),
-        'iat': datetime.now(timezone.utc)
-    }
-    
-    signed_token = jwt.encode(
-        token_payload,
-        current_app.config['SECRET_KEY'],
-        algorithm='HS256'
-    )
+    signed_token = AuthService.generate_ai_scan_token(user, current_app.config)
     
     # Redirigir a una página intermedia que envía el token por POST
     return render_template('dashboard/ai_scan_redirect.html',
@@ -74,8 +59,8 @@ def ai_scan_redirect():
         flask_token=signed_token)
 
 @dashboard_bp.route('/')
-@login_required
-@active_required
+@require_auth
+@require_active
 def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -93,8 +78,8 @@ def index():
                          menu_url=menu_url)
 
 @dashboard_bp.route('/toggle-status', methods=['POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def toggle_status():
     restaurant = get_current_restaurant()
     if not restaurant: return jsonify({'success': False}), 404
@@ -115,8 +100,8 @@ def toggle_status():
     return jsonify({'success': True, 'is_open': is_open})
 
 @dashboard_bp.route('/api/check-orders')
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_check_orders():
     """
     Endpoint ligero para el polling de nuevos pedidos (JS polling cada 15s).
@@ -134,8 +119,8 @@ def api_check_orders():
     })
 
 @dashboard_bp.route('/api/stats')
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_stats():
     """Endpoint para obtener estadísticas filtradas por rango (hoy/mes)."""
     restaurant = get_current_restaurant()
@@ -161,11 +146,11 @@ def api_stats():
         }), 500
 
 @dashboard_bp.route('/api/ai-stats')
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_ai_stats():
     user_id = session.get('user_id')
-    user = User.query.get(user_id)
+    user = DashboardService.get_user(user_id)
 
     if not user or not user.clerk_id:
         return jsonify({'totalExpenses': 0, 'success': True})
@@ -181,19 +166,7 @@ def api_ai_stats():
         else:
             start_date = now.replace(month=now.month - 1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    try:
-        query = db.text("""
-            SELECT COALESCE(SUM(amount), 0) as total
-            FROM velzia_expense
-            WHERE userId = :clerk_id AND date >= :start_date
-        """)
-
-        result = db.session.execute(query, {'clerk_id': user.clerk_id, 'start_date': start_date})
-        row = result.fetchone()
-        total_expenses = int(row[0]) if row else 0
-    except Exception:
-        total_expenses = 0
-
+    total_expenses = DashboardService.get_expense_stats(user, start_date)
     logger.info(f"api_ai_stats: user={user.id}, clerk_id={user.clerk_id}, range={range_type}, expenses={total_expenses}")
 
     return jsonify({
@@ -202,14 +175,14 @@ def api_ai_stats():
     })
 
 @dashboard_bp.route('/Productos')
-@login_required
-@active_required
+@require_auth
+@require_active
 def productos():
     return render_template('dashboard/productos.html')
 
 @dashboard_bp.route('/settings')
-@login_required
-@active_required
+@require_auth
+@require_active
 def settings():
     try:
         restaurant = get_current_restaurant()
@@ -218,7 +191,7 @@ def settings():
             abort(404)
         
         user_id = session.get('user_id')
-        user = User.query.get(user_id)
+        user = DashboardService.get_user(user_id)
         
         if not user:
             logger.error(f"Settings accessed by invalid user_id: {user_id}")
@@ -257,8 +230,8 @@ def settings():
         abort(500)
 
 @dashboard_bp.route('/menu/<slug>/qr')
-@login_required
-@active_required
+@require_auth
+@require_active
 def menu_qr(slug):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -285,25 +258,12 @@ def menu_qr_image(slug):
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
     menu_url = f"{base_url}/menu/{slug}"
     
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(menu_url)
-    qr.make(fit=True)
-    
-    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    img_io = BytesIO()
-    img.save(img_io, format="PNG")
-    img_io.seek(0)
-    
-    return send_file(img_io, mimetype='image/png', as_attachment=False)
+    img_io, mime_type = QRService.generate_menu_qr(menu_url)
+    return send_file(img_io, mimetype=mime_type, as_attachment=False)
 
 @dashboard_bp.route('/menu/<slug>/qr/download')
-@login_required
-@active_required
+@require_auth
+@require_active
 def menu_qr_download(slug):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -319,26 +279,7 @@ def menu_qr_download(slug):
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
     menu_url = f"{base_url}/menu/{slug}"
     
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,  # Mayor corrección de errores
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(menu_url)
-    qr.make(fit=True)
-    
-    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    buf = BytesIO()
-    
-    if fmt == 'png':
-        img.save(buf, format='PNG')
-        mime_type = 'image/png'
-    else:  # jpg o jpeg
-        img.save(buf, format='JPEG', quality=95)
-        mime_type = 'image/jpeg'
-    
-    buf.seek(0)
+    buf, mime_type = QRService.generate_menu_qr(menu_url, error_correction=qrcode.constants.ERROR_CORRECT_H, fmt=fmt)
     # Generar nombre de archivo amigable basado en el nombre del restaurante
     def slugify(text):
         text = str(text)
@@ -352,8 +293,8 @@ def menu_qr_download(slug):
     return send_file(buf, mimetype=mime_type, as_attachment=True, download_name=file_name)
 
 @dashboard_bp.route('/subscription')
-@login_required
-@active_required
+@require_auth
+@require_active
 def subscription():
     """
     Vista de gestión de suscripción. Consume get_subscription_status() centralizadamente.
@@ -362,9 +303,7 @@ def subscription():
     if not restaurant:
         abort(404)
     
-    user = User.query.get(session.get('user_id'))
-    
-    user = User.query.get(session.get('user_id'))
+    user = DashboardService.get_user(session.get('user_id'))
     sub_status = get_subscription_status(restaurant)
     
     # Límites del plan actual
@@ -394,31 +333,27 @@ def subscription():
     )
 
 @dashboard_bp.route('/delete-account', methods=['POST'])
-@login_required
+@require_auth
 def delete_account():
     restaurant = get_current_restaurant()
     if not restaurant: 
         return jsonify({'success': False, 'message': 'Restaurante no encontrado'}), 404
     
-    try:
-        db.session.delete(restaurant)
-        db.session.commit()
-        
+    success, result = DashboardService.delete_restaurant(restaurant)
+    if success:
         session.clear()
-        
-        return jsonify({'success': True, 'message': 'Cuenta eliminada exitosamente'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': 'Error al eliminar la cuenta'}), 500
+        return jsonify(result)
+    else:
+        return jsonify({'success': False, 'message': result['message']}), 500
 
 @dashboard_bp.route('/profile', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def profile():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    user = User.query.get(session.get('user_id'))
+    user = DashboardService.get_user(session.get('user_id'))
     
     if request.method == 'POST':
         restaurant_name = request.form.get('restaurant_name')
@@ -429,50 +364,23 @@ def profile():
             flash('Todos los campos son obligatorios.', 'error')
             return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
         
-        try:
-            if restaurant_name != restaurant.name:
-                existing_restaurant = Restaurant.query.filter(
-                    Restaurant.name == restaurant_name, 
-                    Restaurant.id != restaurant.id
-                ).first()
-                if existing_restaurant:
-                    flash('No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.', 'error')
-                    return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
-
-            if whatsapp_phone != restaurant.whatsapp_phone:
-                phone_in_trial = TrialHistory.query.filter(
-                    TrialHistory.whatsapp_phone == whatsapp_phone
-                ).first()
-                phone_in_other_restaurant = Restaurant.query.filter(
-                    Restaurant.whatsapp_phone == whatsapp_phone,
-                    Restaurant.id != restaurant.id,
-                    Restaurant.has_used_trial == True
-                ).first()
-                if phone_in_trial or phone_in_other_restaurant:
-                    flash('No es posible usar este número. Intenta con otro.', 'error')
-                    return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
-
-            restaurant.name = restaurant_name
-            restaurant.whatsapp_phone = whatsapp_phone
-            user.username = username.strip() if username else user.username
-            
-            db.session.commit()
-            flash('¡Perfil actualizado correctamente!', 'success')
-            return redirect(url_for('dashboard.profile'))
-        except Exception:
-            db.session.rollback()
-            flash('No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.', 'error')
+        success, error = DashboardService.update_profile(restaurant, user, restaurant_name, whatsapp_phone, username)
+        if not success:
+            flash(error, 'error')
+            return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
+        
+        flash('¡Perfil actualizado correctamente!', 'success')
+        return redirect(url_for('dashboard.profile'))
             
     return render_template('dashboard/profile_form.html', 
                          restaurant=restaurant, 
                          user=user)
 
 @dashboard_bp.route('/change-email', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def change_email():
-    user = User.query.get(session['user_id'])
-    is_clerk_user = bool(user.clerk_id)
+    user = DashboardService.get_user(session['user_id'])
     
     if request.method == 'POST':
         if request.is_json:
@@ -485,69 +393,15 @@ def change_email():
             confirm_email = request.form.get('confirm_email', '').strip().lower()
             current_password = request.form.get('current_password')
 
-        # Validaciones
-        if not new_email or not confirm_email:
-            msg = 'Todos los campos son requeridos.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_email'))
-
-        if new_email != confirm_email:
-            msg = 'Los correos nuevos no coinciden.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_email'))
-
-        if '@' not in new_email:
-            msg = 'Ingresa un correo valido.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_email'))
-
-        # Verificar que el nuevo email no este en uso
-        existing_user = User.query.filter(User.email == new_email, User.id != user.id).first()
-        if existing_user:
-            msg = 'Este correo ya esta registrado por otro usuario.'
-            if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 400
-            flash(msg, 'error')
-            return redirect(url_for('dashboard.change_email'))
-
-        # Verificar contraseña (solo para usuarios no Clerk)
-        if not is_clerk_user:
-            if not current_password:
-                msg = 'Debes ingresar tu contraseña actual.'
-                if request.is_json:
-                    return jsonify({'success': False, 'message': msg}), 400
-                flash(msg, 'error')
-                return redirect(url_for('dashboard.change_email'))
-            
-            if not user.check_password(current_password):
-                msg = 'La contraseña actual es incorrecta.'
-                if request.is_json:
-                    return jsonify({'success': False, 'message': msg}), 400
-                flash(msg, 'error')
-                return redirect(url_for('dashboard.change_email'))
-
-        # Actualizar email
-        try:
-            user.email = new_email
-            db.session.commit()
-            
-            msg = '¡Correo actualizado con exito!'
+        success, msg, status = DashboardService.change_email(user, new_email, confirm_email, current_password)
+        if success:
             if request.is_json:
                 return jsonify({'success': True, 'message': msg})
-            
             flash(msg, 'success')
             return redirect(url_for('dashboard.settings'))
-        except Exception as e:
-            db.session.rollback()
-            msg = 'Error al intentar cambiar el correo. Intenta de nuevo.'
+        else:
             if request.is_json:
-                return jsonify({'success': False, 'message': msg}), 500
+                return jsonify({'success': False, 'message': msg}), (status or 400)
             flash(msg, 'error')
             return redirect(url_for('dashboard.change_email'))
 
@@ -555,8 +409,8 @@ def change_email():
 
 
 @dashboard_bp.route('/notifications')
-@login_required
-@active_required
+@require_auth
+@require_active
 def notifications():
     restaurant = get_current_restaurant()
     if not restaurant:

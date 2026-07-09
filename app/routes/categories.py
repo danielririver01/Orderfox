@@ -1,14 +1,14 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import CategoryForm
-from app.utils.auth import login_required, active_required
+from app.utils.auth import require_auth, require_active
 from app.utils.restaurant import get_current_restaurant
 from app.services.category_service import CategoryService
 
 categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
 
 @categories_bp.route('/')
-@login_required
-@active_required
+@require_auth
+@require_active
 def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -16,8 +16,8 @@ def index():
     return render_template('dashboard/categories.html', categories=categories)
 
 @categories_bp.route('/create', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def create():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -38,8 +38,8 @@ def create():
     return render_template('dashboard/category_form.html', form=form, title='Nueva Categoría')
 
 @categories_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def edit(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -63,8 +63,8 @@ def edit(id):
     return render_template('dashboard/category_form.html', form=form, title='Editar Categoría', category=category)
 
 @categories_bp.route('/<int:id>/status', methods=['GET'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def get_status(id):
     restaurant = get_current_restaurant()
     if not restaurant:
@@ -75,8 +75,8 @@ def get_status(id):
     return jsonify({'success': True, 'id': category.id, 'is_active': category.is_active})
 
 @categories_bp.route('/<int:id>/status', methods=['PUT', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def update_status(id):
     restaurant = get_current_restaurant()
     if not restaurant:
@@ -91,8 +91,8 @@ def update_status(id):
     return jsonify({'success': True, 'is_active': category.is_active, 'message': 'Estado de categoría actualizado'})
 
 @categories_bp.route('/<int:id>/toggle', methods=['PATCH'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def toggle(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -103,8 +103,8 @@ def toggle(id):
     return jsonify({'success': True, 'is_active': category.is_active})
 
 @categories_bp.route('/<int:id>/reorder', methods=['PATCH'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def reorder(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -117,8 +117,8 @@ def reorder(id):
     return jsonify({'success': True, 'sort_order': category.sort_order})
 
 @categories_bp.route('/<int:id>/delete', methods=['POST', 'DELETE'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def delete(id):
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)

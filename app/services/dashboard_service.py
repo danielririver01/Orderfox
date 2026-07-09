@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone, timedelta
 from sqlalchemy import func
-from app.models import db, Order
+from app.models import db, Order, Restaurant, User, TrialHistory
 
 
 class DashboardService:
@@ -147,3 +147,119 @@ class DashboardService:
         restaurant.is_open = is_open
         db.session.commit()
         return restaurant.is_open
+
+    @staticmethod
+    def get_user(user_id):
+        """Return User by ID or None."""
+        return User.query.get(user_id)
+
+    @staticmethod
+    def get_expense_stats(user, start_date):
+        """
+        Query the velzia_expense table for total expenses by clerk_id.
+
+        Returns int (0 on failure or no data).
+        """
+        try:
+            query = db.text("""
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM velzia_expense
+                WHERE userId = :clerk_id AND date >= :start_date
+            """)
+            result = db.session.execute(query, {
+                'clerk_id': user.clerk_id,
+                'start_date': start_date
+            })
+            row = result.fetchone()
+            return int(row[0]) if row else 0
+        except Exception:
+            return 0
+
+    @staticmethod
+    def delete_restaurant(restaurant):
+        """
+        Delete a restaurant and clear session on success.
+
+        Returns (True, message_dict) or (False, error_dict).
+        """
+        try:
+            db.session.delete(restaurant)
+            db.session.commit()
+            return True, {'message': 'Cuenta eliminada exitosamente'}
+        except Exception:
+            db.session.rollback()
+            return False, {'message': 'Error al eliminar la cuenta'}
+
+    @staticmethod
+    def update_profile(restaurant, user, restaurant_name, whatsapp_phone, username):
+        """
+        Update restaurant name, phone, and user display name.
+
+        Returns (True, None) on success or (False, error_message) on failure.
+        Checks for name/phone conflicts.
+        """
+        try:
+            if restaurant_name != restaurant.name:
+                existing = Restaurant.query.filter(
+                    Restaurant.name == restaurant_name,
+                    Restaurant.id != restaurant.id
+                ).first()
+                if existing:
+                    return False, 'No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.'
+
+            if whatsapp_phone != restaurant.whatsapp_phone:
+                phone_in_trial = TrialHistory.query.filter(
+                    TrialHistory.whatsapp_phone == whatsapp_phone
+                ).first()
+                phone_in_other = Restaurant.query.filter(
+                    Restaurant.whatsapp_phone == whatsapp_phone,
+                    Restaurant.id != restaurant.id,
+                    Restaurant.has_used_trial == True
+                ).first()
+                if phone_in_trial or phone_in_other:
+                    return False, 'No es posible usar este número. Intenta con otro.'
+
+            restaurant.name = restaurant_name
+            restaurant.whatsapp_phone = whatsapp_phone
+            user.username = username.strip() if username else user.username
+
+            db.session.commit()
+            return True, None
+        except Exception:
+            db.session.rollback()
+            return False, 'No se pudieron guardar los cambios. Verifica los datos e intenta de nuevo.'
+
+    @staticmethod
+    def change_email(user, new_email, confirm_email, current_password=None):
+        """
+        Change user's email with validation.
+
+        Returns (True, message) on success or (False, error_message, http_status).
+        For Clerk users, password is not required.
+        """
+        if not new_email or not confirm_email:
+            return False, 'Todos los campos son requeridos.', 400
+
+        if new_email != confirm_email:
+            return False, 'Los correos nuevos no coinciden.', 400
+
+        if '@' not in new_email:
+            return False, 'Ingresa un correo valido.', 400
+
+        existing = User.query.filter(User.email == new_email, User.id != user.id).first()
+        if existing:
+            return False, 'Este correo ya esta registrado por otro usuario.', 400
+
+        if not user.clerk_id:
+            if not current_password:
+                return False, 'Debes ingresar tu contraseña actual.', 400
+            if not user.check_password(current_password):
+                return False, 'La contraseña actual es incorrecta.', 400
+
+        try:
+            user.email = new_email
+            db.session.commit()
+            return True, '¡Correo actualizado con exito!', None
+        except Exception as e:
+            db.session.rollback()
+            return False, 'Error al intentar cambiar el correo. Intenta de nuevo.', 500

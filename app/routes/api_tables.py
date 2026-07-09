@@ -1,13 +1,14 @@
 from flask import Blueprint, jsonify, request
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
+from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.services.table_service import TableService
 import uuid
 
 api_tables_bp = Blueprint('api_tables', __name__, url_prefix='/api/tables')
 
 @api_tables_bp.route('', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def list_tables():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -32,9 +33,9 @@ def list_tables():
     })
 
 @api_tables_bp.route('', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
-@jwt_feature_required('has_table_qr')
+@require_auth
+@require_active
+@require_feature('has_table_qr')
 def create_table():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -65,9 +66,9 @@ def create_table():
     }), 201
 
 @api_tables_bp.route('/<int:id>', methods=['DELETE'])
-@jwt_login_required
-@jwt_active_required
-@jwt_feature_required('has_table_qr')
+@require_auth
+@require_active
+@require_feature('has_table_qr')
 def delete_table(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:

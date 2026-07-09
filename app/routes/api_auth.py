@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, get_current_user_jwt, get_current_restaurant_jwt
+from app.utils.auth import require_auth, require_active
+from app.utils.jwt_auth import get_current_user_jwt, get_current_restaurant_jwt
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
 from app.models import User
@@ -56,8 +57,8 @@ def get_plans():
 
 
 @api_auth_bp.route('/payment/initiate', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def initiate_payment():
     data = request.get_json()
     if not data:

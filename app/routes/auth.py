@@ -2,11 +2,10 @@ from flask import Blueprint, render_template, redirect, url_for, flash, session,
 from app import db
 from app.forms import LoginForm
 from app.forms.auth import RegisterSetupForm
-from app.models import User, Restaurant
+from app.models import Restaurant
 from app.utils.subscription import initialize_or_reset_token_wallet
 from app.services.auth_service import AuthService
 from app.utils.restaurant import get_current_restaurant
-import requests
 import mercadopago
 
 auth_bp = Blueprint('auth', __name__)
@@ -25,51 +24,16 @@ def sync_clerk():
     email = data.get('email')
     session_id = data.get('session_id')
 
-    # 1. Verificación en el backend contra Clerk
-    clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
-    if not clerk_secret:
-        return jsonify({'success': False, 'message': 'Clerk secret not configured'}), 500
+    # 1. Verificación en el backend contra Clerk (delegada al servicio)
+    verified_email, error = AuthService.verify_clerk_session(session_id, clerk_id, email)
+    if error:
+        return jsonify({
+            'success': False,
+            'message': error.get('message', 'Verification failed'),
+            'error_code': error.get('error_code', 'VERIFICATION_FAILED')
+        }), 401 if error.get('error_code') in ('INVALID_SESSION', 'INVALID_USER', 'EMAIL_MISMATCH') else 500
 
-    try:
-        session_resp = requests.get(
-            f"https://api.clerk.com/v1/sessions/{session_id}",
-            headers={"Authorization": f"Bearer {clerk_secret}"},
-            timeout=5
-        )
-
-        if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
-            return jsonify({'success': False, 'message': 'Invalid or inactive session'}), 401
-
-        response = requests.get(
-            f"https://api.clerk.com/v1/users/{clerk_id}",
-            headers={"Authorization": f"Bearer {clerk_secret}"},
-            timeout=5
-        )
-
-        if response.status_code != 200:
-            return jsonify({'success': False, 'message': 'Invalid Clerk user'}), 401
-
-        clerk_user_data = response.json()
-
-        verified_email = next(
-            (e['email_address'] for e in clerk_user_data.get('email_addresses', [])
-             if e['id'] == clerk_user_data.get('primary_email_address_id')),
-            None
-        )
-
-        if not verified_email:
-            all_emails = [e['email_address'] for e in clerk_user_data.get('email_addresses', [])]
-            if email.lower() in [e.lower() for e in all_emails]:
-                verified_email = email
-
-        if not verified_email or verified_email.lower() != email.lower():
-            return jsonify({'success': False, 'message': 'Email mismatch or not verified'}), 401
-
-        email = verified_email
-
-    except Exception as e:
-        current_app.logger.error(f"Error verifying Clerk user: {e}")
-        return jsonify({'success': False, 'message': 'Verification failed'}), 500
+    email = verified_email
 
     username = data.get('username') or email.split('@')[0]
 
@@ -155,7 +119,7 @@ def legal():
 @auth_bp.route('/planes')
 def plans():
     if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+        user = AuthService.get_user(session['user_id'])
         if user and not user.restaurant:
             return redirect(url_for('auth.setup_account'))
     return render_template('auth/plans.html')
@@ -206,7 +170,7 @@ def setup_account():
 
     form = RegisterSetupForm()
 
-    user = User.query.get(session['user_id'])
+    user = AuthService.get_user(session['user_id'])
     if not user:
         return redirect(url_for('auth.register'))
 
@@ -269,7 +233,7 @@ def renew():
         flash('Debes iniciar sesión para renovar tu suscripción.')
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session['user_id'])
+    user = AuthService.get_user(session['user_id'])
     if not user or not user.restaurant:
         flash('No se encontró información de tu cuenta.')
         return redirect(url_for('dashboard.index'))

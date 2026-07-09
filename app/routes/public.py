@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session, send_from_directory
-from app.models import db, Restaurant, Table
+from app.models import db, Table
 from app import csrf
 from datetime import datetime
 from app.utils.rate_limiter import OrderRateLimiter
@@ -26,7 +26,7 @@ def init_checkout():
 def menu(slug=None):
     # Si no hay slug, buscar el primero activo (MVP)
     if not slug:
-        restaurant = Restaurant.query.first()
+        restaurant = PublicMenuService.get_first_active_restaurant()
         if not restaurant:
             abort(404)
         return redirect(url_for('public.menu', slug=restaurant.slug, **request.args))
@@ -80,7 +80,7 @@ def create_order():
             'error': '¡Uy, vas muy rápido! Tómate un segundo para revisar tus datos.'
         }), 429
 
-    restaurant = Restaurant.query.filter_by(id=data.get('restaurant_id', 1)).first()
+    restaurant = PublicMenuService.get_restaurant_by_id(data.get('restaurant_id', 1))
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
@@ -126,7 +126,7 @@ def create_order():
     table_name = None
     if table_id:
         table = Table.query.get(table_id)
-        if table:
+        if table and table.restaurant_id == restaurant.id:
             table_name = table.name
 
     # Construir notas del pedido

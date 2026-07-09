@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import timedelta
 from dotenv import load_dotenv
 
@@ -12,9 +13,10 @@ class Config:
     # Flask
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
-        # ⚠️ Este valor seguro SOLO debe usarse en desarrollo.
-        # En producción, configurar SECRET_KEY como variable de entorno.
-        SECRET_KEY = 'una-clave-secreta-muy-larga-para-desarrollo-seguro'
+        raise ValueError(
+            "SECRET_KEY no está configurada. "
+            "Establece SECRET_KEY en el archivo .env o como variable de entorno."
+        )
     
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
@@ -59,3 +61,10 @@ class Config:
 
     # CSRF: enable default check; API routes exempted via before_request
     WTF_CSRF_CHECK_DEFAULT = True
+
+    # Sentry (error tracking)
+    SENTRY_DSN = os.environ.get('SENTRY_DSN')
+
+    # Logging
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    LOG_FORMAT = os.environ.get('LOG_FORMAT', 'json')

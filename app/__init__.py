@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, render_template, session, request, flash, redirect, url_for
 from .models import db, migrate,User
 from flask_apscheduler import APScheduler
@@ -33,6 +34,23 @@ def create_app():
     migrate.init_app(app, db)
     limiter.init_app(app)
     jwt = JWTManager(app)
+
+    # Logging configuration
+    log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO'), logging.INFO)
+    logging.basicConfig(level=log_level)
+    app.logger.setLevel(log_level)
+
+    # Sentry initialization
+    sentry_dsn = app.config.get('SENTRY_DSN')
+    if sentry_dsn:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[FlaskIntegration()],
+            traces_sample_rate=0.1,
+        )
+        app.logger.info('Sentry initialized')
 
     # IMPORTANTE: Registrar ANTES de csrf.init_app para que se ejecute primero.
     # Flask-WTF's _csrf_check internamente respeta request._csrf_exempt.
@@ -126,11 +144,21 @@ def create_app():
         Esto evita que el botón 'Atrás' funcione después del logout.
         No aplicar a archivos estáticos (CSS, JS, imágenes).
         """
-        # Excluir archivos estáticos del no-cache para que WhiteNoise funcione
         if not request.path.startswith('/static'):
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '-1'
+
+        # Security headers
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+
+        # HSTS solo si no está en debug
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
         return response
 
     @app.template_global()
@@ -200,6 +228,7 @@ def create_app():
 
     @app.errorhandler(500)
     def internal_server_error(e):
+        app.logger.error(f"Internal server error: {e}", exc_info=True)
         user = None
         is_admin = False
         try:
@@ -207,8 +236,8 @@ def create_app():
                 user = User.query.get(session['user_id'])
                 if user:
                     is_admin = user.restaurant is not None
-        except Exception as e:
-            app.logger.error(f"Error in 500 handler: {e}")
+        except Exception as e2:
+            app.logger.error(f"Error in 500 handler: {e2}")
         return render_template('errors/500.html', user=user, is_admin=is_admin), 500
 
     @app.errorhandler(403)

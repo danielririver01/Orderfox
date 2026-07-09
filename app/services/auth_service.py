@@ -30,6 +30,11 @@ class AuthService:
     # ── Helpers ─────────────────────────────────────────────
 
     @staticmethod
+    def get_user(user_id):
+        """Return User by ID or None."""
+        return User.query.get(user_id)
+
+    @staticmethod
     def generate_slug(name):
         """Convert a restaurant name to a URL-safe slug (ASCII, lowercase, hyphenated)."""
         slug = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode('ascii')
@@ -401,6 +406,107 @@ class AuthService:
             db.session.rollback()
 
         return {'restaurant_id': restaurant_id, 'plan_type': plan_type}
+
+    # ── Core Auth ───────────────────────────────────────────
+
+    @staticmethod
+    def authenticate(email, password):
+        """
+        Authenticate a user by email and password.
+
+        Returns:
+            (user, None) on success,
+            (None, error_message_string) on failure.
+        """
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
+            return None, 'Credenciales inválidas'
+        return user, None
+
+    # ── Clerk Verification ─────────────────────────────────
+
+    @staticmethod
+    def verify_clerk_session(session_id, clerk_id, email):
+        """
+        Verify a Clerk session by calling the Clerk API directly.
+
+        Returns:
+            (verified_email, None) on success,
+            (None, error_dict) on failure.
+        """
+        import requests
+        clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
+        if not clerk_secret:
+            return None, {'error_code': 'CLERK_NOT_CONFIGURED',
+                          'message': 'Clerk secret not configured'}
+
+        try:
+            session_resp = requests.get(
+                f"https://api.clerk.com/v1/sessions/{session_id}",
+                headers={"Authorization": f"Bearer {clerk_secret}"},
+                timeout=5
+            )
+
+            if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
+                return None, {'error_code': 'INVALID_SESSION',
+                              'message': 'Invalid or inactive session'}
+
+            response = requests.get(
+                f"https://api.clerk.com/v1/users/{clerk_id}",
+                headers={"Authorization": f"Bearer {clerk_secret}"},
+                timeout=5
+            )
+
+            if response.status_code != 200:
+                return None, {'error_code': 'INVALID_USER',
+                              'message': 'Invalid Clerk user'}
+
+            clerk_user_data = response.json()
+            verified_email = next(
+                (e['email_address'] for e in clerk_user_data.get('email_addresses', [])
+                 if e['id'] == clerk_user_data.get('primary_email_address_id')),
+                None
+            )
+
+            if not verified_email:
+                all_emails = [e['email_address'] for e in clerk_user_data.get('email_addresses', [])]
+                if email.lower() in [e.lower() for e in all_emails]:
+                    verified_email = email
+
+            if not verified_email or verified_email.lower() != email.lower():
+                return None, {'error_code': 'EMAIL_MISMATCH',
+                              'message': 'Email mismatch or not verified'}
+
+            return verified_email, None
+
+        except Exception as e:
+            current_app.logger.error(f"Error verifying Clerk user: {e}")
+            return None, {'error_code': 'VERIFICATION_FAILED',
+                          'message': 'Verification failed'}
+
+    # ── AI Scan Token ──────────────────────────────────────
+
+    @staticmethod
+    def generate_ai_scan_token(user, app_config):
+        """
+        Generate a signed JWT token for Scanner IA redirect.
+
+        Returns the signed token string.
+        """
+        import jwt as pyjwt
+        token_payload = {
+            'clerk_id': user.clerk_id,
+            'user_id': user.id,
+            'email': user.email,
+            'exp': datetime.now(timezone.utc) + timedelta(minutes=5),
+            'iat': datetime.now(timezone.utc)
+        }
+        signed_token = pyjwt.encode(
+            token_payload,
+            app_config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+        return signed_token
 
     # ── API Auth ────────────────────────────────────────────
 

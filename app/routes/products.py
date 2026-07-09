@@ -1,18 +1,19 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import ProductForm
-from app.models import Category, Product
-from app.utils.auth import login_required, active_required
+from app.models import Product
+from app.utils.auth import require_auth, require_active
 
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access, get_plan_limits
 from app.services.product_service import ProductService
+from app.services.category_service import CategoryService
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 
 
 @products_bp.route('/')
-@login_required
-@active_required
+@require_auth
+@require_active
 def index():
     """Listar todos los productos del restaurante agrupados por categoría"""
     restaurant = get_current_restaurant()
@@ -20,7 +21,7 @@ def index():
         abort(404)
 
     products, _ = ProductService.get_products_for_restaurant(restaurant.id)
-    categories = Category.query.filter_by(restaurant_id=restaurant.id).all()
+    categories = CategoryService.get_categories(restaurant.id)
     plan_limits = get_plan_limits(restaurant.plan_type)
     current_active_count = ProductService.get_active_count(restaurant.id)
     has_modifiers_access = check_feature_access(restaurant, 'has_modifiers')
@@ -34,25 +35,22 @@ def index():
 
 
 @products_bp.route('/category/<int:category_id>')
-@login_required
-@active_required
+@require_auth
+@require_active
 def by_category(category_id):
     """Ver productos de una categoría con paginación"""
     restaurant = get_current_restaurant()
     if not restaurant:
         abort(404)
 
-    category = Category.query.filter_by(
-        id=category_id, restaurant_id=restaurant.id
-    ).first_or_404()
+    category = CategoryService.get_category(restaurant.id, category_id)
+    if not category:
+        abort(404)
 
     page = request.args.get('page', 1, type=int)
     per_page = 6
 
-    pagination = Product.query.filter_by(
-        category_id=category_id,
-        restaurant_id=restaurant.id
-    ).order_by(Product.name).paginate(page=page, per_page=per_page, error_out=False)
+    pagination = ProductService.get_products_paginated(restaurant.id, category_id, page=page, per_page=per_page)
 
     plan_limits = get_plan_limits(restaurant.plan_type)
     current_active_count = ProductService.get_active_count(restaurant.id)
@@ -68,8 +66,8 @@ def by_category(category_id):
 
 
 @products_bp.route('/create', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def create():
     """Crear nuevo producto"""
     restaurant = get_current_restaurant()
@@ -78,9 +76,7 @@ def create():
 
     form = ProductForm()
 
-    categories = Category.query.filter_by(
-        restaurant_id=restaurant.id, is_active=True
-    ).all()
+    categories = CategoryService.get_active_categories(restaurant.id)
     form.category_id.choices = [(c.id, c.name) for c in categories]
 
     # Pre-seleccionar categoría si viene en los argumentos
@@ -116,8 +112,8 @@ def create():
 
 
 @products_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def edit(id):
     """Editar producto existente"""
     restaurant = get_current_restaurant()
@@ -130,9 +126,7 @@ def edit(id):
 
     form = ProductForm(obj=product)
 
-    categories = Category.query.filter_by(
-        restaurant_id=restaurant.id, is_active=True
-    ).all()
+    categories = CategoryService.get_active_categories(restaurant.id)
     form.category_id.choices = [(c.id, c.name) for c in categories]
 
     # Forzar la seleccion correcta con GET
@@ -164,8 +158,8 @@ def edit(id):
 
 
 @products_bp.route('/<int:id>/status', methods=['GET'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def get_status(id):
     """Obtener el estado actual de un producto"""
     restaurant = get_current_restaurant()
@@ -181,8 +175,8 @@ def get_status(id):
 
 
 @products_bp.route('/<int:id>/status', methods=['PUT', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def update_status(id):
     """Actualizar el estado is_active con validación de límites"""
     restaurant = get_current_restaurant()
@@ -224,8 +218,8 @@ def update_status(id):
 
 
 @products_bp.route('/<int:id>/toggle', methods=['PATCH', 'POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def toggle(id):
     """Mantenemos compatibilidad con el endpoint anterior si es necesario"""
     restaurant = get_current_restaurant()
@@ -256,8 +250,8 @@ def toggle(id):
 
 
 @products_bp.route('/<int:id>/delete', methods=['POST', 'DELETE'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def delete(id):
     """Eliminar producto"""
     restaurant = get_current_restaurant()
@@ -281,8 +275,8 @@ def delete(id):
 
 
 @products_bp.route('/<int:product_id>/api/modifiers', methods=['GET'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_list_modifiers(product_id):
     """Listar modificadores de un producto (session auth)"""
     restaurant = get_current_restaurant()
@@ -314,8 +308,8 @@ def api_list_modifiers(product_id):
 
 
 @products_bp.route('/<int:product_id>/api/modifiers', methods=['POST'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_create_modifier(product_id):
     """Crear modificador (session auth)"""
     restaurant = get_current_restaurant()
@@ -363,8 +357,8 @@ def api_create_modifier(product_id):
 
 
 @products_bp.route('/api/modifiers/<int:id>/toggle', methods=['PATCH'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_toggle_modifier(id):
     """Activar/desactivar modificador (session auth)"""
     restaurant = get_current_restaurant()
@@ -389,8 +383,8 @@ def api_toggle_modifier(id):
 
 
 @products_bp.route('/api/modifiers/<int:id>', methods=['DELETE'])
-@login_required
-@active_required
+@require_auth
+@require_active
 def api_delete_modifier(id):
     """Eliminar modificador (session auth)"""
     restaurant = get_current_restaurant()

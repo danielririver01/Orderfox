@@ -19,6 +19,16 @@ class PublicMenuService:
     # ── Restaurant Lookup ───────────────────────────────────
 
     @staticmethod
+    def get_first_active_restaurant():
+        """Return the first active restaurant (MVP fallback when no slug)."""
+        return Restaurant.query.first()
+
+    @staticmethod
+    def get_restaurant_by_id(restaurant_id):
+        """Look up a restaurant by ID."""
+        return Restaurant.query.get(restaurant_id)
+
+    @staticmethod
     def get_restaurant_by_slug(slug):
         """
         Look up a restaurant by URL slug.
@@ -178,12 +188,31 @@ class PublicMenuService:
             order_total = 0
             validated_items = []
 
+            product_ids = [pid for pid in cart.keys() if pid]
+            products = Product.query.filter(
+                Product.id.in_(product_ids),
+                Product.restaurant_id == restaurant.id,
+                Product.is_active == True
+            ).all()
+            products_map = {p.id: p for p in products}
+
+            all_modifier_ids = []
+            for item in cart.values():
+                for extra in item.get('extras', []):
+                    mid = extra.get('id')
+                    if mid:
+                        all_modifier_ids.append(mid)
+
+            modifiers_map = {}
+            if all_modifier_ids:
+                modifiers = Modifier.query.filter(
+                    Modifier.id.in_(all_modifier_ids),
+                    Modifier.is_active == True
+                ).all()
+                modifiers_map = {m.id: m for m in modifiers}
+
             for product_id, item in cart.items():
-                product = Product.query.filter_by(
-                    id=product_id,
-                    restaurant_id=restaurant.id,
-                    is_active=True
-                ).first()
+                product = products_map.get(product_id)
                 if not product:
                     continue
 
@@ -195,12 +224,8 @@ class PublicMenuService:
                     modifier_id = extra.get('id')
                     if not modifier_id:
                         continue
-                    modifier = Modifier.query.filter_by(
-                        id=modifier_id,
-                        product_id=product.id,
-                        is_active=True
-                    ).first()
-                    if modifier:
+                    modifier = modifiers_map.get(modifier_id)
+                    if modifier and modifier.product_id == product.id:
                         extras_price += modifier.extra_price
                         modifiers_data.append({
                             'name': modifier.name,
@@ -332,28 +357,23 @@ class PublicMenuService:
         Returns None if an error occurs.
         """
         try:
-            categories = Category.query.join(Product).filter(
-                Category.restaurant_id == restaurant.id,
-                Category.is_active == True,
-                Product.is_active == True
-            ).order_by(Category.sort_order).distinct().all()
+            categories = Category.query.options(
+                selectinload(Category.products.and_(
+                    Product.is_active == True,
+                    Product.restaurant_id == restaurant.id
+                )).selectinload(Product.modifiers)
+            ).filter_by(
+                restaurant_id=restaurant.id,
+                is_active=True
+            ).order_by(Category.sort_order).all()
 
             categories_data = []
             for cat in categories:
-                active_count = Product.query.filter_by(
-                    category_id=cat.id,
-                    restaurant_id=restaurant.id,
-                    is_active=True
-                ).count()
-
-                products = Product.query.filter_by(
-                    category_id=cat.id,
-                    restaurant_id=restaurant.id,
-                    is_active=True
-                ).all()
+                active_products = [p for p in cat.products if p.is_active]
+                active_count = len(active_products)
 
                 products_data = []
-                for p in products:
+                for p in active_products:
                     modifiers = [
                         {'id': m.id, 'name': m.name, 'extra_price': m.extra_price}
                         for m in p.modifiers if m.is_active
@@ -403,21 +423,20 @@ class PublicMenuService:
         Returns (category_dict, products_list) or (None, None) on error.
         """
         try:
-            category = Category.query.filter_by(
+            category = Category.query.options(
+                selectinload(Category.products.and_(
+                    Product.is_active == True,
+                    Product.restaurant_id == restaurant.id
+                )).selectinload(Product.modifiers)
+            ).filter_by(
                 id=category_id,
                 restaurant_id=restaurant.id,
             ).first()
             if not category:
                 return None, None
 
-            products = Product.query.filter_by(
-                category_id=category_id,
-                restaurant_id=restaurant.id,
-                is_active=True
-            ).all()
-
             products_data = []
-            for p in products:
+            for p in category.products:
                 modifiers = [
                     {'id': m.id, 'name': m.name, 'extra_price': m.extra_price}
                     for m in p.modifiers if m.is_active
@@ -453,7 +472,9 @@ class PublicMenuService:
         Returns (products_list, pagination_dict) or ([], {}) on error.
         """
         try:
-            query = Product.query.filter_by(
+            query = Product.query.options(
+                selectinload(Product.category)
+            ).filter_by(
                 restaurant_id=restaurant.id,
                 is_active=True
             ).order_by(Product.created_at.desc())

@@ -15,9 +15,9 @@
     {# Brand header #}
     <div class="flex items-center justify-between px-5 h-16 border-b border-white/[0.06] flex-shrink-0">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f2460d] to-[#c93000] flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <span class="material-symbols-outlined text-white text-[18px]">lunch_dining</span>
-            </div>
+            <a href="{{ url_for('dashboard.index') }}" class="shrink-0">
+                <img src="{{ url_for('static', filename='img/Zorro.png') }}" alt="Orderfox" class="w-8 h-8">
+            </a>
             <span class="text-xs font-black text-white uppercase tracking-tight">Velzia</span>
         </div>
         <button onclick="closeMobileNav()" aria-label="Cerrar menú"

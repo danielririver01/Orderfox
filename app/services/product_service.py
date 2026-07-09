@@ -52,6 +52,15 @@ class ProductService:
         ).first()
 
     @staticmethod
+    def get_products_paginated(restaurant_id, category_id, page=1, per_page=6):
+        """Return paginated products filtered by restaurant and category."""
+        pagination = Product.query.filter_by(
+            category_id=category_id,
+            restaurant_id=restaurant_id
+        ).order_by(Product.name).paginate(page=page, per_page=per_page, error_out=False)
+        return pagination
+
+    @staticmethod
     def create_product(restaurant_id, category_id, name, price,
                        description='', is_active=True, image_file=None):
         """

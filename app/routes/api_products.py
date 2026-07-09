@@ -1,16 +1,14 @@
 from flask import Blueprint, jsonify, request
-from app.utils.jwt_auth import (
-    jwt_login_required, jwt_active_required, jwt_feature_required,
-    get_current_restaurant_jwt
-)
+from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.services.product_service import ProductService
 
 api_products_bp = Blueprint('api_products', __name__, url_prefix='/api/products')
 
 
 @api_products_bp.route('', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def list_products():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -60,8 +58,8 @@ def list_products():
 
 
 @api_products_bp.route('/<int:id>', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def get_product(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -98,8 +96,8 @@ def get_product(id):
 
 
 @api_products_bp.route('', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def create_product():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -141,8 +139,8 @@ def create_product():
 
 
 @api_products_bp.route('/<int:id>', methods=['PUT'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def update_product(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -193,8 +191,8 @@ def update_product(id):
 
 
 @api_products_bp.route('/<int:id>', methods=['DELETE'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def delete_product(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -213,8 +211,8 @@ def delete_product(id):
 
 
 @api_products_bp.route('/<int:id>/toggle', methods=['PATCH'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def toggle_product(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -246,8 +244,8 @@ def toggle_product(id):
 
 
 @api_products_bp.route('/<int:id>/modifiers', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def list_modifiers(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -276,9 +274,9 @@ def list_modifiers(id):
 
 
 @api_products_bp.route('/<int:id>/modifiers', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
-@jwt_feature_required('has_modifiers')
+@require_auth
+@require_active
+@require_feature('has_modifiers')
 def create_modifier(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -319,8 +317,8 @@ def create_modifier(id):
 
 
 @api_products_bp.route('/modifiers/<int:id>/toggle', methods=['PATCH'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def toggle_modifier(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -344,8 +342,8 @@ def toggle_modifier(id):
 
 
 @api_products_bp.route('/modifiers/<int:id>', methods=['DELETE'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def delete_modifier(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:

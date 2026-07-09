@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Fox head icon -->
+  <g transform="translate(0, 4)">
+    <!-- Left ear -->
+    <polygon points="8,32 16,6 24,22" fill="#f97316"/>
+    <polygon points="12,32 18,12 22,24" fill="#fff" opacity="0.3"/>
+    <!-- Right ear -->
+    <polygon points="32,32 24,6 40,22" fill="#f97316"/>
+    <polygon points="36,32 30,12 38,24" fill="#fff" opacity="0.3"/>
+    <!-- Face -->
+    <ellipse cx="24" cy="26" rx="14" ry="10" fill="#f97316"/>
+    <!-- Eyes -->
+    <ellipse cx="18" cy="26" rx="2.5" ry="3" fill="#1c1917"/>
+    <ellipse cx="30" cy="26" rx="2.5" ry="3" fill="#1c1917"/>
+    <!-- Eye shine -->
+    <circle cx="19" cy="24.5" r="1" fill="#fff" opacity="0.8"/>
+    <circle cx="31" cy="24.5" r="1" fill="#fff" opacity="0.8"/>
+    <!-- Nose -->
+    <ellipse cx="24" cy="33" rx="2" ry="1.2" fill="#1c1917"/>
+    <!-- Muzzle highlight -->
+    <ellipse cx="24" cy="32" rx="4" ry="2" fill="#fff" opacity="0.15"/>
+  </g>
+  <!-- Brand name -->
+  <text x="52" y="30" font-family="'Segoe UI', system-ui, sans-serif" font-size="22" font-weight="800" fill="#1c1917" letter-spacing="1">Velzia</text>
+  <!-- Tagline dot -->
+  <circle cx="52" cy="38" r="2" fill="#f97316"/>
+  <text x="60" y="40" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" fill="#78716c" letter-spacing="2">ORDERFOX</text>
+</svg>

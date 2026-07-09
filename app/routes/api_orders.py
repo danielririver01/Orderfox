@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from app import db
-from app.models import Order, Table
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt
+from app.models import Order
+from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
 from app.services.order_service import OrderService
 from app.services.notification_service import notify_new_order
@@ -10,8 +11,8 @@ api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
 
 
 @api_orders_bp.route('', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def list_orders():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -68,8 +69,8 @@ def list_orders():
 
 
 @api_orders_bp.route('/<int:id>', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def get_order(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -111,8 +112,8 @@ def get_order(id):
 
 
 @api_orders_bp.route('', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def create_order():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -129,7 +130,7 @@ def create_order():
         return jsonify({'success': False, 'error': 'Al menos un producto es requerido'}), 400
 
     if table_id:
-        table = Table.query.filter_by(id=table_id, restaurant_id=restaurant.id).first()
+        table = OrderService.validate_table(restaurant.id, table_id)
         if not table:
             return jsonify({'success': False, 'error': 'Mesa no encontrada'}), 404
 
@@ -160,8 +161,8 @@ def create_order():
 
 
 @api_orders_bp.route('/<int:id>/status', methods=['PATCH'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def change_status(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -189,8 +190,7 @@ def change_status(id):
             'error': f'No se puede cambiar de {order.status} a {new_status}'
         }), 400
 
-    order.status = new_status
-    db.session.commit()
+    OrderService.change_order_status(order, new_status)
 
     return jsonify({
         'success': True,
@@ -203,8 +203,8 @@ def change_status(id):
 
 
 @api_orders_bp.route('/<int:id>/cancel', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def cancel_order(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -214,14 +214,12 @@ def cancel_order(id):
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
-    if order.status in ['delivered', 'cancelled']:
+    success, error = OrderService.cancel_order(order)
+    if not success:
         return jsonify({
             'success': False,
-            'error': 'No se puede cancelar un pedido entregado o ya cancelado'
+            'error': error
         }), 400
-
-    order.status = 'cancelled'
-    db.session.commit()
 
     return jsonify({
         'success': True,
@@ -233,8 +231,8 @@ def cancel_order(id):
 
 
 @api_orders_bp.route('/<int:id>/receipt', methods=['GET'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def get_receipt(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -269,8 +267,8 @@ def get_receipt(id):
 
 
 @api_orders_bp.route('/<int:id>', methods=['DELETE'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def delete_order(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -280,13 +278,11 @@ def delete_order(id):
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
 
-    if order.status != 'cancelled':
+    success, error = OrderService.delete_order(order)
+    if not success:
         return jsonify({
             'success': False,
-            'error': 'Solo se pueden eliminar órdenes canceladas'
+            'error': error
         }), 400
-
-    db.session.delete(order)
-    db.session.commit()
 
     return jsonify({'success': True, 'message': 'Orden eliminada exitosamente'})

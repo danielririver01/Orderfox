@@ -1,122 +1,139 @@
 from functools import wraps
 from flask import session, redirect, url_for, flash, g, request, jsonify
 import logging
-from datetime import datetime
-from app import db
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import is_subscription_active, check_feature_access
 
 logger = logging.getLogger(__name__)
 
-def login_required(f):
+
+# ── Decoradores Unificados ─────────────────────────────────────────
+
+def require_auth(f):
+    """
+    Decorador unificado que detecta automáticamente JWT o sesión Flask.
+    Reemplaza a @login_required y @jwt_login_required.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            logger.info(f"Acceso denegado: user_id no en sesión. Ruta: {request.path}")
+        auth_header = request.headers.get('Authorization', '')
+        is_bearer = auth_header.startswith('Bearer ')
+
+        if is_bearer:
+            from flask_jwt_extended import verify_jwt_in_request
+            try:
+                verify_jwt_in_request()
+                return f(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"JWT verification failed in require_auth: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': 'unauthorized',
+                    'message': 'Token inválido o expirado. Por favor inicia sesión nuevamente.'
+                }), 401
+        elif 'user_id' in session:
+            return f(*args, **kwargs)
+        else:
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({
+                    'success': False,
                     'error': 'unauthorized',
                     'message': 'Por favor, inicia sesión para acceder.'
                 }), 401
             flash('Por favor, inicia sesión para acceder a esta página.', 'warning')
             return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
     return decorated_function
 
-def active_required(f):
+
+def _get_restaurant_unified():
+    """Get the restaurant using JWT or session (auto-detect)."""
+    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+    from app.models import Restaurant as RestModel
+
+    auth_header = request.headers.get('Authorization', '')
+    is_bearer = auth_header.startswith('Bearer ')
+
+    if is_bearer:
+        try:
+            verify_jwt_in_request()
+            user_id = get_jwt_identity()
+            from app.models import User
+            user = User.query.get(user_id)
+            if user and user.restaurant:
+                return user.restaurant
+        except Exception:
+            pass
+        return None
+
+    if 'user_id' in session:
+        return get_current_restaurant()
+    return None
+
+
+def require_active(f):
     """
-    Decorador que verifica:
-    1. El usuario tiene un restaurante asociado
-    2. El restaurante está activo (no suspendido)
-    3. La suscripción no ha expirado
-    
-    Si alguna verificación falla, redirige apropiadamente.
-    Para peticiones AJAX, retorna JSON.
+    Decorador unificado que verifica cuenta activa (JWT o sesión).
+    Reemplaza a @active_required y @jwt_active_required.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Permitir acceso siempre a la página de suscripción para que puedan renovar
-        if request.endpoint == 'dashboard.subscription':
-             return f(*args, **kwargs)
+        if request.endpoint and 'subscription' in request.endpoint:
+            return f(*args, **kwargs)
 
-        # Obtener restaurante actual
-        restaurant = get_current_restaurant()
-        
-        # Helper para retornar error apropiado
+        restaurant = _get_restaurant_unified()
+
         def return_error(message, code=401, redirect_to='auth.login'):
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'error': message}), code
+                return jsonify({'success': False, 'error': message}), code
             flash(message, 'warning')
             return redirect(url_for(redirect_to))
-        
-        # Verificación 1: ¿Existe el restaurante?
+
         if not restaurant:
-            logger.warning(
-                f"Acceso sin restaurante - User: {session.get('user_id', 'unknown')} - "
-                f"Ruta: {request.path}"
-            )
-            # Si no hay restaurante, el usuario está en limbo (autenticado pero sin setup completo)
-            return return_error('Completa la configuración de tu restaurante para continuar.', redirect_to='auth.setup_account')
-        
-        # Verificación 2: ¿Está activo el restaurante? (no suspendido)
+            return return_error('Tu cuenta no está asociada a ningún restaurante.', redirect_to='auth.setup_account')
+
         if not restaurant.is_active:
-            logger.warning(
-                f"Acceso a cuenta suspendida - Restaurant ID: {restaurant.id} - "
-                f"Ruta: {request.path}"
-            )
             return return_error('Tu cuenta ha sido suspendida. Contacta a soporte para más información.')
-        
-        # Verificación 3: ¿Está activa la suscripción (o en gracia)?
-        # Velzia 2.0.0: Permitimos acceso SIEMPRE si tienen tokens disponibles para el Scanner,
-        # incluso si el plan principal expiró.
+
         has_tokens = False
         if restaurant.users:
-            # Tomamos el primer usuario (dueño) para verificar tokens
             owner = restaurant.users[0]
             if owner.token_wallet and owner.token_wallet.can_scan():
                 has_tokens = True
 
         if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
-            logger.info(
-                f"Acceso denegado (expirado total) - Restaurant ID: {restaurant.id} - "
-                f"Expira: {restaurant.subscription_expires_at} - Ruta: {request.path}"
-            )
             return return_error('Tu periodo de gracia ha terminado. Por favor renueva tu plan para recuperar el acceso.', redirect_to='dashboard.subscription')
-        
-        # Guardar en 'g' si estamos en modo lectura (suscripción expirada pero permitida por tokens o gracia)
+
         g.is_expired = not is_subscription_active(restaurant, include_grace_period=False)
         g.has_tokens = has_tokens
-        
-        # Todo OK - permitir acceso
+
         return f(*args, **kwargs)
-    
     return decorated_function
 
-def feature_required(feature_name):
+
+def require_feature(feature_name):
     """
-    Decorador para verificar acceso a características específicas del plan.
-    Debe usarse después de @login_required y @active_required.
+    Decorador unificado para verificar acceso a características.
+    Reemplaza a @feature_required y @jwt_feature_required.
+    Debe usarse después de @require_auth y @require_active.
     """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            restaurant = get_current_restaurant()
-            
+            restaurant = _get_restaurant_unified()
+
             if not restaurant:
-                return jsonify({'error': 'Restaurante no encontrado'}), 404
-                
+                return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
             if not check_feature_access(restaurant, feature_name):
-                # Si es una petición AJAX/API
                 if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return jsonify({
+                        'success': False,
                         'error': 'Plan insuficiente',
                         'message': f'Tu plan actual no incluye la función: {feature_name}'
                     }), 403
-                
-                # Para peticiones normales de navegación
                 flash(f'Actualiza tu plan para acceder a esta función.', 'warning')
                 return redirect(url_for('dashboard.subscription'))
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator

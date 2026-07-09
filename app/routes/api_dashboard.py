@@ -1,19 +1,20 @@
 from flask import Blueprint, jsonify, request, current_app
-from app import db
-from app.models import Restaurant, User, Product
-from app.utils.jwt_auth import jwt_login_required, jwt_active_required, jwt_feature_required, get_current_restaurant_jwt, get_current_user_jwt
-from app.utils.subscription import get_plan_limits, AI_TOKEN_LIMITS, get_subscription_status, check_feature_access
+from app.models import Restaurant, User
+from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.jwt_auth import get_current_restaurant_jwt, get_current_user_jwt
+from app.utils.subscription import get_plan_limits, AI_TOKEN_LIMITS, get_subscription_status
 from datetime import datetime, timezone
 import jwt as pyjwt
 from datetime import timedelta
 from app.services.dashboard_service import DashboardService
+from app.services.product_service import ProductService
 
 api_dashboard_bp = Blueprint('api_dashboard', __name__, url_prefix='/api/dashboard')
 
 
 @api_dashboard_bp.route('/overview')
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def overview():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -38,9 +39,9 @@ def overview():
 
 
 @api_dashboard_bp.route('/toggle-status', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
-@jwt_feature_required('has_status_management')
+@require_auth
+@require_active
+@require_feature('has_status_management')
 def toggle_status():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -55,8 +56,8 @@ def toggle_status():
 
 
 @api_dashboard_bp.route('/check-orders')
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def check_orders():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -67,8 +68,8 @@ def check_orders():
 
 
 @api_dashboard_bp.route('/stats')
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def stats():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -81,8 +82,8 @@ def stats():
 
 
 @api_dashboard_bp.route('/settings')
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def settings():
     user = get_current_user_jwt()
     restaurant = get_current_restaurant_jwt()
@@ -117,8 +118,8 @@ def settings():
 
 
 @api_dashboard_bp.route('/subscription')
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def subscription():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -129,10 +130,7 @@ def subscription():
     plan_info = get_plan_limits(restaurant.plan_type)
     plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(restaurant.plan_type, 0)
 
-    products_used = Product_count = Product.query.filter_by(
-        restaurant_id=restaurant.id,
-        is_active=True
-    ).count()
+    products_used = ProductService.get_active_count(restaurant.id)
 
     ai_tokens_used = 0
     ai_tokens_limit = plan_info.get('ai_tokens', 0)
@@ -159,8 +157,8 @@ def subscription():
 
 
 @api_dashboard_bp.route('/profile', methods=['PUT'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def update_profile():
     restaurant = get_current_restaurant_jwt()
     user = get_current_user_jwt()
@@ -176,22 +174,12 @@ def update_profile():
     whatsapp_phone = data.get('whatsapp_phone')
     username = data.get('username')
 
-    if restaurant_name:
-        existing = Restaurant.query.filter(
-            Restaurant.name == restaurant_name,
-            Restaurant.id != restaurant.id
-        ).first()
-        if existing:
-            return jsonify({'success': False, 'error': 'Este nombre ya está en uso'}), 400
-        restaurant.name = restaurant_name
+    if not restaurant_name or not whatsapp_phone or not username:
+        return jsonify({'success': False, 'error': 'Todos los campos son obligatorios.'}), 400
 
-    if whatsapp_phone:
-        restaurant.whatsapp_phone = whatsapp_phone
-
-    if username:
-        user.username = username.strip()
-
-    db.session.commit()
+    success, error = DashboardService.update_profile(restaurant, user, restaurant_name, whatsapp_phone, username)
+    if not success:
+        return jsonify({'success': False, 'error': error}), 400
 
     return jsonify({
         'success': True,
@@ -209,7 +197,7 @@ def update_profile():
 
 
 @api_dashboard_bp.route('/delete-account', methods=['POST'])
-@jwt_login_required
+@require_auth
 def delete_account():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -219,18 +207,16 @@ def delete_account():
     if not data or data.get('confirmation') != 'ELIMINAR':
         return jsonify({'success': False, 'error': 'Confirmación requerida: escribe ELIMINAR'}), 400
 
-    try:
-        db.session.delete(restaurant)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Cuenta eliminada permanentemente'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': 'Error al eliminar la cuenta'}), 500
+    success, result = DashboardService.delete_restaurant(restaurant)
+    if success:
+        return jsonify({'success': True, 'message': result['message']})
+    else:
+        return jsonify({'success': False, 'error': result['message']}), 500
 
 
 @api_dashboard_bp.route('/ai-scan/token', methods=['POST'])
-@jwt_login_required
-@jwt_active_required
+@require_auth
+@require_active
 def ai_scan_token():
     user = get_current_user_jwt()
     if not user or not user.clerk_id:

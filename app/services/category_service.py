@@ -14,6 +14,13 @@ class CategoryService:
         ).order_by(Category.sort_order).all()
 
     @staticmethod
+    def get_active_categories(restaurant_id):
+        """Return active categories for a restaurant (for product forms)."""
+        return Category.query.filter_by(
+            restaurant_id=restaurant_id, is_active=True
+        ).order_by(Category.sort_order).all()
+
+    @staticmethod
     def get_category(restaurant_id, category_id):
         return Category.query.filter_by(
             id=category_id, restaurant_id=restaurant_id

@@ -1,18 +1,16 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, abort
-from app.utils.auth import login_required, active_required, feature_required
+from app.utils.auth import require_auth, require_active, require_feature
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
 from app.services.table_service import TableService
-import qrcode
-from io import BytesIO
-from PIL import Image, ImageFilter
+from app.services.qr_service import QRService
 import unicodedata, re
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/dashboard/tables')
 
 @tables_bp.route('/')
-@login_required
-@active_required
+@require_auth
+@require_active
 def index():
     restaurant = get_current_restaurant()
     tables = TableService.get_tables(restaurant.id)
@@ -23,9 +21,9 @@ def index():
                          has_table_qr_access=has_table_qr_access)
 
 @tables_bp.route('/create', methods=['POST'])
-@login_required
-@active_required
-@feature_required('has_table_qr')
+@require_auth
+@require_active
+@require_feature('has_table_qr')
 def create():
     restaurant = get_current_restaurant()
     name = request.form.get('name')
@@ -37,9 +35,9 @@ def create():
     return redirect(url_for('tables.index'))
 
 @tables_bp.route('/<int:id>/delete', methods=['POST'])
-@login_required
-@active_required
-@feature_required('has_table_qr')
+@require_auth
+@require_active
+@require_feature('has_table_qr')
 def delete(id):
     restaurant = get_current_restaurant()
     table = TableService.get_table(restaurant.id, id)
@@ -51,8 +49,8 @@ def delete(id):
     return redirect(url_for('tables.index'))
 
 @tables_bp.route('/<int:id>/qr')
-@login_required
-@active_required
+@require_auth
+@require_active
 def qr(id):
     """
     Vista previa del QR de la mesa.
@@ -77,8 +75,8 @@ def qr(id):
                          has_qr_access=has_table_qr_access)
 
 @tables_bp.route('/<int:id>/qr/image')
-@login_required
-@active_required
+@require_auth
+@require_active
 def qr_image(id):
     """
     Genera la imagen del QR para ser mostrada en la etiqueta <img>.
@@ -91,21 +89,13 @@ def qr_image(id):
     has_access = check_feature_access(restaurant, 'has_table_qr')
     base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
     menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
-    qr = qrcode.QRCode(version=1, box_size=10, border=4)
-    qr.add_data(menu_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-    if not has_access:
-        img = img.filter(ImageFilter.GaussianBlur(radius=8))
-    buffer = BytesIO()
-    img.save(buffer, 'PNG')
-    buffer.seek(0)
+    buffer = QRService.generate_table_qr(menu_url, apply_blur=not has_access)
     return send_file(buffer, mimetype='image/png')
 
 @tables_bp.route('/<int:id>/qr/download')
-@login_required
-@active_required
-@feature_required('has_table_qr')
+@require_auth
+@require_active
+@require_feature('has_table_qr')
 def download_qr(id):
     """
     Descarga el QR de la mesa como archivo.
@@ -117,13 +107,7 @@ def download_qr(id):
         abort(404)
     base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
     menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(menu_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buffer = BytesIO()
-    img.save(buffer, 'PNG')
-    buffer.seek(0)
+    buffer = QRService.generate_table_qr(menu_url)
     safe_name = unicodedata.normalize('NFKD', table.name)
     safe_name = safe_name.encode('ascii', 'ignore').decode('ascii')
     safe_name = re.sub(r'[^\w\s-]', '', safe_name).strip()
