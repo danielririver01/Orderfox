@@ -1,0 +1,31 @@
+---
+export interface Props {
+  id?: string;
+}
+
+const { id = 'toast-container' } = Astro.props;
+---
+
+<div id={id} class="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 flex-col gap-2"></div>
+
+<script>
+  const container = document.getElementById('toast-container');
+
+  (window as any).showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    if (!container) return;
+    const colors = {
+      success: 'bg-green-600 text-white',
+      error: 'bg-red-600 text-white',
+      info: 'bg-gray-800 text-white',
+    };
+    const toast = document.createElement('div');
+    toast.className = `rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ${colors[type]}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  };
+</script>

@@ -4,276 +4,478 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Planes de Suscripción</title>
-    <link rel="icon" href="{{ url_for('static', filename='img/Zorro.png') }}" type="image/png">
+    <title>Velzia · Planes de Suscripción</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
-
-    <!-- Tailwind Configuration (DEBE IR ANTES del CDN) -->
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        :root {
+            --primary: #f97316;
+            --primary-hover: #ea6c0a;
+            --gold: #fbbf24;
+            --bg: #111111;
+            --card: rgba(24, 20, 15, 0.82);
+            --card-border: rgba(255,255,255,0.07);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f0ebe4;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient ── */
+        .plans-ambient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .plans-orb {
+            position: absolute;
+            border-radius: 9999px;
+            animation: orbFloat 18s ease-in-out infinite;
+        }
+        .plans-orb--1 {
+            width: 50rem; height: 50rem;
+            top: -20rem; left: -10rem;
+            background: radial-gradient(circle, rgba(249,115,22,0.18), transparent 65%);
+            filter: blur(80px);
+        }
+        .plans-orb--2 {
+            width: 40rem; height: 40rem;
+            bottom: -18rem; right: -8rem;
+            background: radial-gradient(circle, rgba(251,191,36,0.14), transparent 65%);
+            filter: blur(80px);
+            animation-delay: -8s;
+        }
+        .plans-orb--3 {
+            width: 28rem; height: 28rem;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(234,88,12,0.10), transparent 65%);
+            filter: blur(70px);
+            animation-delay: -14s;
+        }
+        @keyframes orbFloat {
+            0%,100% { transform: translateY(0) scale(1); }
+            50%      { transform: translateY(-30px) scale(1.04); }
+        }
+
+        /* ── Plan card ── */
+        .plan-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            padding: 2rem 1.75rem;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+            position: relative;
+        }
+        .plan-card:hover {
+            border-color: rgba(249,115,22,0.25);
+            box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7), 0 0 40px -20px rgba(249,115,22,0.2);
+        }
+
+        /* Featured card */
+        .plan-card--featured {
+            border-color: rgba(249,115,22,0.55);
+            box-shadow: 0 0 0 1px rgba(249,115,22,0.3) inset,
+                        0 32px 72px -20px rgba(0,0,0,0.8),
+                        0 0 60px -20px rgba(249,115,22,0.35);
+            transform: translateY(-10px) scale(1.025);
+            z-index: 2;
+        }
+        .plan-card--featured:hover {
+            border-color: rgba(249,115,22,0.75);
+            transform: translateY(-12px) scale(1.03);
+        }
+
+        /* Badge Más Popular */
+        .popular-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #f97316, #fbbf24);
+            color: #111;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.35rem 1.1rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+            box-shadow: 0 6px 20px -6px rgba(249,115,22,0.7);
+        }
+
+        /* Price */
+        .plan-price {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #f5f0eb;
+            line-height: 1;
+        }
+        .plan-price--zero {
+            background: linear-gradient(90deg, #f97316, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Feature list */
+        .plan-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            font-size: 0.82rem;
+            color: #a09488;
+            line-height: 1.4;
+        }
+        .plan-feature strong { color: #e8e0d8; }
+        .plan-feature .material-symbols-outlined { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+        /* Divider */
+        .plan-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 1rem 0; }
+
+        /* Buttons */
+        .btn-primary {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.875rem 1rem;
+            border-radius: 0.875rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            background: linear-gradient(135deg, #f97316, #ea6c0a);
+            color: white;
+            box-shadow: 0 10px 28px -10px rgba(249,115,22,0.65);
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            box-shadow: 0 14px 32px -10px rgba(249,115,22,0.8);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.875rem 1rem;
+            border-radius: 0.875rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #c8bfb5;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.09);
+            border-color: rgba(249,115,22,0.3);
+            color: #f5f0eb;
+        }
+
+        .btn-disabled {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.875rem 1rem;
+            border-radius: 0.875rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            background: rgba(255,255,255,0.04);
+            color: #4b4440;
+            cursor: not-allowed;
+        }
+
+        /* Tag "Sin compromiso" */
+        .plan-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .plan-tag--free {
+            background: rgba(249,115,22,0.12);
+            color: #f97316;
+            border: 1px solid rgba(249,115,22,0.25);
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b6058;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--primary); }
+        .back-link .material-symbols-outlined { font-size: 1.1rem; transition: transform 0.2s; }
+        .back-link:hover .material-symbols-outlined { transform: translateX(-3px); }
+    </style>
 </head>
 
-<body class="bg-[#0a0a0a] font-display antialiased min-h-screen py-10 px-4">
+<body>
 
-    <main class="max-w-6xl mx-auto">
+    <!-- Ambient -->
+    <div class="plans-ambient">
+        <div class="plans-orb plans-orb--1"></div>
+        <div class="plans-orb plans-orb--2"></div>
+        <div class="plans-orb plans-orb--3"></div>
+    </div>
 
-        <!-- Header -->
-        <div class="mb-12">
-            <div class="flex justify-between items-center mb-8">
-                {% if 'user_id' in session %}
-                <a href="{{ url_for('dashboard.index') }}"
-                    class="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors group">
-                    <span
-                        class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                    Volver al Dashboard
-                </a>
-                {% else %}
-                <a href="{{ url_for('auth.login') }}"
-                    class="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors group">
-                    <span
-                        class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                    Volver
-                </a>
-                {% endif %}
+    <main style="position:relative; z-index:1; max-width:72rem; margin:0 auto; padding:3rem 1.5rem 5rem;">
 
-                {% if 'user_id' in session %}
-                <a href="{{ url_for('auth.logout') }}"
-                    class="text-xs font-bold text-red-400 hover:text-red-500 transition-colors flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[16px]">logout</span>
-                    Salir
-                </a>
-                {% endif %}
-            </div>
+        <!-- Top nav -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3.5rem;">
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('dashboard.index') }}" class="back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Volver al Dashboard
+            </a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Volver
+            </a>
+            {% endif %}
 
-            <div class="text-center">
-                <h1
-                    class="text-4xl md:text-5xl font-extrabold text-[#1c110d] dark:text-white tracking-tight mb-4 leading-tight">
-                    Elige el plan que impulsará <br class="hidden md:block"> tu negocio gastronómico
-                </h1>
-                <p class="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-                    Soluciones reales, sin letras pequeñas. Escala tu restaurante a tu propio ritmo.
-                </p>
-            </div>
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('auth.logout') }}"
+                style="font-size:0.75rem; font-weight:700; color:#e07070; text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                <span class="material-symbols-outlined" style="font-size:1rem;">logout</span>
+                Salir
+            </a>
+            {% endif %}
         </div>
 
+        <!-- Header -->
+        <div style="text-align:center; margin-bottom:4rem;">
+            <!-- Robot icon -->
+            <div style="display:inline-flex; align-items:center; justify-content:center; width:3.5rem; height:3.5rem; border-radius:1.2rem; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); margin-bottom:1.5rem;">
+                <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia"
+                    style="width:2.4rem; height:2.4rem; object-fit:contain; filter:drop-shadow(0 0 8px rgba(249,115,22,0.4));">
+            </div>
 
-        <!-- Cards Grid -->
-        <div class="grid grid-cols-1 {% if session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial' %}md:grid-cols-3{% else %}md:grid-cols-4{% endif %} gap-6 items-stretch">
+            <h1 style="font-size:clamp(2rem,5vw,3.2rem); font-weight:800; letter-spacing:-0.03em; line-height:1.1; margin:0 0 1rem; color:#f5f0eb;">
+                Elige el plan que impulsará<br>
+                <span style="background:linear-gradient(90deg,#f97316,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+                    tu negocio gastronómico
+                </span>
+            </h1>
+            <p style="font-size:1rem; color:#7a6f67; max-width:32rem; margin:0 auto;">
+                Soluciones reales, sin letras pequeñas. Escala tu restaurante a tu propio ritmo.
+            </p>
+        </div>
 
-            {% if not (session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial')
-            %}
-            <!-- Plan Prueba - Diseño Profesional -->
-            <div
-                class="bg-white dark:bg-[#141414] rounded-3xl p-8 shadow-sm border border-gray-200 dark:border-[#262626] flex flex-col hover:border-gray-300 dark:hover:border-[#404040] transition-all duration-300 relative group">
-                <div
-                    class="absolute top-4 right-4 bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                    Sin compromiso
+        <!-- Cards grid -->
+        <div class="{% if session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial' %}grid-3{% else %}grid-4{% endif %}"
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; align-items:center;">
+
+            <!-- ── Plan Trial ── -->
+            {% if not (session.get('user_id') and sub_status and not sub_status.active and sub_status.plan == 'trial') %}
+            <div class="plan-card">
+                <div style="margin-bottom:1.25rem;">
+                    <span class="plan-tag plan-tag--free">
+                        <span class="material-symbols-outlined" style="font-size:0.8rem;">rocket_launch</span>
+                        Sin compromiso
+                    </span>
                 </div>
-                <div class="mb-6 mt-2">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Empieza hoy · 10 días incluidos
-                    </h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Prueba todas las funciones sin tarjeta.</p>
-                    <div class="flex flex-col">
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-5xl font-extrabold text-[#1c110d] dark:text-white">$0</span>
-                        </div>
-                        <span class="text-[11px] font-bold text-indigo-500 mt-1 uppercase tracking-tight">Luego $50.000
-                            / mes</span>
+
+                <div style="margin-bottom:1.5rem;">
+                    <h2 style="font-size:1.05rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Empieza hoy</h2>
+                    <p style="font-size:0.78rem; color:#6b6058; margin:0 0 1rem;">10 días incluidos, prueba todo sin tarjeta.</p>
+                    <div style="display:flex; align-items:baseline; gap:0.25rem;">
+                        <span class="plan-price plan-price--zero">$0</span>
                     </div>
+                    <p style="font-size:0.68rem; font-weight:700; color:#9a5a30; margin:0.4rem 0 0; text-transform:uppercase; letter-spacing:0.06em;">
+                        Luego $50.000/mes
+                    </p>
                 </div>
 
-                <div class="space-y-3 mb-8 flex-1 border-t border-gray-100 dark:border-[#262626] pt-6">
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-gray-400 text-[18px]">check_circle</span>
-                            <span class="font-medium text-gray-900 dark:text-white">Mesas digitales con QR
-                                inteligente</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-indigo-500 text-[18px]">check_circle</span>
-                            <span>Control Operativo Total</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-purple-500 text-[18px]">auto_awesome</span>
-                            <span class="font-bold text-gray-900 dark:text-white">10 Tokens IA incluídos gratis</span>
-                        </li>
-                    </ul>
-                </div>
+                <div class="plan-divider"></div>
+
+                <ul style="list-style:none; padding:0; margin:1rem 0 1.5rem; display:flex; flex-direction:column; gap:0.75rem; flex:1;">
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#9a9088;">check_circle</span>
+                        Mesas digitales con QR inteligente
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#f97316;">check_circle</span>
+                        Control Operativo Total
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
+                        <strong>10 Tokens IA incluidos</strong>
+                    </li>
+                </ul>
 
                 {% if 'user_id' in session %}
-                <button disabled
-                    class="w-full py-3 text-center rounded-xl bg-gray-50 dark:bg-[#262626] text-gray-400 dark:text-gray-500 font-bold cursor-not-allowed text-sm">
-                    Solo nuevos usuarios
-                </button>
+                <span class="btn-disabled">Solo nuevos usuarios</span>
                 {% else %}
-                <a href="{{ url_for('auth.register', plan='trial') }}"
-                    class="w-full py-4 text-center rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none active:scale-[0.98] text-sm">
+                <a href="{{ url_for('auth.register', plan='trial') }}" class="btn-primary">
                     Comenzar prueba gratis
                 </a>
                 {% endif %}
             </div>
             {% endif %}
 
-            <!-- Plan Emprendedor -->
-            <div
-                class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#262626] flex flex-col hover:shadow-xl transition-shadow duration-300">
-                <div class="mb-8">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Emprendedor</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Ideal para empezar a vender por delivery
-                        hoy mismo.</p>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$30.000</span>
-                        <span class="text-gray-500 font-medium">/mes</span>
+            <!-- ── Plan Emprendedor ── -->
+            <div class="plan-card">
+                <div style="margin-bottom:1.5rem;">
+                    <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Emprendedor</h2>
+                    <p style="font-size:0.78rem; color:#6b6058; margin:0 0 1rem;">Ideal para empezar a vender por delivery hoy mismo.</p>
+                    <div style="display:flex; align-items:baseline; gap:0.25rem;">
+                        <span class="plan-price">$30.000</span>
+                        <span style="font-size:0.82rem; color:#6b6058; font-weight:500;">/mes</span>
                     </div>
                 </div>
 
-                <div class="space-y-4 mb-10 flex-1">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo que obtienes:</p>
-                    <ul class="space-y-4">
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
-                            <span>Menú Digital (Link compartible)</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
-                            <span>Pedidos ilimitados a WhatsApp</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-green-500 text-[20px]">qr_code_2</span>
-                            <span>Menú Digital Inteligente</span>
-                        </li>
-                        <li
-                            class="flex items-start gap-3 text-gray-600 dark:text-gray-300 border-t border-orange-50 dark:border-white/5 pt-3">
-                            <span class="material-symbols-outlined text-purple-500 text-[20px]">auto_awesome</span>
-                            <span class="font-bold text-gray-900 dark:text-white">25 Tokens IA Mensuales</span>
-                        </li>
-                    </ul>
-                </div>
+                <div class="plan-divider"></div>
+
+                <p style="font-size:0.65rem; font-weight:700; color:#6b6058; text-transform:uppercase; letter-spacing:0.1em; margin:1rem 0 0.75rem;">Lo que obtienes:</p>
+                <ul style="list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:0.75rem; flex:1;">
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#22c55e;">check_circle</span>
+                        Menú Digital (Link compartible)
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#22c55e;">check_circle</span>
+                        Pedidos ilimitados a WhatsApp
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#22c55e;">qr_code_2</span>
+                        Menú Digital Inteligente
+                    </li>
+                    <li class="plan-feature" style="padding-top:0.75rem; border-top:1px solid rgba(255,255,255,0.05);">
+                        <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
+                        <strong>25 Tokens IA Mensuales</strong>
+                    </li>
+                </ul>
 
                 {% if 'user_id' in session %}
-                <a href="{{ url_for('auth.renew', plan='emprendedor') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#262626] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition-colors border border-gray-100 dark:border-transparent">
+                <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="btn-secondary">
                     Elegir Emprendedor
                 </a>
                 {% else %}
-                <a href="{{ url_for('auth.register', plan='emprendedor') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-gray-50 dark:bg-[#262626] text-[#1c110d] dark:text-white font-bold hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition-colors border border-gray-100 dark:border-transparent">
+                <a href="{{ url_for('auth.register', plan='emprendedor') }}" class="btn-secondary">
                     Iniciar hoy
                 </a>
                 {% endif %}
             </div>
 
-            <!-- Plan Crecimiento - EL MÁS VENDIDO -->
-            <div
-                class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-2xl border-4 border-[#f2460d] relative flex flex-col transform md:-translate-y-4 scale-105 z-20 transition-all duration-300 group">
-                <div
-                    class="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#f2460d] text-white text-[11px] font-bold px-8 py-2.5 rounded-full uppercase tracking-widest shadow-lg">
-                    Más Popular
-                </div>
+            <!-- ── Plan Crecimiento (FEATURED) ── -->
+            <div class="plan-card plan-card--featured">
+                <div class="popular-badge">⭐ Más Popular</div>
 
-                <div class="mb-8">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Crecimiento</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Para locales físicos que quieren tráfico
-                        desde las mesas.</p>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$40.000</span>
-                        <span class="text-gray-500 font-medium">/mes</span>
+                <div style="margin-bottom:1.5rem; margin-top:0.5rem;">
+                    <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Crecimiento</h2>
+                    <p style="font-size:0.78rem; color:#9a9088; margin:0 0 1rem;">Para locales físicos que quieren tráfico desde las mesas.</p>
+                    <div style="display:flex; align-items:baseline; gap:0.25rem;">
+                        <span class="plan-price" style="background:linear-gradient(90deg,#f97316,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">$40.000</span>
+                        <span style="font-size:0.82rem; color:#6b6058; font-weight:500;">/mes</span>
                     </div>
                 </div>
 
-                <div class="space-y-4 mb-10 flex-1">
-                    <p
-                        class="text-xs font-bold text-gray-400 uppercase tracking-widest text-[#1c110d] dark:text-white opacity-60">
-                        Lo de Emprendedor más:</p>
-                    <ul class="space-y-4">
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-[#f2460d] text-[22px]">qr_code_scanner</span>
-                            <span class="font-bold text-[#1c110d] dark:text-white">Mesas digitales con QR
-                                inteligente</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span
-                                class="material-symbols-outlined text-[#f2460d] text-[22px]">format_list_bulleted</span>
-                            <span>Catálogo: 100 Productos Activos</span>
-                        </li>
-                        <li
-                            class="flex items-start gap-3 text-gray-600 dark:text-gray-300 border-t border-orange-500/20 pt-3">
-                            <span class="material-symbols-outlined text-purple-500 text-[22px]">auto_awesome</span>
-                            <span class="font-bold text-[#1c110d] dark:text-white">40 Tokens IA Mensuales</span>
-                        </li>
-                    </ul>
-                </div>
+                <div class="plan-divider"></div>
+
+                <p style="font-size:0.65rem; font-weight:700; color:#9a7060; text-transform:uppercase; letter-spacing:0.1em; margin:1rem 0 0.75rem;">Lo de Emprendedor +</p>
+                <ul style="list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:0.75rem; flex:1;">
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#f97316;">qr_code_scanner</span>
+                        <strong>Mesas digitales con QR inteligente</strong>
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#f97316;">format_list_bulleted</span>
+                        Catálogo: 100 Productos Activos
+                    </li>
+                    <li class="plan-feature" style="padding-top:0.75rem; border-top:1px solid rgba(249,115,22,0.15);">
+                        <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
+                        <strong>40 Tokens IA Mensuales</strong>
+                    </li>
+                </ul>
 
                 {% if 'user_id' in session %}
-                <a href="{{ url_for('auth.renew', plan='crecimiento') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
+                <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="btn-primary">
                     Elegir Crecimiento
                 </a>
                 {% else %}
-                <a href="{{ url_for('auth.register', plan='crecimiento') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-[#f2460d] text-white font-bold hover:bg-[#d63a0a] shadow-lg shadow-orange-300/40 transition-all active:scale-[0.98]">
+                <a href="{{ url_for('auth.register', plan='crecimiento') }}" class="btn-primary">
                     Elegir Crecimiento
                 </a>
                 {% endif %}
             </div>
 
-            <!-- Plan Élite -->
-            <div
-                class="bg-white dark:bg-[#141414] rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-[#262626] flex flex-col hover:shadow-xl transition-shadow duration-300">
-                <div class="mb-8">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Élite</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Menús complejos y alta personalización
-                        operativa.</p>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-4xl font-extrabold text-[#1c110d] dark:text-white">$50.000</span>
-                        <span class="text-gray-500 font-medium">/mes</span>
+            <!-- ── Plan Élite ── -->
+            <div class="plan-card">
+                <div style="margin-bottom:1.5rem;">
+                    <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Élite</h2>
+                    <p style="font-size:0.78rem; color:#6b6058; margin:0 0 1rem;">Menús complejos y alta personalización operativa.</p>
+                    <div style="display:flex; align-items:baseline; gap:0.25rem;">
+                        <span class="plan-price">$50.000</span>
+                        <span style="font-size:0.82rem; color:#6b6058; font-weight:500;">/mes</span>
                     </div>
                 </div>
 
-                <div class="space-y-4 mb-10 flex-1">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Lo de Crecimiento más:</p>
-                    <ul class="space-y-4">
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-purple-500 text-[20px]">add_task</span>
-                            <span class="font-bold text-purple-600 dark:text-purple-400">Personalización Avanzada de
-                                Menú</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-purple-500 text-[20px]">all_out</span>
-                            <span>Catálogo e Inventario Ilimitado</span>
-                        </li>
-                        <li class="flex items-start gap-3 text-gray-600 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-purple-500 text-[20px]">qr_code_scanner</span>
-                            <span class="font-bold text-purple-600 dark:text-purple-400">Mesas digitales con QR
-                                inteligente</span>
-                        </li>
-                        <li
-                            class="flex items-start gap-3 text-gray-600 dark:text-gray-300 border-t border-purple-500/20 pt-3">
-                            <span class="material-symbols-outlined text-purple-500 text-[20px]">auto_awesome</span>
-                            <span class="font-bold text-purple-600 dark:text-purple-400 uppercase tracking-tight">3000
-                                Tokens IA</span>
-                        </li>
-                    </ul>
-                </div>
+                <div class="plan-divider"></div>
+
+                <p style="font-size:0.65rem; font-weight:700; color:#6b6058; text-transform:uppercase; letter-spacing:0.1em; margin:1rem 0 0.75rem;">Lo de Crecimiento +</p>
+                <ul style="list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:0.75rem; flex:1;">
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#a78bfa;">add_task</span>
+                        <strong style="color:#c4b5fd;">Personalización Avanzada de Menú</strong>
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#a78bfa;">all_out</span>
+                        Catálogo e Inventario Ilimitado
+                    </li>
+                    <li class="plan-feature">
+                        <span class="material-symbols-outlined" style="color:#a78bfa;">qr_code_scanner</span>
+                        <strong style="color:#c4b5fd;">Mesas digitales con QR inteligente</strong>
+                    </li>
+                    <li class="plan-feature" style="padding-top:0.75rem; border-top:1px solid rgba(167,139,250,0.15);">
+                        <span class="material-symbols-outlined" style="color:#a78bfa;">auto_awesome</span>
+                        <strong style="color:#c4b5fd; text-transform:uppercase; letter-spacing:0.04em;">3000 Tokens IA</strong>
+                    </li>
+                </ul>
 
                 {% if 'user_id' in session %}
-                <a href="{{ url_for('auth.renew', plan='elite') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-[#0a0a0a] text-white font-bold hover:bg-black transition-colors">
+                <a href="{{ url_for('auth.renew', plan='elite') }}" class="btn-secondary">
                     Elegir Élite
                 </a>
                 {% else %}
-                <a href="{{ url_for('auth.register', plan='elite') }}"
-                    class="w-full py-4 text-center rounded-2xl bg-[#0a0a0a] text-white font-bold hover:bg-black transition-colors">
+                <a href="{{ url_for('auth.register', plan='elite') }}" class="btn-secondary">
                     Obtener Plan Élite
                 </a>
                 {% endif %}
@@ -281,9 +483,9 @@
 
         </div>
 
-        <!-- Footer Note -->
-        <div class="mt-20 text-center">
-            <p class="text-gray-400 text-sm italic">
+        <!-- Footer note -->
+        <div style="margin-top:4rem; text-align:center;">
+            <p style="font-size:0.78rem; color:#4b4440; font-style:italic;">
                 * Precios en Pesos Colombianos (COP). Activación inmediata tras confirmación.
             </p>
         </div>

@@ -61,12 +61,21 @@ def create_app():
 
     csrf.init_app(app)
     
-    # Habilitar CORS para permitir peticiones desde Scanner IA (Next.js/Node)
+    # Habilitar CORS para peticiones desde Astro (frontend moderno) y Scanner IA
     CORS(app, resources={
         r"/api/*": {
             "origins": [
                 "http://localhost:3000",
+                "http://localhost:4321",
                 "http://localhost:5173",
+                app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),
+            ],
+            "supports_credentials": True
+        },
+        r"/menu/api/*": {
+            "origins": [
+                "http://localhost:4321",
+                "http://localhost:3000",
                 app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),
             ],
             "supports_credentials": True
@@ -95,7 +104,6 @@ def create_app():
     from .routes.products import products_bp
     from .routes.orders import orders_bp
     from .routes.public import public_bp
-    from .routes.menu import menu_bp
     from .routes.tables import tables_bp
     from .routes.api_auth import api_auth_bp
     from .routes.api_dashboard import api_dashboard_bp
@@ -111,7 +119,6 @@ def create_app():
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(public_bp)
-    app.register_blueprint(menu_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(tokens_bp)
     app.register_blueprint(api_docs_bp)

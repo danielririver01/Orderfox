@@ -48,7 +48,7 @@
               
               <!-- Botón Unificado (La lógica de si es móvil o desktop se hace en JS para evitar fallos de CSS) -->
               <button 
-                onclick="handleQRClick(event, '{{ table.id }}', '{{ table.name }}', '{{ url_for('tables.qr_image', id=table.id) }}', '{{ request.host_url.rstrip('/') }}{{ url_for('public.menu', slug=table.restaurant.slug, table=table.id) }}', '{{ url_for('tables.download_qr', id=table.id) }}', '{{ url_for('tables.qr', id=table.id) }}')"
+                onclick="handleQRClick(event, '{{ table.id }}', '{{ table.name }}', '{{ url_for('tables.qr_image', id=table.id) }}', '{{ astro_base_url }}/{{ table.restaurant.slug }}/?table={{ table.id }}', '{{ url_for('tables.download_qr', id=table.id) }}', '{{ url_for('tables.qr', id=table.id) }}')"
                 class="flex-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] dark:hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-3 px-4 rounded-xl text-center shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest hover:text-[#f2460d]"
               >
                 <span class="material-symbols-outlined text-[18px]">qr_code_2</span>

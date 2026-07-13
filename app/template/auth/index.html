@@ -1,144 +1,117 @@
 <!DOCTYPE html>
-<html class="dark">
+<html lang="es">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Velzia - Admin Dashboard</title>
+    <title>Velzia · Inicia sesión</title>
 
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="icon" href="{{ url_for('static', filename='img/Zorro.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
 
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap"
+        rel="stylesheet" />
 
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class'
+            darkMode: 'media'
         }
     </script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
 </head>
 
-<body class="bg-[#0a0a0a] antialiased">
+<body class="antialiased">
+
+    <!-- Ambient orbs -->
+    <div class="auth-ambient">
+        <div class="auth-orb auth-orb--1"></div>
+        <div class="auth-orb auth-orb--2"></div>
+        <div class="auth-orb auth-orb--3"></div>
+    </div>
 
     <div class="auth-split-screen">
 
-        <!-- LEFT PANEL - Branding (Desktop only) -->
-        <div class="auth-brand-panel">
-            <!-- Floating Particles -->
-            <div class="auth-particle"></div>
-            <div class="auth-particle"></div>
-            <div class="auth-particle"></div>
+        <!-- LEFT — Robot chef hero with light trails -->
+        <div class="auth-hero">
 
-            <div class="auth-brand-content">
-                <!-- Logo -->
-                <div class="auth-brand-logo">
-                    <span class="material-symbols-outlined">lunch_dining</span>
-                </div>
+            <!-- Animated SVG light trails (similar to Stitch design) -->
+            <svg class="auth-light-trails" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice"
+                xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="trailGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#f97316;stop-opacity:0" />
+                        <stop offset="40%" style="stop-color:#f97316;stop-opacity:1" />
+                        <stop offset="70%" style="stop-color:#fbbf24;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:0" />
+                    </linearGradient>
+                    <linearGradient id="trailGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:0" />
+                        <stop offset="35%" style="stop-color:#fbbf24;stop-opacity:0.8" />
+                        <stop offset="65%" style="stop-color:#f97316;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#f97316;stop-opacity:0" />
+                    </linearGradient>
+                </defs>
+                <!-- Upper swooping trail -->
+                <path class="auth-trail auth-trail--1"
+                    d="M -300 220 C -100 120, 150 50, 350 180 C 550 310, 700 200, 900 100" />
+                <!-- Lower swooping trail -->
+                <path class="auth-trail auth-trail--2"
+                    d="M -300 580 C -50 680, 150 500, 350 550 C 550 600, 700 450, 900 520" />
+                <!-- Middle subtle trail -->
+                <path class="auth-trail auth-trail--3"
+                    d="M -200 400 C 50 300, 250 380, 400 300 C 550 220, 700 300, 900 200" />
+            </svg>
 
-                <!-- Title -->
-                <h1 class="auth-brand-title">Velzia</h1>
-                <p class="auth-brand-subtitle">
-                    Administra tu restaurante, pedidos y menú digital desde un solo lugar.
-                </p>
-
-                <!-- Mock Dashboard Cards -->
-                <div class="auth-mock-cards">
-                    <!-- Revenue Card -->
-                    <div class="auth-mock-card">
-                        <div class="auth-mock-card-header">
-                            <span class="auth-mock-card-title">Ingresos Hoy</span>
-                            <span class="auth-mock-card-badge">+12%</span>
-                        </div>
-                        <div class="auth-mock-card-value">$2.450.000</div>
-                        <div class="auth-mock-card-change">
-                            <span class="material-symbols-outlined text-[14px]">trending_up</span>
-                            vs. ayer
-                        </div>
-                    </div>
-
-                    <!-- Orders Card -->
-                    <div class="auth-mock-card">
-                        <div class="auth-mock-card-header">
-                            <span class="auth-mock-card-title">Pedidos Activos</span>
-                            <span class="auth-mock-card-badge">En vivo</span>
-                        </div>
-                        <div class="auth-mock-card-value">24</div>
-                        <!-- Bar Chart -->
-                        <div class="auth-mock-chart">
-                            <div class="auth-mock-bar" style="height: 40%"></div>
-                            <div class="auth-mock-bar" style="height: 65%"></div>
-                            <div class="auth-mock-bar" style="height: 45%"></div>
-                            <div class="auth-mock-bar" style="height: 80%"></div>
-                            <div class="auth-mock-bar" style="height: 55%"></div>
-                            <div class="auth-mock-bar" style="height: 90%"></div>
-                            <div class="auth-mock-bar" style="height: 70%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Status Card -->
-                    <div class="auth-mock-card">
-                        <div class="auth-mock-card-header">
-                            <span class="auth-mock-card-title">Estado del Menú</span>
-                            <span class="auth-mock-card-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Activo</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
-                            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(249, 115, 22, 0.15); display: flex; align-items: center; justify-content: center;">
-                                <span class="material-symbols-outlined text-[20px]" style="color: #f97316;">qr_code_2</span>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.75rem; font-weight: 700; color: white;">12 mesas digitales</div>
-                                <div style="font-size: 0.625rem; color: rgba(255,255,255,0.3);">QR activos</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Robot mascot -->
+            <div class="auth-hero-robot">
+                <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia Robot Chef"
+                    loading="eager">
             </div>
+
+
         </div>
 
-        <!-- RIGHT PANEL - Login Form -->
+        <!-- RIGHT — Dark glassmorphism login -->
         <div class="auth-form-panel">
             <main class="w-full max-w-[420px] mx-auto">
 
                 <div class="auth-card">
-
                     <div class="auth-card-content">
 
                         <!-- Icon (Mobile only) -->
                         <div class="auth-card-icon md:hidden">
-<img src="{{ url_for('static', filename='img/Zorro.png') }}" alt="Orderfox" class="w-12 h-12">
+                            <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia"
+                                class="w-7 h-7">
                         </div>
 
-                        <!-- Title (Mobile only - desktop shows it on left panel) -->
-                        <div class="text-center mb-2 md:hidden">
-                            <h1 class="text-white text-2xl font-black tracking-tighter uppercase"
-                                style="font-family: 'Outfit', sans-serif;">
-                                Velzia
-                            </h1>
-                        </div>
+                        <h1 class="auth-card-title hidden md:block">
+                            Bienvenido a <em>Velzia</em>
+                        </h1>
+                        <p class="auth-card-sub hidden md:block">Tu asistente para gestionar el restaurante</p>
 
                         {% if get_flashed_messages() %}
-                        <div class="max-w-md mx-auto px-2 pt-4">
+                        <div class="max-w-md mx-auto px-2 pt-2 pb-2">
                             {% include 'components/flash_messages.html' %}
                         </div>
                         {% endif %}
 
-                        <!-- Clerk SignIn -->
+                        <!-- Clerk SignIn mounts here -->
                         <div id="clerk-signin" class="w-full min-h-[300px] flex justify-center"></div>
 
-                        <!-- Links -->
+                        <!-- Plans link -->
                         <div class="mt-6 w-full flex flex-col items-center gap-4">
                             <a href="{{ url_for('auth.plans') }}"
-                                class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-[#f2460d] transition-all duration-300 flex items-center gap-2 group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-[#f2460d] transition-colors"></span>
+                                class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-orange-400 transition-all duration-300 flex items-center gap-2 group">
+                                <span class="auth-brand-dot group-hover:bg-orange-400 transition-colors"></span>
                                 Ver planes y precios
                             </a>
-
                         </div>
                     </div>
 
@@ -147,16 +120,16 @@
                         <span>© 2026 Velzia</span>
                         <span class="flex items-center gap-1">
                             <span class="material-symbols-outlined text-[14px]">lock</span>
-                            Seguro
+                            Conexión segura
                         </span>
                     </div>
                 </div>
 
-                <!-- Bottom Links -->
-                <div class="mt-8 flex justify-center gap-6 text-sm text-gray-500 font-medium">
-                    <a class="hover:text-[#f2460d] transition-colors"
+                <!-- Bottom links -->
+                <div class="mt-8 flex justify-center gap-6 text-sm text-gray-600 font-medium">
+                    <a class="auth-link-soft transition-colors"
                         href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
-                    <a class="hover:text-[#f2460d] transition-colors" href="{{ url_for('auth.legal') }}">Legal</a>
+                    <a class="auth-link-soft transition-colors" href="{{ url_for('auth.legal') }}">Legal</a>
                 </div>
 
             </main>
@@ -165,23 +138,20 @@
     </div>
 
     <style>
-        /* Fix: inputs OTP de Clerk en dark mode */
+        /* ——— Clerk dark theme overrides ——— */
+
+        /* OTP inputs */
         .cl-otpCodeFieldInput {
-            color: #ffffff !important;
-            background-color: #1a1a1a !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
-            caret-color: #f2460d !important;
+            color: #f5f0eb !important;
+            background-color: rgba(40, 34, 28, 0.9) !important;
+            border-color: rgba(249, 115, 22, 0.25) !important;
+            caret-color: #f97316 !important;
         }
 
-        /* Autocomplete colors */
+        /* Autocomplete */
         :root {
-            --autofill-bg: #0a0a0a;
-            --autofill-text: #ffffff;
-        }
-
-        .dark {
-            --autofill-bg: #0a0a0a;
-            --autofill-text: #ffffff;
+            --autofill-bg: #1c1814;
+            --autofill-text: #f5f0eb;
         }
 
         input:-webkit-autofill,
@@ -229,7 +199,7 @@
                         signIn: {
                             start: {
                                 title: 'Velzia',
-                                subtitle: 'Dashboard Administrativo',
+                                subtitle: 'Tu asistente para gestionar el restaurante',
                                 actionText: '¿No tienes suscripción?',
                                 actionLink: 'Ver planes'
                             }
@@ -241,15 +211,15 @@
                     }
                 });
 
-                // Silent Sync
+                // Silent Sync — if user already has a Clerk session, sync and redirect
                 const hasFlashMessages = document.querySelector('.flash-message') !== null;
                 if (window.Clerk.user && !hasFlashMessages) {
                     const signInDiv = document.getElementById('clerk-signin');
 
                     signInDiv.innerHTML = `
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div class="h-10 w-10 border-4 border-[#f2460d] border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p class="text-xs font-black text-gray-500 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
+                            <div class="auth-spinner mb-4"></div>
+                            <p class="text-xs font-black text-orange-400/70 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
                         </div>
                     `;
 
@@ -274,14 +244,14 @@
                                 const signInDiv = document.getElementById('clerk-signin');
                                 signInDiv.innerHTML = `
                                     <div class="flex flex-col items-center justify-center py-12 px-6">
-                                        <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-                                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-green-500/30">
+                                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </div>
-                                        <p class="text-sm font-bold text-green-500 text-center mb-2">¡Bienvenido!</p>
-                                        <p class="text-xs text-gray-600 text-center mb-4">Tu plan trial (10 días) está activado con 10 tokens IA</p>
-                                        <p class="text-xs text-gray-500 text-center">Redirigiendo...</p>
+                                        <p class="text-sm font-bold text-green-400 text-center mb-2">¡Bienvenido!</p>
+                                        <p class="text-xs text-gray-500 text-center mb-4">Tu plan trial (10 días) está activado con 10 tokens IA</p>
+                                        <p class="text-xs text-gray-600 text-center">Redirigiendo...</p>
                                     </div>
                                 `;
                                 setTimeout(() => {
@@ -296,13 +266,13 @@
                             const signInDiv = document.getElementById('clerk-signin');
                             signInDiv.innerHTML = `
                                 <div class="flex flex-col items-center justify-center py-12 px-6">
-                                    <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
-                                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/30">
+                                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </div>
-                                    <p class="text-sm font-bold text-red-500 text-center mb-4">${message}</p>
-                                    <button onclick="window.location.reload()" class="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm">
+                                    <p class="text-sm font-bold text-red-400 text-center mb-4">${message}</p>
+                                    <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
                                         Intentar de nuevo
                                     </button>
                                 </div>
@@ -318,35 +288,40 @@
                     return;
                 }
 
+                // Mount Clerk SignIn with dark orange theme
                 const signInDiv = document.getElementById('clerk-signin');
-                const isDarkMode = true;
 
                 window.Clerk.mountSignIn(signInDiv, {
                     afterSignInUrl: '/',
                     afterSignUpUrl: '/',
                     appearance: {
-                        baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
+                        baseTheme: window.Clerk.themes ? window.Clerk.themes.dark : undefined,
                         variables: {
-                            colorPrimary: '#f2460d',
-                            colorBackground: isDarkMode ? '#111' : '#ffffff',
-                            colorText: isDarkMode ? '#ffffff' : '#1c110d',
-                            colorInputText: isDarkMode ? '#ffffff' : '#1c110d',
-                            colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
+                            colorPrimary: '#f97316',
+                            colorBackground: 'transparent',
+                            colorText: '#f5f0eb',
+                            colorTextSecondary: '#9a9088',
+                            colorInputText: '#f5f0eb',
+                            colorInputBackground: 'rgba(40, 34, 28, 0.9)',
+                            colorNeutral: '#6b7280',
+                            borderRadius: '0.75rem',
                         },
                         elements: {
                             rootBox: "w-full flex justify-center",
                             card: "w-full shadow-none border-none bg-transparent p-0",
                             headerTitle: "hidden",
                             headerSubtitle: "hidden",
-                            socialButtonsBlockButton: "rounded-xl h-11 border-white/10 bg-[#1a1a1a] hover:bg-[#222] transition-all",
-                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-12 rounded-xl",
+                            socialButtonsBlockButton: "rounded-xl h-11 border-[rgba(249,115,22,0.2)] bg-[rgba(40,34,28,0.8)] hover:bg-[rgba(55,47,38,0.9)] hover:border-[rgba(249,115,22,0.4)] transition-all font-semibold text-[#f5f0eb]",
+                            formButtonPrimary: "bg-[#f97316] hover:bg-[#ea6c0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
                             footer: "hidden",
-                            dividerRow: "my-6",
-                            dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
-                            formFieldInput: 'bg-[#0f0f0f] border-white/8 focus:ring-[#f2460d]/20 focus:border-[#f2460d] rounded-xl',
-                            otpCodeFieldInput: isDarkMode
-                                ? 'text-white bg-[#1a1a1a] border-white/10 caret-orange-500'
-                                : 'text-[#1c110d] bg-white border-[#e8d5ce] caret-orange-500',
+                            dividerRow: "my-5",
+                            dividerText: "text-[10px] font-black text-gray-600 uppercase tracking-widest",
+                            formFieldInput: 'bg-[rgba(40,34,28,0.9)] border-[rgba(249,115,22,0.2)] focus:ring-[#f97316]/20 focus:border-[#f97316] rounded-xl text-[#f5f0eb] placeholder-gray-600',
+                            formFieldLabel: 'text-[#9a9088] font-medium',
+                            otpCodeFieldInput: 'text-[#f5f0eb] bg-[rgba(40,34,28,0.9)] border-[rgba(249,115,22,0.25)] caret-[#f97316]',
+                            identityPreviewEditButton: 'text-[#f97316]',
+                            formResendCodeLink: 'text-[#f97316]',
+                            alternativeMethodsBlockButton: 'text-[#f97316]',
                         }
                     }
                 });

@@ -20,7 +20,7 @@ def overview():
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    menu_url = f"{current_app.config.get('BASE_URL', 'https://velzia.co')}/menu/{restaurant.slug}"
+    menu_url = f"{current_app.config.get('ASTRO_BASE_URL') or current_app.config.get('BASE_URL', 'https://velzia.co')}/{restaurant.slug}/"
     stats = DashboardService.get_today_overview(restaurant.id)
 
     return jsonify({

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request, jsonify, redirect, url_for, session, send_from_directory
+from flask import Blueprint, abort, request, jsonify, redirect, session, current_app
 from app.models import db, Table
 from app import csrf
 from datetime import datetime
@@ -7,7 +7,6 @@ from app.services.order_service import OrderService
 from app.services.public_menu_service import PublicMenuService
 from app.services.notification_service import notify_new_order
 import time
-import os
 
 public_bp = Blueprint('public', __name__)
 
@@ -24,43 +23,22 @@ def init_checkout():
 @public_bp.route('/menu/<string:slug>')
 @public_bp.route('/menu')
 def menu(slug=None):
-    # Si no hay slug, buscar el primero activo (MVP)
+    """
+    El menú digital ahora es servido por el frontend Astro (standalone).
+    Redirigimos al frontend para no romper los enlaces/QR existentes
+    generados desde el dashboard y las mesas.
+    """
     if not slug:
         restaurant = PublicMenuService.get_first_active_restaurant()
         if not restaurant:
             abort(404)
-        return redirect(url_for('public.menu', slug=restaurant.slug, **request.args))
+        slug = restaurant.slug
 
-    restaurant, error = PublicMenuService.get_restaurant_by_slug(slug)
-    if error:
-        abort(404)
-
-    table_id = request.args.get('table')
-    if table_id:
-        table, _ = PublicMenuService.get_restaurant_table(restaurant, table_id)
-        if table:
-            session['table_id'] = table.id
-            session['restaurant_id'] = restaurant.id
-        else:
-            session.pop('table_id', None)
-            session.pop('restaurant_id', None)
-
-    # Bloqueo Radical: Si el local está cerrado por el dueño, mostramos la Landing de Cerrado
-    if not restaurant.is_open:
-        return render_template('public/store_closed.html', restaurant=restaurant)
-
-    ordering_disabled = not PublicMenuService.is_ordering_enabled(restaurant)
-    categories = PublicMenuService.get_menu_categories_with_products(restaurant)
-
-    return render_template('public/menu_public.html',
-                         categories=categories,
-                         restaurant=restaurant,
-                         ordering_disabled=ordering_disabled)
-
-@public_bp.route('/menu/<string:slug>/categoria/<int:category_id>')
-def category_products(slug, category_id):
-    """Redirect a la vista unificada del menú con anclaje a la categoría."""
-    return redirect(url_for('public.menu', slug=slug) + f'#cat-{category_id}')
+    base_url = current_app.config.get('ASTRO_BASE_URL', current_app.config.get('BASE_URL', request.url_root.rstrip('/')))
+    target = f"{base_url}/{slug}/"
+    if request.query_string:
+        target += '?' + request.query_string.decode('utf-8')
+    return redirect(target)
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():
@@ -121,8 +99,8 @@ def create_order():
     city = data.get('city')
     address = data.get('address')
 
-    # Obtener información de la mesa si existe
-    table_id = session.get('table_id') if session.get('restaurant_id') == restaurant.id else None
+    # Obtener información de la mesa si existe (JSON del frontend Astro o sesión Flask)
+    table_id = data.get('table_id') or (session.get('table_id') if session.get('restaurant_id') == restaurant.id else None)
     table_name = None
     if table_id:
         table = Table.query.get(table_id)
@@ -169,8 +147,3 @@ def create_order():
         'address_full': f"{address}, {city}" if address and city else None,
         'table_name': order.table.name if order.table else None
     })
-
-@public_bp.route('/menu/<string:slug>/novedades')
-def novedades(slug):
-    """Redirect a la vista unificada del menú."""
-    return redirect(url_for('public.menu', slug=slug))

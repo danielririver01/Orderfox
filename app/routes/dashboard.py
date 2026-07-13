@@ -16,6 +16,8 @@ from app.utils.auth import require_auth, require_active
 from app.models import db, Restaurant, User
 from datetime import datetime, timezone, timedelta
 import qrcode
+import re
+import unicodedata
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import (
     check_feature_access,
@@ -24,8 +26,12 @@ from app.utils.subscription import (
     AI_TOKEN_LIMITS,
     get_subscription_status
 )
-import re
-import unicodedata
+
+
+def _astro_menu_url(slug):
+    """Construye la URL pública del menú servida por el frontend Astro."""
+    base = current_app.config.get('ASTRO_BASE_URL') or current_app.config.get('BASE_URL', '')
+    return f"{base}/{slug}/"
 
 import logging
 from app.services.dashboard_service import DashboardService
@@ -65,7 +71,7 @@ def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     
-    menu_url = url_for('public.menu', slug=restaurant.slug, _external=True)
+    menu_url = _astro_menu_url(restaurant.slug)
     stats = DashboardService.get_today_overview(restaurant.id)
      
     return render_template('dashboard/index.html', 
@@ -237,8 +243,7 @@ def menu_qr(slug):
     if not restaurant: abort(404)
     
     has_qr_access = True
-    base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-    menu_url = f"{base_url}/menu/{slug}"
+    menu_url = _astro_menu_url(slug)
     qr_image_url = url_for('dashboard.menu_qr_image', slug=slug)
     
     return render_template('dashboard/qr_page.html', 
@@ -255,8 +260,7 @@ def menu_qr_image(slug):
     if not restaurant: abort(404)
     
     # QR de restaurante siempre visible
-    base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-    menu_url = f"{base_url}/menu/{slug}"
+    menu_url = _astro_menu_url(slug)
     
     img_io, mime_type = QRService.generate_menu_qr(menu_url)
     return send_file(img_io, mimetype=mime_type, as_attachment=False)
@@ -276,8 +280,7 @@ def menu_qr_download(slug):
     if fmt not in ['png', 'jpg', 'jpeg']:
         return jsonify({'error': 'Formato no soportado. Use: png, jpg o jpeg'}), 400
     
-    base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-    menu_url = f"{base_url}/menu/{slug}"
+    menu_url = _astro_menu_url(slug)
     
     buf, mime_type = QRService.generate_menu_qr(menu_url, error_correction=qrcode.constants.ERROR_CORRECT_H, fmt=fmt)
     # Generar nombre de archivo amigable basado en el nombre del restaurante

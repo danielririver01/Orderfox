@@ -1,6 +1,6 @@
 """
 PublicMenuService — Business logic for public-facing menu and ordering operations.
-Shared by web routes (public_bp, menu_bp) and API routes (api_public_bp).
+Shared by the public order API (public_bp) and the menu JSON API (api_public_bp).
 
 Pattern: @staticmethod methods returning (result, None) / (None, error_dict).
 """
@@ -263,89 +263,6 @@ class PublicMenuService:
             return None, None, {'error_code': 'ORDER_CREATION_ERROR',
                                 'message': 'Error al crear el pedido. Inténtalo de nuevo.'}
 
-    # ── Search (menu_bp) ────────────────────────────────────
-
-    @staticmethod
-    def search_products_data(restaurant):
-        """
-        Build a flat list of all active products with category info
-        and modifier presence, for the search-products endpoint.
-
-        Returns (products_list, error_or_None).
-        """
-        try:
-            categories = Category.query.options(
-                selectinload(Category.products.and_(Product.is_active == True))
-                .selectinload(Product.modifiers)
-            ).filter_by(
-                restaurant_id=restaurant.id,
-                is_active=True
-            ).all()
-
-            products_list = []
-            for category in categories:
-                for product in category.products:
-                    products_list.append({
-                        'id': product.id,
-                        'name': product.name,
-                        'description': product.description,
-                        'price': product.price,
-                        'category_id': category.id,
-                        'category_name': category.name,
-                        'has_modifiers': len(product.modifiers) > 0
-                    })
-            return products_list, None
-
-        except Exception as e:
-            current_app.logger.error(f"Error in search_products_data: {e}")
-            return [], {'error_code': 'SEARCH_ERROR',
-                        'message': 'Error al buscar productos'}
-
-    @staticmethod
-    def search_products_by_query(restaurant, query):
-        """
-        Search products by text query (matches name, description, category name).
-
-        Returns (matching_products_list, error_or_None).
-        """
-        try:
-            if not query:
-                return [], None
-
-            categories = Category.query.options(
-                selectinload(Category.products.and_(Product.is_active == True))
-                .selectinload(Product.modifiers)
-            ).filter_by(
-                restaurant_id=restaurant.id,
-                is_active=True
-            ).all()
-
-            query_lower = query.lower().strip()
-            matching_products = []
-
-            for category in categories:
-                for product in category.products:
-                    searchable_text = (
-                        f"{product.name} {product.description or ''} {category.name}"
-                    ).lower()
-                    if query_lower in searchable_text:
-                        matching_products.append({
-                            'id': product.id,
-                            'name': product.name,
-                            'description': product.description,
-                            'price': product.price,
-                            'category_id': category.id,
-                            'category_name': category.name,
-                            'has_modifiers': len(product.modifiers) > 0
-                        })
-
-            return matching_products, None
-
-        except Exception as e:
-            current_app.logger.error(f"Error in search_products_by_query: {e}")
-            return [], {'error_code': 'SEARCH_ERROR',
-                        'message': 'Error al buscar productos'}
-
     # ── API Menu Data ───────────────────────────────────────
 
     @staticmethod
@@ -402,6 +319,7 @@ class PublicMenuService:
 
             return {
                 'restaurant': {
+                    'id': restaurant.id,
                     'name': restaurant.name,
                     'slug': restaurant.slug,
                     'whatsapp_phone': restaurant.whatsapp_phone,

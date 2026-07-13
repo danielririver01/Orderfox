@@ -1,495 +1,336 @@
-/* Velzia Auth - Split-Screen Layout */
+/* ============================================================
+   Velzia — AI Kitchen Assistant Login
+   Dark mode · orange/gold ambient · robot chef hero
+   ============================================================ */
 
-/* ============================================
-   SPLIT-SCREEN LAYOUT (Desktop only)
-   ============================================ */
-
-.auth-split-screen {
-    display: flex;
-    min-height: 100vh;
+:root {
+    --primary: #f97316;
+    --primary-hover: #ea6c0a;
+    --primary-soft: rgba(249, 115, 22, 0.15);
+    --primary-glow: rgba(249, 115, 22, 0.35);
+    --gold: #fbbf24;
+    --gold-glow: rgba(251, 191, 36, 0.25);
+    --ink: #f5f0eb;
+    --ink-dim: rgba(245, 240, 235, 0.65);
+    --muted: #9a9088;
+    --bg-app: #111111;
+    --card-bg: rgba(28, 24, 20, 0.85);
+    --card-border: rgba(249, 115, 22, 0.15);
 }
 
-/* Left Panel - Decorative Branding */
-.auth-brand-panel {
-    display: none;
-    position: relative;
-    width: 50%;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #0a0a0a 0%, #141414 40%, #1a0a00 100%);
+* {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: var(--ink);
+    background-color: var(--bg-app);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* ---------- Ambient light field ---------- */
+.auth-ambient {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     overflow: hidden;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 3rem;
-}
-
-/* Geometric Pattern Overlay */
-.auth-brand-panel::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.03) 0%, transparent 70%);
     pointer-events: none;
 }
 
-/* Grid Pattern */
-.auth-brand-panel::after {
-    content: '';
+.auth-orb {
     position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.55;
+    animation: orbFloat 16s ease-in-out infinite;
 }
 
-/* Brand Content */
-.auth-brand-content {
+.auth-orb--1 {
+    width: 32rem;
+    height: 32rem;
+    top: -8rem;
+    left: 15%;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.6), transparent 70%);
+}
+
+.auth-orb--2 {
+    width: 24rem;
+    height: 24rem;
+    bottom: -6rem;
+    right: 10%;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.4), transparent 70%);
+    animation-delay: -6s;
+}
+
+.auth-orb--3 {
+    width: 18rem;
+    height: 18rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(234, 88, 12, 0.3), transparent 70%);
+    animation-delay: -11s;
+}
+
+@keyframes orbFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) translateX(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-32px) translateX(20px) scale(1.07);
+    }
+}
+
+/* ---------- Layout ---------- */
+.auth-split-screen {
     position: relative;
-    z-index: 10;
-    text-align: center;
-    max-width: 400px;
-}
-
-.auth-brand-logo {
+    z-index: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 2rem;
-    border-radius: 24px;
-    background: linear-gradient(135deg, #f2460d 0%, #d63a0a 100%);
-    box-shadow: 0 20px 60px rgba(242, 70, 13, 0.3);
+    min-height: 100vh;
 }
 
-.auth-brand-logo .material-symbols-outlined {
-    font-size: 40px;
-    color: white;
-}
-
-.auth-brand-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: white;
-    letter-spacing: -0.04em;
-    margin-bottom: 0.75rem;
-    font-family: 'Outfit', sans-serif;
-}
-
-.auth-brand-subtitle {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-weight: 500;
-    line-height: 1.6;
-    margin-bottom: 3rem;
-}
-
-/* Mock Dashboard Cards */
-.auth-mock-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-}
-
-.auth-mock-card {
-    background: rgba(20, 20, 22, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 1.25rem;
-    backdrop-filter: blur(10px);
-    text-align: left;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.auth-mock-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.auth-mock-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-}
-
-.auth-mock-card-title {
-    font-size: 0.625rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.auth-mock-card-badge {
-    font-size: 0.5rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    background: rgba(249, 115, 22, 0.15);
-    color: #f97316;
-}
-
-.auth-mock-card-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: white;
-    letter-spacing: -0.04em;
-}
-
-.auth-mock-card-change {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.25rem;
-    font-size: 0.625rem;
-    font-weight: 700;
-    color: #10b981;
-}
-
-/* Mock Bar Chart */
-.auth-mock-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    height: 60px;
-    margin-top: 0.75rem;
-}
-
-.auth-mock-bar {
+/* ---------- Left: hero with robot chef ---------- */
+.auth-hero {
+    display: none;
     flex: 1;
-    border-radius: 4px 4px 0 0;
-    background: linear-gradient(to top, rgba(249, 115, 22, 0.3), rgba(249, 115, 22, 0.6));
-    transition: height 0.5s ease;
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Floating Particles */
-.auth-particle {
+@media (min-width: 1024px) {
+    .auth-hero {
+        display: flex;
+    }
+}
+
+/* SVG light trails */
+.auth-light-trails {
     position: absolute;
-    border-radius: 50%;
-    background: rgba(249, 115, 22, 0.15);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    animation: auth-float 6s ease-in-out infinite;
 }
 
-.auth-particle:nth-child(1) {
-    width: 200px;
-    height: 200px;
-    top: 10%;
-    left: -50px;
+.auth-trail {
+    fill: none;
+    stroke-linecap: round;
+    animation: trailPulse 4s ease-in-out infinite;
+}
+
+.auth-trail--1 {
+    stroke: url(#trailGrad1);
+    stroke-width: 2.5;
     animation-delay: 0s;
 }
 
-.auth-particle:nth-child(2) {
-    width: 150px;
-    height: 150px;
-    bottom: 20%;
-    right: -30px;
-    animation-delay: 2s;
+.auth-trail--2 {
+    stroke: url(#trailGrad2);
+    stroke-width: 1.8;
+    animation-delay: -1.5s;
 }
 
-.auth-particle:nth-child(3) {
-    width: 100px;
-    height: 100px;
-    top: 60%;
-    left: 20%;
-    animation-delay: 4s;
+.auth-trail--3 {
+    stroke: url(#trailGrad1);
+    stroke-width: 1.2;
+    animation-delay: -2.8s;
+    opacity: 0.6;
 }
 
-@keyframes auth-float {
-    0%, 100% { transform: translateY(0px) scale(1); opacity: 0.5; }
-    50% { transform: translateY(-20px) scale(1.05); opacity: 0.8; }
+@keyframes trailPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        filter: blur(0.5px);
+    }
+
+    50% {
+        opacity: 1;
+        filter: blur(0px) drop-shadow(0 0 8px rgba(249, 115, 22, 0.9));
+    }
 }
 
-/* Right Panel - Form Area */
+/* Robot image */
+.auth-hero-robot {
+    position: relative;
+    z-index: 2;
+    width: 360px;
+    height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: robotFloat 6s ease-in-out infinite;
+}
+
+.auth-hero-robot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 40px rgba(249, 115, 22, 0.5)) drop-shadow(0 0 80px rgba(251, 191, 36, 0.2));
+}
+
+@keyframes robotFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-18px);
+    }
+}
+
+/* ---------- Right: login panel ---------- */
 .auth-form-panel {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    background: #0a0a0a;
-    min-height: 100vh;
+    padding: 2rem 1.25rem;
+    position: relative;
+    z-index: 1;
 }
 
-/* ============================================
-   FORM CARD STYLES
-   ============================================ */
+@media (min-width: 1024px) {
+    .auth-form-panel {
+        flex: 0 0 46%;
+        max-width: 46%;
+    }
+}
 
+/* ---------- Dark glassmorphism card ---------- */
 .auth-card {
     width: 100%;
-    max-width: 440px;
-    background: #141414;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
+    max-width: 26rem;
+    border-radius: 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(32px) saturate(160%);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 32px 80px -24px rgba(0, 0, 0, 0.8),
+        0 0 60px -20px rgba(249, 115, 22, 0.25);
+    padding: 2.4rem 2.2rem 1.6rem;
 }
 
 .auth-card-content {
-    padding: 2.5rem;
+    width: 100%;
 }
 
+/* Mobile icon */
 .auth-card-icon {
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 1.5rem;
-    border-radius: 16px;
-    background: rgba(242, 70, 13, 0.1);
-}
-
-.auth-card-icon .material-symbols-outlined {
-    font-size: 28px;
-    color: #f2460d;
+    margin: 0 auto 1.1rem;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    box-shadow: 0 10px 24px -8px rgba(249, 115, 22, 0.7);
 }
 
 .auth-card-title {
     text-align: center;
     font-size: 1.5rem;
-    font-weight: 800;
-    color: white;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.2;
+    margin: 0 0 0.35rem;
 }
 
-.auth-card-description {
+.auth-card-title em {
+    font-style: normal;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-card-sub {
     text-align: center;
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 500;
-    margin-bottom: 2rem;
-    line-height: 1.5;
+    margin: 0 0 1.5rem;
+    font-size: 0.88rem;
+    color: var(--muted);
 }
 
-/* Footer */
+/* ---------- Card footer ---------- */
 .auth-card-footer {
-    background: #0f0f0f;
+    margin-top: 1.8rem;
+    padding-top: 1.1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 1rem 2rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.3);
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--muted);
 }
 
-/* ============================================
-   RESPONSIVE - MOBILE (keep intact)
-   ============================================ */
-
-@media (max-width: 767px) {
-    .auth-split-screen {
-        flex-direction: column;
-    }
-
-    .auth-brand-panel {
-        display: none !important;
-    }
-
-    .auth-form-panel {
-        padding: 1rem;
-    }
+.auth-card-footer span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
-/* ============================================
-   RESPONSIVE - TABLET
-   ============================================ */
-
-@media (min-width: 768px) {
-    .auth-brand-panel {
-        display: flex;
-        width: 45%;
-    }
-
-    .auth-form-panel {
-        width: 55%;
-    }
-
-    .auth-brand-title {
-        font-size: 1.75rem;
-    }
+/* ---------- Links ---------- */
+.auth-link-soft {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.25s ease;
 }
 
-/* ============================================
-   RESPONSIVE - DESKTOP
-   ============================================ */
+.auth-link-soft:hover {
+    color: var(--primary);
+}
 
-@media (min-width: 1024px) {
-    .auth-brand-panel {
-        width: 50%;
-        padding: 4rem;
-    }
+.auth-brand-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 9999px;
+    background: var(--primary);
+    flex-shrink: 0;
+    transition: background 0.25s ease;
+}
 
-    .auth-brand-title {
-        font-size: 2.25rem;
-    }
+/* ---------- Spinner (orange) ---------- */
+.auth-spinner {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 9999px;
+    border: 3px solid rgba(249, 115, 22, 0.3);
+    border-top-color: var(--primary);
+    animation: spin 0.8s linear infinite;
+}
 
-    .auth-mock-cards {
-        max-width: 360px;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 
-/* ============================================
-   RESPONSIVE - LARGE DESKTOP
-   ============================================ */
-
-@media (min-width: 1280px) {
-    .auth-brand-panel {
-        width: 55%;
-    }
-
-    .auth-form-panel {
-        width: 45%;
-    }
-
-    .auth-brand-title {
-        font-size: 2.5rem;
-    }
-
-    .auth-mock-cards {
-        max-width: 400px;
-    }
-}
-
-/* ============================================
-   SETUP PAGE - 2 COLUMN LAYOUT
-   ============================================ */
-
-@media (min-width: 768px) {
-    .auth-setup-layout {
-        display: grid;
-        grid-template-columns: 1fr 1.2fr;
-        gap: 2rem;
-        max-width: 900px;
-        margin: 0 auto;
-        align-items: start;
-    }
-
-    .auth-setup-info {
-        position: sticky;
-        top: 2rem;
-    }
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
-@keyframes auth-slide-in-left {
-    from { transform: translateX(-30px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes auth-slide-in-right {
-    from { transform: translateX(30px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes auth-fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@media (min-width: 768px) {
-    .auth-brand-panel {
-        animation: auth-slide-in-left 0.6s ease-out;
-    }
-
-    .auth-form-panel .auth-card {
-        animation: auth-slide-in-right 0.6s ease-out;
-    }
-}
-
-/* ============================================
-   CLERK OVERRIDES
-   ============================================ */
-
-.cl-rootBox {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-.cl-card {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    width: 100% !important;
-}
-
-.cl-headerTitle,
-.cl-headerSubtitle {
-    display: none !important;
-}
-
-.cl-socialButtonsBlockButton {
-    border-radius: 12px !important;
-    height: 44px !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    background: #1a1a1a !important;
-}
-
-.cl-socialButtonsBlockButton:hover {
-    background: #222 !important;
-}
-
-.cl-formButtonPrimary {
-    border-radius: 12px !important;
-    height: 48px !important;
-    font-weight: 700 !important;
-    font-size: 0.875rem !important;
-    background: #f2460d !important;
-}
-
-.cl-formButtonPrimary:hover {
-    background: #d63a0a !important;
-}
-
-.cl-formFieldInput {
-    background: #0f0f0f !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    border-radius: 12px !important;
-    color: white !important;
-}
-
-.cl-formFieldInput:focus {
-    border-color: #f2460d !important;
-    box-shadow: 0 0 0 2px rgba(242, 70, 13, 0.2) !important;
-}
-
-.cl-footer {
-    display: none !important;
-}
-
-.cl-dividerRow {
-    margin: 1.5rem 0 !important;
-}
-
-.cl-dividerText {
-    font-size: 0.625rem !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.15em !important;
-    color: rgba(255, 255, 255, 0.3) !important;
-}
-
-.cl-otpCodeFieldInput {
-    color: white !important;
-    background-color: #1a1a1a !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    caret-color: #f2460d !important;
-    border-radius: 10px !important;
+/* ---------- Flash messages dark override ---------- */
+.flash-message {
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.75rem;
 }

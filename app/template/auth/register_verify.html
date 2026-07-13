@@ -1,217 +1,190 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="es" class="dark">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>{{ 'Verificar Código' if step == 'otp' else 'Registro - Email' }} - Velzia</title>
-    <link rel="icon" href="{{ url_for('static', filename='img/Zorro.png') }}" type="image/png">
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{{ 'Velzia · Verifica tu email' if step == 'otp' else 'Velzia · Crea tu cuenta' }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet" />
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
+    <style>
+        /* OTP inputs dark */
+        .cl-otpCodeFieldInput {
+            color: #f5f0eb !important;
+            background-color: rgba(40, 34, 28, 0.9) !important;
+            border-color: rgba(249, 115, 22, 0.25) !important;
+            caret-color: #f97316 !important;
+        }
+
+        :root {
+            --autofill-bg: #1c1814;
+            --autofill-text: #f5f0eb;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+            -webkit-text-fill-color: var(--autofill-text) !important;
+            transition: background-color 5000s ease-in-out 0s;
+            border-radius: inherit;
+        }
+
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+    </style>
 </head>
 
-<body class="bg-[#0a0a0a] antialiased">
+<body class="antialiased">
+
+    <!-- Ambient orbs -->
+    <div class="auth-ambient">
+        <div class="auth-orb auth-orb--1"></div>
+        <div class="auth-orb auth-orb--2"></div>
+        <div class="auth-orb auth-orb--3"></div>
+    </div>
 
     <div class="auth-split-screen">
 
-        <!-- LEFT PANEL - Branding (Desktop only) -->
-        <div class="auth-brand-panel">
-            <div class="auth-particle"></div>
-            <div class="auth-particle"></div>
-            <div class="auth-particle"></div>
+        <!-- LEFT — Robot chef hero (same as login) -->
+        <div class="auth-hero">
+            <svg class="auth-light-trails" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice"
+                xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="trailGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#f97316;stop-opacity:0" />
+                        <stop offset="40%" style="stop-color:#f97316;stop-opacity:1" />
+                        <stop offset="70%" style="stop-color:#fbbf24;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:0" />
+                    </linearGradient>
+                    <linearGradient id="trailGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:0" />
+                        <stop offset="35%" style="stop-color:#fbbf24;stop-opacity:0.8" />
+                        <stop offset="65%" style="stop-color:#f97316;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#f97316;stop-opacity:0" />
+                    </linearGradient>
+                </defs>
+                <path class="auth-trail auth-trail--1"
+                    d="M -300 220 C -100 120, 150 50, 350 180 C 550 310, 700 200, 900 100" />
+                <path class="auth-trail auth-trail--2"
+                    d="M -300 580 C -50 680, 150 500, 350 550 C 550 600, 700 450, 900 520" />
+                <path class="auth-trail auth-trail--3"
+                    d="M -200 400 C 50 300, 250 380, 400 300 C 550 220, 700 300, 900 200" />
+            </svg>
 
-                <div class="auth-brand-content">
-                    <div class="auth-brand-logo">
-                        <span class="material-symbols-outlined">person_add</span>
-                    </div>
-
-                    <h1 class="auth-brand-title">Únete a Velzia</h1>
-                    <p class="auth-brand-subtitle">
-                        Crea tu cuenta y comienza a digitalizar tu restaurante en minutos.
-                    </p>
-
-                    <!-- Plan Info -->
-                    <div class="auth-mock-cards">
-                        <div class="auth-mock-card" style="border-color: rgba(249, 115, 22, 0.2);">
-                            <div class="auth-mock-card-header">
-                                <span class="auth-mock-card-title">Plan seleccionado</span>
-                                <span class="auth-mock-card-badge" style="text-transform: capitalize;">{{ plan }}</span>
-                            </div>
-                            <div class="auth-mock-card-value" style="font-size: 1.5rem;">
-                                {% if plan == 'trial' %}$0
-                                {% elif plan == 'emprendedor' %}$30.000
-                                {% elif plan == 'crecimiento' %}$40.000
-                                {% else %}$50.000{% endif %}
-                            </div>
-                            <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4); margin-top: 0.25rem;">
-                                {% if plan == 'trial' %}10 días gratis, luego $50.000/mes
-                                {% else %}/mes{% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Features del plan -->
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #10b981;">check_circle</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">Menú Digital</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Comparte tu carta por WhatsApp</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if plan in ['crecimiento', 'elite'] %}
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(249, 115, 22, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #f97316;">qr_code_scanner</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">QR por Mesa</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Pedidos directos desde la mesa</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if plan == 'elite' %}
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #a855f7;">auto_awesome</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">3000 Tokens IA</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Scanner IA ilimitado</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% elif plan == 'crecimiento' %}
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #a855f7;">auto_awesome</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">40 Tokens IA</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Digitaliza tu menú con fotos</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% elif plan == 'emprendedor' %}
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #a855f7;">auto_awesome</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">25 Tokens IA</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Digitaliza tu menú con fotos</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="auth-mock-card">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #a855f7;">auto_awesome</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">10 Tokens IA Gratis</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">Prueba el scanner IA</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        <!-- CTA Card -->
-                        <div class="auth-mock-card" style="background: linear-gradient(135deg, rgba(242, 70, 13, 0.15), rgba(242, 70, 13, 0.05)); border-color: rgba(242, 70, 13, 0.3);">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(242, 70, 13, 0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <span class="material-symbols-outlined text-[16px]" style="color: #f2460d;">rocket_launch</span>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: white;">Activa hoy</div>
-                                    <div style="font-size: 0.625rem; color: rgba(255,255,255,0.5);">
-                                        {% if plan == 'trial' %}Sin tarjeta de crédito
-                                        {% else %}Cancela cuando quieras{% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="auth-hero-robot">
+                <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia Robot Chef"
+                    loading="eager">
+            </div>
         </div>
 
-        <!-- RIGHT PANEL - Register Form -->
+        <!-- RIGHT — Sign up form -->
         <div class="auth-form-panel">
             <main class="w-full max-w-[420px] mx-auto">
-                <div class="auth-card">
 
+                <div class="auth-card">
                     <div class="auth-card-content">
 
-                        <!-- Icon (Mobile only) -->
+                        <!-- Mobile icon -->
                         <div class="auth-card-icon md:hidden">
-                            <span class="material-symbols-outlined">
-                                {{ 'verified_user' if step == 'otp' else 'person_add' }}
-                            </span>
+                            <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia"
+                                class="w-7 h-7">
                         </div>
 
-                        <!-- Title (Mobile only) -->
-                        <h1 class="auth-card-title md:hidden">
-                            {{ 'Verifica tu email' if step == 'otp' else 'Comienza tu registro' }}
+                        <h1 class="auth-card-title hidden md:block">
+                            {% if step == 'otp' %}Verifica tu <em>email</em>{% else %}Únete a <em>Velzia</em>{% endif %}
                         </h1>
-                        <p class="auth-card-description md:hidden">
-                            {{ 'Hemos enviado un código de 6 dígitos a ' + session.get('register_email', '') if step == 'otp' else 'Ingresa tu correo profesional para empezar' }}
+                        <p class="auth-card-sub hidden md:block">
+                            {% if step == 'otp' %}Hemos enviado un código de 6 dígitos a {{
+                            session.get('register_email', '') }}{% else %}Crea tu cuenta y digitaliza tu restaurante.{%
+                            endif %}
                         </p>
 
                         <!-- Flash Messages -->
                         {% if get_flashed_messages() %}
-                        <div class="max-w-md mx-auto px-2 pt-2 pb-4">
+                        <div class="max-w-md mx-auto px-2 pt-2 pb-3">
                             {% include 'components/flash_messages.html' %}
                         </div>
                         {% endif %}
 
-                        <!-- Clerk SignUp container -->
-                        <div id="clerk-signup" class="w-full min-h-[400px] flex justify-center"></div>
+                        <!-- Plan badge (only on sign-up step) -->
+                        {% if step != 'otp' %}
+                        <div class="flex items-center gap-2.5 p-3 rounded-xl mb-4"
+                            style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.18);">
+                            <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style="background: rgba(249,115,22,0.15);">
+                                <span class="material-symbols-outlined text-orange-400 text-[15px]">
+                                    {% if plan == 'trial' %}rocket_launch
+                                    {% elif plan == 'emprendedor' %}store
+                                    {% elif plan == 'crecimiento' %}trending_up
+                                    {% else %}star{% endif %}
+                                </span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p
+                                    class="text-[9px] font-bold uppercase tracking-widest text-orange-400/70 leading-none mb-0.5">
+                                    Plan</p>
+                                <p class="text-xs font-bold text-orange-300 capitalize leading-none">
+                                    {{ plan }}
+                                    <span class="text-gray-600 font-normal">
+                                        {% if plan == 'trial' %}· 10 días gratis
+                                        {% elif plan == 'emprendedor' %}· $30.000/mes
+                                        {% elif plan == 'crecimiento' %}· $40.000/mes
+                                        {% else %}· $50.000/mes{% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                            <span class="text-[9px] text-gray-600 font-medium">Sin tarjeta requerida</span>
+                        </div>
+                        {% endif %}
 
-                        <!-- Footer Links -->
-                        <div class="mt-8 text-center border-t border-white/5 pt-6 w-full">
-                            <span class="text-xs text-gray-500">
-                                ¿Problemas? 
-                                <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Problema%20en%20registro" class="text-[#f2460d] hover:underline font-bold">Contáctanos</a>
+                        <!-- Clerk SignUp container -->
+                        <div id="clerk-signup" class="w-full min-h-[380px] flex justify-center"></div>
+
+                        <!-- Footer link -->
+                        <div class="mt-6 text-center border-t pt-5 w-full"
+                            style="border-color: rgba(255,255,255,0.05);">
+                            <span class="text-xs text-gray-600">
+                                ¿Problemas?
+                                <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Problema%20en%20registro"
+                                    class="auth-link-soft font-bold ml-1" style="color: #f97316;">Contáctanos</a>
                             </span>
                         </div>
                     </div>
 
-                    <!-- Bottom Footer -->
+                    <!-- Card footer -->
                     <div class="auth-card-footer">
                         <span>© 2026 Velzia</span>
-                        <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia" class="hover:text-[#f2460d] transition-colors flex items-center gap-1 uppercase font-bold tracking-widest">
-                            <span class="material-symbols-outlined text-[14px]">mail</span>
+                        <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia"
+                            class="auth-link-soft flex items-center gap-1 font-bold text-[10px] uppercase tracking-widest">
+                            <span class="material-symbols-outlined text-[13px]">mail</span>
                             Ayuda
                         </a>
                     </div>
                 </div>
+
             </main>
         </div>
 
     </div>
 
-    <!-- Version script helper -->
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    
+
     <!-- Clerk Themes -->
     <script src="https://cdn.jsdelivr.net/npm/@clerk/themes@latest/dist/index.browser.js"></script>
 
@@ -229,8 +202,8 @@
                         socialButtonsBlockButton__facebook: "Continuar con Facebook",
                         signUp: {
                             start: {
-                                title: "Comienza tu registro",
-                                subtitle: "Ingresa tu correo profesional para empezar"
+                                title: "Únete a Velzia",
+                                subtitle: "Crea tu cuenta y digitaliza tu restaurante"
                             }
                         },
                         formFieldLabel__firstName: "Nombre",
@@ -242,7 +215,6 @@
                         formFieldLabel__password: "Contraseña",
                         formButtonPrimary: "CONTINUAR",
                         formFieldHintText__password: "Mínimo 8 caracteres, una mayúscula y un número.",
-                        formFieldAction__forgotPassword: "¿Olvidaste tu contraseña?",
                         dividerText: "o también",
                         unstable__errors: {
                             password_too_short: "La contraseña es muy corta.",
@@ -258,33 +230,36 @@
                 }
 
                 const signUpDiv = document.getElementById('clerk-signup');
-                const isDarkMode = true;
 
                 window.Clerk.mountSignUp(signUpDiv, {
-                    afterSignUpUrl: '/', 
+                    afterSignUpUrl: '/',
                     appearance: {
-                        baseTheme: isDarkMode ? (window.Clerk.themes ? window.Clerk.themes.dark : undefined) : undefined,
+                        baseTheme: window.Clerk.themes ? window.Clerk.themes.dark : undefined,
                         variables: {
-                            colorPrimary: '#f2460d',
-                            colorBackground: isDarkMode ? '#111' : '#ffffff',
-                            colorText: isDarkMode ? '#ffffff' : '#1c110d',
-                            colorInputText: isDarkMode ? '#ffffff' : '#1c110d',
-                            colorInputBackground: isDarkMode ? '#1a1a1a' : '#fcf9f8',
+                            colorPrimary: '#f97316',
+                            colorBackground: 'transparent',
+                            colorText: '#f5f0eb',
+                            colorTextSecondary: '#9a9088',
+                            colorInputText: '#f5f0eb',
+                            colorInputBackground: 'rgba(40, 34, 28, 0.9)',
+                            colorNeutral: '#6b7280',
+                            borderRadius: '0.75rem',
                         },
                         elements: {
                             rootBox: "w-full flex justify-center",
                             card: "w-full shadow-none border-none bg-transparent p-0",
                             headerTitle: "hidden",
                             headerSubtitle: "hidden",
-                            socialButtonsBlockButton: "rounded-xl h-11 border-white/10 bg-[#1a1a1a] hover:bg-[#222] transition-all",
-                            formButtonPrimary: "bg-[#f2460d] hover:bg-[#d63a0a] text-sm font-bold h-12 rounded-xl",
+                            socialButtonsBlockButton: "rounded-xl h-11 border-[rgba(249,115,22,0.2)] bg-[rgba(40,34,28,0.8)] hover:bg-[rgba(55,47,38,0.9)] hover:border-[rgba(249,115,22,0.4)] transition-all font-semibold text-[#f5f0eb]",
+                            formButtonPrimary: "bg-[#f97316] hover:bg-[#ea6c0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
                             footer: "hidden",
-                            dividerRow: "my-6",
-                            dividerText: "text-[10px] font-black text-gray-500 uppercase tracking-widest",
-                            formFieldInput: 'bg-[#0f0f0f] border-white/8 focus:ring-[#f2460d]/20 focus:border-[#f2460d] rounded-xl',
-                            otpCodeFieldInput: isDarkMode
-                                ? 'text-white bg-[#1a1a1a] border-white/10 caret-orange-500'
-                                : 'text-[#1c110d] bg-white border-[#e8d5ce] caret-orange-500',
+                            dividerRow: "my-5",
+                            dividerText: "text-[10px] font-black text-gray-600 uppercase tracking-widest",
+                            formFieldInput: 'bg-[rgba(40,34,28,0.9)] border-[rgba(249,115,22,0.2)] focus:ring-[#f97316]/20 focus:border-[#f97316] rounded-xl text-[#f5f0eb] placeholder-gray-600',
+                            formFieldLabel: 'text-[#9a9088] font-medium',
+                            otpCodeFieldInput: 'text-[#f5f0eb] bg-[rgba(40,34,28,0.9)] border-[rgba(249,115,22,0.25)] caret-[#f97316]',
+                            identityPreviewEditButton: 'text-[#f97316]',
+                            formResendCodeLink: 'text-[#f97316]',
                         }
                     }
                 });
@@ -293,4 +268,5 @@
     </script>
     {% endif %}
 </body>
+
 </html>

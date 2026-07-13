@@ -1,0 +1,66 @@
+---
+// ProductDetail — dynamic panel shell
+// Content is populated by client-side JavaScript
+// when a product card is clicked.
+---
+
+<div
+  id="product-detail"
+  class="fixed right-0 top-0 z-40 h-full w-full max-w-md translate-x-full transform bg-[#0f0f0f] shadow-2xl transition-transform duration-300"
+>
+  <div class="flex h-full flex-col">
+    <!-- Image section -->
+    <div class="relative aspect-square bg-[#1a1a1a]" id="detail-image-container">
+      <div
+        id="detail-image-placeholder"
+        class="flex h-full w-full items-center justify-center text-6xl font-bold text-[#4a4a4a]"
+      ></div>
+      <img id="detail-image" class="hidden h-full w-full object-cover" alt="" />
+      <button
+        id="close-detail"
+        class="absolute right-3 top-3 rounded-full bg-black/60 p-2 shadow-lg backdrop-blur transition hover:bg-black/80"
+      >
+        <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="flex-1 overflow-y-auto p-5" id="detail-body">
+      <h2 class="text-xl font-bold text-[#f5f5f7]" id="detail-name"></h2>
+      <p class="mt-2 text-sm text-[#a1a1aa]" id="detail-description"></p>
+      <p class="mt-3 text-2xl font-bold text-brand-400" id="detail-price"></p>
+
+      <!-- Modifiers section -->
+      <div class="mt-6" id="detail-modifiers-section" style="display:none">
+        <h3 class="mb-3 text-sm font-semibold text-[#f5f5f7]">Personaliza tu pedido</h3>
+        <div class="space-y-2" id="modifiers-list"></div>
+      </div>
+
+      <!-- Quantity controls -->
+      <div class="mt-6 flex items-center gap-4">
+        <button
+          id="qty-minus"
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-lg text-[#f5f5f7] transition hover:bg-white/10"
+        >−</button>
+        <span id="qty-display" class="w-8 text-center text-lg font-semibold text-[#f5f5f7]">1</span>
+        <button
+          id="qty-plus"
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-lg text-[#f5f5f7] transition hover:bg-white/10"
+        >+</button>
+      </div>
+    </div>
+
+    <!-- Footer / add to cart -->
+    <div class="border-t border-white/5 p-4">
+      <button
+        id="add-to-cart"
+        class="w-full rounded-xl bg-brand-600 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-brand-500"
+        data-product-id=""
+      >
+        Agregar al pedido
+      </button>
+    </div>
+  </div>
+</div>

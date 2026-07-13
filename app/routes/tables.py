@@ -8,6 +8,12 @@ import unicodedata, re
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/dashboard/tables')
 
+
+def _astro_table_url(slug, table_id):
+    """Construye la URL pública del menú de la mesa servida por el frontend Astro."""
+    base = current_app.config.get('ASTRO_BASE_URL') or current_app.config.get('BASE_URL', '')
+    return f"{base}/{slug}/?table={table_id}"
+
 @tables_bp.route('/')
 @require_auth
 @require_active
@@ -18,6 +24,7 @@ def index():
     has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
     return render_template('dashboard/tables.html',
                          tables=tables,
+                         astro_base_url=current_app.config.get('ASTRO_BASE_URL') or current_app.config.get('BASE_URL', ''),
                          has_table_qr_access=has_table_qr_access)
 
 @tables_bp.route('/create', methods=['POST'])
@@ -62,8 +69,7 @@ def qr(id):
     if not table:
         abort(404)
     has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
-    base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
-    menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
+    menu_url = _astro_table_url(restaurant.slug, table.id)
     qr_image_url = url_for('tables.qr_image', id=table.id)
     return render_template('dashboard/qr_page.html',
                          restaurant=restaurant,
@@ -87,8 +93,7 @@ def qr_image(id):
     if not table:
         abort(404)
     has_access = check_feature_access(restaurant, 'has_table_qr')
-    base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
-    menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
+    menu_url = _astro_table_url(restaurant.slug, table.id)
     buffer = QRService.generate_table_qr(menu_url, apply_blur=not has_access)
     return send_file(buffer, mimetype='image/png')
 
@@ -105,8 +110,7 @@ def download_qr(id):
     table = TableService.get_table(restaurant.id, id)
     if not table:
         abort(404)
-    base_url = current_app.config.get('BASE_URL') or request.host_url.rstrip('/')
-    menu_url = f"{base_url}{url_for('public.menu', slug=restaurant.slug, table=table.id)}"
+    menu_url = _astro_table_url(restaurant.slug, table.id)
     buffer = QRService.generate_table_qr(menu_url)
     safe_name = unicodedata.normalize('NFKD', table.name)
     safe_name = safe_name.encode('ascii', 'ignore').decode('ascii')

@@ -1,0 +1,424 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import Loading from '../../components/ui/Loading.astro';
+import Toast from '../../components/ui/Toast.astro';
+import Footer from '../../components/ui/Footer.astro';
+import SearchBar from '../../components/menu/SearchBar.astro';
+import CategorySidebar from '../../components/menu/CategorySidebar.astro';
+import ProductCard from '../../components/menu/ProductCard.astro';
+import ProductDetail from '../../components/menu/ProductDetail.astro';
+import CartButton from '../../components/cart/CartButton.astro';
+import CartDrawer from '../../components/cart/CartDrawer.astro';
+import CheckoutModal from '../../components/checkout/CheckoutModal.astro';
+import SuccessModal from '../../components/checkout/SuccessModal.astro';
+import { fetchMenu } from '../../lib/api';
+import type { Restaurant, Category, Product } from '../../lib/types';
+
+export async function getStaticPaths() {
+  return [];
+}
+
+const { slug } = Astro.params;
+
+const tableParam = Astro.url.searchParams.get('table');
+const tableId = tableParam ? (isNaN(parseInt(tableParam)) ? tableParam : parseInt(tableParam)) : null;
+
+let restaurant: Restaurant | null = null;
+let categories: Category[] = [];
+let error: string | null = null;
+
+try {
+  const response = await fetchMenu(slug!);
+  if (response.success) {
+    restaurant = response.data.restaurant;
+    categories = response.data.categories;
+    categories = categories.filter(cat => cat.products && cat.products.length > 0);
+  } else {
+    error = 'No se pudo cargar el menú';
+  }
+} catch (e) {
+  console.error('fetchMenu error:', e);
+  error = 'Error al cargar el menú';
+}
+
+const isNotFound = !restaurant || error;
+const errorTitle = error || 'Restaurante no encontrado';
+
+let restaurantName = '';
+let whatsappPhone = '';
+let restaurantId = 0;
+let isOpen = false;
+let orderingDisabled = false;
+let productsJson = '{}';
+
+if (!isNotFound) {
+  restaurantName = restaurant!.name;
+  whatsappPhone = restaurant!.whatsapp_phone;
+  restaurantId = restaurant!.id;
+  isOpen = restaurant!.is_open;
+  orderingDisabled = !!restaurant!.ordering_disabled;
+
+  const productsMap: Record<number, Product> = {};
+  for (const cat of categories) {
+    if (cat.products) {
+      for (const product of cat.products) {
+        productsMap[product.id] = product;
+      }
+    }
+  }
+  productsJson = JSON.stringify({ productsMap, restaurantId, whatsappPhone, tableId });
+}
+---
+
+{
+  isNotFound ? (
+    <PublicLayout title={errorTitle}>
+      <main class="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <h1 class="font-display text-2xl font-bold text-[#f5f5f7]">{errorTitle}</h1>
+        <p class="mt-2 text-[#a1a1aa]">{error}</p>
+        <a href="/" class="mt-6 text-sm text-brand-400 hover:text-brand-300">Volver al inicio</a>
+      </main>
+    </PublicLayout>
+  ) : !isOpen ? (
+    <PublicLayout title={`Menú - ${restaurantName}`}>
+      <main class="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <h1 class="font-display text-3xl font-bold text-[#f5f5f7]">{restaurantName}</h1>
+        <p class="mt-4 text-lg text-[#a1a1aa]">Estamos cerrados en este momento</p>
+        <p class="mt-2 text-sm text-[#71717a]">Vuelve pronto</p>
+      </main>
+      <Footer restaurantName={restaurantName} whatsappPhone={whatsappPhone} />
+    </PublicLayout>
+  ) : (
+    <PublicLayout title={`Menú - ${restaurantName}`}>
+      <slot name="head">
+        <meta property="og:title" content={`Menú - ${restaurantName}`} />
+        <meta property="og:description" content="Descubre nuestro menú digital" />
+        <meta property="og:type" content="website" />
+      </slot>
+
+      <Toast />
+
+      {/* Mobile sidebar backdrop */}
+      <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-sm lg:hidden"></div>
+
+      <div class="flex flex-1">
+        <aside id="category-sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col border-r border-white/5 bg-[#0f0f0f] p-4 transition-transform duration-300 lg:static lg:z-0 lg:translate-x-0 lg:block">
+          <div class="mb-4 flex items-center justify-between lg:mb-6">
+            <h1 class="font-display text-xl font-bold text-[#f5f5f7]">{restaurantName}</h1>
+            <button id="sidebar-close" class="rounded-full p-2 text-[#a1a1aa] transition hover:bg-white/10 lg:hidden">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <SearchBar />
+          <div class="mt-4 flex-1 overflow-y-auto">
+            <CategorySidebar categories={categories} />
+          </div>
+        </aside>
+
+        <main class="flex flex-1 flex-col">
+          <div class="flex-1 mx-auto w-full max-w-4xl px-4 py-6">
+            <div class="mb-6 flex items-center gap-3 lg:hidden">
+              <button id="sidebar-toggle" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#1a1a1a] text-[#f5f5f7]">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <h1 class="font-display text-xl font-bold text-[#f5f5f7]">{restaurantName}</h1>
+            </div>
+
+            <div class="mb-6 lg:hidden">
+              <SearchBar />
+            </div>
+
+            {categories.map((cat) => (
+              <section key={cat.id} id={`cat-${cat.id}`} class="mb-10">
+                <h2 class="mb-4 font-display text-lg font-bold text-[#f5f5f7]">{cat.name}</h2>
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {cat.products.map((product) => (
+                    <ProductCard product={product} />
+                  ))}
+                </div>
+              </section>
+            ))}
+
+            <div id="no-results" class="hidden py-16 text-center">
+              <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-[#71717a]">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </div>
+              <p class="text-sm font-medium text-[#f5f5f7]">No encontramos productos</p>
+              <p class="mt-1 text-xs text-[#71717a]">Prueba con otro término de búsqueda</p>
+            </div>
+          </div>
+          <Footer restaurantName={restaurantName} whatsappPhone={whatsappPhone} />
+        </main>
+      </div>
+
+      <ProductDetail />
+      <CartButton restaurantId={restaurantId} />
+      <CartDrawer restaurantId={restaurantId} whatsappPhone={whatsappPhone} />
+      <CheckoutModal restaurantSlug={slug!} restaurantId={restaurantId} tableId={tableId} />
+      <SuccessModal whatsappPhone={whatsappPhone} />
+
+      <script id="page-data" type="application/json" set:html={productsJson}></script>
+
+      <script>
+        const pageDataEl = document.getElementById('page-data');
+        if (!pageDataEl) throw new Error('Missing embedded page data');
+        const pageData = JSON.parse(pageDataEl.textContent);
+        const PRODUCTS_MAP = pageData.productsMap;
+        const RESTAURANT_ID = pageData.restaurantId;
+
+        const detailPanel = document.getElementById('product-detail');
+        const closeBtn = document.getElementById('close-detail');
+        const addBtn = document.getElementById('add-to-cart');
+        const detailName = document.getElementById('detail-name');
+        const detailDesc = document.getElementById('detail-description');
+        const detailPrice = document.getElementById('detail-price');
+        const detailImg = document.getElementById('detail-image');
+        const detailImgPlaceholder = document.getElementById('detail-image-placeholder');
+        const detailModSection = document.getElementById('detail-modifiers-section');
+        const modifiersList = document.getElementById('modifiers-list');
+        const qtyDisplay = document.getElementById('qty-display');
+        const qtyMinus = document.getElementById('qty-minus');
+        const qtyPlus = document.getElementById('qty-plus');
+
+        let currentProductId = null;
+        let currentQty = 1;
+
+        function loadCart() {
+          try {
+            const raw = localStorage.getItem('velziaCart_' + RESTAURANT_ID);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return parsed.items || [];
+          } catch { return []; }
+        }
+
+        function saveCart(items) {
+          const data = { timestamp: Date.now(), items };
+          localStorage.setItem('velziaCart_' + RESTAURANT_ID, JSON.stringify(data));
+          document.dispatchEvent(new CustomEvent('cart-updated'));
+        }
+
+        function showToast(msg, type) {
+          if (typeof window.showToast === 'function') {
+            window.showToast(msg, type || 'success');
+            return;
+          }
+          const container = document.getElementById('toast-container');
+          if (!container) return;
+          const colors = {
+            success: 'bg-green-600 text-white',
+            error: 'bg-red-600 text-white',
+            info: 'bg-[#1a1a1a] text-white',
+          };
+          const toast = document.createElement('div');
+          toast.className = 'rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ' + (colors[type] || colors.info);
+          toast.textContent = msg;
+          container.appendChild(toast);
+          setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+          }, 3000);
+        }
+
+        function openDetail(productId) {
+          const product = PRODUCTS_MAP[productId];
+          if (!product) return;
+
+          currentProductId = product.id;
+          currentQty = 1;
+          if (qtyDisplay) qtyDisplay.textContent = '1';
+
+          if (detailName) detailName.textContent = product.name;
+          if (detailDesc) detailDesc.textContent = product.description || '';
+          if (detailPrice) detailPrice.textContent = '$' + product.price.toLocaleString('es-CO');
+
+          if (product.image_url) {
+            if (detailImg) { detailImg.src = product.image_url; detailImg.alt = product.name; detailImg.classList.remove('hidden'); }
+            if (detailImgPlaceholder) detailImgPlaceholder.classList.add('hidden');
+          } else {
+            if (detailImg) detailImg.classList.add('hidden');
+            if (detailImgPlaceholder) {
+              detailImgPlaceholder.textContent = product.name.charAt(0);
+              detailImgPlaceholder.classList.remove('hidden');
+            }
+          }
+
+          if (addBtn) addBtn.setAttribute('data-product-id', String(product.id));
+
+          if (detailModSection && modifiersList) {
+            if (product.modifiers && product.modifiers.length > 0) {
+              detailModSection.style.display = '';
+              modifiersList.innerHTML = product.modifiers.map((mod) => `
+                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-white/5 p-3 transition hover:bg-white/5">
+                  <input type="checkbox" value="${mod.id}" data-mod-name="${mod.name}" data-mod-price="${mod.extra_price}" class="h-4 w-4 rounded border-white/20 bg-white/5 text-brand-600" />
+                  <span class="flex-1 text-sm text-[#f5f5f7]">${mod.name}</span>
+                  ${mod.extra_price > 0 ? `<span class="text-xs text-[#a1a1aa]">+$${mod.extra_price.toLocaleString('es-CO')}</span>` : ''}
+                </label>
+              `).join('');
+            } else {
+              detailModSection.style.display = 'none';
+              modifiersList.innerHTML = '';
+            }
+          }
+
+          if (detailPanel) detailPanel.classList.remove('translate-x-full');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetail() {
+          if (detailPanel) detailPanel.classList.add('translate-x-full');
+          document.body.style.overflow = '';
+          currentProductId = null;
+        }
+
+        document.addEventListener('open-product', ((e) => {
+          openDetail(e.detail.productId);
+        }));
+
+        if (closeBtn) closeBtn.addEventListener('click', closeDetail);
+
+        if (qtyMinus) qtyMinus.addEventListener('click', () => {
+          if (currentQty > 1) {
+            currentQty--;
+            if (qtyDisplay) qtyDisplay.textContent = String(currentQty);
+          }
+        });
+        if (qtyPlus) qtyPlus.addEventListener('click', () => {
+          if (currentQty < 99) {
+            currentQty++;
+            if (qtyDisplay) qtyDisplay.textContent = String(currentQty);
+          }
+        });
+
+        if (addBtn) addBtn.addEventListener('click', () => {
+          const pid = parseInt(addBtn.getAttribute('data-product-id') || '0');
+          if (!pid) return;
+
+          const product = PRODUCTS_MAP[pid];
+          if (!product) return;
+
+          const modifierCheckboxes = modifiersList ? modifiersList.querySelectorAll('input[type="checkbox"]:checked') : [];
+          const selectedModifiers = Array.from(modifierCheckboxes).map((cb) => {
+            const val = parseInt(cb.value);
+            const mod = (product.modifiers || []).find((m) => m.id === val);
+            return mod || { id: val, name: cb.getAttribute('data-mod-name') || '', extra_price: parseInt(cb.getAttribute('data-mod-price') || '0') };
+          });
+
+          const cartItem = {
+            product: product,
+            quantity: currentQty,
+            selectedModifiers: selectedModifiers,
+          };
+
+          const items = loadCart();
+          const modifierIds = selectedModifiers.map((m) => m.id).sort();
+          const existingIdx = items.findIndex((item) => {
+            if (item.product.id !== product.id) return false;
+            const itemModIds = (item.selectedModifiers || []).map((m) => m.id).sort();
+            if (itemModIds.length !== modifierIds.length) return false;
+            return modifierIds.every((id, i) => id === itemModIds[i]);
+          });
+
+          if (existingIdx >= 0) {
+            items[existingIdx].quantity += currentQty;
+          } else {
+            items.push(cartItem);
+          }
+
+          saveCart(items);
+          showToast('Producto agregado al pedido', 'success');
+          const originalText = addBtn.textContent;
+          addBtn.textContent = '✓ Agregado';
+          addBtn.classList.add('bg-green-600');
+          addBtn.classList.remove('bg-brand-600');
+          setTimeout(() => {
+            addBtn.textContent = originalText;
+            addBtn.classList.remove('bg-green-600');
+            addBtn.classList.add('bg-brand-600');
+          }, 1500);
+        });
+
+        // Search functionality — filter product cards
+        const noResults = document.getElementById('no-results');
+        document.querySelectorAll('.search-input').forEach((input) => {
+          input.addEventListener('input', (e) => {
+            const q = (e.target as HTMLInputElement).value.toLowerCase().trim();
+            const sections = document.querySelectorAll('section[id^="cat-"]');
+            let totalVisible = 0;
+            sections.forEach((section) => {
+              const cards = section.querySelectorAll('[data-product-id]');
+              let visibleCount = 0;
+              cards.forEach((card) => {
+                const name = (card.querySelector('h3') as HTMLElement)?.textContent?.toLowerCase() || '';
+                const desc = (card.querySelector('p') as HTMLElement)?.textContent?.toLowerCase() || '';
+                const match = !q || name.includes(q) || desc.includes(q);
+                (card as HTMLElement).style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+              });
+              // Hide entire section if no visible products
+              (section as HTMLElement).style.display = visibleCount === 0 ? 'none' : '';
+              totalVisible += visibleCount;
+            });
+            if (noResults) noResults.classList.toggle('hidden', totalVisible > 0);
+          });
+        });
+
+        // Mobile sidebar (hamburger) toggle
+        const sidebar = document.getElementById('category-sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+
+        function openSidebar() {
+          sidebar?.classList.remove('-translate-x-full');
+          sidebarOverlay?.classList.remove('hidden');
+        }
+        function closeSidebarMenu() {
+          sidebar?.classList.add('-translate-x-full');
+          sidebarOverlay?.classList.add('hidden');
+        }
+
+        sidebarToggle?.addEventListener('click', openSidebar);
+        sidebarClose?.addEventListener('click', closeSidebarMenu);
+        sidebarOverlay?.addEventListener('click', closeSidebarMenu);
+
+        // Close sidebar after clicking a category link (mobile)
+        document.querySelectorAll('nav a[href^="#cat-"]').forEach((link) => {
+          link.addEventListener('click', () => {
+            if (window.innerWidth < 1024) closeSidebarMenu();
+          });
+        });
+
+        // Category sidebar smooth scroll
+        document.querySelectorAll('nav a[href^="#cat-"]').forEach((link) => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const id = link.getAttribute('href')?.slice(1);
+            if (id) {
+              document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+        });
+
+        // Deep link: scroll to product card if #product-XXX in URL
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#product-')) {
+          const id = hash.split('-')[1];
+          const card = document.querySelector(`[data-product-id="${id}"]`);
+          if (card) {
+            setTimeout(() => {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              (card as HTMLElement).style.borderColor = '#7c3aed';
+              (card as HTMLElement).style.boxShadow = '0 0 0 2px rgba(124,58,237,0.4)';
+              setTimeout(() => {
+                (card as HTMLElement).style.borderColor = '';
+                (card as HTMLElement).style.boxShadow = '';
+              }, 2500);
+            }, 500);
+          }
+        }
+      </script>
+    </PublicLayout>
+  )
+}

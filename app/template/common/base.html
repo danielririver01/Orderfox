@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 
 <head>
@@ -14,7 +14,7 @@
         }
     </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/Zorro.png') }}" type="image/png">
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link crossorigin=" href=" https://fonts.gstatic.com" rel="preconnect" />
     <link
@@ -104,7 +104,7 @@
             <!-- Logo -->
             <div class="flex items-center gap-3 px-6 py-6 border-b border-white/5">
                 <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-3">
-                    <img src="{{ url_for('static', filename='img/Zorro.png') }}" alt="Orderfox" class="w-10 h-10">
+                    <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Orderfox" class="w-10 h-10">
                     <div>
                         <h2 class="text-sm font-black text-white uppercase tracking-tight"
                             style="font-family: 'Outfit', sans-serif;">Velzia</h2>

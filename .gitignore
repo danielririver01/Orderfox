@@ -59,6 +59,12 @@ seed_restaurant.py
 #paquetes de node.js
 node_modules/
 
+# Astro build/cache
+.astro/
+**/.astro/
+dist/
+astro/dist/
+
 # Playwright
 /playwright-report/
 /blob-report/
