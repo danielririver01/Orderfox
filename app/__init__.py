@@ -56,7 +56,7 @@ def create_app():
     # Flask-WTF's _csrf_check internamente respeta request._csrf_exempt.
     @app.before_request
     def exempt_api_from_csrf():
-        if request.path.startswith('/api/'):
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/'):
             request._csrf_exempt = True
 
     csrf.init_app(app)
@@ -103,6 +103,7 @@ def create_app():
     from .routes.categories import categories_bp
     from .routes.products import products_bp
     from .routes.orders import orders_bp
+    from .routes.insights import insights_bp
     from .routes.public import public_bp
     from .routes.tables import tables_bp
     from .routes.api_auth import api_auth_bp
@@ -118,6 +119,7 @@ def create_app():
     app.register_blueprint(categories_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)
+    app.register_blueprint(insights_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(tokens_bp)
@@ -134,7 +136,7 @@ def create_app():
     @app.before_request
     def block_grace_period_crud():
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
-            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint or 'api_auth.' in request.endpoint or request.path.startswith('/api/')):
+            if request.endpoint and ('auth.' in request.endpoint or 'payment' in request.endpoint or 'public.' in request.endpoint or 'api_auth.' in request.endpoint or request.path.startswith('/api/') or request.path.startswith('/insights/api/')):
                 return
                 
             restaurant = get_current_restaurant()

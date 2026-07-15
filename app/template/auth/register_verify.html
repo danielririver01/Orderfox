@@ -142,14 +142,14 @@
                                 <p class="text-xs font-bold text-orange-300 capitalize leading-none">
                                     {{ plan }}
                                     <span class="text-gray-600 font-normal">
-                                        {% if plan == 'trial' %}· 10 días gratis
+                                        {% if plan == 'trial' %}· 90 días gratis
                                         {% elif plan == 'emprendedor' %}· $30.000/mes
                                         {% elif plan == 'crecimiento' %}· $40.000/mes
                                         {% else %}· $50.000/mes{% endif %}
                                     </span>
                                 </p>
                             </div>
-                            <span class="text-[9px] text-gray-600 font-medium">Sin tarjeta requerida</span>
+                            {% if plan == 'trial' %}<span class="text-[9px] text-gray-600 font-medium">Sin tarjeta requerida</span>{% endif %}
                         </div>
                         {% endif %}
 
@@ -161,7 +161,7 @@
                             style="border-color: rgba(255,255,255,0.05);">
                             <span class="text-xs text-gray-600">
                                 ¿Problemas?
-                                <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Problema%20en%20registro"
+                                <a href="{{ url_for('auth.legal') }}#faq"
                                     class="auth-link-soft font-bold ml-1" style="color: #f97316;">Contáctanos</a>
                             </span>
                         </div>
@@ -170,7 +170,7 @@
                     <!-- Card footer -->
                     <div class="auth-card-footer">
                         <span>© 2026 Velzia</span>
-                        <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Registro%20Soporte%20Velzia"
+                        <a href="{{ url_for('auth.legal') }}#faq"
                             class="auth-link-soft flex items-center gap-1 font-bold text-[10px] uppercase tracking-widest">
                             <span class="material-symbols-outlined text-[13px]">mail</span>
                             Ayuda

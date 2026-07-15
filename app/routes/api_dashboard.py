@@ -129,6 +129,7 @@ def subscription():
     sub_status = get_subscription_status(restaurant)
     plan_info = get_plan_limits(restaurant.plan_type)
     plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(restaurant.plan_type, 0)
+    plan_info['ai_tokens_unlimited'] = False
 
     products_used = ProductService.get_active_count(restaurant.id)
 

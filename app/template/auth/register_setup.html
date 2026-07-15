@@ -23,9 +23,9 @@
         .reg-field {
             width: 100%;
             border-radius: 0.75rem;
-            border: 1px solid rgba(249, 115, 22, 0.18);
-            background: rgba(30, 24, 18, 0.85);
-            color: #f5f0eb;
+            border: 1px solid rgba(249, 115, 22, 0.25) !important;
+            background: rgba(40, 34, 28, 0.9) !important;
+            color: #f5f0eb !important;
             padding: 0.875rem 1rem;
             font-size: 0.875rem;
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -34,12 +34,12 @@
         }
 
         .reg-field::placeholder {
-            color: #4b4440;
+            color: #6b6058 !important;
         }
 
         .reg-field:focus {
-            border-color: #f97316;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
         }
 
         .reg-label {
@@ -195,7 +195,7 @@
                                 Plan seleccionado</p>
                             <p class="text-sm font-bold text-orange-300 capitalize leading-none">{{ plan }}
                                 <span class="text-gray-500 font-normal text-xs ml-1">
-                                    {% if plan == 'trial' %}· 10 días gratis
+                                    {% if plan == 'trial' %}· 90 días gratis
                                     {% elif plan == 'emprendedor' %}· $30.000/mes
                                     {% elif plan == 'crecimiento' %}· $40.000/mes
                                     {% else %}· $50.000/mes{% endif %}
@@ -259,7 +259,7 @@
                             onmouseover="if(!this.disabled) this.style.background='#ea6c0a'"
                             onmouseout="if(!this.disabled) this.style.background='#f97316'">
                             {% if plan == 'trial' %}
-                            <span>Comenzar Prueba Gratis</span>
+                            <span>Comenzar Prueba Premium</span>
                             <span class="material-symbols-outlined text-[20px]">rocket_launch</span>
                             {% else %}
                             <span>Continuar al Pago</span>
@@ -350,7 +350,7 @@
                             onmouseover="if(!this.disabled) this.style.background='#ea6c0a'"
                             onmouseout="if(!this.disabled) this.style.background='#f97316'">
                             {% if plan == 'trial' %}
-                            <span>Comenzar Prueba Gratis</span>
+                            <span>Comenzar Prueba Premium</span>
                             <span class="material-symbols-outlined text-[20px]">rocket_launch</span>
                             {% else %}
                             <span>Continuar al Pago</span>
@@ -365,7 +365,7 @@
                         <span>© 2026 Velzia</span>
                         <span>
                             ¿Problemas?
-                            <a href="mailto:{{ SUPPORT_EMAIL }}?subject=Problema%20en%20registro"
+                            <a href="{{ url_for('auth.legal') }}#faq"
                                 class="auth-link-soft ml-1 font-bold" style="color: #f97316;">Contáctanos</a>
                         </span>
                     </div>

@@ -10,7 +10,9 @@ from app import db
 from jose import jwt
 import requests as req
 from app.models import User, AITokenWallet, AITokenTransaction
-from app.utils.subscription import initialize_or_reset_token_wallet, TOP_UP_PACKS
+from app.utils.subscription import (
+    initialize_or_reset_token_wallet, TOP_UP_PACKS, is_subscription_active, can_use_ai,
+)
 
 
 class TokenService:
@@ -77,8 +79,8 @@ class TokenService:
 
         return {
             'is_elite':        wallet.is_elite,
-            'plan_limit':      wallet.plan_limit or 300,
-            'plan_tokens':     wallet.plan_tokens if not wallet.is_elite else 300,
+            'plan_limit':      wallet.plan_limit or 0,
+            'plan_tokens':     wallet.plan_tokens,
             'extra_tokens':    wallet.extra_tokens,
             'total_available': wallet.total_available,
             'tokens_used':     wallet.tokens_used_month,
@@ -118,29 +120,20 @@ class TokenService:
             }
 
         try:
-            if wallet.is_elite:
-                # Elite: no deduction, just log the scan
-                tx = AITokenTransaction(
-                    user_id=user.id, type='elite_scan', amount=0,
-                    source='scanner_ia',
-                    description='Escaneo IA (Plan Elite — sin costo)',
-                )
-                db.session.add(tx)
+            # Deduct from plan_tokens first, then extra_tokens
+            if wallet.plan_tokens > 0:
+                wallet.plan_tokens -= 1
             else:
-                # Deduct from plan_tokens first, then extra_tokens
-                if wallet.plan_tokens > 0:
-                    wallet.plan_tokens -= 1
-                else:
-                    wallet.extra_tokens -= 1
+                wallet.extra_tokens -= 1
 
-                wallet.tokens_used_month += 1
+            wallet.tokens_used_month += 1
 
-                tx = AITokenTransaction(
-                    user_id=user.id, type='consume', amount=-1,
-                    source='scanner_ia',
-                    description='Escaneo IA',
-                )
-                db.session.add(tx)
+            tx = AITokenTransaction(
+                user_id=user.id, type='consume', amount=-1,
+                source='scanner_ia',
+                description='Escaneo IA',
+            )
+            db.session.add(tx)
 
             db.session.commit()
             current_app.logger.info(

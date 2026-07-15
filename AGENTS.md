@@ -1,7 +1,7 @@
 # Orderfox AI Agent Guide
 
 **Project:** Restaurant ordering management SaaS platform  
-**Version:** 1.3.0 | **Stack:** Flask (Python) + Vanilla JS + Tailwind CSS + MySQL  
+**Version:** 1.4.0 | **Stack:** Flask (Python) + Vanilla JS + Tailwind CSS + MySQL  
 **Repository:** https://github.com/danielririver01/Orderfox.git
 
 ---

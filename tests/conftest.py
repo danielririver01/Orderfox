@@ -148,7 +148,7 @@ def grace_period_restaurant(db):
         plan_type='emprendedor',
         is_active=True,
         is_open=True,
-        subscription_expires_at=datetime.now(timezone.utc) - timedelta(days=5),
+        subscription_expires_at=datetime.now(timezone.utc) - timedelta(days=2),
         has_used_trial=False,
     )
     db.session.add(r)

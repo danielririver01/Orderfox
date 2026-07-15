@@ -312,6 +312,7 @@ def subscription():
     # Límites del plan actual
     plan_info = get_plan_limits(restaurant.plan_type)
     plan_info['ai_tokens'] = AI_TOKEN_LIMITS.get(restaurant.plan_type, 0)
+    plan_info['ai_tokens_unlimited'] = False
     
     # Fecha de creación del restaurante (formateada)
     created_date = "No disponible"
@@ -384,6 +385,7 @@ def profile():
 @require_active
 def change_email():
     user = DashboardService.get_user(session['user_id'])
+    is_clerk_user = bool(user.clerk_id) if user else False
     
     if request.method == 'POST':
         if request.is_json:

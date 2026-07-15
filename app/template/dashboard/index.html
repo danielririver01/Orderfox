@@ -50,6 +50,33 @@
 
 
 
+    <!-- Copilot Insights Event Card -->
+    <div id="insights-event-card" class="hidden mb-6 md:mb-8">
+        <div class="bg-gradient-to-br from-orange-500/5 to-orange-600/5 dark:from-orange-500/[0.04] dark:to-orange-600/[0.03] rounded-2xl border border-orange-200/50 dark:border-orange-500/10 p-5 md:p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none"></div>
+            <div class="flex items-start justify-between gap-4 relative">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-orange-500 text-lg">auto_awesome</span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">Copilot VZ</span>
+                    </div>
+                    <h4 id="event-card-title" class="text-base font-extrabold text-white tracking-tight mb-1"></h4>
+                    <p id="event-card-preview" class="text-sm text-gray-400 line-clamp-2"></p>
+                </div>
+                <div class="flex-shrink-0 flex flex-col gap-2">
+                    <button id="event-card-analyze"
+                        class="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-500/25">
+                        Analizar
+                    </button>
+                    <button id="event-card-dismiss"
+                        class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
+                        Descartar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Section 1: Business Operations -->
     <section class="mb-6 md:mb-8" aria-label="Métricas Operativas">
         <div class="grid grid-cols-3 gap-2 md:gap-4">
@@ -223,4 +250,88 @@
     const SCANNER_IA_URL = "{{ SCANNER_IA_URL }}";
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+(function() {
+    const card = document.getElementById('insights-event-card');
+    const title = document.getElementById('event-card-title');
+    const preview = document.getElementById('event-card-preview');
+    const analyzeBtn = document.getElementById('event-card-analyze');
+    const dismissBtn = document.getElementById('event-card-dismiss');
+    const sidebarBadge = document.getElementById('sidebar-insights-badge');
+    const mobileBadge = document.getElementById('mobile-insights-badge');
+
+    let currentEventId = null;
+    let analyzing = false;
+
+    function setBadge(show) {
+        if (sidebarBadge) sidebarBadge.classList.toggle('hidden', !show);
+        if (mobileBadge) mobileBadge.classList.toggle('hidden', !show);
+    }
+
+    function fetchPendingEvent() {
+        fetch('/insights/api/events/pending')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.event) {
+                    var ev = data.event;
+                    currentEventId = ev.id;
+                    title.textContent = ev.title;
+                    preview.textContent = ev.preview;
+                    card.classList.remove('hidden');
+                    setBadge(true);
+                } else {
+                    card.classList.add('hidden');
+                    setBadge(false);
+                    currentEventId = null;
+                }
+            })
+            .catch(function() {
+                card.classList.add('hidden');
+                setBadge(false);
+            });
+    }
+
+    function consumeEvent() {
+        if (!currentEventId || analyzing) return;
+        analyzing = true;
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analizando...';
+        fetch('/insights/api/events/' + currentEventId + '/consume', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    card.classList.add('hidden');
+                    setBadge(false);
+                    currentEventId = null;
+                }
+            })
+            .catch(function() {
+                card.classList.add('hidden');
+                setBadge(false);
+            })
+            .finally(function() {
+                analyzing = false;
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analizar';
+            });
+    }
+
+    function dismissEvent() {
+        if (!currentEventId) return;
+        var eid = currentEventId;
+        currentEventId = null;
+        card.classList.add('hidden');
+        setBadge(false);
+        fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' }).catch(function() {});
+    }
+
+    if (analyzeBtn) analyzeBtn.addEventListener('click', consumeEvent);
+    if (dismissBtn) dismissBtn.addEventListener('click', dismissEvent);
+
+    fetchPendingEvent();
+    setInterval(fetchPendingEvent, 30000);
+})();
+</script>
 {% endblock %}

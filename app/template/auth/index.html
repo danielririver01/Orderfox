@@ -128,7 +128,7 @@
                 <!-- Bottom links -->
                 <div class="mt-8 flex justify-center gap-6 text-sm text-gray-600 font-medium">
                     <a class="auth-link-soft transition-colors"
-                        href="mailto:{{ SUPPORT_EMAIL }}?subject=Soporte%20Dashboard%20Velzia">Ayuda</a>
+                        href="{{ url_for('auth.legal') }}#faq">Ayuda</a>
                     <a class="auth-link-soft transition-colors" href="{{ url_for('auth.legal') }}">Legal</a>
                 </div>
 
@@ -250,7 +250,7 @@
                                             </svg>
                                         </div>
                                         <p class="text-sm font-bold text-green-400 text-center mb-2">¡Bienvenido!</p>
-                                        <p class="text-xs text-gray-500 text-center mb-4">Tu plan trial (10 días) está activado con 10 tokens IA</p>
+                                        <p class="text-xs text-gray-500 text-center mb-4">Tu plan de Prueba Premium (90 días) está activado con 50 créditos IA para Copilot VZ y Scanner IA</p>
                                         <p class="text-xs text-gray-600 text-center">Redirigiendo...</p>
                                     </div>
                                 `;

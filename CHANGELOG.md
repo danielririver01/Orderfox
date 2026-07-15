@@ -4,7 +4,44 @@ Todas las fechas en UTC.
 
 ---
 
-## [1.3.0] — 2026-04-14
+## [1.4.0] — 2026-07-15
+
+### Añadido
+- **Copilot VZ** — Analista de negocios IA completamente funcional
+  - Clasificador híbrido (SQL rápido + análisis profundo con DeepSeek)
+  - Prompt builder con 12 reglas estrictas de identidad, estilo y alcance
+  - Context manager con compresión en 2 fases (resumen + modo comprimido)
+  - Sistema de gráficas automáticas (Chart.js + sanitizer)
+  - Onboarding inteligente según madurez de datos (4 niveles)
+  - Sugerencias dinámicas de bienvenida y seguimiento contextual
+  - Motor de eventos automáticos (APScheduler)
+  - Anillo de contexto SVG con persistencia
+  - Disclaimer "Copilot VZ puede cometer errores" inteligente
+  - Edición de mensajes y regeneración de respuestas
+  - Conversaciones ancladas, búsqueda y renombrado
+- **Frontend Astro standalone** para el menú digital público
+  - Migración completa del menú QR a Astro
+  - URLs redirigidas desde Flask al nuevo frontend
+- Documentación completa de Copilot VZ (GUIDE-07)
+
+### Cambiado
+- Migración del menú público de Flask/Jinja2 a Astro
+- Dashboard: rediseño Friendly AI-Centric (Velzia)
+- Panel de suscripción: diseño renovado en pestañas (Plan Actual, Historial, Planes)
+- Autenticación: flujo Clerk sync simplificado, plantillas login pulidas
+- Sidebar/navbar: logo y marca actualizados en todas las páginas
+- Modal de compra de tokens con packs de 5K y 10K
+- `AGENTS.md` actualizado con guía de Copilot VZ
+- Logo del zorro reemplazado por robot chef en el menú digital (Astro favicon)
+- System prompt de Copilot VZ: versión v1.3 (regla de identidad vs nombre del restaurante)
+
+### Arreglado
+- Disclaimer de Copilot VZ no aparecía en conversaciones nuevas
+- Botón de "Editar" en página de perfil del dashboard corregido
+- Pantalla de error 429 rediseñada y 500 estilizada
+- Varias correcciones en templates auth y dashboard
+
+---
 
 ### Añadido
 - Sistema de tokens AI (Velzia 2.0.0)

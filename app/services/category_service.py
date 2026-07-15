@@ -31,6 +31,13 @@ class CategoryService:
         if not name or not name.strip():
             return None, 'Nombre es requerido'
 
+        clean_name = name.strip()
+        duplicate = Category.query.filter_by(
+            restaurant_id=restaurant_id
+        ).filter(db.func.lower(Category.name) == clean_name.lower()).first()
+        if duplicate:
+            return None, 'Ya existe una categoría con ese nombre'
+
         max_order = db.session.query(db.func.max(Category.sort_order)).filter_by(
             restaurant_id=restaurant_id
         ).scalar() or 0
@@ -56,7 +63,14 @@ class CategoryService:
     def update_category(category, name=None, description=None, is_active=None,
                         image_file=None, delete_image_flag=False):
         if name is not None:
-            category.name = name.strip() if name else name
+            new_name = name.strip() if name else name
+            if new_name and new_name.lower() != category.name.lower():
+                duplicate = Category.query.filter_by(
+                    restaurant_id=category.restaurant_id
+                ).filter(db.func.lower(Category.name) == new_name.lower()).first()
+                if duplicate and duplicate.id != category.id:
+                    return None, 'Ya existe una categoría con ese nombre'
+            category.name = new_name
         if description is not None:
             category.description = description
         if is_active is not None:

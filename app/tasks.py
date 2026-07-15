@@ -3,6 +3,29 @@ from app.models import Restaurant, Order
 from datetime import datetime, timedelta, timezone
 from flask import has_app_context, current_app
 
+
+def scan_business_events():
+    """Escanea restaurantes en busca de BusinessEvents. Cada hora."""
+    if has_app_context():
+        return _perform_event_scan()
+    else:
+        with scheduler.app.app_context():
+            return _perform_event_scan()
+
+
+def _perform_event_scan():
+    try:
+        from app.services.insights.event_engine import scan_all_restaurants, auto_dismiss_expired
+        dismissed = auto_dismiss_expired()
+        results = scan_all_restaurants()
+        current_app.logger.info(
+            f"[{datetime.now(timezone.utc)}] "
+            f"Events: scanned={results['scanned']}, created={results['events_created']}, "
+            f"auto-dismissed={dismissed}"
+        )
+    except Exception as e:
+        current_app.logger.error(f"CRITICAL ERROR in event scan: {e}")
+
 def delete_inactive_accounts():
     """
     Elimina cuentas (Restaurantes) que están inactivas y fueron creadas hace más de 24 horas.
@@ -111,4 +134,13 @@ def init_tasks(scheduler):
             func=expire_pending_orders,
             trigger='cron',
             minute=0  # Cada hora en punto
+        )
+
+    # Programar escaneo de BusinessEvents cada hora
+    if not scheduler.get_job('scan_business_events'):
+        scheduler.add_job(
+            id='scan_business_events',
+            func=scan_business_events,
+            trigger='cron',
+            minute=30,  # 30 minutos después de expire_pending_orders
         )

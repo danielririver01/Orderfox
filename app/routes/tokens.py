@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, request, session, current_app, redirect, u
 from app import db
 from app.models import User, AITokenTransaction
 from app.csrf import csrf
-from app.utils.subscription import TOP_UP_PACKS
+from app.utils.subscription import TOP_UP_PACKS, is_subscription_active
 import mercadopago
 from app.services.token_service import TokenService
 
@@ -115,15 +115,17 @@ def topup_initiate():
         return jsonify({'error': 'unauthorized'}), 401
 
     data = request.get_json(silent=True) or {}
-    pack_key = data.get('pack', '5k')
+    pack_key = data.get('pack', '25')
     pack = TOP_UP_PACKS.get(pack_key)
     if not pack:
         return jsonify({'error': 'Pack inválido'}), 400
 
-    plan_type = user.restaurant.plan_type if user.restaurant else 'trial'
-    if plan_type == 'trial':
+    # Compra permitida solo con suscripción estrictamente activa (trial o plan
+    # de pago). En gracia o expirada → debe activar un plan primero.
+    restaurant = user.restaurant
+    if restaurant and not is_subscription_active(restaurant, include_grace_period=False):
         return jsonify({
-            'error': 'Los usuarios en trial no pueden comprar tokens. Elige un plan.',
+            'error': 'Tu prueba gratuita ha finalizado. Activa un plan para comprar créditos IA.',
         }), 403
 
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
@@ -145,16 +147,25 @@ def topup_initiate():
                 f"{base_url}/api/tokens/topup/callback"
                 f"?pack={pack_key}&user={user.id}&status=pending",
         },
-        "auto_return": "approved",
         "external_reference": f"token_topup:{user.id}:{pack_key}",
     }
 
+    # auto_return solo en producción: Mercado Pago IGNORA las back_urls en
+    # cuentas TEST / dominios localhost, y con auto_return="approved" exige
+    # back_urls.success definido -> la preferencia se rechaza ("Error MP").
+    if base_url and 'localhost' not in base_url and '127.0.0.1' not in base_url:
+        preference_data["auto_return"] = "approved"
+
     try:
         pref_resp = sdk.preference().create(preference_data)
+        if pref_resp.get('status') != 201:
+            current_app.logger.error(f"MP topup error: {pref_resp}")
+            msg = pref_resp.get('response', {}).get('message', 'Error al crear la preferencia de pago')
+            return jsonify({'error': f'Error MP: {msg}'}), 500
         checkout_url = pref_resp['response']['init_point']
         return jsonify({'success': True, 'checkout_url': checkout_url})
     except Exception as e:
-        current_app.logger.error(f"MP topup error: {e}")
+        current_app.logger.error(f"MP topup exception: {e}")
         return jsonify({'error': 'Error MP'}), 500
 
 

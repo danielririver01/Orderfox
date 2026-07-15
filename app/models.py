@@ -273,22 +273,18 @@ class AITokenWallet(db.Model):
     @property
     def total_available(self):
         """Tokens disponibles para usar ahora mismo."""
-        if self.is_elite:
-            return float('inf')  # Elite: tokens ilimitados
         return self.plan_tokens + self.extra_tokens
 
     @property
     def usage_percent(self):
-        """Porcentaje de uso del plan mensual (0-100). None si Elite."""
-        if self.is_elite or not self.plan_limit:
+        """Porcentaje de uso del plan mensual (0-100). None si no hay límite."""
+        if not self.plan_limit:
             return None
         used = self.plan_limit - self.plan_tokens
         return round((used / self.plan_limit) * 100, 1)
 
     def can_scan(self):
         """¿El usuario puede hacer un escaneo ahora?"""
-        if self.is_elite:
-            return True
         return self.total_available > 0
 
     def __repr__(self):
@@ -366,3 +362,74 @@ class Expense(db.Model):
     
     def __repr__(self):
         return f'<Expense {self.description} ${self.amount}>'
+
+
+
+# ─── Copilot VZ: Conversaciones y Mensajes de IA ─────────────────────────────
+# Postulado de diseno:
+#   "PostgreSQL calcula, Flask organiza, la IA interpreta."
+# - CopilotConversation: una sesion de analisis del restaurante.
+# - CopilotMessage: cada turno (usuario o asistente).
+# - prompt_version + model se guardan para poder cambiar el prompt sin romper
+#   el historial de conversaciones anteriores.
+
+class CopilotConversation(db.Model):
+    __tablename__ = 'copilot_conversations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(200), nullable=True)
+    prompt_version = db.Column(db.String(10), default='v1.0')
+    model = db.Column(db.String(50), default='deepseek-chat')
+    analysis_active = db.Column(db.Boolean, default=False, nullable=False)
+    pinned = db.Column(db.Boolean, default=False, nullable=False)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),
+                          onupdate=lambda: datetime.now(timezone.utc))
+
+    restaurant = db.relationship('Restaurant', backref=db.backref('copilot_conversations', lazy=True, cascade='all, delete-orphan'))
+    user = db.relationship('User', backref=db.backref('copilot_conversations', lazy=True, cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<CopilotConversation {self.id} title={self.title}>'
+
+
+class CopilotMessage(db.Model):
+    __tablename__ = 'copilot_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('copilot_conversations.id', ondelete='CASCADE'), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    conversation = db.relationship('CopilotConversation', backref=db.backref('messages', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<CopilotMessage {self.id} [{self.role}]>'
+
+
+class CopilotBusinessEvent(db.Model):
+    __tablename__ = 'copilot_business_events'
+
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False, index=True)
+    kind = db.Column(db.String(50), nullable=False, index=True)
+    priority = db.Column(db.SmallInteger, default=0, nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    preview = db.Column(db.String(300), nullable=False)
+    template_key = db.Column(db.String(50), nullable=False)
+    template_data = db.Column(db.Text, nullable=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('copilot_conversations.id', ondelete='SET NULL'), nullable=True)
+    active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+    consumed_at = db.Column(AwareDateTime, nullable=True)
+    dismissed_at = db.Column(AwareDateTime, nullable=True)
+
+    restaurant = db.relationship('Restaurant', backref=db.backref('copilot_events', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<CopilotBusinessEvent {self.id} kind={self.kind} p={self.priority}>'

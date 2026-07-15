@@ -1,6 +1,6 @@
 # Documentación de Orderfox
 
-**Versión del proyecto:** 1.3.0 | **Última actualización:** 2026-06-16
+**Versión del proyecto:** 1.3.0 | **Última actualización:** 2026-07-15
 
 Mapa de navegación de toda la documentación técnica del proyecto.
 
@@ -42,6 +42,7 @@ Documentos de implementación y referencia.
 | [GUIDE-04: Scanner IA](02-GUIDES/GUIDE-04_Integracion_ScannerIA.md) | Integración con el servicio externo de inteligencia artificial |
 | [GUIDE-05: Estrategia PWA](02-GUIDES/GUIDE-05_Estrategia_Offline_PWA.md) | Estrategia offline, carrito y service workers |
 | [GUIDE-06: Env Vars](02-GUIDES/GUIDE-06_Referencia_Env_Vars.md) | Referencia completa de variables de entorno |
+| [GUIDE-07: Copilot VZ](02-GUIDES/GUIDE-07_Copilot_VZ.md) | Analista de negocios IA — arquitectura, flujo, API y componentes |
 
 ---
 

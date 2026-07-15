@@ -125,10 +125,10 @@
                     </p>
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
                         {% if plan_info.has_ai_tokens %}
-                        Potencia tu catálogo con <b class="text-gray-800 dark:text-white">{{ plan_info.ai_tokens }} créditos de IA</b> para
-                        clasificación automática.
+                        Dispones de <b class="text-gray-800 dark:text-white">{{ plan_info.ai_tokens }} créditos IA</b> para
+                        Copilot VZ y Scanner IA.
                         {% else %}
-                        IA de clasificación no disponible en este plan.
+                        Créditos IA no disponibles en este plan.
                         {% endif %}
                     </p>
                 </div>
@@ -201,13 +201,13 @@
         class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
 
         {% for plan_key, plan in [
-        ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos + 150 Tokens IA', 'price':
+        ('emprendedor', {'title': 'Plan Emprendedor', 'desc': 'Hasta 25 productos', 'credits': '250 créditos IA incluidos', 'price':
         '$30.000', 'color':
         'blue'}),
-        ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR + 500 Tokens IA', 'price':
+        ('crecimiento', {'title': 'Plan Crecimiento', 'desc': 'Hasta 100 productos + QR', 'credits': '800 créditos IA incluidos', 'price':
         '$40.000', 'color':
         'green'}),
-        ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores + 3000 Tokens IA', 'price': '$50.000',
+        ('elite', {'title': 'Plan Élite', 'desc': 'Ilimitado + Modificadores', 'credits': '3000 créditos IA incluidos', 'price': '$50.000',
         'color':
         'orange'})
         ] %}
@@ -221,6 +221,8 @@
                         plan.title }}</h4>
                     <p class="text-[10px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{
                         plan.desc }}</p>
+                    <p class="text-[11px] font-bold text-{{ plan.color }}-700 dark:text-{{ plan.color }}-300 mt-1">{{ plan.credits }}</p>
+                    <p class="text-[9px] text-gray-500 dark:text-gray-500 font-medium">Para Copilot VZ y Scanner IA</p>
                 </div>
                 <div class="text-right">
                     <p class="text-lg font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400">{{ plan.price
@@ -238,6 +240,8 @@
                 <div>
                     <h4 class="font-black text-gray-800 dark:text-white tracking-tight">{{ plan.title }}</h4>
                     <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium">{{ plan.desc }}</p>
+                    <p class="text-[11px] font-bold text-orange-600 dark:text-orange-400 mt-1">{{ plan.credits }}</p>
+                    <p class="text-[9px] text-gray-500 dark:text-gray-500 font-medium">Para Copilot VZ y Scanner IA</p>
                 </div>
                 <div class="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 dark:bg-orange-500/10 rounded-lg border border-orange-200 dark:border-orange-500/20">
                     <span class="material-symbols-outlined text-orange-500 text-[12px]">star</span>

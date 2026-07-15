@@ -196,7 +196,7 @@ class AuthService:
         is_trial = (selected_plan == 'trial')
 
         if is_trial:
-            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=10)
+            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=90)
             restaurant = Restaurant(
                 name=restaurant_name,
                 slug=slug,
@@ -261,6 +261,7 @@ class AuthService:
             'price_raw': limits['price_cop'],
             'has_ai_tokens': limits.get('has_ai_tokens', False),
             'ai_tokens': AI_TOKEN_LIMITS.get(plan_key, 0),
+            'ai_tokens_unlimited': False,
         }
 
     @staticmethod

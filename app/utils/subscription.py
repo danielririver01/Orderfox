@@ -43,9 +43,9 @@ PLAN_LIMITS = {
         'has_modifiers': True,
         'has_status_management': True,
         'has_ai_tokens': True,
-        'name': 'Prueba Gratuita Premium',
+        'name': 'Prueba Premium · 90 días',
         'price_cop': 0,
-        'duration_days': 10
+        'duration_days': 90
     }
 }
 
@@ -53,29 +53,35 @@ PLAN_LIMITS = {
 
 # Límites de tokens asignados por plan mensualmente
 AI_TOKEN_LIMITS = {
-    'trial':       10,
-    'emprendedor': 150,
-    'crecimiento': 500,
-    'elite':       3000,   # Límite mensual del plan Elite
+    'trial':       50,
+    'emprendedor': 250,
+    'crecimiento': 800,
+    'elite':       3000,   # Créditos reales mensuales (plan limitado, como los demás)
 }
 
-# Paquetes de recarga (Top-ups)
+# Paquetes de recarga (Top-ups) — Copilot VZ / Scanner IA
 TOP_UP_PACKS = {
-    '5k':  {
-        'price_cop': 5000, 
-        'tokens': 15, 
-        'label': 'Pack Básico',
+    '25': {
+        'price_cop': 5000,
+        'tokens': 25,
+        'label': 'Pack Inicial',
         'badge': 'Starter'
     },
-    '10k': {
-        'price_cop': 10000, 
-        'tokens': 35, 
+    '50': {
+        'price_cop': 9000,
+        'tokens': 50,
+        'label': 'Pack Popular',
+        'badge': 'Más popular'
+    },
+    '100': {
+        'price_cop': 16000,
+        'tokens': 100,
         'label': 'Pack Pro',
-        'badge': 'Popular'
+        'badge': 'Mejor valor'
     },
 }
 
-GRACE_PERIOD_DAYS = 10
+GRACE_PERIOD_DAYS = 5
 
 def is_subscription_active(restaurant, include_grace_period=False):
     """
@@ -107,8 +113,27 @@ def is_subscription_active(restaurant, include_grace_period=False):
     if include_grace_period:
         grace_end = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
         return now <= grace_end
-        
+
     return False
+
+
+def can_buy_tokens(restaurant):
+    """
+    ¿El restaurante puede COMPRAR créditos IA ahora?
+    Solo si la suscripción está estrictamente activa (trial o plan de pago).
+    En periodo de gracia o expirada → NO puede comprar (debe activar un plan).
+    """
+    return is_subscription_active(restaurant, include_grace_period=False)
+
+
+def can_use_ai(restaurant):
+    """
+    ¿El restaurante puede USAR la IA (Copilot VZ / Scanner IA) ahora?
+    Sí si está activa O en periodo de gracia. Tras la gracia → bloqueado,
+    aunque tenga créditos comprados (quedan congelados hasta activar plan).
+    """
+    return is_subscription_active(restaurant, include_grace_period=True)
+
 
 def get_plan_limits(plan_type):
     return PLAN_LIMITS.get(plan_type, PLAN_LIMITS['emprendedor'])
@@ -268,7 +293,7 @@ def get_subscription_status(restaurant):
             'expires_at': expires_at,
             'formatted_expiration': formatted_expiration,
             'can_crud': False,
-            'message': f'⚠️ Suscripción vencida. Tienes {days_grace_remaining} día{"s" if days_grace_remaining != 1 else ""} de gracia para renovar.',
+            'message': f'Tu suscripción ha finalizado. Tus datos están seguros. Tienes {days_grace_remaining} día{"s" if days_grace_remaining != 1 else ""} de gracia para renovar y seguir gestionando tu restaurante.',
             'badge_class': 'bg-orange-100 text-orange-700',
             'badge_text': 'Periodo de gracia',
             'plan': restaurant.plan_type
@@ -368,18 +393,26 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
             # Re-verificar dentro del bloque para evitar race conditions
             wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
             if not wallet:
-                # Para Elite: plan_limit es NULL (ilimitado)
-                is_elite_plan = (plan_type == 'elite')
-                actual_plan_limit = None if is_elite_plan else plan_limit
-                actual_plan_tokens = 0 if is_elite_plan else plan_limit
-                
+                is_trial_plan = (plan_type == 'trial')
+                if is_trial_plan:
+                    # Trial: 50 créditos de una vez, SIN renovación mensual
+                    actual_plan_limit = plan_limit          # tope para % de uso
+                    actual_plan_tokens = plan_limit          # 50 de una vez
+                    reset_at = None
+                else:
+                    # Todos los planes de pago (incl. Élite) son limitados y se
+                    # renuevan mes a mes con su cupo de AI_TOKEN_LIMITS.
+                    actual_plan_limit = plan_limit
+                    actual_plan_tokens = plan_limit
+                    reset_at = get_next_reset_date(now)
+
                 wallet = AITokenWallet(
                     user_id=user.id,
                     plan_limit=actual_plan_limit,
                     plan_tokens=actual_plan_tokens,
                     extra_tokens=0,
                     tokens_used_month=0,
-                    reset_at=get_next_reset_date(now)
+                    reset_at=reset_at
                 )
                 db.session.add(wallet)
                 
@@ -419,11 +452,12 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 current_app.logger.info(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
                 return wallet
 
-        # Para Elite: plan_limit es NULL (ilimitado)
-        is_elite_plan = (plan_type == 'elite')
-        actual_plan_limit = None if is_elite_plan else plan_limit
-        actual_plan_tokens = 0 if is_elite_plan else plan_limit
+        # Todos los planes de pago (incl. Élite) son limitados y se renuevan
+        # mes a mes con su cupo de AI_TOKEN_LIMITS.
+        actual_plan_limit = plan_limit
+        actual_plan_tokens = plan_limit
         
+
         wallet.plan_limit = actual_plan_limit
         wallet.plan_tokens = actual_plan_tokens
         wallet.tokens_used_month = 0

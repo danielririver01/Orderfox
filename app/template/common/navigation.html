@@ -47,6 +47,14 @@
                 <span class="material-symbols-outlined text-[20px]">document_scanner</span>
                 AI Scan
             </a>
+            <a href="{{ url_for('insights.index') }}" onclick="closeMobileNav()"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
+                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                <span class="material-symbols-outlined text-[20px]">insights</span>
+                Copilot VZ
+                <span id="mobile-insights-badge"
+                    class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
+            </a>
             <a href="{{ url_for('orders.index') }}" onclick="closeMobileNav()"
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
                 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
