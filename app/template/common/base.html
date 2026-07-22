@@ -28,6 +28,35 @@
 
 
     <style>
+        /* 0. MOBILE VIEWPORT FIX — elimina espacio negro al abrir/cerrar teclado */
+        .min-h-dynamic {
+            min-height: var(--app-height, 100vh);
+        }
+        @supports (height: 100dvh) {
+            .min-h-dynamic {
+                min-height: 100dvh;
+            }
+        }
+
+        /* 0b. MOBILE PERFORMANCE — reduce efectos pesados en celulares */
+        @media (max-width: 768px) {
+            .toast {
+                -webkit-backdrop-filter: blur(4px) !important;
+                backdrop-filter: blur(4px) !important;
+            }
+            .lock-overlay {
+                -webkit-backdrop-filter: blur(2px) !important;
+                backdrop-filter: blur(2px) !important;
+            }
+            .animate-pulse {
+                animation-duration: 3s !important;
+            }
+            .shadow-\[0_0_22px_rgba\(255\,122\,26\,0\.45\)\],
+            .shadow-\[0_10px_28px_-10px_rgba\(249\,115\,22\,0\.65\)\] {
+                box-shadow: none !important;
+            }
+        }
+
         /* 1. DEFINICIÓN DE COLORES (Obsidian Dark Only) */
         :root {
             --autofill-bg: #0a0a0a;
@@ -73,7 +102,7 @@
     {% endif %}
 </head>
 
-<body class="bg-[#050505] text-white antialiased min-h-screen pb-8 md:pb-24 selection:bg-orange-500/30">
+<body class="bg-[#050505] text-white antialiased min-h-dynamic pb-8 md:pb-24 selection:bg-orange-500/30">
     <!-- Toast Notifications Container (Global) -->
     <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
 
@@ -96,7 +125,7 @@
     </div>
 
     <!-- Dashboard Layout: Sidebar (Desktop) + Content -->
-    <div class="flex min-h-screen">
+    <div class="flex min-h-dynamic">
 
         <!-- Sidebar Desktop (hidden on mobile) -->
         <aside
@@ -138,7 +167,7 @@
                 <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
                     <span class="material-symbols-outlined text-[20px]">document_scanner</span>
-                    AI Scan
+                    Escanear tus compras
                 </a>
                 <a href="{{ url_for('insights.index') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
@@ -312,6 +341,96 @@
     {% endblock %}
 
     <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
+
+    <script>
+        /* Mobile viewport fix (suavizado, sin stutter) */
+        (function () {
+            'use strict';
+
+            var root = document.documentElement;
+            var body = document.body;
+            var lastHeight = 0;
+            var lastWidth = 0;
+            var lastKeyboard = null;
+            var rafId = 0;
+            var targetHeight = 0;
+            var currentHeight = 0;
+
+            function detectKeyboard(vvh, ih) {
+                if (!vvh) return false;
+                var diff = ih - vvh;
+                return diff > 120 && vvh < ih * 0.85;
+            }
+
+            function setAppHeight(h, w) {
+                if (h === lastHeight && w === lastWidth) return;
+                lastHeight = h;
+                lastWidth = w;
+                root.style.setProperty('--app-height', h + 'px');
+                root.style.setProperty('--app-width', w + 'px');
+            }
+
+            function setKeyboard(on) {
+                if (on === lastKeyboard) return;
+                lastKeyboard = on;
+                root.classList.toggle('kb-open', on);
+                body.classList.toggle('kb-open', on);
+                body.style.overflow = on ? 'hidden' : '';
+            }
+
+            function tick() {
+                rafId = 0;
+                var diff = targetHeight - currentHeight;
+                if (Math.abs(diff) < 0.5) {
+                    currentHeight = targetHeight;
+                } else {
+                    currentHeight += diff * 0.35;
+                }
+                var vv = window.visualViewport;
+                var w = vv ? vv.width : window.innerWidth;
+                setAppHeight(currentHeight, w);
+                if (vv) setKeyboard(detectKeyboard(vv.height, window.innerHeight));
+                if (Math.abs(diff) >= 0.5) schedule();
+            }
+
+            function schedule() {
+                if (rafId) return;
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function onViewport() {
+                var vv = window.visualViewport;
+                if (!vv) {
+                    setAppHeight(window.innerHeight, window.innerWidth);
+                    return;
+                }
+                targetHeight = vv.height;
+                schedule();
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', onViewport, { passive: true });
+                window.visualViewport.addEventListener('scroll', onViewport, { passive: true });
+            }
+            window.addEventListener('resize', onViewport, { passive: true });
+            window.addEventListener('orientationchange', function () {
+                setTimeout(onViewport, 250);
+            }, { passive: true });
+
+            document.addEventListener('focusin', function (e) {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                    setTimeout(onViewport, 350);
+                }
+            });
+            document.addEventListener('focusout', function (e) {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                    setTimeout(onViewport, 350);
+                }
+            });
+
+            onViewport();
+        })();
+    </script>
 </body>
 
 </html>

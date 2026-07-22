@@ -80,7 +80,12 @@ def create():
         order = OrderService.create_order(restaurant.id, order_data)
 
         items_data = json.loads(data.get('items', '[]'))
-        total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+        try:
+            total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), 'error')
+            return redirect(url_for('orders.create'))
 
         db.session.commit()
         notify_new_order(order.id)

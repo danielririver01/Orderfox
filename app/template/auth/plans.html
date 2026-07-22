@@ -16,234 +16,7 @@
         tailwind.config = { darkMode: 'class' }
     </script>
 
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
-
-        :root {
-            --primary: #f97316;
-            --primary-hover: #ea6c0a;
-            --gold: #fbbf24;
-            --bg: #111111;
-            --card: rgba(24, 20, 15, 0.82);
-            --card-border: rgba(255,255,255,0.07);
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            background: var(--bg);
-            color: #f0ebe4;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-
-        /* ── Ambient ── */
-        .plans-ambient {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .plans-orb {
-            position: absolute;
-            border-radius: 9999px;
-            animation: orbFloat 18s ease-in-out infinite;
-        }
-        .plans-orb--1 {
-            width: 50rem; height: 50rem;
-            top: -20rem; left: -10rem;
-            background: radial-gradient(circle, rgba(249,115,22,0.18), transparent 65%);
-            filter: blur(80px);
-        }
-        .plans-orb--2 {
-            width: 40rem; height: 40rem;
-            bottom: -18rem; right: -8rem;
-            background: radial-gradient(circle, rgba(251,191,36,0.14), transparent 65%);
-            filter: blur(80px);
-            animation-delay: -8s;
-        }
-        .plans-orb--3 {
-            width: 28rem; height: 28rem;
-            top: 40%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(234,88,12,0.10), transparent 65%);
-            filter: blur(70px);
-            animation-delay: -14s;
-        }
-        @keyframes orbFloat {
-            0%,100% { transform: translateY(0) scale(1); }
-            50%      { transform: translateY(-30px) scale(1.04); }
-        }
-
-        /* ── Plan card ── */
-        .plan-card {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: 1.5rem;
-            padding: 2rem 1.75rem;
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(24px) saturate(140%);
-            -webkit-backdrop-filter: blur(24px) saturate(140%);
-            transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
-            position: relative;
-        }
-        .plan-card:hover {
-            border-color: rgba(249,115,22,0.25);
-            box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7), 0 0 40px -20px rgba(249,115,22,0.2);
-        }
-
-        /* Featured card */
-        .plan-card--featured {
-            border-color: rgba(249,115,22,0.55);
-            box-shadow: 0 0 0 1px rgba(249,115,22,0.3) inset,
-                        0 32px 72px -20px rgba(0,0,0,0.8),
-                        0 0 60px -20px rgba(249,115,22,0.35);
-            transform: translateY(-10px) scale(1.025);
-            z-index: 2;
-        }
-        .plan-card--featured:hover {
-            border-color: rgba(249,115,22,0.75);
-            transform: translateY(-12px) scale(1.03);
-        }
-
-        /* Badge Más Popular */
-        .popular-badge {
-            position: absolute;
-            top: -14px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(90deg, #f97316, #fbbf24);
-            color: #111;
-            font-size: 0.65rem;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            padding: 0.35rem 1.1rem;
-            border-radius: 9999px;
-            white-space: nowrap;
-            box-shadow: 0 6px 20px -6px rgba(249,115,22,0.7);
-        }
-
-        /* Price */
-        .plan-price {
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            color: #f5f0eb;
-            line-height: 1;
-        }
-        .plan-price--zero {
-            background: linear-gradient(90deg, #f97316, #fbbf24);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Feature list */
-        .plan-feature {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.65rem;
-            font-size: 0.82rem;
-            color: #a09488;
-            line-height: 1.4;
-        }
-        .plan-feature strong { color: #e8e0d8; }
-        .plan-feature .material-symbols-outlined { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.05rem; }
-
-        /* Divider */
-        .plan-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 1rem 0; }
-
-        /* Buttons */
-        .btn-primary {
-            display: block;
-            width: 100%;
-            text-align: center;
-            padding: 0.875rem 1rem;
-            border-radius: 0.875rem;
-            font-weight: 700;
-            font-size: 0.875rem;
-            background: linear-gradient(135deg, #f97316, #ea6c0a);
-            color: white;
-            box-shadow: 0 10px 28px -10px rgba(249,115,22,0.65);
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #fb923c, #f97316);
-            box-shadow: 0 14px 32px -10px rgba(249,115,22,0.8);
-            transform: translateY(-1px);
-        }
-        .btn-primary:active { transform: scale(0.98); }
-
-        .btn-secondary {
-            display: block;
-            width: 100%;
-            text-align: center;
-            padding: 0.875rem 1rem;
-            border-radius: 0.875rem;
-            font-weight: 700;
-            font-size: 0.875rem;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #c8bfb5;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.09);
-            border-color: rgba(249,115,22,0.3);
-            color: #f5f0eb;
-        }
-
-        .btn-disabled {
-            display: block;
-            width: 100%;
-            text-align: center;
-            padding: 0.875rem 1rem;
-            border-radius: 0.875rem;
-            font-weight: 700;
-            font-size: 0.875rem;
-            background: rgba(255,255,255,0.04);
-            color: #4b4440;
-            cursor: not-allowed;
-        }
-
-        /* Tag "Sin compromiso" */
-        .plan-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.3rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-        .plan-tag--free {
-            background: rgba(249,115,22,0.12);
-            color: #f97316;
-            border: 1px solid rgba(249,115,22,0.25);
-        }
-
-        /* Back link */
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #6b6058;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--primary); }
-        .back-link .material-symbols-outlined { font-size: 1.1rem; transition: transform 0.2s; }
-        .back-link:hover .material-symbols-outlined { transform: translateX(-3px); }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/plans.css') }}">
 </head>
 
 <body>
@@ -340,7 +113,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>50 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Scanner IA</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
                     </li>
                 </ul>
 
@@ -386,7 +159,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>250 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Scanner IA</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
                     </li>
                 </ul>
 
@@ -431,7 +204,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>800 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Scanner IA</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
                     </li>
                 </ul>
 
@@ -478,7 +251,7 @@
                             <span class="material-symbols-outlined" style="color:#a78bfa;">auto_awesome</span>
                             <strong style="color:#c4b5fd;">3000 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#b3a6d9; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Scanner IA</span>
+                        <span style="font-size:0.62rem; color:#b3a6d9; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
                     </li>
                 </ul>
 

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
+    <title>{% block title %}Velzia{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
+    <script>
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <style>
+        .min-h-dynamic {
+            min-height: var(--app-height, 100vh);
+        }
+        @supports (height: 100dvh) {
+            .min-h-dynamic {
+                min-height: 100dvh;
+            }
+        }
+        @media (max-width: 768px) {
+            .toast {
+                -webkit-backdrop-filter: blur(4px) !important;
+                backdrop-filter: blur(4px) !important;
+            }
+            .lock-overlay {
+                -webkit-backdrop-filter: blur(2px) !important;
+                backdrop-filter: blur(2px) !important;
+            }
+            .animate-pulse {
+                animation-duration: 3s !important;
+            }
+        }
+        :root {
+            --autofill-bg: #0a0a0a;
+            --autofill-text: #ffffff;
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+            -webkit-text-fill-color: var(--autofill-text) !important;
+            transition: background-color 5000s ease-in-out 0s;
+            border-radius: inherit;
+        }
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+        input::-webkit-contacts-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
+    {% if config.CLERK_PUBLISHABLE_KEY %}
+    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+        src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"></script>
+    {% endif %}
+</head>
+
+<body class="bg-[#050505] text-white antialiased min-h-dynamic selection:bg-orange-500/30 overflow-hidden flex flex-col">
+    <div id="toast-container" class="fixed top-4 right-4 z-[1000] flex flex-col gap-2"></div>
+
+    {% block content %}{% endblock %}
+
+    {% include 'components/modal_delete.html' %}
+    <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
+    {% if session.get('user_id') %}
+    {% include 'components/modal_tokens.html' %}
+    <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>
+    {% endif %}
+
+    {% block extra_js %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            {% for category, message in messages %}
+            showToast("{{ message }}", "{{ category }}");
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+    {% endwith %}
+    {% endblock %}
+
+    <script>
+        (function () {
+            'use strict';
+            var root = document.documentElement;
+            var body = document.body;
+            var lastHeight = 0;
+            var lastWidth = 0;
+            var lastKeyboard = null;
+            var rafId = 0;
+            var targetHeight = 0;
+            var currentHeight = 0;
+
+            // Detecta teclado usando offsetTop (funciona en Android e iOS).
+            // En Android el visualViewport NO se encoge, pero offsetTop crece
+            // cuando el teclado empuja el viewport hacia arriba.
+            function detectKeyboard(vv, ih) {
+                if (!vv) return false;
+                var offset = vv.offsetTop || 0;
+                var diff = ih - vv.height;
+                return offset > 40 || (diff > 120 && vv.height < ih * 0.85);
+            }
+
+            function setAppHeight(h, w) {
+                if (h === lastHeight && w === lastWidth) return;
+                lastHeight = h;
+                lastWidth = w;
+                root.style.setProperty('--app-height', h + 'px');
+                root.style.setProperty('--app-width', w + 'px');
+            }
+
+            function setKeyboard(on) {
+                if (on === lastKeyboard) return;
+                lastKeyboard = on;
+                root.classList.toggle('kb-open', on);
+                body.classList.toggle('kb-open', on);
+                body.style.overflow = on ? 'hidden' : '';
+            }
+
+            function tick() {
+                rafId = 0;
+                var diff = targetHeight - currentHeight;
+                if (Math.abs(diff) < 0.5) {
+                    currentHeight = targetHeight;
+                } else {
+                    currentHeight += diff * 0.35;
+                }
+                var vv = window.visualViewport;
+                var w = vv ? vv.width : window.innerWidth;
+                setAppHeight(currentHeight, w);
+                if (vv) setKeyboard(detectKeyboard(vv, window.innerHeight));
+                if (Math.abs(diff) >= 0.5) schedule();
+            }
+
+            function schedule() {
+                if (rafId) return;
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function onViewport() {
+                var vv = window.visualViewport;
+                if (!vv) {
+                    setAppHeight(window.innerHeight, window.innerWidth);
+                    return;
+                }
+                // Usa la altura REAL visible (encima del teclado) en ambas plataformas.
+                targetHeight = vv.height;
+                schedule();
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', onViewport, { passive: true });
+                window.visualViewport.addEventListener('scroll', onViewport, { passive: true });
+            }
+            window.addEventListener('resize', onViewport, { passive: true });
+            window.addEventListener('orientationchange', function () {
+                setTimeout(onViewport, 250);
+            }, { passive: true });
+
+            document.addEventListener('focusin', function (e) {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                    setTimeout(onViewport, 300);
+                    // Lleva el campo al área visible para evitar el espacio vacío.
+                    setTimeout(function () {
+                        try { e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) {}
+                    }, 320);
+                }
+            });
+            document.addEventListener('focusout', function (e) {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                    setTimeout(onViewport, 300);
+                }
+            });
+
+            onViewport();
+        })();
+    </script>
+</body>
+
+</html>

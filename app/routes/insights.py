@@ -83,6 +83,15 @@ _FOREIGN_RESTAURANT_MSG = (
 
 
 def _current_user():
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+        try:
+            verify_jwt_in_request()
+            user_id = get_jwt_identity()
+            return User.query.get(user_id)
+        except Exception:
+            return None
     user_id = session.get('user_id')
     if not user_id:
         return None
@@ -477,7 +486,7 @@ def api_post_message(cid):
             'credits_used': 0,
             'model': 'sql',
             'execution_ms': execution_ms,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
         }
         if chart:
             meta['chart'] = chart
@@ -490,7 +499,7 @@ def api_post_message(cid):
             'content': result['text'],
             'chart': chart,
             'metadata': meta,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
         })
@@ -554,7 +563,7 @@ def api_post_message(cid):
             'model': 'sql',
             'execution_ms': execution_ms,
             'chart': chart,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
         }
         assistant_msg = cs.add_message(cid, 'assistant', proj['text'], meta)
         return jsonify({
@@ -563,7 +572,7 @@ def api_post_message(cid):
             'content': proj['text'],
             'chart': chart,
             'metadata': meta,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
         })
@@ -614,7 +623,7 @@ def api_post_message(cid):
         'model': current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
         'execution_ms': execution_ms,
         'chart': parsed['chart'] if parsed['chart'] else None,
-        'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+        'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
     }
     if stage['level'] == 2:
         meta['note'] = _LEARNING_NOTE
@@ -631,7 +640,7 @@ def api_post_message(cid):
         'content': parsed['text'],
         'chart': parsed['chart'],
         'metadata': meta,
-        'suggestions': chart_service.followup_suggestions(cls, stage=stage),
+        'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
         'message_id': user_msg.id,
         'assistant_message_id': assistant_msg.id,
     })

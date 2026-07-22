@@ -30,6 +30,9 @@ COPY --from=css-builder /app/app/static/CSS/output.css ./app/static/CSS/output.c
 
 COPY . .
 
+RUN adduser --system --no-create-home appuser && chown -R appuser /app
+USER appuser
+
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_DEBUG=False
 

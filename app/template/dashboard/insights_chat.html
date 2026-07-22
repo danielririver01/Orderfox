@@ -1,0 +1,93 @@
+<main id="chat-main" class="mode-welcome flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+
+    <header id="chat-header"
+        class="relative z-10 flex items-center gap-3 px-4 md:px-6 py-4 border-b border-[var(--border-subtle)]">
+        <button id="btn-toggle-conv"
+            class="md:hidden w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)]">
+            <span class="material-symbols-outlined text-[20px]">menu</span>
+        </button>
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span class="material-symbols-outlined text-[20px] text-[var(--primary)]">bubble_chart</span>
+            <div class="flex flex-col">
+                <h1 class="text-sm font-black text-white leading-tight font-heading">
+                    <span id="conv-title">Copilot VZ</span>
+                </h1>
+                <span class="text-[10px] text-[var(--success)] font-semibold tracking-wider flex items-center gap-1 md:hidden">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[var(--success)]"></span> Listo para ayudarte
+                </span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 ml-5">
+                <a href="#" class="vz-header-nav-link vz-header-nav-link--active">Chat</a>
+            </nav>
+        </div>
+        <div class="flex items-center gap-1">
+            <button id="btn-edit-title" title="Rename" style="display:none"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button id="btn-context" title="View context" style="display:none"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[18px]">subject</span>
+            </button>
+            <a href="/legal#copilot" target="_blank" title="About Copilot VZ"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[18px]">info</span>
+            </a>
+        </div>
+    </header>
+
+    <div id="stage" class="relative z-10 flex-1 min-h-0 flex flex-col">
+
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="vz-ambient-circle vz-ambient-circle--tl"></div>
+            <div class="vz-ambient-circle vz-ambient-circle--br"></div>
+        </div>
+
+        <div id="hero" class="flex-1 flex flex-col items-center justify-center text-center px-6 relative z-10">
+            <div class="relative mb-6">
+                <div class="absolute inset-0 bg-[var(--primary)]/20 blur-3xl animate-vz-pulse"></div>
+                <div class="vz-hero-icon relative w-20 h-20 rounded-2xl bg-[var(--bg-surface)] border border-white/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-4xl text-[var(--primary)]" style="font-variation-settings:'FILL' 1;">bubble_chart</span>
+                </div>
+            </div>
+            <h2 id="vz-greeting" class="font-heading text-2xl md:text-3xl font-extrabold text-white max-w-[360px] leading-tight">
+                ¿En qué puedo ayudarte hoy?
+            </h2>
+            <div class="flex gap-2 mt-4 opacity-40">
+                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </div>
+
+            <div id="welcome-chips" class="grid grid-cols-2 gap-3 w-full max-w-xs mt-8"></div>
+
+            <a href="/legal#copilot" target="_blank"
+                class="mt-8 flex items-center gap-1 text-[11px] text-[var(--text-dim)] hover:text-[var(--text-muted)]">
+                <span class="material-symbols-outlined text-[14px]">info</span>
+                About Copilot VZ
+            </a>
+        </div>
+
+        <div id="messages" class="flex-1 overflow-y-auto py-6 px-4 space-y-6"></div>
+
+        <div id="chat-loading-overlay">
+            <div class="vz-spinner"></div>
+            <span>Cargando conversación…</span>
+        </div>
+
+        <div id="composer-wrap" class="shrink-0 px-4 pb-5 pt-2 relative z-20">
+            <form id="chat-form" class="w-full max-w-xl mx-auto">
+                <div class="vz-glass-composer flex items-end gap-2 p-2 pl-5">
+                    <span class="material-symbols-outlined text-[var(--text-dim)]/60 shrink-0 mb-2" style="font-size:20px">auto_awesome</span>
+                    <textarea id="chat-input" rows="1" placeholder="Escribe tu pregunta..."
+                        class="flex-1 bg-transparent resize-none outline-none text-[15px] text-white placeholder:text-[var(--text-dim)]/50 px-1 py-2 max-h-36 leading-relaxed"></textarea>
+                    <button type="submit" id="chat-send"
+                        class="w-11 h-11 shrink-0 rounded-2xl bg-[var(--primary)] hover:brightness-110 text-white flex items-center justify-center disabled:opacity-40 vz-send-glow">
+                        <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1;">arrow_upward</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>

@@ -15,10 +15,50 @@ from app import db
 from app.models import CopilotConversation, CopilotMessage
 
 
-def list_conversations(user_id, limit=50):
+def list_conversations(user_id, limit=200):
     return (
         CopilotConversation.query
         .filter_by(user_id=user_id)
+        .order_by(
+            CopilotConversation.pinned.desc(),
+            CopilotConversation.updated_at.desc(),
+        )
+        .limit(limit)
+        .all()
+    )
+
+
+def search_conversations(user_id, query, limit=50):
+    """Filtra las conversaciones del usuario por texto.
+
+    Busca coincidencias (case-insensitive) en el título de la conversación
+    y en el contenido de sus mensajes (primer mensaje, título derivado, etc.).
+    Devuelve las conversaciones ordenadas igual que list_conversations.
+    """
+    from sqlalchemy import or_, and_
+    from sqlalchemy.orm import joinedload
+
+    q = f"%{query.strip().lower()}%"
+    if not query or not query.strip():
+        return list_conversations(user_id, limit=limit)
+
+    # Subquery: conversaciones que tienen algún mensaje cuyo contenido
+    # coincide con la búsqueda.
+    convs_with_msg = (
+        db.session.query(CopilotMessage.conversation_id)
+        .filter(CopilotMessage.content.ilike(q))
+        .subquery()
+    )
+
+    return (
+        CopilotConversation.query
+        .filter(
+            CopilotConversation.user_id == user_id,
+            or_(
+                CopilotConversation.title.ilike(q),
+                CopilotConversation.id.in_(convs_with_msg),
+            ),
+        )
         .order_by(
             CopilotConversation.pinned.desc(),
             CopilotConversation.updated_at.desc(),
@@ -62,10 +102,11 @@ def add_message(conversation_id, role, content, metadata=None):
         metadata_json=json.dumps(metadata, ensure_ascii=False) if metadata is not None else None,
     )
     db.session.add(msg)
-    # Refresca updated_at de la conversación.
-    conv = CopilotConversation.query.get(conversation_id)
-    if conv:
-        conv.updated_at = datetime.now(timezone.utc)
+    # UPDATE directo — evita el error MySQL 1020 ("record has changed since last read")
+    # que ocurre cuando dos requests concurrentes modifican la misma conversación.
+    CopilotConversation.query.filter_by(id=conversation_id).update(
+        {'updated_at': datetime.now(timezone.utc)}
+    )
     db.session.commit()
     return msg
 
@@ -80,18 +121,16 @@ def delete_conversation(conversation_id, user_id):
 
 
 def set_title(conversation_id, title):
-    conv = CopilotConversation.query.get(conversation_id)
-    if not conv:
-        return
-    conv.title = title
+    CopilotConversation.query.filter_by(id=conversation_id).update(
+        {'title': title, 'updated_at': datetime.now(timezone.utc)}
+    )
     db.session.commit()
 
 
 def set_pinned(conversation_id, pinned):
-    conv = CopilotConversation.query.get(conversation_id)
-    if not conv:
-        return
-    conv.pinned = bool(pinned)
+    CopilotConversation.query.filter_by(id=conversation_id).update(
+        {'pinned': bool(pinned), 'updated_at': datetime.now(timezone.utc)}
+    )
     db.session.commit()
 
 
@@ -114,10 +153,10 @@ MAX_PINNED = 3
 
 
 def mark_analysis_active(conversation_id):
-    conv = CopilotConversation.query.get(conversation_id)
-    if conv:
-        conv.analysis_active = True
-        db.session.commit()
+    CopilotConversation.query.filter_by(id=conversation_id).update(
+        {'analysis_active': True, 'updated_at': datetime.now(timezone.utc)}
+    )
+    db.session.commit()
 
 
 def make_title_from_message(text, limit=60):

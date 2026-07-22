@@ -1,4 +1,8 @@
 import os
+import werkzeug.serving
+werkzeug.serving.WSGIRequestHandler.server_version = ''
+werkzeug.serving.WSGIRequestHandler.sys_version = ''
+
 from app import create_app
 
 app = create_app()

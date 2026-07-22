@@ -4,6 +4,7 @@ from app.forms import LoginForm
 from app.forms.auth import RegisterSetupForm
 from app.models import Restaurant
 from app.utils.subscription import initialize_or_reset_token_wallet
+from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.services.auth_service import AuthService
 from app.utils.restaurant import get_current_restaurant
 import mercadopago
@@ -351,10 +352,12 @@ def payment_callback():
 @csrf.exempt
 def webhook():
     """
-    Recibe notificaciones de Mercado Pago sobre actualizaciones de pago.
+    Recibe notificaciones de Mercado Pago (formato IPN legacy).
+    Verifica firma HMAC cuando `MP_WEBHOOK_SECRET` está configurado.
+    Para webhooks nuevos, usar `POST /api/v1/webhooks/mercadopago`.
     """
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
 
         payment_id = None
 
@@ -366,6 +369,16 @@ def webhook():
             if topic == 'payment':
                 payment_id = request.args.get('id') or request.args.get('data.id')
 
+        # Verificación HMAC si hay secret configurado
+        webhook_secret = current_app.config.get('MP_WEBHOOK_SECRET')
+        if webhook_secret and payment_id:
+            ts, v1 = extract_mp_signature(request.headers)
+            if not verify_mp_signature(str(payment_id), ts, v1, webhook_secret):
+                current_app.logger.warning(
+                    f"WEBHOOK LEGACY: Firma inválida para payment_id={payment_id}"
+                )
+                return jsonify({'success': False, 'error': 'invalid_signature'}), 401
+
         if payment_id:
             access_token = current_app.config.get('MP_ACCESS_TOKEN')
             result = AuthService.process_mp_webhook_payment(payment_id, access_token)
@@ -374,10 +387,10 @@ def webhook():
                     f"WEBHOOK: Activated restaurant {result['restaurant_id']}"
                 )
 
-        return "OK", 200
+        return jsonify({'success': True}), 200
     except Exception as e:
         current_app.logger.error(f"WEBHOOK ERROR: {e}", exc_info=True)
-        return "ERROR", 500
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
 
 
 @auth_bp.route('/logout')

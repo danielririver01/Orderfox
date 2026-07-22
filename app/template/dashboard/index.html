@@ -133,9 +133,8 @@
                             <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Ingresos Menú
                                 Digital</span>
                         </div>
-                        <span id="stat-ventas"
-                            class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{{
-                            total_sales if '$' in total_sales else '$' + total_sales }}</span>
+<span id="stat-ventas"
+    class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{{ total_sales | currency }}</span>
                     </div>
 
                     <!-- Gastos (Output) -->

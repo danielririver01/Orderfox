@@ -140,6 +140,8 @@ class OrderService:
                 continue
 
             quantity = item_data.get('quantity', 1)
+            if not isinstance(quantity, (int, float)) or quantity <= 0:
+                raise ValueError(f"Cantidad inválida para el producto '{product.name}': debe ser mayor a 0")
             extras_price = 0
             modifiers_data = []
 

@@ -1,0 +1,73 @@
+/* Register-specific overrides */
+.reg-field {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(249, 115, 22, 0.25) !important;
+    background: rgba(40, 34, 28, 0.9) !important;
+    color: #f5f0eb !important;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+.reg-field::placeholder {
+    color: #6b6058 !important;
+}
+
+.reg-field:focus {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
+}
+
+.reg-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9a9088;
+    margin-bottom: 0.45rem;
+}
+
+.reg-check-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b6560;
+    transition: color 0.2s;
+}
+
+.reg-check-item.valid {
+    color: #22c55e;
+}
+
+/* Autofill dark override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 30px #1c1814 inset !important;
+    -webkit-text-fill-color: #f5f0eb !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
+/* Scrollbar for right panel */
+.auth-form-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.auth-form-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.auth-form-panel::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.2);
+    border-radius: 2px;
+}

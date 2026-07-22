@@ -8,9 +8,6 @@ pytest-cov==6.1.1
 # Linting
 flake8==7.2.0
 
-# Error tracking
-sentry-sdk==2.28.0
-
 # Security scanning
 bandit==1.8.3
 safety==3.3.1

@@ -1,0 +1,31 @@
+# Gitleaks configuration for Velzia / Orderfox
+# Usage: gitleaks detect --source . --config .gitleaks.toml --report-format sarif --report-path tests/security/reports/gitleaks.sarif
+#         gitleaks protect --staged --config .gitleaks.toml   (pre-commit / pre-push)
+
+title = "Velzia Gitleaks Config"
+
+[extend]
+# Use the built-in default rules (AWS, GitHub, JWT, private keys, etc.)
+useDefault = true
+
+[allowlist]
+# Paths that should never be scanned
+paths = [
+    '''.*\.git/.*''',
+    '''node_modules/.*''',
+    '''\.venv/.*''',
+    '''astro/node_modules/.*''',
+    '''tests/security/.*''',     # security test fixtures contain fake tokens on purpose
+    '''docs/.*''',
+    '''.*\.md$''',
+]
+
+    # Allow OpenAI/DeepSeek demo keys used only in docs/tests (non-functional)
+    [[rules]]
+    id = "velzia-test-keys"
+    description = "Allow intentionally fake API keys used in tests and docs"
+    regex = '''(?i)(sk|pk)-?(test|demo|example|fake|xxxx)[a-z0-9]{10,}'''
+    [rules.allowlist]
+    regexes = [
+        '''(?i)sk-(test|demo|example|fake|xxxxx)''',
+    ]

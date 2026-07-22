@@ -1,3 +1,4 @@
+import os
 from flask_apscheduler import APScheduler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -20,7 +21,7 @@ def exempt_from_limiter():
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
+    default_limits=os.getenv("RATELIMIT_DEFAULT", "200 per day;50 per hour").split(";"),
+    storage_uri=os.getenv("RATELIMIT_STORAGE_URL", "memory://"),
     default_limits_exempt_when=exempt_from_limiter,
 )

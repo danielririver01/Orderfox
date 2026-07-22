@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, session, request, flash, redirect, url_for
+from flask import Flask, current_app, render_template, session, request, flash, redirect, url_for
 from .models import db, migrate,User
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import generate_csrf
@@ -16,7 +16,7 @@ from .csrf import csrf
 from .routes.tokens import tokens_bp
 from .routes.api_docs import api_docs_bp
 from app.utils.restaurant import get_current_restaurant
-from app.utils.subscription import can_perform_crud, get_subscription_status
+from app.utils.subscription import can_perform_crud, get_subscription_status, PLAN_LIMITS
 
 # 2. El "Pase VIP" (Sustituto de exempt_when)
 @limiter.request_filter
@@ -40,26 +40,106 @@ def create_app():
     logging.basicConfig(level=log_level)
     app.logger.setLevel(log_level)
 
-    # Sentry initialization
+    # Sentry / Better Stack Error Tracking initialization
     sentry_dsn = app.config.get('SENTRY_DSN')
     if sentry_dsn:
+        import json
         import sentry_sdk
         from sentry_sdk.integrations.flask import FlaskIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        SENSITIVE_HEADERS = frozenset({
+            'authorization', 'cookie', 'set-cookie',
+            'x-api-key', 'x-auth-token', 'proxy-authorization',
+        })
+        SENSITIVE_BODY_KEYS = frozenset({
+            'password', 'token', 'secret', 'api_key', 'authorization',
+            'access_token', 'refresh_token', 'jwt', 'cookie', 'session',
+        })
+
+        def strip_sensitive_data(event, hint):
+            if 'request' not in event:
+                return event
+            req = event['request']
+
+            if req.get('data'):
+                try:
+                    body = json.loads(req['data'])
+                    cleaned = {
+                        k: ('***' if k.lower() in SENSITIVE_BODY_KEYS else v)
+                        for k, v in body.items()
+                    }
+                    req['data'] = json.dumps(cleaned)
+                except (json.JSONDecodeError, TypeError):
+                    body_str = str(req['data']).lower()
+                    if any(kw in body_str for kw in SENSITIVE_BODY_KEYS):
+                        req['data'] = '***'
+
+            headers = req.get('headers', {})
+            if isinstance(headers, dict):
+                for h in headers:
+                    if h.lower() in SENSITIVE_HEADERS:
+                        headers[h] = '***'
+
+            return event
+
         sentry_sdk.init(
             dsn=sentry_dsn,
-            integrations=[FlaskIntegration()],
-            traces_sample_rate=0.1,
+            integrations=[
+                FlaskIntegration(),
+                SqlalchemyIntegration(),
+                LoggingIntegration(
+                    level=logging.INFO,
+                    event_level=logging.ERROR,
+                ),
+            ],
+            before_send=strip_sensitive_data,
+            traces_sample_rate=0,
+            environment=app.config.get('FLASK_ENV', 'development'),
+            release=app.config.get('APP_VERSION', 'unknown'),
         )
-        app.logger.info('Sentry initialized')
+        app.logger.info('Better Stack Error Tracking initialized')
 
-    # IMPORTANTE: Registrar ANTES de csrf.init_app para que se ejecute primero.
-    # Flask-WTF's _csrf_check internamente respeta request._csrf_exempt.
+    # Disable auto-CSRF check; we run it manually for non-API routes below.
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+    csrf.init_app(app)
+
+    # Selective CSRF: skip /api/ and /insights/ routes (they use JWT not session).
+    # csrf_protect runs first (set False above), then exempt_api runs,
+    # then _csrf_protect_nonapi runs CSRF check for non-API routes.
     @app.before_request
     def exempt_api_from_csrf():
         if request.path.startswith('/api/') or request.path.startswith('/insights/api/'):
-            request._csrf_exempt = True
+            return
 
-    csrf.init_app(app)
+    @app.before_request
+    def _csrf_protect_nonapi():
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/'):
+            return
+        csrf_instance = current_app.extensions.get('csrf')
+        if csrf_instance:
+            csrf_instance.protect()
+
+    if sentry_dsn:
+        from app.utils.jwt_auth import get_current_user_jwt
+        from app.utils.restaurant import get_current_restaurant
+
+        @app.before_request
+        def set_sentry_context():
+            user = get_current_user_jwt()
+            if user:
+                sentry_sdk.set_user({
+                    'id': user.id,
+                    'email': user.email,
+                })
+            restaurant = get_current_restaurant()
+            if restaurant:
+                sentry_sdk.set_tag('restaurant_id', restaurant.id)
+            sentry_sdk.set_tag('app_version',
+                               app.config.get('APP_VERSION', 'unknown'))
+            module = request.path.split('/')[1] if request.path != '/' else 'root'
+            sentry_sdk.set_tag('module', module)
     
     # Habilitar CORS para peticiones desde Astro (frontend moderno) y Scanner IA
     CORS(app, resources={
@@ -114,6 +194,7 @@ def create_app():
     from .routes.api_public import api_public_bp
     from .routes.api_tables import api_tables_bp
     from .routes.api_email import api_email_bp
+    from .routes.api_webhooks import api_webhooks_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -132,6 +213,7 @@ def create_app():
     app.register_blueprint(api_public_bp)
     app.register_blueprint(api_tables_bp)
     app.register_blueprint(api_email_bp)
+    app.register_blueprint(api_webhooks_bp)
     csrf.exempt(api_email_bp)
     @app.before_request
     def block_grace_period_crud():
@@ -161,12 +243,28 @@ def create_app():
         # Security headers
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-XSS-Protection'] = '0'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+            "cdn.jsdelivr.net cdn.tailwindcss.com "
+            "oriented-tortoise-50.clerk.accounts.dev; "
+            "style-src 'self' 'unsafe-inline' "
+            "fonts.googleapis.com cdn.jsdelivr.net; "
+            "font-src 'self' fonts.gstatic.com data:; "
+            "img-src 'self' data: res.cloudinary.com img.clerk.com; "
+            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev; "
+            "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev"
+        )
 
         # HSTS solo si no está en debug
         if not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
+        # No leak server version
+        response.headers.pop('Server', None)
 
         return response
 
@@ -177,6 +275,16 @@ def create_app():
         if image_path.startswith('http'):
             return image_path
         return url_for('static', filename=image_path)
+
+    @app.template_filter('currency')
+    def currency_filter(value):
+        if value is None:
+            return '$0'
+        try:
+            n = int(value)
+            return '$' + f"{n:,}".replace(',', '.')
+        except (ValueError, TypeError):
+            return '$0'
 
     # Inyectar variables de soporte y suscripción globalmente
     @app.context_processor
@@ -210,6 +318,10 @@ def create_app():
                 data['sub_status'] = None
             
         data['restaurant'] = restaurant
+        if restaurant:
+            data['plan_name'] = PLAN_LIMITS.get(restaurant.plan_type, {}).get('name', restaurant.plan_type.capitalize())
+        else:
+            data['plan_name'] = None
         return data
 
     # --- Comandos CLI ---

@@ -307,7 +307,7 @@ class AITokenTransaction(db.Model):
     amount        = db.Column(db.Integer, nullable=False)  # +recarga / -consumo
     # Fuente: 'scanner_ia', 'plan_renewal', 'mp_purchase', 'migration_seed'
     source        = db.Column(db.String(50), nullable=False)
-    mp_payment_id = db.Column(db.String(100), nullable=True)
+    mp_payment_id = db.Column(db.String(100), nullable=True, unique=True)
     description   = db.Column(db.String(200), nullable=True)
     created_at    = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
 

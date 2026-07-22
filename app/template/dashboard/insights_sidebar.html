@@ -1,0 +1,61 @@
+<aside id="conv-panel"
+    class="vz-drawer">
+    <div class="vz-drawer-header">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px] text-[var(--primary)]">bubble_chart</span>
+            <span class="font-heading text-sm font-extrabold text-white">Copilot VZ</span>
+        </div>
+        <div class="flex items-center gap-1">
+            <a href="/legal#copilot" target="_blank" title="About Copilot VZ"
+                class="w-7 h-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)]">
+                <span class="material-symbols-outlined text-[16px]">info</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="vz-profile-section">
+        <div class="vz-profile-avatar">
+            <span class="material-symbols-outlined text-[18px] text-[var(--primary)]">account_circle</span>
+        </div>
+        <div class="vz-profile-info">
+            <p class="vz-profile-name">{{ user.username or restaurant.name or 'Admin' }}</p>
+            <p class="vz-profile-plan">{{ plan_name or restaurant.plan_type }}</p>
+        </div>
+    </div>
+
+    <nav class="px-3 space-y-0.5">
+        <button type="button" class="vz-nav-btn" id="btn-new-conv">
+            <span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+            <span>Nuevo Chat</span>
+        </button>
+    </nav>
+
+    <div class="px-4 pt-3 pb-1.5">
+        <span class="vz-section-label">Conversaciones</span>
+    </div>
+
+    <div class="vz-search-wrap">
+        <span class="material-symbols-outlined vz-search-ic">search</span>
+        <input id="conv-search" type="text" placeholder="Search conversations..." autocomplete="off"
+            class="vz-search-input" />
+    </div>
+
+    <div id="conv-list-area" class="flex-1 overflow-y-auto px-2.5">
+        <div id="conv-list" class="space-y-0.5">
+            <div id="conv-list-skeleton" class="conv-loading-skeleton">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+            </div>
+        </div>
+        <div id="conv-empty-state" class="flex flex-col items-center justify-center py-8 px-4 text-center" hidden>
+            <span class="material-symbols-outlined text-[32px] text-[var(--text-dim)] mb-2">chat_bubble_outline</span>
+            <p class="text-xs font-semibold text-[var(--text-muted)] mb-0.5">No hay chats recientes</p>
+            <p class="text-[11px] text-[var(--text-dim)]">Inicia una nueva conversación</p>
+        </div>
+    </div>
+
+
+</aside>

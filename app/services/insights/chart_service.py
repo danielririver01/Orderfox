@@ -137,8 +137,9 @@ def clean_chart(chart):
     }
 
 
-def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None):
+def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None, restaurant_id=None):
     """Chips contextuales según el último intent y el historial de la conversación."""
     return data_service.followup_suggestions(
-        cls=cls, last_intent=last_intent, stage=stage, seen_intents=seen_intents
+        cls=cls, last_intent=last_intent, stage=stage, seen_intents=seen_intents,
+        restaurant_id=restaurant_id,
     )

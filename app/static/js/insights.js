@@ -7,6 +7,7 @@
     const API = '/insights/api/conversations';
     let currentConvId = null;
     let currentConvHasMessages = false;
+    let welcomeSuggestions = [];
     let isBusy = false;
     const chatCharts = [];
 
@@ -54,20 +55,21 @@
         return s;
     }
 
+    let _bulkLoading = false;
     function scrollToBottom() {
+        if (_bulkLoading) return;
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
     // ── Aviso "Copilot VZ comete errores" (una vez por conversación) ──
     let disclaimerEl = null;
     let _disclaimerShown = false;
-    let _welcomeSuggestions = null;
     function buildDisclaimer() {
         const el = document.createElement('div');
         el.className = 'vz-disclaimer';
         el.innerHTML =
-            '<span class="material-symbols-outlined text-[14px] vz-ic-orange">info</span>' +
-            '<span>Copilot VZ puede cometer errores. Verifica la información importante.</span>';
+            '<span class="material-symbols-outlined text-[14px]" style="color:var(--primary);">info</span>' +
+            '<span>AI may produce inaccurate information. Verify critical operational data.</span>';
         return el;
     }
     function removeDisclaimer() {
@@ -88,6 +90,27 @@
         }
     }
 
+    // ── Date separators ─────────────────────────────────────
+    function formatDateLabel(dateStr) {
+        if (!dateStr) return '';
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const diffDays = Math.round((today - dateOnly) / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'TODAY';
+        if (diffDays === 1) return 'YESTERDAY';
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+    }
+
+    function insertDateSeparator(dateStr) {
+        const sep = document.createElement('div');
+        sep.className = 'vz-date-sep';
+        sep.textContent = formatDateLabel(dateStr);
+        messagesEl.appendChild(sep);
+    }
+
     // ── Render de burbujas ──────────────────────────────────
     function appendUserBubble(text, id) {
         const wrap = document.createElement('div');
@@ -95,11 +118,11 @@
         wrap.dataset.mid = id || '';
         wrap.dataset.role = 'user';
         wrap.innerHTML =
-            `<div class="vz-bubble relative max-w-full bg-orange-500/15 border border-orange-500/20 text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5">
+            `<div class="vz-bubble relative max-w-[85%] md:max-w-[70%] text-white text-sm rounded-2xl px-4 py-2.5">
                 <div class="vz-bubble-text whitespace-pre-wrap">${escapeHtml(text)}</div>
             </div>
             <div class="vz-msg-actions">
-                <button type="button" class="vz-act" data-act="edit" title="Editar mensaje"><span class="material-symbols-outlined">edit</span></button>
+                <button type="button" class="vz-act" data-act="edit" title="Edit message"><span class="material-symbols-outlined">edit</span></button>
             </div>`;
         appendMsg(wrap);
         scrollToBottom();
@@ -113,17 +136,17 @@
         wrap.dataset.role = 'assistant';
         wrap.dataset.uid = uid || '';
         wrap.innerHTML =
-            `<div class="vz-bubble relative w-full bg-white/[0.04] border border-white/[0.06] rounded-2xl rounded-bl-sm px-4 py-3">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                    <span class="material-symbols-outlined text-[16px] vz-ic-orange">insights</span>
-                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Copilot VZ</span>
+            `<div class="vz-bubble relative w-full text-white text-sm rounded-2xl px-4 py-3">
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="material-symbols-outlined text-[16px] text-[var(--primary)]">bubble_chart</span>
+                    <span class="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Copilot VZ</span>
                     <span class="badge ml-1"></span>
                 </div>
-                <div class="text-sm text-gray-200 leading-relaxed content"></div>
-                <div class="extra mt-2"></div>
+                <div class="text-sm leading-relaxed content"></div>
+                <div class="extra mt-3"></div>
             </div>
             <div class="vz-msg-actions">
-                <button type="button" class="vz-act" data-act="regen" title="Regenerar respuesta"><span class="material-symbols-outlined">refresh</span></button>
+                <button type="button" class="vz-act" data-act="regen" title="Regenerate"><span class="material-symbols-outlined">refresh</span></button>
             </div>`;
         appendMsg(wrap);
         return wrap;
@@ -134,15 +157,15 @@
         contentEl.innerHTML = renderMarkdown(content);
         const badge = wrap.querySelector('.badge');
         if (meta && meta.type === 'quick') {
-            badge.className = 'badge text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md';
-            badge.textContent = '✅ Consulta rápida';
+            badge.className = 'badge text-[10px] font-bold text-[var(--success)] bg-[var(--success)]/10 px-2 py-0.5 rounded-md';
+            badge.textContent = 'Quick query';
         } else if (meta && meta.type === 'analysis') {
             badge.className = 'badge vz-badge-orange text-[10px] font-bold px-2 py-0.5 rounded-md';
             const used = meta.credits_used || 0;
-            badge.textContent = used > 0 ? '✨ Análisis IA · 1 crédito utilizado' : 'Análisis IA';
+            badge.textContent = used > 0 ? 'AI Analysis - 1 credit used' : 'AI Analysis';
         } else if (meta && meta.type === 'scope_guard') {
             badge.className = 'badge text-[10px] font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md';
-            badge.textContent = '🔒 Solo tu restaurante';
+            badge.textContent = 'Your restaurant only';
         }
         const extra = wrap.querySelector('.extra');
         if (chart) {
@@ -167,7 +190,6 @@
             note.textContent = meta.note;
             extra.appendChild(note);
         }
-        if (meta && meta.suggestions) renderFollowup(wrap, meta.suggestions);
         scrollToBottom();
     }
 
@@ -177,16 +199,26 @@
         const extra = wrap.querySelector('.extra');
         if (!extra) return;
         const chipWrap = document.createElement('div');
-        chipWrap.className = 'flex flex-wrap gap-2.5 mt-3';
+        chipWrap.className = 'flex flex-wrap gap-2 mt-3';
         suggestions.forEach((s) => {
             const item = (s && typeof s === 'object') ? s : { label: String(s || '') };
             const label = item.label || '';
+            const prompt = item.prompt || label;
+            const icon = item.icon || '';
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'vz-chip';
-            b.textContent = label;
+            if (icon) {
+                const ico = document.createElement('span');
+                ico.className = 'material-symbols-outlined text-[14px] mr-1';
+                ico.textContent = icon;
+                b.appendChild(ico);
+            }
+            const txt = document.createElement('span');
+            txt.textContent = label;
+            b.appendChild(txt);
             b.onclick = () => {
-                inputEl.value = label;
+                inputEl.value = prompt;
                 autoResize();
                 sendMessage();
             };
@@ -197,7 +229,7 @@
 
     // ── Render de gráficas (estilo profesional) ─────────────
     const CHART_FONT = "Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif";
-    const CHART_PALETTE = ['#FF7A1A', '#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#EC4899', '#14B8A6'];
+    const CHART_PALETTE = ['#f97316', '#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#EC4899', '#14B8A6'];
 
     function hexToRgba(hex, a) {
         const h = (hex || '#FF7A1A').replace('#', '');
@@ -326,29 +358,26 @@
         const wrap = document.createElement('div');
         wrap.className = 'flex justify-start';
         if (canBuy) {
-            // Trial/pago activo sin créditos: puede recargar paquetes de IA.
             wrap.innerHTML =
-                `<div class="max-w-[90%] bg-orange-500/[0.06] border border-orange-500/20 rounded-2xl rounded-bl-sm px-4 py-3">
+                `<div class="max-w-[90%] rounded-2xl px-4 py-3" style="background:var(--bg-card-alt);">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="material-symbols-outlined text-[18px] vz-ic-orange">bolt</span>
-                        <span class="text-sm font-bold text-white">Necesitas más créditos para seguir analizando tu negocio durante el periodo de prueba</span>
+                        <span class="material-symbols-outlined text-[18px] text-[var(--primary)]">bolt</span>
+                        <span class="text-sm font-bold text-white">Need more AI credits</span>
                     </div>
-                    <p class="text-xs text-gray-400 mb-1">Recarga un paquete de IA y continúa sacando provecho a tus datos.</p>
-                    <p class="text-[11px] text-gray-500 mb-3">Los créditos adicionales solo están disponibles mientras tu prueba gratuita esté activa.</p>
-                    <button id="ob-buy-credits" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs">
-                        <span class="material-symbols-outlined text-[15px]">bolt</span> Recargar créditos IA
+                    <p class="text-xs" style="color:var(--text-muted)">Top up your AI credits and keep getting insights from your data.</p>
+                    <button id="ob-buy-credits" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs mt-2">
+                        <span class="material-symbols-outlined text-[15px]">bolt</span> Top up AI credits
                     </button>
                 </div>`;
         } else {
-            // En gracia sin créditos: debe activar un plan.
             wrap.innerHTML =
-                `<div class="max-w-[90%] bg-red-500/[0.06] border border-red-500/20 rounded-2xl rounded-bl-sm px-4 py-3">
+                `<div class="max-w-[90%] rounded-2xl px-4 py-3" style="background:var(--bg-card-alt);">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="material-symbols-outlined text-[18px] text-red-400">block</span>
-                        <span class="text-sm font-bold text-white">No tienes créditos IA</span>
+                        <span class="material-symbols-outlined text-[18px] text-[var(--error)]">block</span>
+                        <span class="text-sm font-bold text-white">No AI credits</span>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Tu prueba gratuita está por finalizar. Activa un plan para obtener más análisis y créditos.</p>
-                    <a href="/dashboard/subscription" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs">Ver planes</a>
+                    <p class="text-xs" style="color:var(--text-muted)">Your trial is ending. Activate a plan to keep using AI analysis.</p>
+                    <a href="/dashboard/subscription" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs mt-2">View plans</a>
                 </div>`;
         }
         appendMsg(wrap);
@@ -366,15 +395,15 @@
         const wrap = document.createElement('div');
         wrap.className = 'flex justify-start';
         const msg = escapeHtml(
-            message || 'Tu prueba gratuita finalizó. Tus créditos están guardados. Activa un plan para seguir utilizándolos.');
+            message || 'Your trial has ended. Your credits are saved. Activate a plan to use them.');
         wrap.innerHTML =
-            `<div class="max-w-[90%] bg-red-500/[0.06] border border-red-500/20 rounded-2xl rounded-bl-sm px-4 py-3">
+            `<div class="max-w-[90%] rounded-2xl px-4 py-3" style="background:var(--bg-card-alt);">
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-[18px] text-red-400">lock</span>
-                    <span class="text-sm font-bold text-white">Tu prueba gratuita finalizó</span>
+                    <span class="material-symbols-outlined text-[18px] text-[var(--error)]">lock</span>
+                    <span class="text-sm font-bold text-white">Trial ended</span>
                 </div>
-                <p class="text-xs text-gray-400 mb-3">${msg}</p>
-                <a href="/dashboard/subscription" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs">Activar plan</a>
+                <p class="text-xs" style="color:var(--text-muted);">${msg}</p>
+                <a href="/dashboard/subscription" class="vz-btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs mt-2">Activate plan</a>
             </div>`;
         appendMsg(wrap);
         scrollToBottom();
@@ -418,14 +447,14 @@
 
     function buildConvItem(c) {
         const item = document.createElement('div');
-        item.className = 'conv-item w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition flex items-center gap-2 ' +
-            (c.id === currentConvId ? 'active' : '');
+        item.className = 'conv-item w-full text-left px-3 py-2.5 rounded-xl' +
+            (c.id === currentConvId ? ' active' : '');
         item.dataset.cid = c.id;
         item.innerHTML =
-            `<span class="material-symbols-outlined text-[16px] ${c.pinned ? 'vz-ic-orange' : 'text-gray-500'}">${c.pinned ? 'push_pin' : 'description'}</span>
-             <span class="flex-1 min-w-0 truncate text-xs font-medium text-gray-300">${escapeHtml(c.title || 'Análisis sin título')}</span>
+            `<span class="material-symbols-outlined text-[16px]" style="color:${c.pinned ? 'var(--primary)' : 'var(--text-dim)'}">${c.pinned ? 'push_pin' : 'description'}</span>
+             <span class="flex-1 min-w-0 truncate text-xs font-medium" style="color:var(--text-muted)">${escapeHtml(c.title || 'Untitled analysis')}</span>
              ${c.pinned ? '<span class="vz-pin-dot"></span>' : ''}
-             <button class="vz-kebab" data-kebab title="Más opciones" aria-label="Más opciones"><span class="material-symbols-outlined">more_vert</span></button>`;
+             <button class="vz-kebab" data-kebab title="More options" aria-label="More options"><span class="material-symbols-outlined">more_vert</span></button>`;
         item.onclick = () => selectConversation(c.id);
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -441,32 +470,90 @@
     }
 
     function renderConversations() {
+        hideConvSkeleton();
         const term = normalizeStr(convSearchTerm);
         const list = term
-            ? allConversations.filter((c) => normalizeStr(c.title || 'Análisis sin título').includes(term))
+            ? allConversations.filter((c) => normalizeStr(c.title || 'Untitled analysis').includes(term))
             : allConversations;
         convListEl.innerHTML = '';
+        const emptyState = document.getElementById('conv-empty-state');
         if (!list.length) {
-            const empty = document.createElement('div');
-            empty.className = 'vz-conv-empty';
-            empty.textContent = term ? 'Sin resultados' : 'Aún no tienes análisis';
-            convListEl.appendChild(empty);
+            if (term) {
+                // Searching but no results → show inline text
+                if (emptyState) emptyState.hidden = true;
+                convListEl.style.display = '';
+                const empty = document.createElement('div');
+                empty.className = 'vz-conv-empty';
+                empty.textContent = 'No results';
+                convListEl.appendChild(empty);
+            } else {
+                // No conversations at all → show fancy empty state
+                convListEl.style.display = 'none';
+                if (emptyState) emptyState.hidden = false;
+            }
             return;
         }
+        // We have items → show list, hide empty state
+        convListEl.style.display = '';
+        if (emptyState) emptyState.hidden = true;
         list.forEach((c) => convListEl.appendChild(buildConvItem(c)));
     }
 
+    function hideConvSkeleton() {
+        const skel = document.getElementById('conv-list-skeleton');
+        if (skel) skel.style.display = 'none';
+    }
+    function showConvSkeleton() {
+        const skel = document.getElementById('conv-list-skeleton');
+        if (skel) skel.style.display = '';
+        const emptyState = document.getElementById('conv-empty-state');
+        if (emptyState) emptyState.hidden = true;
+    }
+
     async function loadConversations() {
+        showConvSkeleton();
         try {
             const data = await apiGet(API);
-            if (!data.success) return;
+            if (!data.success) {
+                console.warn('[Copilot VZ] loadConversations: API returned success=false', data);
+                showConvError('No se pudieron cargar las conversaciones.');
+                return;
+            }
             allConversations = data.data || [];
             renderConversations();
-        } catch (e) { /* silencioso */ }
+        } catch (e) {
+            console.warn('[Copilot VZ] loadConversations: fetch failed', e);
+            showConvError('Error de conexión al cargar conversaciones.');
+        }
+    }
+
+    function showConvError(msg) {
+        const list = document.getElementById('conv-list');
+        const emptyState = document.getElementById('conv-empty-state');
+        if (!list) return;
+        convListEl.innerHTML = '';
+        convListEl.style.display = '';
+        if (emptyState) emptyState.hidden = true;
+        const errEl = document.createElement('div');
+        errEl.className = 'vz-conv-error';
+        errEl.innerHTML = '<span class="material-symbols-outlined block">cloud_off</span>' +
+            '<span>' + escapeHtml(msg) + '</span>';
+        convListEl.appendChild(errEl);
     }
 
     function saveConvToStorage(id) {
         try { localStorage.setItem('vz_last_conv', id); } catch (e) {}
+    }
+
+    function showLoadingMessages() {
+        const overlay = document.getElementById('chat-loading-overlay');
+        if (overlay) overlay.classList.add('active');
+        if (messagesEl) messagesEl.style.display = 'none';
+    }
+    function hideLoadingMessages() {
+        const overlay = document.getElementById('chat-loading-overlay');
+        if (overlay) overlay.classList.remove('active');
+        if (messagesEl) messagesEl.style.display = '';
     }
 
     async function selectConversation(id) {
@@ -476,9 +563,12 @@
         removeTypingIndicator();
         loadConversations();
         closeConvDrawer();
+        showLoadingMessages();
         try {
             const data = await apiGet(`${API}/${id}`);
+            hideLoadingMessages();
             if (!data.success) {
+                console.warn('[Copilot VZ] selectConversation: API returned success=false', data);
                 saveConvToStorage(null);
                 showEmptyState();
                 return;
@@ -486,19 +576,29 @@
             destroyChatCharts();
             messagesEl.innerHTML = '';
             const conv = data.data;
-            titleEl.textContent = conv.title || 'Análisis nuevo';
+            titleEl.textContent = conv.title || 'New analysis';
             currentConvHasMessages = !!(conv.messages && conv.messages.length);
             updateHeaderButtons();
             updateContextRing(data.context_usage !== undefined ? data.context_usage : 0);
             if (!conv.messages.length) {
-                _welcomeSuggestions = conv.welcome_suggestions || null;
                 showEmptyState();
                 setMode('welcome');
             } else {
                 setMode('chat');
                 _disclaimerShown = true;
+                _bulkLoading = true;
                 let lastUserId = null;
+                let lastDate = null;
                 conv.messages.forEach((m) => {
+                    // Insert date separator
+                    const msgDate = m.created_at || m.timestamp;
+                    if (msgDate) {
+                        const msgDay = new Date(msgDate).toDateString();
+                        if (msgDay !== lastDate) {
+                            lastDate = msgDay;
+                            insertDateSeparator(msgDate);
+                        }
+                    }
                     if (m.role === 'user') {
                         lastUserId = m.id;
                         appendUserBubble(m.content, m.id);
@@ -512,17 +612,22 @@
                         }
                     }
                 });
+                _bulkLoading = false;
                 ensureDisclaimer();
-                scrollToBottom();
+                requestAnimationFrame(() => scrollToBottom());
             }
-        } catch (e) { /* silencioso */ }
+        } catch (e) {
+            hideLoadingMessages();
+            console.warn('[Copilot VZ] selectConversation: fetch failed', e);
+            saveConvToStorage(null);
+            showEmptyState();
+        }
     }
 
     async function showEmptyState() {
         removeDisclaimer();
         messagesEl.innerHTML = '';
-        // Usuarios nuevos (sin catálogo o sin ventas): mostramos la guía
-        // interactiva de onboarding en lugar de la bienvenida genérica.
+        // Check for onboarding guidance for new users.
         const ob = await fetchOnboarding();
         if (ob && ob.card) {
             setMode('chat');
@@ -530,44 +635,40 @@
             return;
         }
         setMode('welcome');
-        const div = document.createElement('div');
-        div.id = 'empty-state';
-        div.className = 'h-full flex flex-col items-center justify-center text-center px-4';
-        div.innerHTML =
-            `<div class="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4">
-                <span class="material-symbols-outlined vz-ic-orange text-[36px]">insights</span>
-            </div>
-            <h2 class="text-lg font-black text-white">Hola de nuevo.</h2>
-            <p class="text-sm text-gray-500 mt-1">¿Qué quieres analizar hoy?</p>`;
-        messagesEl.appendChild(div);
-        if (_welcomeSuggestions) {
-            renderWelcomeSuggestions(_welcomeSuggestions);
+        // Carga sugerencias dinámicas desde el backend (sin crear chat si ya hay uno activo).
+        if (!currentConvId) {
+            try {
+                const data = await apiSend(`${API}/draft`, {});
+                if (data && data.success && data.data) {
+                    currentConvId = data.data.id;
+                    renderWelcomeChips(data.data.welcome_suggestions || []);
+                }
+            } catch (e) { /* silencioso */ }
         }
     }
 
-    function renderWelcomeSuggestions(suggestions) {
-        const container = document.getElementById('quick-insights');
-        if (!container || !suggestions || !suggestions.length) return;
-        container.innerHTML = '';
-        const footer = document.createElement('div');
-        footer.className = 'text-center text-[11px] text-gray-600 mt-2';
-        footer.textContent = '✨ Prueba alguna de estas ideas';
+    // ── Chips de bienvenida dinámicos (desde el backend) ──
+    function renderWelcomeChips(suggestions) {
+        welcomeSuggestions = Array.isArray(suggestions) ? suggestions : [];
+        const wrap = $('#welcome-chips');
+        if (!wrap) return;
+        wrap.innerHTML = '';
         suggestions.forEach((s) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'vz-quick';
-            btn.dataset.prompt = s.prompt || '';
-            btn.innerHTML = '<span class="vz-quick-label">' + (s.label || '') + '</span>';
-            btn.addEventListener('click', () => {
-                const prompt = btn.dataset.prompt;
-                if (!prompt) return;
+            const item = (s && typeof s === 'object') ? s : { label: String(s || ''), prompt: String(s || '') };
+            const label = item.label || item.prompt || '';
+            const prompt = item.prompt || item.label || '';
+            if (!label) return;
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'vz-chip';
+            b.textContent = label;
+            b.onclick = () => {
                 inputEl.value = prompt;
                 autoResize();
-                inputEl.focus();
-            });
-            container.appendChild(btn);
+                sendMessage();
+            };
+            wrap.appendChild(b);
         });
-        container.appendChild(footer);
     }
 
     // Tipos de estado vacío que forman parte del onboarding interactivo.
@@ -590,19 +691,19 @@
                 return `<button class="vz-onb-action" data-action="${escapeHtml(s.action)}">${label}<span class="material-symbols-outlined text-[15px]">arrow_forward</span></button>`;
             }
             if (s.href) {
-                return `<a href="${escapeHtml(s.href)}" class="px-3 py-1.5 rounded-xl text-xs font-bold text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 transition inline-flex items-center gap-1">${label}<span class="material-symbols-outlined text-[14px]">open_in_new</span></a>`;
+                return `<a href="${escapeHtml(s.href)}" class="px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1" style="color:var(--primary);background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);">${label}<span class="material-symbols-outlined text-[14px]">open_in_new</span></a>`;
             }
-            return `<button class="esg-chip px-3 py-1.5 rounded-xl text-xs font-bold text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 transition" data-sugg="${label}">${label}</button>`;
+            return `<button class="esg-chip px-3 py-1.5 rounded-xl text-xs font-bold" data-sugg="${label}" style="color:var(--primary);background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);">${label}</button>`;
         }).join('');
         wrap.innerHTML =
-            `<div class="max-w-[92%] bg-white/[0.03] border border-white/[0.06] rounded-2xl rounded-bl-sm px-4 py-4">
+            `<div class="max-w-[92%] rounded-2xl px-4 py-4" style="background:var(--bg-card-alt);">
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                        <span class="material-symbols-outlined vz-ic-orange text-[22px]">${icon}</span>
+                    <span class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(249,115,22,0.10);">
+                        <span class="material-symbols-outlined text-[22px]" style="color:var(--primary);">${icon}</span>
                     </span>
-                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Copilot VZ</span>
+                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
                 </div>
-                <div class="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">${text}</div>
+                <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">${text}</div>
                 ${chips ? `<div class="flex flex-wrap gap-2 mt-3">${chips}</div>` : ''}
             </div>`;
         return wrap;
@@ -635,14 +736,14 @@
         const wrap = document.createElement('div');
         wrap.className = 'flex justify-start';
         wrap.innerHTML =
-            `<div class="max-w-[92%] bg-white/[0.03] border border-emerald-500/20 rounded-2xl rounded-bl-sm px-4 py-4">
+            `<div class="max-w-[92%] rounded-2xl px-4 py-4" style="background:var(--bg-card-alt);">
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                    <span class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.10);">
                         <span class="material-symbols-outlined text-[22px]" style="color:#34d399">check_circle</span>
                     </span>
-                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Copilot VZ</span>
+                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
                 </div>
-                <div class="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">🎉 ¡Listo! Ya tienes lo básico para empezar. Pregúntame lo que quieras sobre tu negocio.</div>
+                <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">Ready! You have the basics to start. Ask me anything about your business.</div>
             </div>`;
         messagesEl.appendChild(wrap);
         scrollToBottom();
@@ -661,21 +762,26 @@
     async function newConversation() {
         try {
             const data = await apiSend(`${API}/draft`, {});
-            if (!data.success) return;
+            if (!data.success) {
+                console.warn('[Copilot VZ] newConversation: API returned success=false', data);
+                return;
+            }
             destroyChatCharts();
             messagesEl.innerHTML = '';
-            _welcomeSuggestions = data.data.welcome_suggestions || null;
             _disclaimerShown = false;
             showEmptyState();
             updateContextRing(0);
             currentConvId = data.data.id;
+            renderWelcomeChips(data.data.welcome_suggestions || []);
             saveConvToStorage(null);
             currentConvHasMessages = false;
             updateHeaderButtons();
-            titleEl.textContent = 'Análisis nuevo';
+            titleEl.textContent = 'New analysis';
             await loadConversations();
             closeConvDrawer();
-        } catch (e) { /* silencioso */ }
+        } catch (e) {
+            console.warn('[Copilot VZ] newConversation: fetch failed', e);
+        }
     }
 
     // ── Envío ──────────────────────────────────────────────
@@ -687,13 +793,20 @@
     }
 
     async function newConversationThenSend(text) {
-        const data = await apiSend(`${API}/draft`, {});
-        if (!data.success) return;
-        currentConvId = data.data.id;
-        _disclaimerShown = false;
-        titleEl.textContent = 'Análisis nuevo';
-        await loadConversations();
-        proceedSend(text, currentConvId, null);
+        try {
+            const data = await apiSend(`${API}/draft`, {});
+            if (!data.success) {
+                console.warn('[Copilot VZ] newConversationThenSend: API returned success=false', data);
+                return;
+            }
+            currentConvId = data.data.id;
+            _disclaimerShown = false;
+            titleEl.textContent = 'New analysis';
+            await loadConversations();
+            proceedSend(text, currentConvId, null);
+        } catch (e) {
+            console.warn('[Copilot VZ] newConversationThenSend: fetch failed', e);
+        }
     }
 
     let typingIndicator = null;
@@ -704,10 +817,10 @@
         wrap.className = 'flex flex-col items-start vz-msg-row';
         wrap.id = 'typing-indicator';
         wrap.innerHTML =
-            `<div class="vz-bubble relative bg-white/[0.04] border border-white/[0.06] rounded-xl rounded-bl-sm px-3 py-2.5">
+            `<div class="vz-bubble relative rounded-2xl px-3 py-2.5" style="background:var(--bg-card-alt);">
                 <div class="flex items-center gap-1.5 mb-0.5">
-                    <span class="material-symbols-outlined text-[13px] vz-ic-orange">insights</span>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Copilot VZ</span>
+                    <span class="material-symbols-outlined text-[13px] text-[var(--primary)]">bubble_chart</span>
+                    <span class="text-[10px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
                 </div>
                 <div class="vz-typing-dots">
                     <span class="vz-dot"></span>
@@ -749,7 +862,7 @@
             handleResponse(data, text);
         } catch (e) {
             removeTypingIndicator();
-            appendError('No pude conectar con Copilot VZ. Intenta de nuevo.');
+            appendError('Could not connect to Copilot VZ. Please try again.');
         } finally {
             isBusy = false;
             sendBtn.disabled = false;
@@ -761,13 +874,13 @@
             updateContextRing(data.context_usage);
         }
         if (data.context_optimized) {
-            showToast('🧠 Organicé nuestra conversación para conservar lo más importante y seguir respondiendo con el mismo contexto.');
+            showToast('🧠 Organized our conversation to keep what matters most and continue responding with full context.');
         }
     }
 
     function handleResponse(data, originalText) {
         if (!data || !data.success) {
-            appendError((data && data.message) || 'Ocurrió un error inesperado.');
+            appendError((data && data.message) || 'An unexpected error occurred.');
             return;
         }
         if (data.is_empty_state) {
@@ -797,7 +910,7 @@
             renderFollowup(wrap, data.suggestions);
         } else if (data.type === 'llm_error' || data.type === 'error') {
             removeTypingIndicator();
-            appendError(data.message || 'Error del servicio de IA.');
+            appendError(data.message || 'AI service error.');
         }
         updateContextFromResponse(data);
     }
@@ -806,7 +919,7 @@
         const wrap = document.createElement('div');
         wrap.className = 'flex justify-start';
         wrap.innerHTML =
-            `<div class="max-w-[90%] bg-red-500/[0.06] border border-red-500/20 rounded-2xl px-4 py-2.5 text-xs text-red-300">⚠️ ${escapeHtml(msg)}</div>`;
+            `<div class="max-w-[90%] rounded-2xl px-4 py-2.5 text-xs" style="background:var(--bg-card-alt);color:var(--error);">${escapeHtml(msg)}</div>`;
         appendMsg(wrap);
         scrollToBottom();
     }
@@ -858,13 +971,13 @@
                 replace_tail: true,
             });
             if (!data || !data.success) {
-                appendError((data && data.message) || 'No se pudo editar el mensaje.');
+                appendError((data && data.message) || 'Could not edit the message.');
                 await selectConversation(currentConvId);
                 return;
             }
             await selectConversation(currentConvId);
         } catch (e) {
-            appendError('No se pudo editar el mensaje.');
+            appendError('Could not edit the message.');
         } finally {
             setBusyBtn(btn, false);
         }
@@ -884,13 +997,13 @@
             });
             removeTypingIndicator();
             if (!data || !data.success) {
-                appendError((data && data.message) || 'No se pudo regenerar la respuesta.');
+                appendError((data && data.message) || 'Could not regenerate the response.');
                 return;
             }
             await selectConversation(currentConvId);
         } catch (e) {
             removeTypingIndicator();
-            appendError('No se pudo regenerar la respuesta.');
+            appendError('Could not regenerate the response.');
         } finally {
             setBusyBtn(btn, false);
         }
@@ -909,7 +1022,7 @@
     // ── Input UX ───────────────────────────────────────────
     function autoResize() {
         inputEl.style.height = 'auto';
-        inputEl.style.height = Math.min(inputEl.scrollHeight, 128) + 'px';
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 144) + 'px';
     }
 
     // ── Eventos ────────────────────────────────────────────
@@ -928,7 +1041,10 @@
         $('#conv-backdrop').classList.remove('open');
     }
 
-    $('#btn-new-conv').addEventListener('click', newConversation);
+    document.querySelectorAll('#btn-new-conv').forEach(function(el) {
+        el.addEventListener('click', newConversation);
+    });
+
     $('#btn-toggle-conv').addEventListener('click', () => {
         if ($('#conv-panel').classList.contains('open')) closeConvDrawer();
         else openConvDrawer();
@@ -941,7 +1057,7 @@
     function openRenameModal(cid, currentTitle) {
         if (!cid) return;
         renameTargetId = cid;
-        renameInput.value = (currentTitle && currentTitle !== 'Análisis nuevo') ? currentTitle : '';
+        renameInput.value = (currentTitle && currentTitle !== 'New analysis') ? currentTitle : '';
         renameModal.hidden = false;
         setTimeout(() => { renameInput.focus(); renameInput.select(); }, 30);
     }
@@ -1031,9 +1147,9 @@
     function openDeleteModal(c) {
         if (!c) return;
         deleteTargetId = c.id;
-        deleteConv.textContent = `“${c.title || 'Análisis sin título'}”`;
+        deleteConv.textContent = `“${c.title || 'Untitled analysis'}”`;
         const n = c.message_count || 0;
-        deleteMeta.textContent = `Creado el ${formatEsDate(c.created_at)} • ${n} ${n === 1 ? 'mensaje' : 'mensajes'}`;
+        deleteMeta.textContent = `Created ${formatEsDate(c.created_at)} • ${n} ${n === 1 ? 'message' : 'messages'}`;
         deleteModal.hidden = false;
         setTimeout(() => $('#delete-cancel').focus(), 30);
     }
@@ -1045,7 +1161,7 @@
         const wasCurrent = cid === currentConvId;
         if (wasCurrent) {
             currentConvId = null;
-            titleEl.textContent = 'Análisis nuevo';
+            titleEl.textContent = 'New analysis';
             destroyChatCharts();
             messagesEl.innerHTML = '';
             showEmptyState();
@@ -1100,7 +1216,7 @@
         document.body.removeChild(ta);
     }
     function buildTranscriptMd(messages, title) {
-        let md = `# ${title || 'Análisis Copilot VZ'}\n\n`;
+        let md = `# ${title || 'Copilot VZ Analysis'}\n\n`;
         (messages || []).forEach((m) => {
             const who = m.role === 'user' ? 'Tú' : 'Copilot VZ';
             md += `**${who}:**\n${m.content}\n\n`;
@@ -1142,7 +1258,7 @@
     }
     async function openContextModal() {
         if (!currentConvId) {
-            showToast('Abre o crea un análisis para ver su contexto');
+            showToast('Open or create a conversation to see its context');
             return;
         }
         try {
@@ -1150,10 +1266,10 @@
             if (!data.success || !data.data) return;
             const conv = data.data;
             if (!conv.messages || !conv.messages.length) {
-                showToast('Aún no hay contexto en esta conversación');
+                showToast('No context yet in this conversation');
                 return;
             }
-            $('#context-sub').textContent = conv.title || 'Análisis sin título';
+            $('#context-sub').textContent = conv.title || 'Untitled analysis';
             renderContext(conv.messages || [], conv.title);
             // Reúne las gráficas de la conversación para el visor de exportación.
             contextCharts = (conv.messages || [])
@@ -1250,13 +1366,29 @@
     });
 
     // ── Anillo de contexto ──
-    const ctxRing = document.getElementById('ctx-ring');
-    const ctxPct = document.getElementById('ctx-pct');
-    const ctxWrap = document.getElementById('ctx-ring-wrap');
     function updateContextRing(pct) {
-        if (!ctxRing || !ctxPct || !ctxWrap) return;
-        if (pct == null || pct <= 0) { ctxWrap.style.display = 'none'; return; }
-        ctxWrap.style.display = 'flex';
+        let ctxWrap = document.getElementById('ctx-ring-wrap');
+        if (pct == null || pct <= 0) {
+            if (ctxWrap) ctxWrap.remove();
+            return;
+        }
+        if (!ctxWrap) {
+            ctxWrap = document.createElement('div');
+            ctxWrap.id = 'ctx-ring-wrap';
+            ctxWrap.className = 'flex items-center gap-1 shrink-0 self-center mb-0.5';
+            ctxWrap.innerHTML =
+                '<svg width="15" height="15" viewBox="0 0 18 18" class="shrink-0">' +
+                '<circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2.5" />' +
+                '<circle id="ctx-ring" cx="9" cy="9" r="7" fill="none" stroke="#10B981" ' +
+                'stroke-width="2.5" stroke-linecap="round" stroke-dasharray="44" stroke-dashoffset="0" ' +
+                'transform="rotate(-90,9,9)" /></svg>' +
+                '<span id="ctx-pct" class="text-[11px] tabular-nums text-[var(--text-dim)]">0%</span>';
+            const composer = document.querySelector('.vz-glass-composer');
+            const sendBtn = document.getElementById('chat-send');
+            if (composer && sendBtn) composer.insertBefore(ctxWrap, sendBtn);
+        }
+        const ctxRing = document.getElementById('ctx-ring');
+        const ctxPct = document.getElementById('ctx-pct');
         const circ = 2 * Math.PI * 7;
         const offset = circ - (pct / 100) * circ;
         ctxRing.style.strokeDasharray = circ;
@@ -1373,7 +1505,7 @@
         sel.classList.remove('hidden');
         if (note) note.classList.add('hidden');
         if (save) save.disabled = false;
-        sel.innerHTML = '<option value="">Cargando…</option>';
+        sel.innerHTML = '<option value="">Loading…</option>';
         try {
             const data = await apiGet('/api/categories');
             const cats = (data && data.data && data.data.categories) || [];
@@ -1386,32 +1518,32 @@
             sel.innerHTML = cats.map((c) =>
                 `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
         } catch (e) {
-            sel.innerHTML = '<option value="">Error al cargar</option>';
+            sel.innerHTML = '<option value="">Error loading</option>';
         }
     }
 
     async function loadOnbProducts() {
         const sel = document.getElementById('onb-order-product');
         if (!sel) return;
-        sel.innerHTML = '<option value="">Cargando…</option>';
+        sel.innerHTML = '<option value="">Loading…</option>';
         try {
             const data = await apiGet('/api/products?per_page=200');
             const prods = (data && data.data && data.data.products) || [];
             if (!prods.length) {
-                sel.innerHTML = '<option value="">Sin productos aún</option>';
+                sel.innerHTML = '<option value="">No products yet</option>';
                 return;
             }
             sel.innerHTML = prods.map((p) =>
                 `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
         } catch (e) {
-            sel.innerHTML = '<option value="">Error al cargar</option>';
+            sel.innerHTML = '<option value="">Error loading</option>';
         }
     }
 
     async function saveOnbCategory() {
         const nameEl = document.getElementById('onb-category-name');
         const name = (nameEl && nameEl.value || '').trim();
-        if (!name) { showOnbErr('category', 'Escribe un nombre para la categoría.'); return; }
+        if (!name) { showOnbErr('category', 'Enter a name for the category.'); return; }
         setOnbSaving('category', true);
         clearOnbErr('category');
         try {
@@ -1419,10 +1551,10 @@
             fd.append('name', name);
             const data = await apiForm('/api/categories', fd);
             if (!data || !data.success) {
-                showOnbErr('category', (data && data.error) || 'No se pudo crear la categoría.');
+                showOnbErr('category', (data && data.error) || 'Could not create category.');
                 return;
             }
-            showToast('✓ Categoría creada');
+            showToast('✓ Category created');
             closeOnbModal('category');
             await refreshOnboardingCard();
             if (onbReturnToProduct) {
@@ -1430,7 +1562,7 @@
                 openOnbModal('product'); // recarga las categorías automáticamente
             }
         } catch (e) {
-            showOnbErr('category', 'Error de conexión.');
+            showOnbErr('category', 'Connection error.');
         } finally {
             setOnbSaving('category', false);
         }
@@ -1443,10 +1575,10 @@
         const catId = catEl && catEl.value;
         const name = (nameEl && nameEl.value || '').trim();
         const price = parseInt((priceEl && priceEl.value || '').trim(), 10);
-        if (!catId) { showOnbErr('product', 'Primero elige o crea una categoría.'); return; }
-        if (!name) { showOnbErr('product', 'Escribe un nombre para el producto.'); return; }
+        if (!catId) { showOnbErr('product', 'First choose or create a category.'); return; }
+        if (!name) { showOnbErr('product', 'Enter a name for the product.'); return; }
         if (!Number.isFinite(price) || price < 1) {
-            showOnbErr('product', 'El precio debe ser un número mayor a 0 (en pesos).'); return;
+            showOnbErr('product', 'Price must be a number greater than 0.'); return;
         }
         setOnbSaving('product', true);
         clearOnbErr('product');
@@ -1457,14 +1589,14 @@
             fd.append('category_id', String(catId));
             const data = await apiForm('/api/products', fd);
             if (!data || !data.success) {
-                showOnbErr('product', (data && data.error) || 'No se pudo crear el producto.');
+                showOnbErr('product', (data && data.error) || 'Could not create product.');
                 return;
             }
-            showToast('✓ Producto creado');
+            showToast('✓ Product created');
             closeOnbModal('product');
             await refreshOnboardingCard();
         } catch (e) {
-            showOnbErr('product', 'Error de conexión.');
+            showOnbErr('product', 'Connection error.');
         } finally {
             setOnbSaving('product', false);
         }
@@ -1475,26 +1607,26 @@
         const qtyEl = document.getElementById('onb-order-qty');
         const prodId = prodEl && prodEl.value;
         const qty = parseInt((qtyEl && qtyEl.value || '').trim(), 10);
-        if (!prodId) { showOnbErr('order', 'Primero crea un producto.'); return; }
+        if (!prodId) { showOnbErr('order', 'First create a product.'); return; }
         if (!Number.isFinite(qty) || qty < 1) {
-            showOnbErr('order', 'La cantidad debe ser al menos 1.'); return;
+            showOnbErr('order', 'Quantity must be at least 1.'); return;
         }
         setOnbSaving('order', true);
         clearOnbErr('order');
         try {
             const data = await apiSend('/api/orders', {
-                customer_name: 'Cliente de prueba',
+                customer_name: 'Test customer',
                 items: [{ product_id: parseInt(prodId, 10), quantity: qty }],
             });
             if (!data || !data.success) {
-                showOnbErr('order', (data && data.error) || 'No se pudo crear el pedido.');
+                showOnbErr('order', (data && data.error) || 'Could not create order.');
                 return;
             }
-            showToast('✓ Venta de prueba registrada');
+            showToast('✓ Test sale recorded');
             closeOnbModal('order');
             await refreshOnboardingCard();
         } catch (e) {
-            showOnbErr('order', 'Error de conexión.');
+            showOnbErr('order', 'Connection error.');
         } finally {
             setOnbSaving('order', false);
         }
@@ -1503,6 +1635,7 @@
     (async function init() {
         await loadConversations();
         updateHeaderButtons();
+        autoResize();
 
         // Onboarding: cierre, apertura cruzada y guardado.
         document.querySelectorAll('[data-onb-close]').forEach((b) => {
@@ -1528,20 +1661,51 @@
         if (hashMatch) {
             var convId = parseInt(hashMatch[1], 10);
             history.replaceState(null, '', window.location.pathname);
-            await selectConversation(convId);
+            await selectConversation(convId).catch(function (err) {
+                console.warn('[Copilot VZ] init: hash conversation load failed', err);
+                showEmptyState();
+            });
         } else {
             var savedConvId = null;
             try { savedConvId = localStorage.getItem('vz_last_conv'); } catch (e) {}
             if (savedConvId) {
                 var numId = parseInt(savedConvId, 10);
                 if (!isNaN(numId) && numId > 0) {
-                    await selectConversation(numId);
+                    await selectConversation(numId).catch(function (err) {
+                        console.warn('[Copilot VZ] init: saved conversation load failed', err);
+                        showEmptyState();
+                    });
                 } else {
                     showEmptyState();
                 }
             } else {
                 showEmptyState();
             }
+        }
+    })();
+
+    /* ── Mobile keyboard: mantiene scroll visible al abrir/cerrar ── */
+    (function attachKeyboardGuards() {
+        var input = document.getElementById('chat-input');
+        if (!input) return;
+
+        function scrollBottom() {
+            requestAnimationFrame(function () {
+                scrollToBottom();
+            });
+        }
+
+        input.addEventListener('focus', function () {
+            setTimeout(scrollBottom, 100);
+        });
+        input.addEventListener('blur', function () {
+            setTimeout(scrollBottom, 100);
+        });
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function () {
+                scrollBottom();
+            }, { passive: true });
         }
     })();
 })();

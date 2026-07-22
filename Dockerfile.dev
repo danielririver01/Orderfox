@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN adduser --system --no-create-home appuser && chown -R appuser /app
+USER appuser
+
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_DEBUG=True
 

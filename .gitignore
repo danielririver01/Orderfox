@@ -77,5 +77,18 @@ static/uploads/
 #ignorar la descarga de SKILLS
 node_modules/
 
+# coverage
+.coverage
 
+# security reports (pueden contener secrets)
+tests/security/reports/
+
+# skills
+.agents/skills/
+
+# opencode commands
+.opencode/commands/
+
+# opencode agents (auto-generated)
+.opencode/agents/
 

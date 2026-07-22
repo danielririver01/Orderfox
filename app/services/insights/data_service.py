@@ -40,11 +40,11 @@ def sales_for_date(restaurant_id, days_ago=0):
     base = _today_utc() - timedelta(days=days_ago)
     s = _range_summary(restaurant_id, base, base)
     label = 'hoy' if days_ago == 0 else ('ayer' if days_ago == 1 else f'hace {days_ago} días')
-    avg_txt = f". Ticket promedio: ${s['avg_ticket']:,}" if s['orders'] else ''
+    avg_txt = f". Ticket promedio: ${'{:,}'.format(s['avg_ticket']).replace(',', '.')}" if s['orders'] else ''
     return {
         'text': (
             f"{'Hoy' if days_ago == 0 else 'Ayer'} vendiste "
-            f"${s['total']:,} COP en {s['orders']} pedidos{avg_txt}."
+            f"${'{:,}'.format(s['total']).replace(',', '.')} COP en {s['orders']} pedidos{avg_txt}."
         ),
         'summary': s,
         'label': label,
@@ -395,10 +395,10 @@ def projection_uplift(restaurant_id, days=90, adoption=0.25):
     return {
         'text': (
             f"Analicé tus ventas reales de los últimos {days} días "
-            f"({orders} pedidos, ticket promedio ${avg_ticket:,} COP, "
-            f"${revenue:,} COP en total) y proyecté el impacto:\n\n"
+            f"({orders} pedidos, ticket promedio ${'{:,}'.format(avg_ticket).replace(',', '.')} COP, "
+            f"${'{:,}'.format(revenue).replace(',', '.')} COP en total) y proyecté el impacto:\n\n"
             f"Si en 1 de cada 4 pedidos (25%) agregas una bebida o acompañamiento "
-            f"de ~${addon:,} COP, generarías ${extra_revenue:,} COP adicionales "
+            f"de ~${'{:,}'.format(addon).replace(',', '.')} COP, generarías ${'{:,}'.format(extra_revenue).replace(',', '.')} COP adicionales "
             f"en este mismo periodo (≈ +{pct}% sobre tus ingresos actuales).\n\n"
             f"Es una proyección con tus datos reales, no un número inventado. "
             f"¿Quieres que afine el cálculo con otro tipo de producto o porcentaje?"
@@ -468,8 +468,164 @@ def welcome_suggestions(restaurant_id, stage):
         pool = _LEVEL_2_POOL
     else:
         pool = _LEVEL_3_POOL
-    n = min(3, len(pool))
+    n = min(4, len(pool))
     return random.sample(pool, n)
+
+
+# ── Helpers para datos reales (reutilizados por welcome y follow-up) ──
+
+
+def _top_product(restaurant_id):
+    """Producto más vendido por cantidad."""
+    return (
+        db.session.query(
+            OrderItem.product_name,
+            func.sum(OrderItem.quantity).label('qty'),
+            func.sum(OrderItem.subtotal).label('revenue'),
+        )
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status != 'cancelled',
+        )
+        .group_by(OrderItem.product_name)
+        .order_by(func.sum(OrderItem.quantity).desc())
+        .first()
+    )
+
+
+def _month_sales(restaurant_id):
+    """Ventas agregadas del mes actual y anterior."""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_month_start = (month_start - timedelta(days=1)).replace(day=1)
+    next_month_start = (prev_month_start + timedelta(days=32)).replace(day=1)
+
+    this = (
+        db.session.query(
+            func.count(Order.id).label('orders'),
+            func.sum(Order.total).label('revenue'),
+            func.avg(Order.total).label('avg_ticket'),
+        )
+        .filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status != 'cancelled',
+            Order.created_at >= month_start,
+            Order.created_at < next_month_start,
+        )
+        .first()
+    )
+    prev = (
+        db.session.query(
+            func.count(Order.id).label('orders'),
+            func.sum(Order.total).label('revenue'),
+            func.avg(Order.total).label('avg_ticket'),
+        )
+        .filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status != 'cancelled',
+            Order.created_at >= prev_month_start,
+            Order.created_at < month_start,
+        )
+        .first()
+    )
+    return this, prev
+
+
+def _total_quantity(restaurant_id):
+    """Cantidad total de ítems vendidos (no cancelados)."""
+    return (
+        db.session.query(func.sum(OrderItem.quantity))
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status != 'cancelled',
+        )
+        .scalar() or 1
+    )
+
+
+def _ico(label):
+    """Icono Material Symbols para un label de sugerencia."""
+    m = {
+        'producto': 'star',
+        'ticket': 'receipt',
+        'tendencia': 'trending_up',
+        'recomend': 'tips_and_updates',
+        'proyecci': 'trending_up',
+        'comparar': 'compare_arrows',
+        'impacto': 'pulse',
+        'grafic': 'bar_chart',
+    }
+    lower = label.lower()
+    for kw, icon in m.items():
+        if kw in lower:
+            return icon
+    return 'chat'
+
+
+def _enrich_followup(generic_label, restaurant_id):
+    """Convierte un label genérico en un objeto con datos reales del restaurante."""
+    lower = generic_label.lower()
+
+    if 'ticket' in lower:
+        this, prev = _month_sales(restaurant_id)
+        if this and this.avg_ticket and this.orders:
+            avg = int(this.avg_ticket)
+            avg_fmt = f'${avg:,}'.replace(',', '.')
+            trend = ''
+            if prev and prev.avg_ticket and prev.orders and prev.avg_ticket > 0:
+                diff = round((this.avg_ticket - prev.avg_ticket) / prev.avg_ticket * 100)
+                if diff > 0:
+                    trend = f' · +{diff}%'
+                elif diff < 0:
+                    trend = f' · {diff}%'
+            return {
+                'label': f'Ticket promedio: {avg_fmt} COP{trend}',
+                'prompt': '¿Cuál es mi ticket promedio?',
+                'icon': 'receipt',
+            }
+        return {'label': generic_label, 'prompt': generic_label, 'icon': 'receipt'}
+
+    if 'producto' in lower and ('estrella' in lower or 'vendido' in lower):
+        top = _top_product(restaurant_id)
+        total_qty = _total_quantity(restaurant_id)
+        if top and top.qty:
+            pct = round(top.qty / total_qty * 100)
+            return {
+                'label': f'{top.product_name} · {int(top.qty)} vend ({pct}%)',
+                'prompt': '¿Cuál es mi producto más vendido?',
+                'icon': 'star',
+            }
+        return {'label': generic_label, 'prompt': generic_label, 'icon': 'star'}
+
+    if 'tendencia' in lower or ('profundizar' in lower and 'tendencia' in lower):
+        this, prev = _month_sales(restaurant_id)
+        if this and prev and prev.revenue and prev.revenue > 0 and this.revenue:
+            diff = round((this.revenue - prev.revenue) / prev.revenue * 100)
+            sign = '+' if diff > 0 else ''
+            return {
+                'label': f'Tendencia: {sign}{diff}% vs mes anterior',
+                'prompt': 'Analiza la tendencia de mis ventas',
+                'icon': 'trending_up',
+            }
+        return {'label': generic_label, 'prompt': generic_label, 'icon': 'trending_up'}
+
+    if 'vs ' in lower or ('mes' in lower and 'anterior' in lower):
+        this, prev = _month_sales(restaurant_id)
+        if this and prev and prev.revenue and prev.revenue > 0 and this.revenue:
+            diff_pct = round((this.revenue - prev.revenue) / prev.revenue * 100)
+            diff_rev = int(this.revenue - prev.revenue)
+            diff_fmt = f'${abs(diff_rev):,}'.replace(',', '.')
+            sign = '+' if diff_pct > 0 else ''
+            return {
+                'label': f'{sign}{diff_pct}% · {diff_fmt} COP',
+                'prompt': 'Compara mis ventas de este mes con el anterior',
+                'icon': 'compare_arrows',
+            }
+        return {'label': generic_label, 'prompt': generic_label, 'icon': 'compare_arrows'}
+
+    return {'label': generic_label, 'prompt': generic_label, 'icon': _ico(generic_label)}
 
 
 # ── Follow-up chip pools (contextuales según intent) ──
@@ -596,8 +752,12 @@ def _label_matches_intents(label, seen_intents):
     return False
 
 
-def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None):
-    """Sugerencias contextuales según el último intent y el historial de la conversación."""
+def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None, restaurant_id=None):
+    """Sugerencias contextuales según el último intent y el historial de la conversación.
+
+    Si se proporciona restaurant_id, enriquece los labels genéricos con datos reales
+    (ej. 'Producto estrella' → '🍔 Hamburguesa · 45 vend').
+    """
     intent = last_intent or (cls.get('intent') if cls else None)
     level = stage['level'] if stage else 3
 
@@ -611,4 +771,9 @@ def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=No
         if filtered:
             pool = filtered
 
-    return pool[:3]
+    suggestions = pool[:3]
+
+    if restaurant_id and level >= 2:
+        suggestions = [_enrich_followup(s, restaurant_id) for s in suggestions]
+
+    return suggestions
