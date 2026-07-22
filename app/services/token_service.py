@@ -7,8 +7,8 @@ Pattern: @staticmethod methods returning (result, None) / (None, error_dict).
 from datetime import datetime, timezone
 from flask import current_app
 from app import db
-from jose import jwt
-import requests as req
+import jwt as pyjwt
+from jwt import PyJWKClient
 from app.models import User, AITokenWallet, AITokenTransaction
 from app.utils.subscription import (
     initialize_or_reset_token_wallet, TOP_UP_PACKS, is_subscription_active, can_use_ai,
@@ -33,21 +33,15 @@ class TokenService:
                            'https://oriented-tortoise-50.clerk.accounts.dev'
 
             jwks_url = f"{clerk_domain}/.well-known/jwks.json"
+            jwks_client = PyJWKClient(jwks_url, cache_keys=True)
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
 
-            # Simple cache en app_config
-            cache_key = '_clerk_jwks_cache'
-            jwks_data = current_app.config.get(cache_key)
-            if not jwks_data:
-                resp = req.get(jwks_url, timeout=5)
-                resp.raise_for_status()
-                jwks_data = resp.json()
-                current_app.config[cache_key] = jwks_data
-
-            payload = jwt.decode(
+            payload = pyjwt.decode(
                 token,
-                jwks_data,
+                signing_key.key,
                 algorithms=['RS256'],
-                options={'verify_aud': False}
+                options={'verify_aud': False},
+                issuer=clerk_domain,
             )
             return payload.get('sub')
 
@@ -107,7 +101,10 @@ class TokenService:
             return None, {'error_code': 'USER_NOT_FOUND',
                           'message': 'Usuario no encontrado'}
 
-        wallet = initialize_or_reset_token_wallet(user)
+        # Lock pesimista: SELECT ... FOR UPDATE sobre la fila del wallet.
+        # Si otra petición está modificando esta misma billetera, espera
+        # a que termine. Cierra el TOCTOU entre can_scan() y el decremento.
+        wallet = AITokenWallet.query.filter_by(user_id=user.id).with_for_update().first()
         if not wallet:
             return None, {'error_code': 'NO_WALLET',
                           'message': 'No se encontró billetera de tokens'}
@@ -191,7 +188,13 @@ class TokenService:
                           'message': 'No se encontró billetera de tokens'}
 
         try:
-            wallet.extra_tokens += pack['tokens']
+            # UPDATE atómico — incrementa extra_tokens directo en la DB sin
+            # pasar por el ORM identity map. Previene race conditions donde
+            # dos requests concurrentes leerían el mismo valor y lo
+            # sobreescribirían (lost update).
+            AITokenWallet.query.filter_by(id=wallet.id).update(
+                {AITokenWallet.extra_tokens: AITokenWallet.extra_tokens + pack['tokens']}
+            )
 
             tx = AITokenTransaction(
                 user_id=user.id, type='topup_purchase',

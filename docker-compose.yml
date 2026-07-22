@@ -30,6 +30,7 @@ services:
       FLASK_DEBUG: "False"
       FLASK_APP: run.py
       SCANNER_IA_URL: http://receipt-scanner:3000
+      RATELIMIT_DEFAULT: ${RATELIMIT_DEFAULT:-100000 per day;50000 per hour}
     env_file:
       - .env
     networks:

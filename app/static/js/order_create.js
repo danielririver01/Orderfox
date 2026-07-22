@@ -34,7 +34,7 @@
                 }
             });
 
-            document.getElementById('order-total').textContent = '$' + total.toLocaleString();
+            document.getElementById('order-total').textContent = '$' + total.toLocaleString('es-CO');
             document.getElementById('items-json').value = JSON.stringify(items);
         }
 

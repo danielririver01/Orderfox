@@ -79,7 +79,7 @@ def index():
                          pending_count=stats['pending'],
                          confirmed_count=stats['confirmed'],
                          delivered_count=stats['delivered'],
-                         total_sales=f"{stats['today_sales_cop']:,}",
+                         total_sales=stats['today_sales_cop'],
                          is_open=restaurant.is_open,
                          menu_url=menu_url)
 

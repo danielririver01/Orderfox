@@ -1,333 +1,283 @@
-# Orderfox AI Agent Guide
+# Orderfox / Velzia — AI Agent Guide
 
-**Project:** Restaurant ordering management SaaS platform  
-**Version:** 1.4.0 | **Stack:** Flask (Python) + Vanilla JS + Tailwind CSS + MySQL  
-**Repository:** https://github.com/danielririver01/Orderfox.git
+**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MySQL 8  
+**Version:** v1.4.0  
+**Última actualización:** 2026-07-21
 
----
+## Skills & MCP (para agentes)
 
-## Quick Start Commands
+### Skills Disponibles
+| Skill | Prioridad | Para qué usarlo |
+|-------|-----------|----------------|
+| `frontend-design` | Alta | Diseño UI profesional (jerarquía, colores, tipografía, layouts) |
+| `tailwind-css-patterns` | Alta | Patrones responsive con Tailwind CSS 4 |
+| `accessibility` | Media | WCAG 2.2, screen reader, navegación teclado |
+| `seo` | Media | Meta tags, structured data, sitemap, optimización búsqueda |
+| `python-testing-patterns` | Alta | Patrones pytest, fixtures, mocking, TDD |
+
+### MCP Configurados
+| Servidor | Conexión | Uso |
+|----------|----------|-----|
+| `Conexion_MYSQL` | MySQL 8 local (via Docker) | Consultar DB, ver tablas, ejecutar queries |
+
+> **⚠️ IMPORTANTE:** `Conexion_MYSQL` requiere que Docker esté corriendo con el contenedor `orderfox-db` (MariaDB 11, puerto 3306). Si el MCP se ve rojo/inaccesible, ejecutar `docker start orderfox-db` o `docker compose up -d mysql` desde la raíz del proyecto.
+
+**Regla:** Todo agente DEBE cargar los skills relevantes al iniciar su tarea usando el tool `skill`. Ningún agente debe trabajar sin sus skills cargados.
+
+### Política de Skills (Ciclo de Vida)
+
+1. **Transparencia:** Antes de cargar un skill, el agente DEBE explicar por qué lo necesita: *"Voy a cargar frontend-design porque necesito mejorar la jerarquía visual de este dashboard"*.
+2. **Reutilización:** Si un skill se usará múltiples veces (ej. `frontend-design` en ui-engineer), dejarlo instalado.
+3. **Desechables:** Si un skill se usa una sola vez para una tarea específica (ej. `seo` para optimizar una página), borrarlo al terminar con el tool `skill` o eliminando el directorio `.agents/skills/<skill>/`.
+4. **Justificación:** No cargar skills "por si acaso". Cada skill cargado debe tener un propósito claro.
+
+## Quick Start
 
 ```bash
-# Activate virtual environment (Windows)
 .\.venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # CI usa este, no requirements.txt
 npm install
-
-# Run Flask dev server (http://localhost:5000)
-python run.py
-
-# Watch Tailwind CSS changes
-npm run watch:css
-
-# Build Tailwind CSS (production)
-npm run build:css
-
-# Database migrations
-flask db migrate -m "description"
-flask db upgrade
-
-# Debug tools
-python test_db.py        # Check database state
-python rescues_db.py     # Rescue specific data
+flask db upgrade                      # ejecutar siempre tras pull
+npm run build:css                     # Tailwind 4 (sin tailwind.config.js)
+python run.py                         # http://localhost:5000
 ```
 
----
+Flask y Astro corren por separado. Astro (menú digital, `astro/`, puerto 4321) proxies `/menu/api` a Flask.
 
-## Architecture Overview
-
-**Monolithic Full-Stack** — Single Flask app serving both:
-- **Web pages** (restaurant dashboard, auth flows)
-- **RESTful JSON APIs** (Scanner IA integration, mobile clients)
-
-### Component Breakdown
-
-```
-app/
-  ├── routes/              # Web blueprints (render HTML pages)
-  ├── routes/api_*.py      # REST API endpoints (JSON responses)
-  ├── models.py            # SQLAlchemy ORM (Restaurant, User, Order, etc.)
-  ├── extensions.py        # Flask extensions (Mail, JWT, Limiter, etc.)
-  ├── forms/               # WTForms for validation
-  ├── utils/               # Helpers (auth, subscription, rate-limiting)
-  ├── tasks.py             # APScheduler jobs (cleanup, expiry)
-  ├── csrf.py              # CSRF token management
-  └── static/
-      ├── CSS/             # Tailwind (input.css → output.css)
-      ├── js/              # Vanilla JS modules
-      └── uploads/         # User-uploaded assets cache
-
-template/                  # Jinja2 HTML templates
-  ├── common/              # Base layouts
-  ├── dashboard/           # Owner dashboard views
-  ├── public/              # Customer-facing (QR order page)
-  └── auth/                # Login, register, recovery
-
-migrations/                # Alembic database versions
-docs/                      # Project documentation
+```bash
+cd astro; npm run dev                 # Frontend Astro (menú público)
 ```
 
----
+## Filosofía del Proyecto
 
-## Key Conventions & Patterns
+- **Preferir simplicidad sobre complejidad.** Si hay dos soluciones igual de válidas, escoger la más simple.
+- **No romper APIs existentes.** Los cambios deben ser backward-compatible. Depreciar, no eliminar.
+- **Backend primero, frontend desacoplado.** La lógica de negocio vive en Flask; Astro es solo presentación.
+- **Mobile First.** Todo el frontend debe funcionar y verse bien en móvil antes que en desktop.
+- **No duplicar lógica.** Si un patrón aparece dos veces, extraerlo a un servicio o componente compartido.
+- **No agregar dependencias sin justificación.** Cada librería nueva debe resolver un problema real, no una preferencia.
+- **Las rutas no tienen lógica de negocio.** Flask routes solo orquestan: reciben request, llaman un service, devuelven response.
 
-### 1. **Database Timezone Handling** ⏰ *Critical*
+## Arquitectura
 
-**Rule:** ALL dates stored/compared in UTC only.
-
-- **Always use:** `datetime.now(timezone.utc)` (never `datetime.now()`)
-- **Implementation:** `AwareDateTime` type decorator in models strips timezone on write, adds it back on read
-- **Impact:** Subscription expiry, order timers, all backend calculations must use UTC
-- **Reference:** [docs/02-GUIDES/GUIDE-01_Timezone_Handling.md](docs/02-GUIDES/GUIDE-01_Timezone_Handling.md)
-
-```python
-# ✅ Correct
-from datetime import datetime, timezone
-expires = datetime.now(timezone.utc) + timedelta(days=7)
-
-# ❌ Wrong (naïve datetime)
-expires = datetime.now() + timedelta(days=7)
-```
-
-### 2. **Authentication Policy** 🔐
-
-**Database is source of truth.** If user is in Clerk but NOT in DB → auto-create with trial plan.
-
-- New users get 10-day trial + 10 AI tokens automatically
-- No implicit user creation without database record
-- Error code for rejected access: `USER_NOT_REGISTERED`
-- **Reference:** [docs/TIMEZONE_HANDLING.md](docs/TIMEZONE_HANDLING.md)
-
-### 3. **Subscription State** 💳
-
-**Single source of truth:** Backend-only calculation via `get_subscription_status(restaurant)`
-
-- Returns: `is_active`, `status`, `message`, `badge_class`, `can_crud`
-- **Never** do frontend date math
-- States: `active` → `trial` → `grace_period` → `expired`
-- **Frontend receives pre-computed object**
-- **Reference:** [docs/02-GUIDES/GUIDE-01_Timezone_Handling.md](docs/02-GUIDES/GUIDE-01_Timezone_Handling.md)
-
-### 4. **Rate Limiting** 🚨 Intelligent
-
-- **Max:** 3 orders per minute per IP
-- **Ban:** 10 minutes if limit exceeded
-- **Honeypot:** Hidden field in order form traps bots
-- **Time-to-submit:** Minimum 3 seconds between checkout start and order
-- **Exemption:** `SERVICE_API_KEY` header (server-to-server)
-- **Reference:** [docs/02-GUIDES/GUIDE-02_Rate_Limiting.md](docs/02-GUIDES/GUIDE-02_Rate_Limiting.md)
-
-### 5. **API Response Format** 📨
-
-All JSON responses follow this structure:
-
-```json
-{
-  "success": true,
-  "message": "Operación exitosa",
-  "data": { /* payload */ }
-}
-```
-
-Error responses:
-```json
-{
-  "success": false,
-  "error_code": "ERROR_CODE",
-  "message": "Human-readable message in Spanish"
-}
-```
-
-### 6. **CSRF Protection** 🛡️
-
-- **API routes** (`/api/*`): Exempt from CSRF (use JWT or API key)
-- **Web forms**: Must include CSRF token via `{{ csrf_token() }}`
-- **Default:** POST/PUT/DELETE require CSRF unless exempted
-
-### 7. **Naming Conventions** 📝
-
-| Type | Convention | Example |
-|------|-----------|---------|
-| Database | `snake_case` | `subscription_expires_at` |
-| URLs | `kebab-case` | `/api/products/list` |
-| JS functions | `camelCase` | `updateQty()`, `calculateTotal()` |
-| CSS classes | Tailwind + custom | `btn-primary`, `card` |
-
----
-
-## Task Scheduling (APScheduler)
-
-Jobs in `/app/tasks.py`:
-
-1. **Daily 3:00 AM** — `delete_inactive_accounts()`
-   - Removes restaurants marked inactive 24+ hours
-   - Cascades: deletes users, orders, products
-
-2. **Hourly** — `expire_pending_orders()`
-   - Marks orders as 'expired' if past `expires_at`
-   - Default expiry: 24 hours (configurable)
-
----
-
-## Common Development Tasks
-
-| Task | Files | Command |
-|------|-------|---------|
-| Add API endpoint | `/app/routes/api_*.py` | Create blueprint or extend existing |
-| Add form field | `/app/forms/*.py` + `models.py` | Update model, then `flask db migrate` |
-| Schedule job | `/app/tasks.py` | Register in `create_app()` |
-| Add database table | `/app/models.py` | `flask db migrate` → `flask db upgrade` |
-| Update CSS | `/app/static/CSS/src/input.css` | `npm run build:css` (or watch) |
-| Add JS module | `/app/static/js/` | Reference in template `<script>` tag |
-| Modify template | `/app/template/` | Corresponding `.html` file |
-| Fix auth issue | `/app/routes/auth.py` + `/app/template/auth/` | Check Clerk sync + DB |
-| Tune rate limiter | `/app/utils/rate_limiter.py` | See docs for thresholds |
-
----
-
-## Environment Variables (Required)
-
-See `settings.py` for full list. Key ones:
-
-| Variable | Purpose |
-|----------|---------|
-| `SECRET_KEY` | Session/CSRF encryption |
-| `DATABASE_URL` | MySQL connection (default: `mysql+pymysql://root:@localhost/orderfox`) |
-| `MAIL_SERVER`, `MAIL_USERNAME`, `MAIL_PASSWORD` | Email via Gmail SMTP |
-| `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | OAuth provider |
-| `CLOUDINARY_*` | Image hosting |
-| `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY` | Mercado Pago payments |
-| `SCANNER_IA_URL`, `SERVICE_API_KEY` | External AI service |
-| `BASE_URL` | For QR generation (ngrok/production domain) |
-
----
-
-## Common Gotchas ⚠️
-
-### 1. **MySQL Connection Fails Silently**
-```
-❌ mysql://user:password@host/database    (wrong driver)
-✅ mysql+pymysql://user:password@host/database
-```
-
-### 2. **Trial Period Hard-Coded**
-- 10 days, not configurable per request
-- Stored in `TrialHistory` table
-- Grace period after expiry: 10 days (users can't create/edit content)
-
-### 3. **Static Files in Production**
-- WhiteNoise serves `app/static/` as `/static/`
-- **Must pre-build** CSS: `npm run build:css`
-- No dynamic CSS generation in production
-
-### 4. **Timezone Testing**
-- Create test orders and check `expires_at` in MySQL directly
-- Use `datetime.now(timezone.utc)` when debugging
-
-### 5. **Gmail Email Configuration**
-- Requires **app-specific password**, not your account password
-- TLS enabled by default
-- `MAIL_USERNAME` used as "From" address unless `MAIL_DEFAULT_SENDER` set
-
-### 6. **Rate Limiter Storage**
-- In-memory only (resets on restart)
-- For multi-process/distributed: consider Redis
-
-### 7. **File Upload Max Size**
-- 16 MB (configured in `MAX_CONTENT_LENGTH`)
-- Uploaded to Cloudinary; local cache in `app/static/uploads/`
-- Old files not auto-deleted; manual cleanup needed
-
-### 8. **Reserved Slugs**
-- Cannot create restaurants with slugs like `api`, `admin`, `auth`, etc.
-- See `RESERVED_SLUGS` in `/app/routes/auth.py`
-
----
-
-## API Authentication
-
-| Type | Header | Use Case |
-|------|--------|----------|
-| **Service API Key** | `x-api-key: <key>` | Server-to-server (Scanner IA) — **bypasses rate limiting** |
-| **JWT** | `Authorization: Bearer <token>` | Mobile/external clients — 24-hour expiry |
-| **Clerk Session** | Cookie-based | Web browsers — OAuth redirect |
-
----
-
-## URL Patterns
+Arquitectura basada en separación estricta de responsabilidades. No mover lógica entre capas.
 
 ```
-/                              # Landing/login
-/dashboard/                    # Owner dashboard (protected)
-/dashboard/products            # Product management
-/dashboard/categories          # Category management
-/dashboard/orders              # Order list
-/dashboard/subscription        # Billing & subscription status
-/{restaurant_slug}/menu        # Public customer menu (QR target)
-/{restaurant_slug}/order/{id}  # Order status page
-
-/api/auth/login               # Login endpoint
-/api/auth/sync-clerk          # Clerk OAuth sync
-/api/products/list            # JSON API
-/api/orders/create            # Create order via API
+Flask (app/)         → dashboard + auth + APIs REST
+  app/routes/        → blueprints web (dashboard, auth, public)
+  app/routes/api_*.py→ endpoints JSON (JWT o API key)
+  app/services/      → lógica de negocio (insights, token, order, auth, category)
+  app/services/insights/ → Copilot VZ (classifier, llm_service, prompt_builder, ...)
+  app/utils/         → helpers (subscription, rate_limiter, auth)
+  app/template/      → Jinja2 (dashboard, auth, common)
+Astro (astro/)       → menú digital público (SSR, Tailwind v4)
 ```
 
----
+### Entrypoints & Límites
+- `run.py` → `app.create_app()` → registra blueprints, extensiones y APScheduler
+- `settings.py` → carga todo de `.env`; no subir `.env` a git
+- CSRF: exento en `/api/*` e `/insights/api/*` via `before_request` (flask-csrf)
+- CORS: orígenes permitidos son localhost:3000/4321/5173 + SCANNER_IA_URL
 
-## Deployment Notes
+## Comandos Clave
 
-- **Server:** Gunicorn or similar WSGI server required
-- **Static files:** Run `npm run build:css` before deploying
-- **Migrations:** Run `flask db upgrade` after code deployment
-- **Secrets:** Via `.env` (not in version control)
-- **Database:** MySQL 8.x with UTF-8MB4 support
-- **Scheduled tasks:** APScheduler requires app instance; consider Celery for distributed jobs
+| Comando | Acción |
+|---------|--------|
+| `/build` | Build CSS (`npm run build:css`) |
+| `/check` | Lint + tests + build CSS (todo pre-commit) |
+| `/clean` | Limpia `__pycache__`, `*.pyc`, `.pytest_cache` |
+| `/deploy` | Build CSS → `flask db upgrade` → inicia servidor |
+| `/fix` | Ruff --fix + formatea código |
+| `/health` | Verifica Flask, DB, Redis, ENV, IA |
+| `/lint` | Ruff check del proyecto |
+| `/logs` | Últimos errores del servidor |
+| `/migrate` | Crea migración + upgrade |
+| `/status` | Git branch + status + últimos commits |
+| `/sync` | `git pull` → install deps → db upgrade → build CSS |
+| `/test` | Tests con cobertura |
+| `/stress` | `npm run stress:suite` — ejecuta suite completa de estrés (k6) |
+| `/documentacion` | Documenta cambios recientes automáticamente |
 
----
+## Delegación Automática
 
-## Related Documentation
+El agente principal PUEDE invocar sub-agentes automáticamente sin esperar instrucción del usuario cuando detecte que una tarea se beneficia de paralelización o expertise especializada.
 
-- [Rate Limiting System Design](docs/RATE_LIMITING_INTEL.md) — Spam detection algorithm
-- [Timezone Handling Strategy](docs/TIMEZONE_HANDLING.md) — UTC philosophy & implementation
-- [SWOT Analysis](docs/DOFA.md) — Business strengths, weaknesses, opportunities, threats
+### ¿Cuándo delegar?
 
----
+- **Tareas con partes independientes** (ej. cambiar backend + frontend al mismo tiempo)
+- **Expertise distinta** (ej. migrar DB + diseñar UI + escribir tests)
+- **Tareas pesadas** que son más rápidas en paralelo que secuenciales
+- **Investigación exploratoria** (ej. buscar patrones en múltiples directorios)
 
-## Tech Stack Summary
+### ¿Cuándo NO delegar?
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend Framework** | Flask 3.x |
-| **Database** | MySQL 8.x + SQLAlchemy ORM |
-| **Migrations** | Alembic + Flask-Migrate |
-| **Authentication** | Clerk OAuth + JWT |
-| **Email** | Flask-Mail (Gmail SMTP) |
-| **File Storage** | Cloudinary CDN |
-| **Payments** | Mercado Pago API |
-| **Rate Limiting** | Flask-Limiter (intelligent) |
-| **Job Scheduling** | APScheduler |
-| **Frontend CSS** | Tailwind CSS 4.2.4 |
-| **Templating** | Jinja2 |
-| **JavaScript** | Vanilla (no framework) |
+- Tareas triviales de 1-2 ediciones
+- Cuando los sub-agentes no aportan valor (la comunicación suma overhead)
+- Tareas estrictamente secuenciales donde una depende del resultado de otra
 
----
+### Transparencia
 
-## Quick Reference: Data Models
+Siempre informaré al usuario cuando esté delegando: *"Voy a lanzar X en paralelo para Y mientras yo hago Z"*.
 
-- **Restaurant** — Tenant (unique per business)
-- **User** — Staff/owner (linked to Restaurant)
-- **Product** — Menu items
-- **Category** — Product grouping
-- **Modifier** — Product extras (toppings, sizes, etc.)
-- **Order** — Customer orders
-- **OrderItem** — Items in an order
-- **Table** — Physical tables (dine-in)
-- **TrialHistory** — Trial eligibility tracking (email + phone)
-- **AITokenWallet** — User's AI token balance
-- **AITokenTransaction** — Token consumption log
+Tests usan `sqlite:///:memory:` localmente. CI corre contra MySQL en contenedor.
 
----
+## Security Audit
 
-Generated by Copilot Agent Customization | *Last updated: 2026-06-16*
+```bash
+npm run audit:k6       # k6 headers + JWT audit
+npm run audit:zap      # ZAP passive scan (requiere daemon activo)
+npm run audit:zap-start  # Inicia ZAP daemon en segundo plano
+npm run audit:zap-stop   # Detiene ZAP daemon
+npm run audit:gitleaks   # Escaneo de secretos (SARIF -> tests/security/reports/gitleaks.sarif)
+npm run audit:secrets    # Escaneo de secretos legible en consola
+npm run audit:trivy      # Trivy: escaneo completo (Dockerfile + dependencias)
+npm run audit:trivy:config # Trivy: solo Dockerfile/IaC misconfigs
+npm run audit          # k6 + ZAP (full audit)
+```
+
+### Security Tools
+- **`tests/security/audit-headers.js`**: k6-based security headers checker (score /100)
+- **`tests/security/audit-jwt.js`**: k6-based JWT token security audit (score /100)
+- **`tests/security/zap-daemon.ps1`**: Starts OWASP ZAP 2.17.0 in daemon mode
+- **`tests/security/zap-scan.ps1`**: Runs ZAP passive scan and saves HTML report
+- **`tests/security/_check_headers.py`**: Quick Python header validation script (no k6 needed)
+- **`tests/security/burp/README.md`**: Burp Suite manual test guides (IDOR, JWT, precios, fuzzing)
+- **`tests/security/burp/run_auto_tests.py`**: Automated IDOR/NoAuth/Fuzzing tests
+- **`tests/security/gitleaks/README.md`**: Gitleaks secret-scanning guide
+- **`tests/security/dependency/README.md`**: Dependency CVE scanning guide (pip-audit + npm audit)
+- **`.gitleaks.toml`**: Gitleaks config (default rules + allowlist + fake-key rule)
+- **`.git/hooks/pre-commit`**: Blocks commits that introduce secrets via `gitleaks protect`
+- **`tests/security/reports/`**: ZAP HTML/JSON + Gitleaks SARIF reports directory
+- **`tests/security/run-trivy.ps1`**: Trivy wrapper (Dockerfile misconfigs + FS vuln scan)
+
+### Security Stack (DevSecOps)
+| Herramienta | Propósito | Estado |
+|-------------|-----------|--------|
+| Pytest + Ruff | Tests y lint | ✅ |
+| k6 | Rendimiento / carga | ✅ |
+| OWASP ZAP | Vulnerabilidades web (DAST) | ✅ |
+| Burp Suite | Pruebas manuales (IDOR, JWT, fuzzing) | ✅ |
+| **Gitleaks** | Secret scanning (pre-commit + CI) | ✅ |
+| **pip-audit + npm audit** | CVEs en dependencias (Python/Node) | ✅ |
+| Better Stack | Monitoreo de errores | ✅ |
+| OWASP Dependency-Check | CVEs (alt. a pip-audit; requiere NVD API key) | ⏸️ no usado |
+| Gitleaks CI | Integración en pipeline | ⏳ |
+| Trivy | Escaneo Docker / Imágenes | ✅ |
+
+## Reglas de Negocio (No Triviales)
+
+### Timezone
+Todas las fechas en UTC. **Nunca** `datetime.now()` — siempre `datetime.now(timezone.utc)`.  
+Model usa `AwareDateTime` (strips timezone al guardar, lo restaura al leer).
+
+### Suscripción
+Única fuente de verdad: `get_subscription_status(restaurant)` en `app/utils/subscription.py`.  
+Estados: `trial` → `active` → `grace_period` → `expired`. Frontend recibe objeto precalculado.
+
+### Tokens IA
+Cada usuario tiene `AITokenWallet`. Primer análisis profundo de cada conversación consume 1 token. Consultas rápidas (SQL) y seguimientos no consumen. DeepSeek corre por cuenta de Velzia.
+
+### Rate Limiting (pedidos)
+Máx 3/min por IP. Ban 10 min si excede. Honeypot + mínimo 3s entre checkout y envío. `SERVICE_API_KEY` exime.
+
+### Copilot VZ
+- `insights.py`: blueprint con identidad propia, fuera del dashboard (`/insights/`)
+- Clasificador híbrido: `quick` (SQL directo, gratis) vs `analysis` (DeepSeek, 1 token)
+- Compresión de contexto en 2 fases cuando el uso supera 80%/85% de los 12K tokens
+- Prompt versionado (`PROMPT_VERSION = "v1.3"`) — cada conversación guarda su versión
+- Las consultas de seguimiento (`analysis_active = True`) no descuentan crédito pero sí pagan DeepSeek
+
+### Menú Público
+Redirige de Flask (`/menu/<slug>`) al frontend Astro (`ASTRO_BASE_URL/<slug>/`).  
+Si tocas el menú público, editas `astro/src/`, no `app/template/`.
+
+## Convenciones
+
+- **DB:** snake_case. **URLs:** kebab-case. **JS:** camelCase.
+- **API responses:** `{"success": bool, "message": "...", "data": {...}}` o `{"error_code": "..."}`.
+- **Web forms:** incluir `{{ csrf_token() }}`. API routes exentas.
+- **Nuevo endpoint API:** crear blueprint en `app/routes/api_*.py` o extender existente.
+- **Nuevo template:** `app/template/` (Flask) o `astro/src/pages/` (Astro).
+- **CSS/JS separados:** Nunca escribir CSS ni JS dentro del HTML. Siempre crear archivos CSS y JS separados e importarlos.
+- **Slugs reservados:** `api`, `admin`, `auth`, etc. — ver `RESERVED_SLUGS` en `app/routes/auth.py`.
+
+## Gotchas
+
+- Conexión MySQL requiere driver: `mysql+pymysql://user:pass@host/db`
+- CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
+- `settings.APP_VERSION = '1.3.0'` está desactualizado (no sincronizado con tags de git)
+- Rate limiter es in-memory (se pierde al reiniciar)
+- Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
+- Gmail requiere app-specific password, TLS por defecto
+- APScheduler se inicia en `create_app()` — tareas: `scan_business_events` (hora), `delete_inactive_accounts` (3 AM), `expire_pending_orders` (hora)
+- **`Server` header**: Werkzeug/Flask dev server añade `Server: Werkzeug/...` después de `after_request`. Para suprimirlo se debe parchear `WSGIRequestHandler.server_version` y `sys_version` en `run.py` (no desde `app/__init__.py`).
+
+## Security Fixes (2026-07-21)
+
+### Dependencias — Estado Post-Auditoría
+
+Tras escanear con `pip-audit` + `npm audit` + `Trivy`:
+
+| Categoría | Antes | Después |
+|-----------|-------|---------|
+| Python (requirements.txt) | 39 vulns / 12 paquetes | **0 HIGH** ✅ |
+| Node raíz | 1 HIGH (astro@5 muerto) | **0** ✅ |
+| Node menú (astro/) | 0 | 0 ✅ |
+
+**Paquetes Python actualizados por seguridad:**
+- `PyJWT 2.12.1 → 2.13.0`
+- `Authlib 1.6.11 → 1.6.12`
+- `cryptography 46.0.6 → 48.0.1`
+- `urllib3 2.6.3 → 2.7.0`
+- `pillow 12.1.1 → 12.3.0`
+- `soupsieve 2.8.3 → 2.9.1`
+- `Mako 1.3.10 → 1.3.12`
+
+**Dependencias eliminadas:**
+- `python-jose` (redundante con PyJWT 2.13.0) — migrado `token_service.py:verify_clerk_jwt()` a `PyJWKClient`
+- `ecdsa` (arrastraba CVE-2024-23342 sin fix)
+- `pyasn1`, `rsa` (transitivas de python-jose, no usadas)
+
+### Quantity Validation (order_service.py:142)
+Se agregó `if quantity <= 0: raise ValueError`. Antes crear un pedido con `cantidad: -1` generaba total negativo. Ahora retorna 400.
+
+### Dockerfiles — Non-Root User
+Se agregó `USER appuser` + `adduser --system` en `Dockerfile` y `Dockerfile.dev` para corregir DS-0002 (HIGH). Ambos contenedores antes corrían como root.
+
+## Stress Test (k6)
+
+Suite ubicada en `tests/k6/`. Ejecutar:
+
+```bash
+npm run stress:suite                  # suite completa
+npm run stress:runner                 # diagnóstico rápido
+npm run stress:phase1                 # 5/10/20 usuarios
+```
+
+### Resultados Fase 1-2 (Flask dev server)
+
+| Escenario | Avg | P(90) | P(95) | Falla | Reqs |
+|-----------|-----|-------|-------|-------|------|
+| 5 VUs 30s | 72ms | 106ms | 428ms | 7.3% | 343 |
+| 10 VUs 1m | 90ms | 113ms | 351ms | 7.3% | 1258 |
+| 20 VUs 1m | 120ms | 330ms | 469ms | 7.9% | 2247 |
+| 30 VUs 2m | 433ms | 1.14s | 1.47s | 13.6% | 4222 |
+
+Las fallas (~8%) son sistemáticas (productos no existen → order creation falla), no por carga. A 30 VUs el dev server muestra degradación. **En producción usar gunicorn con ≥4 workers.**
+
+### Infraestructura
+
+- k6 v2.1.0 en `C:\PROGRA~1\k6\k6.exe` (short name para npm scripts sin espacios)
+- Usuario test: `stress@velzia.co` / `stress1234`, slug `velzia-stress`
+- `docker-compose.override.yml` usa Flask dev server (`python run.py`), no gunicorn
+
+### CSRF
+
+Flask-WTF 1.2.2 no respeta `request._csrf_exempt`. Para exentar rutas `/api/` e `/insights/api/` se usa `WTF_CSRF_CHECK_DEFAULT = False` + `before_request` manual en `app/__init__.py:57-71`. No añadir `@csrf.exempt` por endpoint.
+
+## Enlaces Rápidos
+
+- [docs/02-GUIDES/GUIDE-07_Copilot_VZ.md](docs/02-GUIDES/GUIDE-07_Copilot_VZ.md) — documentación completa de Copilot VZ
+- [docs/02-GUIDES/GUIDE-09_Better_Stack.md](docs/02-GUIDES/GUIDE-09_Better_Stack.md) — integración Better Stack Error Tracking
+- [settings.py](settings.py) — todas las variables de entorno
+- [.env.example](.env.example) — plantilla de configuración

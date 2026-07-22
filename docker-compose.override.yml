@@ -13,6 +13,7 @@ services:
       FLASK_DEBUG: "True"
       FLASK_APP: run.py
       SCANNER_IA_URL: http://localhost:3000
+      RATELIMIT_DEFAULT: ${RATELIMIT_DEFAULT:-100000 per day;50000 per hour}
     ports:
       - "5000:5000"
     command: ["sh", "-c", "flask db upgrade && python run.py"]

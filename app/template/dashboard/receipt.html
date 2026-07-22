@@ -3,123 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <style>
-        @page {
-            margin: 0;
-        }
-
-        body {
-            /* Fuente limpia y moderna tipo Google */
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            width: 80mm;
-            margin: 0;
-            padding: 10mm 5mm;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #000;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .bold {
-            font-weight: 700;
-        }
-
-        .uppercase {
-            text-transform: uppercase;
-        }
-
-        /* Header */
-        .brand {
-            font-size: 16px;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-
-        .info-header {
-            font-size: 11px;
-            margin-bottom: 15px;
-        }
-
-        /* Order Info */
-        .order-meta {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 8px 0;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* Tabla de Items */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-
-        th {
-            border-bottom: 1px solid #000;
-            text-align: left;
-            font-size: 10px;
-            padding-bottom: 4px;
-        }
-
-        td {
-            padding: 6px 0;
-            vertical-align: top;
-        }
-
-        .col-qty {
-            width: 10%;
-        }
-
-        .col-desc {
-            width: 60%;
-        }
-
-        .col-price {
-            width: 30%;
-            text-align: right;
-        }
-
-        .item-name {
-            font-weight: 600;
-            display: block;
-        }
-
-        .item-extras {
-            font-size: 10px;
-            color: #333;
-            margin-top: 2px;
-        }
-
-        /* Totales */
-        .total-container {
-            border-top: 1px solid #000;
-            padding-top: 8px;
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            margin-top: 4px;
-        }
-
-        .footer {
-            margin-top: 30px;
-            font-size: 10px;
-            border-top: 1px dashed #ccc;
-            padding-top: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/receipt.css') }}">
 </head>
 
 <body>
@@ -169,7 +53,7 @@
                     <div class="item-extras">+ {{ extras | join(', ') }}</div>
                     {% endif %}
                 </td>
-                <td class="col-price">${{ "{:,}".format(item.subtotal) }}</td>
+                <td class="col-price">{{ item.subtotal | currency }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -178,7 +62,7 @@
     <div class="total-container">
         <div class="total-row bold">
             <span>TOTAL A PAGAR</span>
-            <span>${{ "{:,}".format(order.total) }}</span>
+            <span>{{ order.total | currency }}</span>
         </div>
     </div>
 

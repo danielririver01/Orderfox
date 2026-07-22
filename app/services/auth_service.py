@@ -417,11 +417,11 @@ class AuthService:
 
         Returns:
             (user, None) on success,
-            (None, error_message_string) on failure.
+            (None, error_dict) on failure.
         """
         user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(password):
-            return None, 'Credenciales inválidas'
+            return None, {'error_code': 'INVALID_CREDENTIALS', 'message': 'Credenciales inválidas'}
         return user, None
 
     # ── Clerk Verification ─────────────────────────────────
@@ -496,6 +496,7 @@ class AuthService:
         """
         import jwt as pyjwt
         token_payload = {
+            'iss': app_config.get('BASE_URL', 'https://velzia.co'),
             'clerk_id': user.clerk_id,
             'user_id': user.id,
             'email': user.email,
@@ -530,8 +531,9 @@ class AuthService:
                 'redirect': '/payment',
             }
 
-        access_token = create_access_token(identity=str(user.id))
-        refresh_token = create_refresh_token(identity=str(user.id))
+        iss = current_app.config.get('BASE_URL', 'https://velzia.co')
+        access_token = create_access_token(identity=str(user.id), additional_claims={'iss': iss})
+        refresh_token = create_refresh_token(identity=str(user.id), additional_claims={'iss': iss})
 
         restaurant_data = None
         if user.restaurant:
@@ -581,7 +583,8 @@ class AuthService:
                 return None, {'error_code': 'USER_NOT_FOUND',
                               'message': 'Usuario no encontrado'}
 
-            new_access_token = create_access_token(identity=str(user.id))
+            iss = current_app.config.get('BASE_URL', 'https://velzia.co')
+            new_access_token = create_access_token(identity=str(user.id), additional_claims={'iss': iss})
 
             restaurant_data = None
             if user.restaurant:

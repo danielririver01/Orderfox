@@ -14,6 +14,8 @@ block content %}
 
 <div class="max-w-md md:max-w-2xl lg:max-w-3xl mx-auto px-4 md:px-10 py-8 md:pb-16">
   <form method="POST" enctype="multipart/form-data" onsubmit="
+      var p = this.querySelector('[name=price]');
+      if (p) p.value = p.value.replace(/\./g, '');
       if (this.submitted) return false;
       this.submitted = true;
       let b = this.querySelector('input[type=submit], button[type=submit]');

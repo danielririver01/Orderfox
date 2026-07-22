@@ -74,7 +74,7 @@
                 {% endif %}
                 <div class="flex justify-between items-center">
                     <span class="text-[10px] text-gray-600">{{ item.quantity }} unidad{{ 'es' if item.quantity > 1 else '' }}</span>
-                    <span class="font-black text-[#f2460d] text-sm">${{ '{:,}'.format(item.subtotal) }}</span>
+                    <span class="font-black text-[#f2460d] text-sm">{{ item.subtotal | currency }}</span>
                 </div>
             </div>
             {% if not loop.last %}
@@ -88,7 +88,7 @@
     <div class="bg-[#0a0a0a] rounded-xl border border-[#262626] p-4">
         <div class="flex justify-between items-center">
             <span class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Total</span>
-            <span class="text-xl font-black text-[#f2460d]">${{ '{:,}'.format(order.total) }}</span>
+            <span class="text-xl font-black text-[#f2460d]">{{ order.total | currency }}</span>
         </div>
     </div>
 

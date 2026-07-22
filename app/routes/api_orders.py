@@ -143,7 +143,11 @@ def create_order():
     }
 
     order = OrderService.create_order(restaurant.id, order_data)
-    total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+    try:
+        total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
     db.session.commit()
 
     order_id = order.id

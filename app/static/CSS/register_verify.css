@@ -1,0 +1,27 @@
+/* OTP inputs dark */
+.cl-otpCodeFieldInput {
+    color: #f5f0eb !important;
+    background-color: rgba(40, 34, 28, 0.9) !important;
+    border-color: rgba(249, 115, 22, 0.25) !important;
+    caret-color: #f97316 !important;
+}
+
+:root {
+    --autofill-bg: #1c1814;
+    --autofill-text: #f5f0eb;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+    -webkit-text-fill-color: var(--autofill-text) !important;
+    transition: background-color 5000s ease-in-out 0s;
+    border-radius: inherit;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}

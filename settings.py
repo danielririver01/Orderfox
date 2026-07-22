@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # App Version
-APP_VERSION = '1.3.0'
-APP_RELEASE_DATE = '2026-04-14'
+APP_VERSION = '1.4.0'
+APP_RELEASE_DATE = '2026-07-15'
 
 class Config:
     # Flask
@@ -29,6 +29,7 @@ class Config:
     # Mercado Pago
     MP_ACCESS_TOKEN = os.environ.get('MP_ACCESS_TOKEN')
     MP_PUBLIC_KEY = os.environ.get('MP_PUBLIC_KEY')
+    MP_WEBHOOK_SECRET = os.environ.get('MP_WEBHOOK_SECRET')
     
     # Soporte y Globales
     SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL') or 'soporte@velzia.com'
@@ -65,8 +66,13 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
 
-    # CSRF: enable default check; API routes exempted via before_request
-    WTF_CSRF_CHECK_DEFAULT = True
+    # CSRF: disable default check; we run it manually for non-API routes
+    WTF_CSRF_CHECK_DEFAULT = False
+
+    # Session cookies
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False  # True en producción con HTTPS
 
     # Sentry (error tracking)
     SENTRY_DSN = os.environ.get('SENTRY_DSN')

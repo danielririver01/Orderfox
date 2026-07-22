@@ -387,21 +387,19 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
         return current_date.replace(month=current_date.month + 1, day=1,
                                    hour=0, minute=0, second=0, microsecond=0)
 
-    # 1. Crear wallet si no existe
+    # 1. Crear wallet si no existe (con lock pesimista para evitar duplicados)
     if not wallet:
         try:
-            # Re-verificar dentro del bloque para evitar race conditions
-            wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
+            # Lock pesimista: si dos requests concurrentes intentan crear,
+            # el segundo espera hasta que el primero termine.
+            wallet = AITokenWallet.query.filter_by(user_id=user.id).with_for_update().first()
             if not wallet:
                 is_trial_plan = (plan_type == 'trial')
                 if is_trial_plan:
-                    # Trial: 50 créditos de una vez, SIN renovación mensual
-                    actual_plan_limit = plan_limit          # tope para % de uso
-                    actual_plan_tokens = plan_limit          # 50 de una vez
+                    actual_plan_limit = plan_limit
+                    actual_plan_tokens = plan_limit
                     reset_at = None
                 else:
-                    # Todos los planes de pago (incl. Élite) son limitados y se
-                    # renuevan mes a mes con su cupo de AI_TOKEN_LIMITS.
                     actual_plan_limit = plan_limit
                     actual_plan_tokens = plan_limit
                     reset_at = get_next_reset_date(now)
@@ -415,7 +413,7 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                     reset_at=reset_at
                 )
                 db.session.add(wallet)
-                
+
                 tx = AITokenTransaction(
                     user_id=user.id,
                     type='topup_plan',
@@ -428,8 +426,7 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 current_app.logger.info(f"WALLET: Creado para usuario {user.id} ({plan_type})")
         except Exception as e:
             db.session.rollback()
-            # Si falló por concurrencia, lo buscamos de nuevo
-            wallet = AITokenWallet.query.filter_by(user_id=user.id).first()
+            wallet = AITokenWallet.query.filter_by(user_id=user.id).with_for_update().first()
             if not wallet:
                 current_app.logger.error(f"ERROR CRÍTICO WALLET: No se pudo crear ni recuperar: {e}")
                 return None
@@ -452,21 +449,20 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
                 current_app.logger.info(f"WALLET: Pago {mp_payment_id} ya acreditado. Saltando reset.")
                 return wallet
 
-        # Todos los planes de pago (incl. Élite) son limitados y se renuevan
-        # mes a mes con su cupo de AI_TOKEN_LIMITS.
-        actual_plan_limit = plan_limit
-        actual_plan_tokens = plan_limit
-        
-
-        wallet.plan_limit = actual_plan_limit
-        wallet.plan_tokens = actual_plan_tokens
-        wallet.tokens_used_month = 0
-        wallet.reset_at = get_next_reset_date(now if now >= (wallet.reset_at or now) else wallet.reset_at)
+        # UPDATE atómico — evita lost updates entre requests concurrentes.
+        # El SET usa valores calculados sin leer primero desde otra transacción.
+        next_reset = get_next_reset_date(now if now >= (wallet.reset_at or now) else wallet.reset_at)
+        AITokenWallet.query.filter_by(id=wallet.id).update({
+            'plan_limit': plan_limit,
+            'plan_tokens': plan_limit,
+            'tokens_used_month': 0,
+            'reset_at': next_reset,
+        })
 
         tx = AITokenTransaction(
             user_id=user.id,
             type='topup_plan',
-            amount=actual_plan_tokens,
+            amount=plan_limit,
             source='plan_renewal' if mp_payment_id else 'auto_reset',
             mp_payment_id=mp_payment_id,
             description=f'Reset de tokens ({plan_type})'

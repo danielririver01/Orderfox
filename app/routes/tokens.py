@@ -171,43 +171,29 @@ def topup_initiate():
 
 @tokens_bp.route('/api/tokens/topup/callback', methods=['GET'])
 def topup_callback():
-    """Callback MP post-recarga de tokens."""
+    """Callback MP post-recarga de tokens — SOLO INFORMATIVO.
+
+    NO acredita tokens directamente (eso lo hace el webhook con HMAC).
+    Solo muestra al usuario el estado de su pago.
+    """
     status = request.args.get('status', '')
     ext_ref = request.args.get('external_reference', '')
-
-    if status != 'approved' or not ext_ref.startswith('token_topup:'):
-        flash('No pudimos confirmar tu pago de tokens.', 'error')
-        return redirect(url_for('dashboard.index'))
-
-    # Parsear referencia externa
-    try:
-        _, user_id_str, pack_key = ext_ref.split(':')
-        user_id = int(user_id_str)
-        pack = TOP_UP_PACKS.get(pack_key)
-        if not pack:
-            raise ValueError("Pack no encontrado")
-    except Exception as e:
-        current_app.logger.error(f"Error processing top-up callback: {e}")
-        flash('Referencia inválida.', 'error')
-        return redirect(url_for('dashboard.index'))
-
-    user = User.query.get(user_id)
-    if not user:
-        flash('Usuario no encontrado.', 'error')
-        return redirect(url_for('dashboard.index'))
-
     mp_payment_id = request.args.get('payment_id')
 
-    # Delegar lógica de acreditación al servicio
-    result, error = TokenService.credit_topup_purchase(user, pack, mp_payment_id)
-    if error:
-        flash(f'Error al acreditar tokens: {error["message"]}', 'error')
-        return redirect(url_for('dashboard.index'))
-
-    # Si result es un AITokenTransaction, significa que ya estaba acreditado
-    if isinstance(result, AITokenTransaction):
-        flash('Pago ya acreditado.', 'info')
+    if status == 'approved' and ext_ref.startswith('token_topup:'):
+        if mp_payment_id:
+            already = AITokenTransaction.query.filter_by(
+                mp_payment_id=mp_payment_id, type='topup_purchase'
+            ).first()
+            if already:
+                flash(f'¡{already.amount} tokens acreditados!', 'success')
+            else:
+                flash('Pago recibido. Los tokens se acreditarán en segundos.', 'info')
+        else:
+            flash('Pago recibido. Los tokens se acreditarán en segundos.', 'info')
+    elif status == 'pending' or status == 'in_process':
+        flash('Tu pago de tokens está pendiente.', 'info')
     else:
-        flash(f"¡{pack['tokens']} tokens acreditados!", 'success')
+        flash('No pudimos confirmar tu pago de tokens.', 'error')
 
     return redirect(url_for('dashboard.index'))

@@ -1,7 +1,7 @@
 {
   "name": "orderfox",
   "version": "1.0.0",
-  "description": "",
+  "description": "Velzia — SaaS de gestión de pedidos para restaurantes colombianos",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -10,7 +10,32 @@
   "scripts": {
     "build:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --minify",
     "watch:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "k6": "C:\\PROGRA~1\\k6\\k6.exe",
+    "stress": "npm run k6 -- run tests/k6/full_restaurant.js",
+    "stress:runner": "npm run k6 -- run tests/k6/runner.js",
+    "stress:login": "npm run k6 -- run tests/k6/login.js",
+    "stress:dashboard": "npm run k6 -- run tests/k6/dashboard.js",
+    "stress:orders": "npm run k6 -- run tests/k6/orders.js",
+    "stress:products": "npm run k6 -- run tests/k6/products.js",
+    "stress:copilot": "npm run k6 -- run tests/k6/copilot.js",
+    "stress:menu": "npm run k6 -- run tests/k6/menu_public.js",
+    "stress:phase1": "npm run k6 -- run --vus 5 --duration 30s tests/k6/full_restaurant.js && npm run k6 -- run --vus 10 --duration 1m tests/k6/full_restaurant.js && npm run k6 -- run --vus 20 --duration 1m tests/k6/full_restaurant.js",
+    "stress:phase2": "npm run k6 -- run --vus 30 --duration 2m tests/k6/full_restaurant.js",
+    "stress:phase3": "npm run k6 -- run --vus 50 --duration 2m tests/k6/full_restaurant.js && npm run k6 -- run --vus 100 --duration 2m tests/k6/menu_public.js && npm run k6 -- run --vus 150 --duration 1m tests/k6/menu_public.js",
+    "stress:all": "npm run stress:phase1 && npm run stress:phase2 && npm run stress:phase3",
+    "stress:suite": "powershell -ExecutionPolicy Bypass -File tests/k6/run-stress.ps1 -Report",
+    "audit": "powershell -ExecutionPolicy Bypass -File tests/security/run-audit.ps1",
+    "audit:quick": "powershell -ExecutionPolicy Bypass -File tests/security/run-audit.ps1 -Quick",
+    "audit:k6": "powershell -ExecutionPolicy Bypass -File tests/security/run-audit.ps1 -SkipZap",
+    "audit:zap": "powershell -ExecutionPolicy Bypass -File tests/security/run-audit.ps1 -SkipK6",
+    "audit:zap-start": "powershell -ExecutionPolicy Bypass -File tests/security/zap-daemon.ps1",
+    "audit:zap-stop": "powershell -ExecutionPolicy Bypass -File tests/security/zap-daemon.ps1 -Stop",
+    "audit:gitleaks": "gitleaks detect --source . --config .gitleaks.toml --report-format sarif --report-path tests/security/reports/gitleaks.sarif",
+    "audit:secrets": "gitleaks detect --source . --config .gitleaks.toml --redact",
+    "audit:trivy": "powershell -ExecutionPolicy Bypass -File tests/security/run-trivy.ps1",
+    "audit:trivy:config": "powershell -ExecutionPolicy Bypass -File tests/security/run-trivy.ps1 -Quick",
+    "audit:trivy:json": "powershell -ExecutionPolicy Bypass -File tests/security/run-trivy.ps1 -Json"
   },
   "repository": {
     "type": "git",
@@ -18,16 +43,15 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
+  "private": true,
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/danielririver01/Orderfox/issues"
   },
   "homepage": "https://github.com/danielririver01/Orderfox#readme",
   "dependencies": {
-    "@astrojs/tailwind": "^5.1.5",
     "@tailwindcss/cli": "^4.2.4",
-    "astro": "^5.7.0",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^4.2.4"
   }
 }

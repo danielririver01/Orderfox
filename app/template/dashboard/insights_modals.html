@@ -1,0 +1,199 @@
+<div id="rename-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-modal" role="dialog" aria-modal="true" aria-labelledby="rename-title">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">edit</span>
+            </span>
+            <h3 id="rename-title" class="text-base font-black text-white font-heading">Rename analysis</h3>
+        </div>
+        <input id="rename-input" type="text" maxlength="120" autocomplete="off"
+            class="vz-modal-input" placeholder="Analysis name" />
+        <div class="flex justify-end gap-2 mt-5">
+            <button id="rename-cancel" type="button" class="vz-modal-btn-ghost">Cancel</button>
+            <button id="rename-save" type="button" class="vz-modal-btn-primary">Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="delete-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-del-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <div class="vz-del-icon">
+            <span class="material-symbols-outlined">delete</span>
+        </div>
+        <h3 id="delete-title" class="vz-del-title">Delete analysis</h3>
+        <p id="delete-conv" class="vz-del-conv"></p>
+        <p id="delete-meta" class="vz-del-meta"></p>
+        <p class="vz-del-warn">This action cannot be undone.</p>
+        <div class="flex justify-center gap-2 mt-6">
+            <button id="delete-cancel" type="button" class="vz-modal-btn-ghost">Cancel</button>
+            <button id="delete-confirm" type="button" class="vz-modal-btn-danger">Delete analysis</button>
+        </div>
+    </div>
+</div>
+
+<div id="context-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-ctx-modal" role="dialog" aria-modal="true" aria-labelledby="context-title">
+        <div class="flex items-center gap-3 mb-3">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">subject</span>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="context-title" class="text-base font-black text-white font-heading">Conversation context</h3>
+                <p id="context-sub" class="text-[11px] text-[var(--text-dim)] truncate"></p>
+            </div>
+            <button id="context-close" type="button"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+            <button id="context-copy-all" type="button" class="vz-modal-btn-ghost">
+                <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy all
+            </button>
+            <button id="context-download" type="button" class="vz-modal-btn-ghost">
+                <span class="material-symbols-outlined text-[16px]">download</span> Download .md
+            </button>
+            <button id="context-chart-btn" type="button" class="vz-modal-btn-ghost" hidden>
+                <span class="material-symbols-outlined text-[16px]">bar_chart</span> View chart
+            </button>
+        </div>
+        <div id="context-body" class="vz-ctx-body"></div>
+    </div>
+</div>
+
+<div id="chart-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-chart-modal" role="dialog" aria-modal="true" aria-labelledby="chart-title">
+        <div class="flex items-center gap-3 mb-3">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">bar_chart</span>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="chart-title" class="text-base font-black text-white font-heading">Analysis chart</h3>
+                <p class="text-[11px] text-[var(--text-dim)]">Download high-resolution image.</p>
+            </div>
+            <button id="chart-close" type="button"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <div id="chart-body" class="vz-chart-body"></div>
+    </div>
+</div>
+
+<div id="onb-category-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-ctx-modal" role="dialog" aria-modal="true" aria-labelledby="onb-cat-title">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">category</span>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="onb-cat-title" class="text-base font-black text-white font-heading">Create category</h3>
+                <p class="text-[11px] text-[var(--text-dim)]">Group your products (e.g. Drinks, Starters).</p>
+            </div>
+            <button type="button" data-onb-close="category"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Name</label>
+        <input id="onb-category-name" type="text" maxlength="60" placeholder="e.g. Drinks"
+            class="vz-modal-input mb-3" />
+        <div id="onb-category-err" class="onb-err text-xs text-red-400 mb-2 hidden"></div>
+        <div class="flex justify-end gap-2">
+            <button type="button" data-onb-close="category" class="vz-modal-btn-ghost">Cancel</button>
+            <button type="button" id="onb-category-save"
+                class="vz-modal-btn-primary inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">add</span> Create category
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="onb-product-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-ctx-modal" role="dialog" aria-modal="true" aria-labelledby="onb-prod-title">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">inventory_2</span>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="onb-prod-title" class="text-base font-black text-white font-heading">Create product</h3>
+                <p class="text-[11px] text-[var(--text-dim)]">Your first item to start selling.</p>
+            </div>
+            <button type="button" data-onb-close="product"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <div id="onb-product-nocat" class="onb-nocat hidden">
+            <span class="material-symbols-outlined">info</span>
+            <div class="nocat-body">
+                To create a product you need a category first (e.g. Drinks, Food, Desserts).
+                <div class="nocat-cta">
+                    <button type="button" class="vz-onb-action" data-onb-open="category">
+                        <span class="material-symbols-outlined text-[15px]">add</span> Create my first category
+                    </button>
+                </div>
+            </div>
+        </div>
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Category</label>
+        <select id="onb-product-category" class="vz-modal-input mb-3"></select>
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Name</label>
+        <input id="onb-product-name" type="text" maxlength="80" placeholder="e.g. Classic burger"
+            class="vz-modal-input mb-3" />
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Price (in
+            pesos, e.g. 15000)</label>
+        <input id="onb-product-price" type="number" min="1" step="1" placeholder="15000"
+            class="vz-modal-input mb-3" />
+        <div id="onb-product-err" class="onb-err text-xs text-red-400 mb-2 hidden"></div>
+        <div class="flex justify-end gap-2">
+            <button type="button" data-onb-close="product" class="vz-modal-btn-ghost">Cancel</button>
+            <button type="button" id="onb-product-save" class="vz-modal-btn-primary inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">add</span> Create product
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="onb-order-modal" class="vz-modal-backdrop" hidden>
+    <div class="vz-ctx-modal" role="dialog" aria-modal="true" aria-labelledby="onb-order-title">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[var(--primary)] text-[20px]">receipt_long</span>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="onb-order-title" class="text-base font-black text-white font-heading">Register test sale
+                </h3>
+                <p class="text-[11px] text-[var(--text-dim)]">Create an order so I can analyze your data.</p>
+            </div>
+            <button type="button" data-onb-close="order"
+                class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-[var(--text-dim)] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Product</label>
+        <select id="onb-order-product" class="vz-modal-input mb-3"></select>
+        <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Quantity</label>
+        <input id="onb-order-qty" type="number" min="1" step="1" value="1" class="vz-modal-input mb-3" />
+        <div id="onb-order-err" class="onb-err text-xs text-red-400 mb-2 hidden"></div>
+        <div class="flex justify-end gap-2">
+            <button type="button" data-onb-close="order" class="vz-modal-btn-ghost">Cancel</button>
+            <button type="button" id="onb-order-save" class="vz-modal-btn-primary inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">add</span> Create order
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="conv-menu" class="vz-ctx-menu" hidden>
+    <button class="vz-ctx-item" data-action="pin">
+        <span class="material-symbols-outlined">push_pin</span>
+        <span id="ctx-pin-label">Pin conversation</span>
+    </button>
+    <div class="vz-ctx-sep"></div>
+    <button class="vz-ctx-item danger" data-action="delete">
+        <span class="material-symbols-outlined">delete</span>
+        <span>Delete</span>
+    </button>
+</div>
+
+<div id="vz-toast" class="vz-toast" hidden></div>

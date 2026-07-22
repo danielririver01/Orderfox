@@ -14,85 +14,9 @@
         rel="stylesheet" />
     <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
+    <script src="{{ url_for('static', filename='js/register_setup.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
-    <style>
-        /* Register-specific overrides */
-        .reg-field {
-            width: 100%;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(249, 115, 22, 0.25) !important;
-            background: rgba(40, 34, 28, 0.9) !important;
-            color: #f5f0eb !important;
-            padding: 0.875rem 1rem;
-            font-size: 0.875rem;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            outline: none;
-        }
-
-        .reg-field::placeholder {
-            color: #6b6058 !important;
-        }
-
-        .reg-field:focus {
-            border-color: #f97316 !important;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
-        }
-
-        .reg-label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: #9a9088;
-            margin-bottom: 0.45rem;
-        }
-
-        .reg-check-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: #6b6560;
-            transition: color 0.2s;
-        }
-
-        .reg-check-item.valid {
-            color: #22c55e;
-        }
-
-        /* Autofill dark override */
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus {
-            -webkit-box-shadow: 0 0 0 30px #1c1814 inset !important;
-            -webkit-text-fill-color: #f5f0eb !important;
-            transition: background-color 5000s ease-in-out 0s;
-        }
-
-        input::-ms-reveal,
-        input::-ms-clear {
-            display: none;
-        }
-
-        /* Scrollbar for right panel */
-        .auth-form-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .auth-form-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .auth-form-panel::-webkit-scrollbar-thumb {
-            background: rgba(249, 115, 22, 0.2);
-            border-radius: 2px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/register_setup.css') }}">
 </head>
 
 <body class="antialiased">
@@ -246,12 +170,7 @@
                             {{ form.phone(class="reg-field", placeholder="573...") }}
                         </div>
 
-                        <script>
-                            window.addEventListener('load', () => {
-                                const btn = document.getElementById('submitBtn');
-                                if (btn) btn.disabled = false;
-                            });
-                        </script>
+                        <script src="{{ url_for('static', filename='js/register_setup.js') }}"></script>
 
                         <button id="submitBtn" disabled type="submit"
                             class="mt-2 w-full flex items-center justify-center gap-2 font-bold h-12 rounded-xl transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
@@ -376,66 +295,7 @@
 
     </div>
 
-    <script>
-        const password = document.getElementById('password');
-        const confirm = document.getElementById('confirm_password');
-        const submitBtn = document.getElementById('submitBtn');
-
-        const checks = {
-            length: document.getElementById('check-length'),
-            upper: document.getElementById('check-upper'),
-            number: document.getElementById('check-number'),
-            match: document.getElementById('check-match')
-        };
-
-        function validate() {
-            if (!password || !confirm) return;
-            const val = password.value;
-            const valConfirm = confirm.value;
-
-            const isLength = val.length >= 8;
-            const isUpper = /^[A-Z]/.test(val);
-            const hasNumber = /[0-9]/.test(val);
-            const matches = val === valConfirm && val.length > 0;
-
-            updateUI(checks.length, isLength);
-            updateUI(checks.upper, isUpper);
-            updateUI(checks.number, hasNumber);
-            updateUI(checks.match, matches);
-
-            submitBtn.disabled = !(isLength && isUpper && hasNumber && matches);
-            submitBtn.style.background = submitBtn.disabled ? '#27201a' : '#f97316';
-            submitBtn.style.color = submitBtn.disabled ? '#4b4440' : 'white';
-            submitBtn.style.boxShadow = submitBtn.disabled ? 'none' : '0 10px 28px -10px rgba(249,115,22,0.65)';
-        }
-
-        function updateUI(el, isValid) {
-            if (!el) return;
-            const icon = el.querySelector('.material-symbols-outlined');
-            if (isValid) {
-                el.classList.add('valid');
-                icon.innerText = 'check_circle';
-            } else {
-                el.classList.remove('valid');
-                icon.innerText = 'circle';
-            }
-        }
-
-        if (password) password.addEventListener('input', validate);
-        if (confirm) confirm.addEventListener('input', validate);
-
-        function togglePass(inputId, iconId) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.innerText = 'visibility_off';
-            } else {
-                input.type = 'password';
-                icon.innerText = 'visibility';
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/register_setup.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
 </body>
 

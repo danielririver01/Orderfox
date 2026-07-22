@@ -117,8 +117,9 @@ def mobile_sync():
     if not user:
         return jsonify({'success': False, 'error': 'Usuario no encontrado. Completa el registro en la web primero.'}), 404
 
-    access_token = create_access_token(identity=str(user.id))
-    refresh_token = create_refresh_token(identity=str(user.id))
+    iss = current_app.config.get('BASE_URL', 'https://velzia.co')
+    access_token = create_access_token(identity=str(user.id), additional_claims={'iss': iss})
+    refresh_token = create_refresh_token(identity=str(user.id), additional_claims={'iss': iss})
 
     return jsonify({
         'success': True,
