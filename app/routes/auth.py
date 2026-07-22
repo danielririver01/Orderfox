@@ -293,9 +293,9 @@ def payment():
 
     if error_msg:
         flash(error_msg)
+        return redirect(url_for('auth.plans'))
 
-    return render_template('auth/payment.html', restaurant=restaurant,
-                           plan_info=plan_info, checkout_url=checkout_url)
+    return redirect(checkout_url)
 
 
 @auth_bp.route('/payment-callback')
