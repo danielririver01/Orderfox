@@ -8,9 +8,13 @@ reenvíos maliciosos y race conditions.
 import logging
 
 from flask import Blueprint, request, jsonify, current_app
+from svix.webhooks import Webhook, WebhookVerificationError
+
+from werkzeug.security import generate_password_hash
 
 from app.services.auth_service import AuthService
 from app.services.token_service import TokenService
+from app import db
 from app.models import AITokenTransaction, User
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.utils.subscription import TOP_UP_PACKS
@@ -18,6 +22,97 @@ from app.utils.subscription import TOP_UP_PACKS
 api_webhooks_bp = Blueprint('api_webhooks', __name__, url_prefix='/api/v1/webhooks')
 
 logger = logging.getLogger(__name__)
+
+
+@api_webhooks_bp.route('/clerk', methods=['POST'])
+def clerk_webhook():
+    """
+    Webhook de Clerk para sincronización de usuarios.
+    Verifica firma Svix, maneja: user.created, user.updated, user.deleted.
+    """
+    wh_secret = current_app.config.get('CLERK_WEBHOOK_SECRET')
+    if not wh_secret:
+        logger.error("CLERK WEBHOOK: CLERK_WEBHOOK_SECRET no configurado")
+        return jsonify({'success': False, 'error': 'webhook_not_configured'}), 503
+
+    # Verificar firma Svix
+    headers = {
+        'svix-id': request.headers.get('svix-id'),
+        'svix-timestamp': request.headers.get('svix-timestamp'),
+        'svix-signature': request.headers.get('svix-signature'),
+    }
+    if not all(headers.values()):
+        return jsonify({'success': False, 'error': 'missing_svix_headers'}), 401
+
+    try:
+        wh = Webhook(wh_secret)
+        payload = wh.verify(request.get_data(), headers)
+    except WebhookVerificationError:
+        logger.warning("CLERK WEBHOOK: Firma Svix inválida")
+        return jsonify({'success': False, 'error': 'invalid_signature'}), 401
+
+    event_type = payload.get('type')
+    data = payload.get('data', {})
+
+    clerk_id = data.get('id')
+    if not clerk_id:
+        return jsonify({'success': False, 'error': 'missing_user_id'}), 400
+
+    email = ''
+    email_addresses = data.get('email_addresses', [])
+    if email_addresses:
+        email = email_addresses[0].get('email_address', '')
+
+    username = data.get('username') or data.get('first_name') or email.split('@')[0]
+
+    if event_type == 'user.created':
+        existing = User.query.filter_by(clerk_id=clerk_id).first()
+        if existing:
+            logger.info(f"CLERK WEBHOOK: user.created para clerk_id={clerk_id} ya existe, saltando")
+            return jsonify({'success': True, 'status': 'already_exists'}), 200
+
+        user = User(
+            clerk_id=clerk_id,
+            email=email,
+            username=username,
+            password=generate_password_hash(str(clerk_id))
+        )
+        db.session.add(user)
+        db.session.commit()
+        logger.info(f"CLERK WEBHOOK: Usuario {clerk_id} creado con email={email}")
+        return jsonify({'success': True, 'status': 'user_created'}), 201
+
+    elif event_type == 'user.updated':
+        user = User.query.filter_by(clerk_id=clerk_id).first()
+        if not user:
+            user = User(
+                clerk_id=clerk_id,
+                email=email,
+                username=username,
+                password=generate_password_hash(str(clerk_id))
+            )
+            db.session.add(user)
+            logger.info(f"CLERK WEBHOOK: user.updated pero no existía, creado clerk_id={clerk_id}")
+        else:
+            if email:
+                user.email = email
+            if username:
+                user.username = username
+        db.session.commit()
+        return jsonify({'success': True, 'status': 'user_updated'}), 200
+
+    elif event_type == 'user.deleted':
+        user = User.query.filter_by(clerk_id=clerk_id).first()
+        if user:
+            db.session.delete(user)
+            db.session.commit()
+            logger.info(f"CLERK WEBHOOK: Usuario {clerk_id} eliminado")
+            return jsonify({'success': True, 'status': 'user_deleted'}), 200
+        logger.info(f"CLERK WEBHOOK: user.deleted pero no existía en DB, clerk_id={clerk_id}")
+        return jsonify({'success': True, 'status': 'not_found'}), 200
+
+    logger.debug(f"CLERK WEBHOOK: Evento ignorado {event_type}")
+    return jsonify({'success': True, 'status': 'ignored'}), 200
 
 
 def _payment_already_processed(data_id: str) -> bool:

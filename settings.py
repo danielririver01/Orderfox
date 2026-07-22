@@ -45,6 +45,7 @@ class Config:
     CLERK_PUBLISHABLE_KEY = os.environ.get('CLERK_PUBLISHABLE_KEY') or os.environ.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
     CLERK_SECRET_KEY = os.environ.get('CLERK_SECRET_KEY')
     CLERK_JWT_ISSUER = os.environ.get('CLERK_JWT_ISSUER') or 'https://oriented-tortoise-50.clerk.accounts.dev'
+    CLERK_WEBHOOK_SECRET = os.environ.get('CLERK_WEBHOOK_SECRET')
 
     # Cloudinary Configuration
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')

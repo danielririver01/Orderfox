@@ -250,13 +250,14 @@ def create_app():
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
             "cdn.jsdelivr.net cdn.tailwindcss.com "
-            "oriented-tortoise-50.clerk.accounts.dev; "
+            "oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
             "style-src 'self' 'unsafe-inline' "
             "fonts.googleapis.com cdn.jsdelivr.net; "
             "font-src 'self' fonts.gstatic.com data:; "
             "img-src 'self' data: res.cloudinary.com img.clerk.com; "
-            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev; "
-            "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev"
+            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
+            "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
+            "worker-src 'self' blob:"
         )
 
         # HSTS solo si no está en debug
