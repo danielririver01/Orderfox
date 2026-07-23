@@ -64,6 +64,8 @@ node_modules/
 **/.astro/
 dist/
 astro/dist/
+.vercel/
+**/.vercel/
 
 # Playwright
 /playwright-report/
