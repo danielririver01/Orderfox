@@ -8,7 +8,6 @@ reenvíos maliciosos y race conditions.
 import logging
 
 from flask import Blueprint, request, jsonify, current_app
-from svix.webhooks import Webhook, WebhookVerificationError
 
 from werkzeug.security import generate_password_hash
 
@@ -34,6 +33,13 @@ def clerk_webhook():
     if not wh_secret:
         logger.error("CLERK WEBHOOK: CLERK_WEBHOOK_SECRET no configurado")
         return jsonify({'success': False, 'error': 'webhook_not_configured'}), 503
+
+    # Lazy import: svix puede no estar instalado (Docker sin --no-cache-dir)
+    try:
+        from svix.webhooks import Webhook, WebhookVerificationError
+    except ImportError:
+        logger.error("CLERK WEBHOOK: svix no instalado. Ejecuta: pip install svix")
+        return jsonify({'success': False, 'error': 'svix_not_installed'}), 503
 
     # Verificar firma Svix
     headers = {
