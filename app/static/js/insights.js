@@ -1574,7 +1574,8 @@
         const priceEl = document.getElementById('onb-product-price');
         const catId = catEl && catEl.value;
         const name = (nameEl && nameEl.value || '').trim();
-        const price = parseInt((priceEl && priceEl.value || '').trim(), 10);
+        const rawPrice = (priceEl && priceEl.value || '').replace(/\./g, '').trim();
+        const price = parseInt(rawPrice, 10);
         if (!catId) { showOnbErr('product', 'Primero elige o crea una categoría.'); return; }
         if (!name) { showOnbErr('product', 'Ingresa un nombre para el producto.'); return; }
         if (!Number.isFinite(price) || price < 1) {
