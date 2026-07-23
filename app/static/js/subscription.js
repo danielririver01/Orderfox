@@ -1,5 +1,13 @@
 // JavaScript para la vista de suscripción
 
+// Leer cookie por nombre
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+}
+
 // Abrir modal de eliminación de cuenta
 function openAccountDeleteModal() {
     const modal = document.getElementById('accountDeleteModal');
@@ -52,11 +60,13 @@ async function deleteAccount() {
     deleteBtn.textContent = 'Eliminando...';
 
     try {
+        const csrfToken = getCookie('csrf_token');
         const response = await fetch('/dashboard/delete-account', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
             }
         });
 
