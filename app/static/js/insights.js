@@ -1622,7 +1622,7 @@
                 showOnbErr('order', (data && data.error) || 'No se pudo crear el pedido.');
                 return;
             }
-            showToast('✓ Venta de prueba registrada');
+            showToast('✓ Venta registrada');
             closeOnbModal('order');
             await refreshOnboardingCard();
         } catch (e) {
