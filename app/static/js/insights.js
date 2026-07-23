@@ -743,7 +743,7 @@
                     </span>
                     <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
                 </div>
-                <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">Ready! You have the basics to start. Ask me anything about your business.</div>
+                <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">¡Listo! Ya tienes lo básico para empezar. Pregúntame lo que quieras sobre tu negocio.</div>
             </div>`;
         messagesEl.appendChild(wrap);
         scrollToBottom();
@@ -1505,7 +1505,7 @@
         sel.classList.remove('hidden');
         if (note) note.classList.add('hidden');
         if (save) save.disabled = false;
-        sel.innerHTML = '<option value="">Loading…</option>';
+        sel.innerHTML = '<option value="">Cargando…</option>';
         try {
             const data = await apiGet('/api/categories');
             const cats = (data && data.data && data.data.categories) || [];
@@ -1518,32 +1518,32 @@
             sel.innerHTML = cats.map((c) =>
                 `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
         } catch (e) {
-            sel.innerHTML = '<option value="">Error loading</option>';
+            sel.innerHTML = '<option value="">Error al cargar</option>';
         }
     }
 
     async function loadOnbProducts() {
         const sel = document.getElementById('onb-order-product');
         if (!sel) return;
-        sel.innerHTML = '<option value="">Loading…</option>';
+        sel.innerHTML = '<option value="">Cargando…</option>';
         try {
             const data = await apiGet('/api/products?per_page=200');
             const prods = (data && data.data && data.data.products) || [];
             if (!prods.length) {
-                sel.innerHTML = '<option value="">No products yet</option>';
+                sel.innerHTML = '<option value="">Sin productos aún</option>';
                 return;
             }
             sel.innerHTML = prods.map((p) =>
                 `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
         } catch (e) {
-            sel.innerHTML = '<option value="">Error loading</option>';
+            sel.innerHTML = '<option value="">Error al cargar</option>';
         }
     }
 
     async function saveOnbCategory() {
         const nameEl = document.getElementById('onb-category-name');
         const name = (nameEl && nameEl.value || '').trim();
-        if (!name) { showOnbErr('category', 'Enter a name for the category.'); return; }
+        if (!name) { showOnbErr('category', 'Ingresa un nombre para la categoría.'); return; }
         setOnbSaving('category', true);
         clearOnbErr('category');
         try {
@@ -1551,10 +1551,10 @@
             fd.append('name', name);
             const data = await apiForm('/api/categories', fd);
             if (!data || !data.success) {
-                showOnbErr('category', (data && data.error) || 'Could not create category.');
+                showOnbErr('category', (data && data.error) || 'No se pudo crear la categoría.');
                 return;
             }
-            showToast('✓ Category created');
+            showToast('✓ Categoría creada');
             closeOnbModal('category');
             await refreshOnboardingCard();
             if (onbReturnToProduct) {
@@ -1562,7 +1562,7 @@
                 openOnbModal('product'); // recarga las categorías automáticamente
             }
         } catch (e) {
-            showOnbErr('category', 'Connection error.');
+            showOnbErr('category', 'Error de conexión.');
         } finally {
             setOnbSaving('category', false);
         }
@@ -1575,10 +1575,10 @@
         const catId = catEl && catEl.value;
         const name = (nameEl && nameEl.value || '').trim();
         const price = parseInt((priceEl && priceEl.value || '').trim(), 10);
-        if (!catId) { showOnbErr('product', 'First choose or create a category.'); return; }
-        if (!name) { showOnbErr('product', 'Enter a name for the product.'); return; }
+        if (!catId) { showOnbErr('product', 'Primero elige o crea una categoría.'); return; }
+        if (!name) { showOnbErr('product', 'Ingresa un nombre para el producto.'); return; }
         if (!Number.isFinite(price) || price < 1) {
-            showOnbErr('product', 'Price must be a number greater than 0.'); return;
+            showOnbErr('product', 'El precio debe ser un número mayor a 0.'); return;
         }
         setOnbSaving('product', true);
         clearOnbErr('product');
@@ -1589,14 +1589,14 @@
             fd.append('category_id', String(catId));
             const data = await apiForm('/api/products', fd);
             if (!data || !data.success) {
-                showOnbErr('product', (data && data.error) || 'Could not create product.');
+                showOnbErr('product', (data && data.error) || 'No se pudo crear el producto.');
                 return;
             }
-            showToast('✓ Product created');
+            showToast('✓ Producto creado');
             closeOnbModal('product');
             await refreshOnboardingCard();
         } catch (e) {
-            showOnbErr('product', 'Connection error.');
+            showOnbErr('product', 'Error de conexión.');
         } finally {
             setOnbSaving('product', false);
         }
@@ -1607,26 +1607,26 @@
         const qtyEl = document.getElementById('onb-order-qty');
         const prodId = prodEl && prodEl.value;
         const qty = parseInt((qtyEl && qtyEl.value || '').trim(), 10);
-        if (!prodId) { showOnbErr('order', 'First create a product.'); return; }
+        if (!prodId) { showOnbErr('order', 'Primero crea un producto.'); return; }
         if (!Number.isFinite(qty) || qty < 1) {
-            showOnbErr('order', 'Quantity must be at least 1.'); return;
+            showOnbErr('order', 'La cantidad debe ser al menos 1.'); return;
         }
         setOnbSaving('order', true);
         clearOnbErr('order');
         try {
             const data = await apiSend('/api/orders', {
-                customer_name: 'Test customer',
+                customer_name: 'Cliente de prueba',
                 items: [{ product_id: parseInt(prodId, 10), quantity: qty }],
             });
             if (!data || !data.success) {
-                showOnbErr('order', (data && data.error) || 'Could not create order.');
+                showOnbErr('order', (data && data.error) || 'No se pudo crear el pedido.');
                 return;
             }
-            showToast('✓ Test sale recorded');
+            showToast('✓ Venta de prueba registrada');
             closeOnbModal('order');
             await refreshOnboardingCard();
         } catch (e) {
-            showOnbErr('order', 'Connection error.');
+            showOnbErr('order', 'Error de conexión.');
         } finally {
             setOnbSaving('order', false);
         }
