@@ -450,6 +450,7 @@ class RewardClaim(db.Model):
     reward_label = db.Column(db.String(200), nullable=True)
     status = db.Column(db.String(20), default='pending', nullable=False)
     claimed_at = db.Column(AwareDateTime, nullable=True)
+    claimed_ip = db.Column(db.String(45), nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('reward_claims', lazy='dynamic', cascade='all, delete-orphan'))

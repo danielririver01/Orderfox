@@ -110,12 +110,12 @@ def create_app():
     # then _csrf_protect_nonapi runs CSRF check for non-API routes.
     @app.before_request
     def exempt_api_from_csrf():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/'):
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/'):
             return
 
     @app.before_request
     def _csrf_protect_nonapi():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/'):
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/'):
             return
         csrf_instance = current_app.extensions.get('csrf')
         if csrf_instance:
