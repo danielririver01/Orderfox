@@ -1,6 +1,15 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
+    "n8n": {
+      "type": "local",
+      "command": ["npx", "-y", "n8n-mcp"],
+      "enabled": true,
+      "environment": {
+        "N8N_API_URL": "http://host.docker.internal:5678",
+        "N8N_API_KEY": "{env:N8N_API_KEY}"
+      }
+    },
     "Conexion_MYSQL": {
       "type": "local",
       "command": ["opencode", "x", "@f4ww4z/mcp-mysql-server"],

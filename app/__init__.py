@@ -195,6 +195,7 @@ def create_app():
     from .routes.api_tables import api_tables_bp
     from .routes.api_email import api_email_bp
     from .routes.api_webhooks import api_webhooks_bp
+    from .routes.rewards import rewards_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -214,7 +215,9 @@ def create_app():
     app.register_blueprint(api_tables_bp)
     app.register_blueprint(api_email_bp)
     app.register_blueprint(api_webhooks_bp)
+    app.register_blueprint(rewards_bp)
     csrf.exempt(api_email_bp)
+    csrf.exempt(rewards_bp)
     @app.before_request
     def block_grace_period_crud():
         if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:

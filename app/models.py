@@ -433,3 +433,27 @@ class CopilotBusinessEvent(db.Model):
 
     def __repr__(self):
         return f'<CopilotBusinessEvent {self.id} kind={self.kind} p={self.priority}>'
+
+
+class RewardClaim(db.Model):
+    """Recompensa generada tras pago (Sorpresa Velzia)."""
+    __tablename__ = 'reward_claims'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    token = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    plan_key = db.Column(db.String(50), nullable=False)
+    rarity = db.Column(db.String(20), nullable=False)
+    reward_type = db.Column(db.String(50), nullable=False)
+    reward_value = db.Column(db.Integer, nullable=True)
+    reward_label = db.Column(db.String(200), nullable=True)
+    status = db.Column(db.String(20), default='pending', nullable=False)
+    claimed_at = db.Column(AwareDateTime, nullable=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('reward_claims', lazy='dynamic', cascade='all, delete-orphan'))
+    restaurant = db.relationship('Restaurant', backref=db.backref('reward_claims', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<RewardClaim {self.id} {self.rarity}/{self.reward_type} for user {self.user_id}>'

@@ -6,6 +6,9 @@ reenvíos maliciosos y race conditions.
 """
 
 import logging
+import threading
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 
 from flask import Blueprint, request, jsonify, current_app
 
@@ -121,6 +124,17 @@ def clerk_webhook():
     return jsonify({'success': True, 'status': 'ignored'}), 200
 
 
+def _fire_n8n_reward(url: str, body: bytes, app):
+    """Envía el payload a n8n en segundo plano (fire-and-forget)."""
+    with app.app_context():
+        try:
+            req = Request(url, data=body, headers={'Content-Type': 'application/json'})
+            urlopen(req, timeout=5)
+            logger.info(f"N8N reward triggered: {body.decode()[:100]}")
+        except URLError as e:
+            logger.warning(f"N8N reward failed: {e.reason}")
+
+
 def _payment_already_processed(data_id: str) -> bool:
     """Chequeo de idempotencia unificado: True si este payment_id ya fue procesado
     como suscripción (topup_plan) o como top-up de tokens (topup_purchase)."""
@@ -217,7 +231,7 @@ def mercadopago_webhook():
                     )
                     return jsonify({'success': True, 'status': 'topup_ignored'}), 200
 
-                # ── Subscription activation flow (legacy) ──
+                # ── Subscription activation flow ──
                 result = AuthService.process_mp_webhook_payment(
                     payment_id, access_token
                 )
@@ -225,6 +239,19 @@ def mercadopago_webhook():
                     logger.info(
                         f"WEBHOOK MP: Restaurante {result.get('restaurant_id')} activado"
                     )
+                    # Disparar Sorpresa Velzia en segundo plano
+                    n8n_url = current_app.config.get('N8N_REWARD_URL')
+                    if n8n_url and external_ref:
+                        payer_email = payment.get('payer', {}).get('email', '')
+                        body = (
+                            '{"external_reference":"' + external_ref +
+                            '","payer":{"email":"' + (payer_email or '') + '"}}'
+                        ).encode()
+                        threading.Thread(
+                            target=_fire_n8n_reward,
+                            args=(n8n_url, body, current_app._get_current_object()),
+                            daemon=True
+                        ).start()
                     return jsonify({
                         'success': True,
                         'status': 'processed',

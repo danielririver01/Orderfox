@@ -75,6 +75,9 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = False  # True en producción con HTTPS
 
+    # n8n Reward Workflow
+    N8N_REWARD_URL = os.environ.get('N8N_REWARD_URL') or 'http://n8n:5678/webhook/reward_immediate'
+
     # Sentry (error tracking)
     SENTRY_DSN = os.environ.get('SENTRY_DSN')
 
