@@ -421,3 +421,31 @@ def notifications():
     if not restaurant:
         abort(404)
     return render_template('dashboard/notifications.html', restaurant=restaurant)
+
+
+@dashboard_bp.route('/logros')
+@require_auth
+@require_active
+def achievements():
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        abort(404)
+
+    from app.services.achievement_engine import get_profile
+    owner = restaurant.users[0] if restaurant.users else None
+    if not owner:
+        abort(404)
+    profile = get_profile(owner.id)
+
+    new_achievement = session.pop('_new_achievement', None)
+    new_ach_data = None
+    if new_achievement:
+        from app.services.achievement_definitions import VELZIA_ACHIEVEMENTS
+        new_ach_data = VELZIA_ACHIEVEMENTS.get(new_achievement)
+
+    return render_template(
+        'dashboard/logros.html',
+        restaurant=restaurant,
+        profile=profile,
+        new_achievement=new_ach_data,
+    )

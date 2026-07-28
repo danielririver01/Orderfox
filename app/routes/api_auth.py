@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from app.utils.auth import require_auth, require_active
 from app.utils.jwt_auth import get_current_user_jwt, get_current_restaurant_jwt
 from app.services.auth_service import AuthService
+from app.services.subscription_service import SubscriptionService
 from app.services.token_service import TokenService
 from app.models import User
 import mercadopago
@@ -48,7 +49,7 @@ def logout():
 
 @api_auth_bp.route('/plans', methods=['GET'])
 def get_plans():
-    plans_config = AuthService.get_plans_config()
+    plans_config = SubscriptionService.get_plans_config()
 
     return jsonify({
         'success': True,
@@ -75,7 +76,7 @@ def initiate_payment():
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
     base_url = current_app.config.get('BASE_URL', 'https://velzia.co')
-    preference_data, plan_info = AuthService.build_mp_preference_data(
+    preference_data, plan_info, coupon = SubscriptionService.build_mp_preference_data(
         plan_type, restaurant.id, base_url
     )
 
@@ -85,6 +86,8 @@ def initiate_payment():
         preference = preference_response["response"]
         checkout_url = preference.get("init_point", "#")
         preference_id = preference.get('id')
+        if preference_id and coupon:
+            SubscriptionService.reserve_coupon(coupon, preference_id)
     except Exception as e:
         current_app.logger.error(f"Error creating MP preference: {e}")
         return jsonify({'success': False, 'error': 'Error al conectar con la pasarela de pago'}), 500

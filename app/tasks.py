@@ -1,5 +1,5 @@
 from app import db, scheduler
-from app.models import Restaurant, Order
+from app.models import Restaurant, Order, DiscountCoupon
 from datetime import datetime, timedelta, timezone
 from flask import has_app_context, current_app
 
@@ -116,6 +116,29 @@ def _perform_expiry():
         current_app.logger.error(f"CRITICAL ERROR in expiry task: {e}")
 
 
+def expire_coupons():
+    """Expira cupones pending que superaron su fecha de expiración."""
+    if has_app_context():
+        return _perform_coupon_expiry()
+    else:
+        with scheduler.app.app_context():
+            return _perform_coupon_expiry()
+
+def _perform_coupon_expiry():
+    try:
+        now = datetime.now(timezone.utc)
+        expired = DiscountCoupon.query.filter(
+            DiscountCoupon.status.in_(['pending', 'reserved']),
+            DiscountCoupon.expires_at < now,
+        ).all()
+        for c in expired:
+            c.status = 'expired'
+        db.session.commit()
+        if expired:
+            current_app.logger.info(f"[{now}] Expired {len(expired)} coupons.")
+    except Exception as e:
+        current_app.logger.error(f"Coupon expiry error: {e}", exc_info=True)
+
 def init_tasks(scheduler):
     # Programar la tarea para las 3:00 AM todos los días
     if not scheduler.get_job('delete_inactive_accounts'):
@@ -143,4 +166,13 @@ def init_tasks(scheduler):
             func=scan_business_events,
             trigger='cron',
             minute=30,  # 30 minutos después de expire_pending_orders
+        )
+
+    # Expirar cupones vencidos cada hora
+    if not scheduler.get_job('expire_coupons'):
+        scheduler.add_job(
+            id='expire_coupons',
+            func=expire_coupons,
+            trigger='cron',
+            minute=45,
         )

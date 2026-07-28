@@ -11,7 +11,8 @@ from app import create_app
 from app.models import db as _db
 from app.models import (
     Restaurant, User, Order, OrderItem, Category, Product,
-    Modifier, Table, TrialHistory, AITokenWallet, AITokenTransaction
+    Modifier, Table, TrialHistory, AITokenWallet, AITokenTransaction,
+    DiscountCoupon
 )
 
 
@@ -154,6 +155,32 @@ def grace_period_restaurant(db):
     db.session.add(r)
     db.session.commit()
     return r
+
+
+@pytest.fixture
+def sample_coupon(db, sample_restaurant):
+    c = DiscountCoupon(
+        restaurant_id=sample_restaurant.id,
+        percentage=20,
+        status='pending',
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+    )
+    db.session.add(c)
+    db.session.commit()
+    return c
+
+
+@pytest.fixture
+def expired_coupon(db, sample_restaurant):
+    c = DiscountCoupon(
+        restaurant_id=sample_restaurant.id,
+        percentage=15,
+        status='pending',
+        expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+    )
+    db.session.add(c)
+    db.session.commit()
+    return c
 
 
 @pytest.fixture

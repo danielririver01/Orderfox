@@ -3,6 +3,7 @@ reward_service.py — Sorpresa Velzia
 Reglas de recompensa 70/25/5 por plan, sin repetición consecutiva.
 """
 import random
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Literal
@@ -10,10 +11,17 @@ from typing import Optional, Literal
 PlanKey = Literal['emprendedor', 'crecimiento', 'elite', 'trial']
 
 REWARD_POOL: dict[PlanKey, dict[str, list[dict]]] = {
+    'trial': {
+        'common': [
+            {'type': 'badge', 'value': 'trial_explorer', 'label': 'Insignia Explorador Velzia'},
+            {'type': 'badge', 'value': 'trial_pioneer', 'label': 'Insignia Pionero'},
+            {'type': 'badge', 'value': 'trial_taster', 'label': 'Insignia Catador'},
+        ],
+    },
     'emprendedor': {
         'common': [
             {'type': 'ai_tokens', 'value': 10, 'label': '10 tokens IA'},
-            {'type': 'badge', 'value': 'early_adopter', 'label': 'Insignia Early Adopter'},
+            {'type': 'badge', 'value': 'early_adopter', 'label': 'Insignia Primeros Usuarios'},
             {'type': 'badge', 'value': 'collector_1', 'label': 'Insignia Coleccionista Bronce'},
         ],
         'uncommon': [
@@ -63,6 +71,44 @@ REWARD_POOL: dict[PlanKey, dict[str, list[dict]]] = {
     },
 }
 
+STREAK_BONUS_BY_TIER = {
+    1: [
+        {'type': 'ai_tokens', 'value': 10, 'label': '10 tokens IA \u2022 Fidelidad Bronce'},
+    ],
+    2: [
+        {'type': 'discount', 'value': 15, 'label': '15% dto. \u2022 Fidelidad Plata'},
+        {'type': 'ai_tokens', 'value': 40, 'label': '40 tokens IA \u2022 Fidelidad Plata'},
+    ],
+    3: [
+        {'type': 'free_month', 'label': '1 mes gratis \u2022 Fidelidad Oro'},
+        {'type': 'ai_tokens', 'value': 75, 'label': '75 tokens IA \u2022 Fidelidad Oro'},
+    ],
+    4: [
+        {'type': 'ai_tokens', 'value': 150, 'label': '150 tokens IA \u2022 Fidelidad Diamante'},
+    ],
+}
+
+
+def get_bonus_pool(tier: int) -> list:
+    return STREAK_BONUS_BY_TIER.get(tier, [])
+
+
+def generate_streak_reward(tier: int) -> dict | None:
+    pool = get_bonus_pool(tier)
+    if not pool:
+        return None
+    reward = random.choice(pool)
+    return {
+        'rarity': 'uncommon' if tier <= 2 else 'rare',
+        'emoji': RARITY_EMOJIS['uncommon' if tier <= 2 else 'rare'],
+        'color': RARITY_COLORS['uncommon' if tier <= 2 else 'rare'],
+        'type': reward['type'],
+        'value': reward.get('value'),
+        'label': reward['label'],
+        'is_streak_bonus': True,
+    }
+
+
 RARITY_ROLLS: dict[str, float] = {
     'common': 0.70,
     'uncommon': 0.25,
@@ -110,18 +156,22 @@ def generate_reward(
     force_rarity: Optional[str] = None,
 ) -> dict | None:
     if plan == 'trial':
-        return None
-    rarity = force_rarity or _roll_rarity()
+        rarity = 'common'
+    else:
+        rarity = force_rarity or _roll_rarity()
     reward = _pick_reward(plan, rarity, last_reward_label)
+    raw_value = reward.get('value')
+    value = raw_value if isinstance(raw_value, (int, float)) else None
 
     return {
         'rarity': rarity,
         'emoji': RARITY_EMOJIS[rarity],
         'color': RARITY_COLORS[rarity],
         'type': reward['type'],
-        'value': reward.get('value'),
+        'value': value,
         'label': reward['label'],
         'token': str(uuid.uuid4()),
+        'short_code': secrets.token_urlsafe(16),
         'created_at': datetime.now(timezone.utc).isoformat(),
     }
 
@@ -145,3 +195,8 @@ def apply_reward_protocol(reward: dict) -> str:
         'early_access': '🚀',
     }
     return emoji_map.get(reward['type'], '🎁')
+
+
+def build_email_html(claim_url: str, reward_label: str) -> str:
+    from flask import render_template
+    return render_template('rewards/email_congratulations.html', claim_url=claim_url, reward_label=reward_label)

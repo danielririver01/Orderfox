@@ -6,6 +6,7 @@ from app.models import Restaurant
 from app.utils.subscription import initialize_or_reset_token_wallet
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.services.auth_service import AuthService
+from app.services.subscription_service import SubscriptionService
 from app.utils.restaurant import get_current_restaurant
 import mercadopago
 
@@ -277,19 +278,24 @@ def payment():
         return redirect(url_for('auth.register'))
 
     selected_plan_key = session.get('selected_plan', 'crecimiento')
-    plan_info = AuthService.get_plan_info(selected_plan_key)
+    plan_info = SubscriptionService.get_plan_info(selected_plan_key)
 
     if plan_info['price_raw'] <= 0:
         flash('Plan inválido para pago. Por favor selecciona un plan de pago.')
         return redirect(url_for('auth.plans'))
 
     base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
-    preference_data, _ = AuthService.build_mp_preference_data(
+    preference_data, _, coupon = SubscriptionService.build_mp_preference_data(
         selected_plan_key, restaurant_id, base_url
     )
 
     sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
-    checkout_url, error_msg = AuthService.create_mp_preference(sdk, preference_data)
+    checkout_url, preference_id, error_msg = SubscriptionService.create_mp_preference(sdk, preference_data)
+    if preference_id and coupon:
+        try:
+            SubscriptionService.reserve_coupon(coupon, preference_id)
+        except Exception:
+            current_app.logger.warning('Error reservando cupón', exc_info=True)
 
     if error_msg:
         flash(error_msg)
@@ -313,7 +319,7 @@ def payment_callback():
         except (ValueError, IndexError):
             restaurant_id = None
 
-    restaurant, user, _ = AuthService.process_payment_callback(
+    restaurant, user, _ = SubscriptionService.process_payment_callback(
         status, restaurant_id, plan_type
     )
 
@@ -381,7 +387,7 @@ def webhook():
 
         if payment_id:
             access_token = current_app.config.get('MP_ACCESS_TOKEN')
-            result = AuthService.process_mp_webhook_payment(payment_id, access_token)
+            result = SubscriptionService.process_mp_webhook_payment(payment_id, access_token)
             if result:
                 current_app.logger.info(
                     f"WEBHOOK: Activated restaurant {result['restaurant_id']}"

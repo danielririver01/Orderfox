@@ -18,8 +18,6 @@ Flujo de un mensaje (POST /insights/api/conversations/<id>/messages):
 """
 
 import json
-import re
-import time
 from datetime import datetime, timezone, timedelta
 
 from flask import (
@@ -27,14 +25,20 @@ from flask import (
     url_for, g,
 )
 from app.utils.auth import require_auth, require_active
-from app.utils.subscription import is_subscription_active
 from app.csrf import csrf
 from app.models import db, User, Restaurant, CopilotConversation, CopilotBusinessEvent
 from app.services.insights import (
-    classifier, data_service, conversation_service as cs, prompt_builder, llm_service,
-    event_engine, event_templates, context_manager, chart_service,
+    data_service, conversation_service as cs, prompt_builder,
+    event_engine, event_templates, context_manager,
 )
-from app.services.token_service import TokenService
+from app.services.insights.helpers import (
+    current_user as _current_user,
+    parse_llm_response as _parse_llm_response,
+    foreign_restaurant_response as _foreign_restaurant_response,
+    empty_state_response as _empty_state_response,
+    FOREIGN_RESTAURANT_MSG as _FOREIGN_RESTAURANT_MSG,
+)
+from app.services.insights.message_handler import handle_post_message
 
 insights_bp = Blueprint('insights', __name__, url_prefix='/insights')
 
@@ -53,101 +57,6 @@ def _add_context_to_response(response):
         except Exception:
             pass
     return response
-
-# Nota amable para restaurantes en Nivel 2 (pocos datos): el análisis es real,
-# pero señalamos que mejorará con más historial.
-_LEARNING_NOTE = (
-    'Todavía estoy aprendiendo tu negocio. A medida que registres más ventas, '
-    'mis análisis serán más precisos.'
-)
-
-
-
-# Detecta cuando el usuario quiere un cálculo de impacto numérico real.
-_CALC_IMPACT_RE = re.compile(
-    r'impacto|calcula(?:r)? (?:el )?(?:impacto|ticket|ingres|venta|pedido)|'
-    r'cu.nto (?:podr|ganar|aumentar|m.s)|proyect',
-    re.I,
-)
-
-# Respuesta del guard de alcance: el usuario pide datos de un restaurante ajeno.
-_FOREIGN_RESTAURANT_MSG = (
-    "Entiendo tu curiosidad 🤝\n\n"
-    "Soy **Copilot VZ**, el asistente de **Velzia**, y mi trabajo es ayudarte "
-    "a hacer crecer **tu** negocio. No tengo acceso a datos de otros restaurantes, "
-    "así que no podría darte información precisa sobre ellos aunque quisiera.\n\n"
-    "Pero lo que **sí** puedo hacer es analizar **tus** datos a fondo. "
-    "¿Quieres que te muestre algo de tu negocio? Ventas, productos, lo que prefieras."
-)
-
-
-
-def _current_user():
-    auth_header = request.headers.get('Authorization', '')
-    if auth_header.startswith('Bearer '):
-        from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-        try:
-            verify_jwt_in_request()
-            user_id = get_jwt_identity()
-            return User.query.get(user_id)
-        except Exception:
-            return None
-    user_id = session.get('user_id')
-    if not user_id:
-        return None
-    return User.query.get(user_id)
-
-
-def _parse_llm_response(raw):
-    """Intenta parsear JSON {text, chart?, title?}; si falla, texto plano.
-
-    El modelo no siempre devuelve JSON puro: puede anteponer un saludo
-    ("Aquí tienes la gráfica:") o encerrar el JSON en ```json ... ```. En
-    esos casos extraemos el objeto JSON de forma tolerante para no romper
-    la gráfica (mostrándola como texto crudo).
-    """
-    raw = (raw or '').strip()
-
-    def _try_json(s):
-        try:
-            # Algunos modelos dejan comas finales; las eliminamos.
-            s = re.sub(r',\s*([}\]])', r'\1', s)
-            data = json.loads(s)
-            return data if isinstance(data, dict) else None
-        except (json.JSONDecodeError, ValueError):
-            return None
-
-    def _as_parsed(obj, fallback_text=''):
-        return {
-            'text': obj.get('text') or fallback_text,
-            'chart': obj.get('chart'),
-            'title': obj.get('title'),
-        }
-
-    # 1) JSON puro (caso ideal).
-    obj = _try_json(raw)
-    if obj:
-        return _as_parsed(obj)
-
-    # 2) Bloque ```json ... ``` en cualquier parte.
-    m = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', raw, re.S)
-    if m:
-        obj = _try_json(m.group(1))
-        if obj:
-            text = obj.get('text') or raw.replace(m.group(0), '').strip()
-            return _as_parsed(obj, text)
-
-    # 3) Primer objeto JSON {...} embebido en el texto.
-    start = raw.find('{')
-    end = raw.rfind('}')
-    if start != -1 and end > start:
-        obj = _try_json(raw[start:end + 1])
-        if obj:
-            text = obj.get('text') or raw[:start].strip()
-            return _as_parsed(obj, text)
-
-    return {'text': raw, 'chart': None, 'title': None}
-
 
 # ── Página principal ─────────────────────────────────────────────────────────
 
@@ -363,306 +272,7 @@ def api_post_message(cid):
         return jsonify({'success': False, 'error': 'not_found'}), 404
 
     data = request.get_json(silent=True) or {}
-    content = (data.get('content') or '').strip()
-    message_id = data.get('message_id')
-    # Edición / regeneración: reemplaza la cola de la conversación por una
-    # nueva respuesta a partir del mensaje indicado (replace_tail).
-    replace_tail = bool(data.get('replace_tail', False))
-
-    # En regeneración el contenido se toma del mensaje reutilizado.
-    if replace_tail and message_id and not content:
-        _existing = cs.safe_get_message(message_id, cid)
-        if _existing:
-            content = _existing.content
-
-    if not content:
-        return jsonify({'success': False, 'error': 'empty_content'}), 400
-
-    t0 = time.time()
-
-    # 1) Mensaje del usuario: reusar el ya guardado (edición / regeneración)
-    #    o crear uno nuevo.
-    if message_id:
-        user_msg = cs.safe_get_message(message_id, cid)
-        if not user_msg:
-            user_msg = cs.add_message(cid, 'user', content)
-        else:
-            # Edición de mensaje ya enviado: actualiza su contenido y borra
-            # la cola (mensajes posteriores) para generar una rama nueva.
-            if replace_tail:
-                cs.update_message_content(user_msg.id, content)
-                cs.delete_messages_after(cid, user_msg.id)
-    else:
-        user_msg = cs.add_message(cid, 'user', content)
-
-    # Poner título a la conversación si es el primer mensaje.
-    if not conv.title:
-        cs.set_title(cid, cs.make_title_from_message(content))
-
-    # ── Gestión de contexto: estimar uso y comprimir si es necesario ──
-    g.context_usage = 0
-    g.context_optimized = False
-    ctx_summary = None
-    ctx_compressed = False
-    try:
-        history_msgs = cs.get_messages(cid)
-        ctx_meta = context_manager.get_conv_metadata(conv)
-        ctx_summary = ctx_meta.get('summary')
-        ctx_compressed = ctx_meta.get('compressed', False)
-        context_json = json.dumps(data_service.build_context(conv.restaurant_id, days=90), ensure_ascii=False)
-        total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
-            context_json, history_msgs, content, summary=ctx_summary if ctx_compressed else None
-        )
-        # Usage = % de la parte variable (historial) sobre el espacio disponible
-        variable = max(1, context_manager.MAX_INPUT_TOKENS - baseline)
-        used = max(0, total_tokens - baseline)
-        g.context_usage = min(100, int((used / variable) * 100))
-
-        # Fase 1: ≥80% y no hay resumen → generarlo ahora (1 request ligeramente más lenta)
-        if g.context_usage >= 80 and not ctx_summary and not ctx_compressed:
-            summary = context_manager.compress_conversation(cid, conv, context_json, content)
-            if summary:
-                ctx_summary = summary
-                g.context_optimized = True
-                ctx_compressed = ctx_meta.get('compressed', False)
-                total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
-                    context_json, history_msgs, content, summary=ctx_summary
-                )
-                variable = max(1, context_manager.MAX_INPUT_TOKENS - baseline)
-                used = max(0, total_tokens - baseline)
-                g.context_usage = min(100, int((used / variable) * 100))
-
-        # Fase 2: ≥85% → marcar como comprimido (el prompt_builder usará resumen + 5 últimos)
-        if g.context_usage >= 85 and ctx_summary and not ctx_compressed:
-            meta = context_manager.get_conv_metadata(conv)
-            meta['compressed'] = True
-            context_manager.save_conv_metadata(conv, meta)
-            ctx_compressed = True
-            g.context_optimized = True
-            total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
-                context_json, history_msgs, content, summary=ctx_summary
-            )
-            variable = max(1, context_manager.MAX_INPUT_TOKENS - baseline)
-            used = max(0, total_tokens - baseline)
-            g.context_usage = min(100, int((used / variable) * 100))
-    except Exception as e:
-        current_app.logger.warning(f"Context management error: {e}")
-
-    # 2) Guard de alcance: si pide DATOS de un restaurante AJENO, respondemos
-    #    directo sin LLM ni crédito. Es un problema de confianza, no de
-    #    seguridad: evita que el clasificador rápido conteste con las ventas
-    #    del usuario ante "ventas ayer de McDonald's".
-    restaurant = user.restaurant
-    restaurant_name = restaurant.name if restaurant else None
-    restaurant_slug = restaurant.slug if restaurant else None
-    if classifier.is_foreign_restaurant_query(content, restaurant_name, restaurant_slug):
-        return _foreign_restaurant_response(conv, user_msg.id)
-
-    # 3) Clasificación híbrida.
-    cls = classifier.classify(content)
-
-    # ── Etapa de madurez de datos (Nivel 0-3) ──
-    # Si no hay datos suficientes, respondemos con un estado vacío inteligente:
-    # sin llamar a DeepSeek y sin consumir crédito.
-    stage = data_service.get_data_stage(conv.restaurant_id)
-    if stage['level'] == 0:
-        return _empty_state_response(conv, 'no_catalog')
-    if stage['level'] == 1:
-        return _empty_state_response(conv, 'no_sales_yet')
-
-    # ── Nivel 1: consulta rápida (GRATIS, SQL directo) ──
-    if cls['level'] == 'quick':
-        result = data_service.handle_quick(conv.restaurant_id, cls['intent'])
-        # Sin datos en la ventana → estado vacío (Caso 2), no "No hay datos."
-        if data_service.is_empty_quick_result(result):
-            label = data_service.window_label_from_days(cls['window'])
-            return _empty_state_response(conv, 'no_data_window', window_label=label)
-        chart = chart_service.chart_for_intent(conv.restaurant_id, cls['intent'], result)
-        execution_ms = int((time.time() - t0) * 1000)
-        meta = {
-            'type': 'quick',
-            'intent': cls['intent'],
-            'window': cls['window'],
-            'credits_used': 0,
-            'model': 'sql',
-            'execution_ms': execution_ms,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-        }
-        if chart:
-            meta['chart'] = chart
-        if stage['level'] == 2:
-            meta['note'] = _LEARNING_NOTE
-        assistant_msg = cs.add_message(cid, 'assistant', result['text'], meta)
-        return jsonify({
-            'success': True,
-            'type': 'quick',
-            'content': result['text'],
-            'chart': chart,
-            'metadata': meta,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-            'message_id': user_msg.id,
-            'assistant_message_id': assistant_msg.id,
-        })
-
-    # ── Nivel 2: análisis IA ──
-    # Guarda contra "No hay datos." del LLM: si no hay ventas en la ventana,
-    # devolvemos un estado vacío bonito (Caso 2/3) sin gastar crédito.
-    if not data_service.has_sales(conv.restaurant_id, cls['window']):
-        label = data_service.window_label_from_days(cls['window'])
-        kind = 'chart_empty' if re.search(r'gr.ffic|chart|visualiz', content.lower()) else 'no_data_window'
-        return _empty_state_response(conv, kind, window_label=label)
-
-    follow_up = conv.analysis_active  # ya se pagó en esta conversación
-
-    # Consumir 1 crédito la primera vez (no en seguimientos). Si no hay
-    # créditos, interrumpimos el flujo con una tarjeta elegante (sin consumir).
-    if not follow_up:
-        ok, err = TokenService.consume_token(user)
-        if not ok:
-            code = (err or {}).get('error_code')
-            # Suscripción vencida (tras gracia): créditos congelados.
-            if code == 'SUBSCRIPTION_REQUIRED':
-                return jsonify({
-                    'success': True,
-                    'type': 'subscription_required',
-                    'message': (err or {}).get('message'),
-                    'message_id': user_msg.id,
-                })
-            # Sin créditos: ¿puede comprar más? (trial/pago activo = sí)
-            can_buy = bool(user.restaurant) and is_subscription_active(
-                user.restaurant, include_grace_period=False)
-            return jsonify({
-                'success': True,
-                'type': 'no_credits',
-                'can_buy': can_buy,
-                'message_id': user_msg.id,
-                'error_code': code,
-            })
-        cs.mark_analysis_active(cid)
-
-    # ── Cálculo de impacto (respuesta directa, sin LLM) ──
-    # En una conversación ya pagada, si el usuario pide calcular el impacto,
-    # respondemos con una PROYECCIÓN REAL basada en sus ventas (no inventada),
-    # sin gastar crédito (es seguimiento).
-    wants_calc = bool(_CALC_IMPACT_RE.search(content)) and not re.search(
-        r'gr.ffic|chart|visualiz', content.lower())
-    if follow_up and wants_calc:
-        proj = data_service.projection_uplift(conv.restaurant_id)
-        chart = {
-            'type': 'bar',
-            'title': 'Proyección de impacto',
-            'labels': ['Actual', 'Con mejora'],
-            'datasets': [{'label': 'Ingresos ($)', 'data': [proj['revenue'], proj['projected_revenue']]}],
-        }
-        execution_ms = int((time.time() - t0) * 1000)
-        meta = {
-            'type': 'analysis',
-            'intent': 'calc_impact',
-            'window': cls['window'],
-            'credits_used': 0,
-            'model': 'sql',
-            'execution_ms': execution_ms,
-            'chart': chart,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-        }
-        assistant_msg = cs.add_message(cid, 'assistant', proj['text'], meta)
-        return jsonify({
-            'success': True,
-            'type': 'analysis',
-            'content': proj['text'],
-            'chart': chart,
-            'metadata': meta,
-            'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-            'message_id': user_msg.id,
-            'assistant_message_id': assistant_msg.id,
-        })
-
-    # Construir contexto + llamar al LLM.
-    try:
-        context = data_service.build_context(conv.restaurant_id, days=90)
-        history = cs.get_messages(cid)
-        # Excluir el mensaje de usuario recién guardado para no duplicar.
-        history_for_llm = [m for m in history if m.id != user_msg.id]
-        messages = prompt_builder.build_analysis_messages(
-            user_message=content,
-            context=context,
-            history=history_for_llm,
-            restaurant_name=(user.restaurant.name if user.restaurant else None),
-            context_summary=ctx_summary,
-            compressed=ctx_compressed,
-        )
-        raw = llm_service.chat(messages)
-    except llm_service.LLMServiceError as e:
-        return jsonify({
-            'success': False,
-            'type': 'llm_error',
-            'message': str(e),
-            'message_id': user_msg.id,
-        }), 502
-    except Exception as e:  # noqa
-        current_app.logger.error(f"Copilot analysis error: {e}")
-        return jsonify({
-            'success': False,
-            'type': 'error',
-            'message': 'Ocurrió un error inesperado analizando tu negocio.',
-            'message_id': user_msg.id,
-        }), 500
-
-    parsed = _parse_llm_response(raw)
-    # El modelo a veces corrompe el dataset de la gráfica (p.ej. mete texto de
-    # sugerencias dentro de `data`). Lo saneamos antes de guardar/mostrar.
-    parsed['chart'] = chart_service.clean_chart(parsed['chart'])
-    execution_ms = int((time.time() - t0) * 1000)
-    credits_used = 0 if follow_up else 1
-
-    meta = {
-        'type': 'analysis',
-        'intent': cls['intent'],
-        'window': cls['window'],
-        'credits_used': credits_used,
-        'model': current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
-        'execution_ms': execution_ms,
-        'chart': parsed['chart'] if parsed['chart'] else None,
-        'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-    }
-    if stage['level'] == 2:
-        meta['note'] = _LEARNING_NOTE
-
-    # Título generado por la IA (solo si la conversación aún no tiene).
-    if parsed.get('title') and not conv.title:
-        cs.set_title(cid, parsed['title'][:200])
-
-    assistant_msg = cs.add_message(cid, 'assistant', parsed['text'], meta)
-
-    return jsonify({
-        'success': True,
-        'type': 'analysis',
-        'content': parsed['text'],
-        'chart': parsed['chart'],
-        'metadata': meta,
-        'suggestions': chart_service.followup_suggestions(cls, stage=stage, restaurant_id=conv.restaurant_id),
-        'message_id': user_msg.id,
-        'assistant_message_id': assistant_msg.id,
-    })
-
-
-def _foreign_restaurant_response(conv, user_msg_id):
-    """Respuesta directa (sin LLM, sin crédito) cuando piden datos de un ajeno."""
-    meta = {
-        'type': 'scope_guard',
-        'credits_used': 0,
-        'model': 'guard',
-    }
-    assistant_msg = cs.add_message(conv.id, 'assistant', _FOREIGN_RESTAURANT_MSG, meta)
-    return jsonify({
-        'success': True,
-        'type': 'scope_guard',
-        'content': _FOREIGN_RESTAURANT_MSG,
-        'metadata': meta,
-        'suggestions': chart_service.followup_suggestions(None),
-        'message_id': user_msg_id,
-        'assistant_message_id': assistant_msg.id,
-    })
+    return handle_post_message(cid, user, conv, data)
 
 
 @insights_bp.route('/api/onboarding', methods=['GET'])
@@ -799,25 +409,4 @@ def api_dismiss_event(eid):
     return jsonify({'success': True})
 
 
-def _empty_state_response(conv, kind, window_label=None):
-    """Responde con un estado vacío inteligente (sin LLM, sin crédito)."""
-    payload = data_service.build_empty_state(kind, window_label=window_label)
-    # Usamos el payload pero FORZAMOS type='empty_state'. El payload trae su
-    # propia clave 'type' (el kind, p.ej. 'no_data_window') que de lo contrario
-    # sobrescribiría la nuestra y rompería la detección en el historial.
-    meta = dict(payload)
-    meta['type'] = 'empty_state'
-    msg = cs.add_message(conv.id, 'assistant', payload['text'], meta)
-    return jsonify({
-        'success': True,
-        'is_empty_state': True,
-        'type': 'empty_state',
-        'empty_state': payload,
-        'message': {
-            'id': msg.id,
-            'role': 'assistant',
-            'content': payload['text'],
-            'metadata': meta,
-            'created_at': msg.created_at.isoformat() if msg.created_at else None,
-        },
-    })
+
