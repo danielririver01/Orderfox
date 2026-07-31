@@ -42,18 +42,21 @@ def _unlock(user_id: int, achievement_id: str) -> UserAchievement | None:
 
 
 def _credit_tokens(user_id: int, amount: int):
-    from app.models import AITokenTransaction, User
-    user = User.query.get(user_id)
-    if not user:
+    from app.models import AITokenTransaction, AITokenWallet
+    wallet = AITokenWallet.query.filter_by(user_id=user_id).first()
+    if not wallet:
+        current_app.logger.warning('Achievement tokens: wallet no encontrado para user=%d', user_id)
         return
-    user.ai_tokens = (user.ai_tokens or 0) + amount
+    wallet.extra_tokens = (wallet.extra_tokens or 0) + amount
     tx = AITokenTransaction(
         user_id=user_id,
         type='achievement',
         amount=amount,
+        source='achievement',
         description=f'Logro desbloqueado: +{amount} tokens',
     )
     db.session.add(tx)
+    db.session.commit()
 
 
 def evaluate(user_id: int, event_type: str, event_data: dict = None):
