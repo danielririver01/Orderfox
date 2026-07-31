@@ -1,0 +1,267 @@
+{% extends 'common/base.html' %}
+
+{% block title %}Logros – Velzia{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
+
+<div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
+
+  <!-- New Achievement Overlay -->
+  {% if new_achievement %}
+  {% if new_achievement.secret %}
+  <div id="newAchievementOverlay" class="fixed inset-0 z-[9999] flex items-center justify-center" style="background: radial-gradient(ellipse at center, rgba(88,28,135,0.4) 0%, rgba(0,0,0,0.85) 70%); animation: secretReveal 0.6s ease-out;">
+    <div id="secretRing" style="position:absolute;width:0;height:0;border-radius:50%;border:2px solid rgba(168,85,247,0.6);animation: shockwave 1.2s ease-out forwards;pointer-events:none;"></div>
+    <div class="relative text-center px-8 py-12 rounded-3xl" style="background: linear-gradient(180deg, #1a0a2e 0%, #0f0a1a 100%); border: 1px solid rgba(168,85,247,0.3); animation: secretPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both; max-width: 420px; width: 100%; box-shadow: 0 0 60px rgba(168,85,247,0.15), inset 0 0 80px rgba(168,85,247,0.05);">
+      <div id="secretGlow" style="position:absolute;top:-1px;left:-1px;right:-1px;bottom:-1px;border-radius:inherit;border:1px solid transparent;animation: borderPulse 2s ease-in-out infinite;pointer-events:none;"></div>
+      <div class="relative z-10">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style="background: rgba(168,85,247,0.15);">
+          <span class="material-symbols-outlined text-4xl" style="color: #c084fc; animation: iconGlow 2s ease-in-out infinite;">{{ new_achievement.icon }}</span>
+        </div>
+        <div id="secretLabel" class="text-[10px] font-black uppercase tracking-[0.25em] mb-3" style="color: #a855f7;">???</div>
+        <div id="secretName" class="text-2xl font-black tracking-[-0.03em] text-white mb-2">???</div>
+        <div id="secretDesc" class="text-sm mb-6" style="color: rgba(192,132,252,0.6);">???</div>
+        {% if new_achievement.reward_tokens %}
+        <div id="secretReward" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold mb-6" style="display:none;background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.3); color: #c084fc;">
+          <span class="material-symbols-outlined text-lg">token</span>
+          +{{ new_achievement.reward_tokens }} tokens IA
+        </div>
+        {% endif %}
+        <button id="secretBtn" onclick="closeAchievementOverlay()" class="w-full py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all" style="display:none; background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.2);">
+          Revelado
+        </button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var secretData = {
+      label: 'Logro secreto desbloqueado',
+      name: '{{ new_achievement.name|e }}',
+      desc: '{{ new_achievement.description|e }}',
+      hasReward: {{ 1 if new_achievement.reward_tokens else 0 }}
+    };
+    setTimeout(function() {
+      var label = document.getElementById('secretLabel');
+      var name = document.getElementById('secretName');
+      var desc = document.getElementById('secretDesc');
+      var reward = document.getElementById('secretReward');
+      var btn = document.getElementById('secretBtn');
+      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var glitchInterval = setInterval(function() {
+        if (!label) { clearInterval(glitchInterval); return; }
+        var glitched = '';
+        for (var i = 0; i < secretData.label.length; i++) {
+          glitched += Math.random() > 0.6 ? chars[Math.floor(Math.random() * chars.length)] : secretData.label[i];
+        }
+        label.textContent = glitched;
+        label.style.color = '#fff';
+        setTimeout(function() { if (label) { label.style.color = '#a855f7'; } }, 80);
+      }, 100);
+      setTimeout(function() {
+        clearInterval(glitchInterval);
+        label.textContent = secretData.label;
+        label.style.color = '#a855f7';
+        var revealName = '';
+        var ni = setInterval(function() {
+          revealName = secretData.name.slice(0, revealName.length + 1);
+          name.textContent = revealName + '???'.slice(0, Math.max(0, secretData.name.length - revealName.length));
+          if (revealName.length >= secretData.name.length) {
+            clearInterval(ni);
+            name.textContent = secretData.name;
+            desc.textContent = secretData.desc;
+            if (secretData.hasReward && reward) { reward.style.display = 'inline-flex'; }
+            if (btn) { btn.style.display = 'block'; }
+          }
+        }, 50);
+      }, 1800);
+    }, 600);
+    function closeAchievementOverlay() {
+      document.getElementById('newAchievementOverlay').remove();
+      launchSecretConfetti();
+    }
+    setTimeout(function() {
+      var overlay = document.getElementById('newAchievementOverlay');
+      if (overlay) overlay.remove();
+    }, 12000);
+    function launchSecretConfetti() {
+      var c = document.createElement('div');
+      c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999';
+      var colors = ['#a855f7','#c084fc','#e9d5ff','#facc15','#f97316'];
+      for (var i = 0; i < 100; i++) {
+        var p = document.createElement('div');
+        var isStar = Math.random() > 0.7;
+        p.style.cssText = 'position:absolute;width:'+(isStar?12:3+Math.random()*6)+'px;height:'+(isStar?12:3+Math.random()*6)+'px;top:-20px;left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+(isStar?'2px':'50%')+';'+(isStar?'clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);':'')+'animation:sc'+(i%4)+' '+(2+Math.random()*3)+'s ease-out forwards;animation-delay:'+Math.random()*0.8+'s;opacity:'+(isStar?1:0.8);
+        c.appendChild(p);
+      }
+      var shrapnel = document.createElement('div');
+      shrapnel.style.cssText = 'position:fixed;top:50%;left:50%;pointer-events:none;z-index:99999';
+      for (var i = 0; i < 12; i++) {
+        var s = document.createElement('div');
+        var angle = (i / 12) * 360;
+        s.style.cssText = 'position:absolute;width:4px;height:4px;background:#c084fc;border-radius:50%;animation:shrapnel 1s ease-out forwards;animation-delay:0.1s;transform:rotate('+angle+'deg) translateX(0);';
+        s.dataset.angle = angle;
+        shrapnel.appendChild(s);
+      }
+      c.appendChild(shrapnel);
+      var s = document.createElement('style');
+      s.textContent = '@keyframes sc0{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(720deg) scale(0.5);opacity:0}}@keyframes sc1{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(-540deg) scale(0.5);opacity:0}}@keyframes sc2{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(360deg) scale(0);opacity:0}}@keyframes sc3{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(100vh) scale(2);opacity:0}}@keyframes shrapnel{0%{transform:rotate(var(--angle)) translateX(0);opacity:1}100%{transform:rotate(var(--angle)) translateX(200px);opacity:0}}';
+      document.head.appendChild(s);
+      setTimeout(function() {
+        Array.from(shrapnel.children).forEach(function(el) {
+          var a = parseFloat(el.dataset.angle);
+          el.style.setProperty('--angle', a+'deg');
+          el.style.transform = 'rotate('+a+'deg) translateX(200px)';
+        });
+      }, 50);
+      document.body.appendChild(c);
+      setTimeout(function(){c.remove()}, 5000);
+    }
+  </script>
+  {% else %}
+  <div id="newAchievementOverlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" style="animation: fadeIn 0.3s ease-out;">
+    <div class="text-center px-8 py-12 rounded-3xl border border-white/10" style="background: linear-gradient(180deg, #1a1a1a 0%, #0f0f10 100%); animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); max-width: 400px; width: 100%;">
+      <div class="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-orange-500/10 animate-bounce">
+        <span class="material-symbols-outlined text-4xl text-orange-400">{{ new_achievement.icon }}</span>
+      </div>
+      <div class="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400 mb-3">Nuevo logro desbloqueado</div>
+      <div class="text-2xl font-black tracking-[-0.03em] text-white mb-2">{{ new_achievement.name }}</div>
+      <div class="text-sm text-zinc-400 mb-6">{{ new_achievement.description }}</div>
+      {% if new_achievement.reward_tokens %}
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-bold mb-6">
+        <span class="material-symbols-outlined text-lg">token</span>
+        +{{ new_achievement.reward_tokens }} tokens IA
+      </div>
+      {% endif %}
+      <button onclick="closeAchievementOverlay()" class="w-full py-3 rounded-xl font-black text-sm uppercase tracking-wider bg-white/10 text-white hover:bg-white/20 transition-all">
+        Continuar
+      </button>
+    </div>
+  </div>
+  <script>
+    function closeAchievementOverlay() {
+      document.getElementById('newAchievementOverlay').remove();
+      launchConfetti();
+    }
+    setTimeout(function() {
+      var overlay = document.getElementById('newAchievementOverlay');
+      if (overlay) overlay.remove();
+    }, 8000);
+    function launchConfetti() {
+      var c = document.createElement('div');
+      c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999';
+      var colors = ['#f97316','#22c55e','#3b82f6','#a855f7','#facc15'];
+      for (var i = 0; i < 60; i++) {
+        var p = document.createElement('div');
+        p.style.cssText = 'position:absolute;width:'+(4+Math.random()*8)+'px;height:'+(4+Math.random()*8)+'px;top:-10px;left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+(Math.random()>0.5?'50%':'2px')+';animation:cf'+(i%3)+' '+(2+Math.random()*2)+'s ease-out forwards;animation-delay:'+Math.random()*0.5+'s';
+        c.appendChild(p);
+      }
+      var s = document.createElement('style');
+      s.textContent = '@keyframes cf0{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}@keyframes cf1{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(-540deg);opacity:0}}@keyframes cf2{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(100vh) scale(1.5);opacity:0}}';
+      document.head.appendChild(s);
+      document.body.appendChild(c);
+      setTimeout(function(){c.remove()}, 5000);
+    }
+  </script>
+  {% endif %}
+  {% endif %}
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-black tracking-[-0.06em] text-white uppercase">Logros</h1>
+      <p class="text-zinc-500 text-sm font-medium mt-1">Todo lo que has construido en Velzia</p>
+    </div>
+  </div>
+
+  <!-- Summary Card -->
+  <div class="rounded-2xl border border-white/5 p-6 mb-8" style="background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(249,115,22,0.02));">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-orange-500/10">
+        <span class="material-symbols-outlined text-2xl text-orange-400">emoji_events</span>
+      </div>
+      <div>
+        <div class="text-3xl font-black text-white tracking-[-0.03em]">{{ profile.unlocked }}/{{ profile.total }}</div>
+        <div class="text-zinc-500 text-sm font-medium">logros desbloqueados</div>
+      </div>
+      <div class="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+        {% set pct = (profile.unlocked / profile.total * 100) | int %}
+        <span class="text-orange-400 text-sm font-black">{% if pct == 0 %}Sin comenzar{% else %}{{ pct }}%{% endif %}</span>
+        <span class="text-zinc-600 text-xs">completado</span>
+      </div>
+    </div>
+    <div class="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div class="h-full rounded-full" style="width:{{ (profile.unlocked / profile.total * 100) | int }}%; background: linear-gradient(90deg, #f97316, #ea580c); transition: width 0.5s;"></div>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  {% for cat_id, cat in profile.categories.items() %}
+  {% if cat.visible_count > 0 %}
+  <div class="mb-10">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="material-symbols-outlined text-lg text-orange-400">{{ cat.icon }}</span>
+      <h2 class="text-lg font-black text-white uppercase tracking-[-0.03em]">{{ cat.name }}</h2>
+      <span class="text-xs font-bold text-zinc-600 ml-auto">{{ cat.unlocked }}/{{ cat.total }}</span>
+    </div>
+
+    <div class="grid gap-3">
+      {% for ach in cat.achievement_list %}
+      {% if ach.earned or not ach.secret %}
+      <div class="rounded-xl border transition-all {% if ach.earned %}border-orange-500/20 bg-orange-500/5{% else %}border-white/5 bg-white/[0.02]{% endif %} p-4 flex items-center gap-4">
+        <!-- Icon -->
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {% if ach.earned %}bg-orange-500/10{% else %}bg-white/5{% endif %}">
+          <span class="material-symbols-outlined text-xl {% if ach.earned %}text-orange-400{% else %}text-zinc-600{% endif %}">{{ ach.icon }}</span>
+        </div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-white truncate">{{ ach.name }}</span>
+            {% if ach.secret and not ach.earned %}
+            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Secreto</span>
+            {% endif %}
+            {% if ach.earned %}
+            <span class="text-[10px] font-black text-orange-400 ml-auto">Obtenido</span>
+            {% endif %}
+          </div>
+          <div class="text-xs text-zinc-500 mt-0.5">
+            {% if ach.secret and not ach.earned %}
+            ???
+            {% else %}
+            {{ ach.description }}
+            {% endif %}
+          </div>
+          {% if ach.earned and ach.earned_at %}
+          <div class="text-[10px] text-zinc-600 mt-1">{{ ach.earned_at.strftime('%d/%m/%Y') }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Progress / Reward -->
+        <div class="text-right flex-shrink-0">
+          {% if ach.earned and ach.reward_tokens %}
+          <div class="text-[10px] font-bold text-orange-400">+{{ ach.reward_tokens }} tokens</div>
+          {% endif %}
+          {% if not ach.earned and ach.current_progress is defined and ach.required_progress > 1 %}
+          <div class="text-xs font-bold text-zinc-600">{{ ach.current_progress }}/{{ ach.required_progress }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+</div>
+
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes secretReveal { 0% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes secretPop { 0% { transform: scale(0.6) rotateY(15deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 1; } }
+  @keyframes shockwave { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 800px; height: 800px; opacity: 0; } }
+  @keyframes borderPulse { 0%, 100% { border-color: rgba(168,85,247,0.2); } 50% { border-color: rgba(168,85,247,0.6); } }
+  @keyframes iconGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.3)); } 50% { filter: drop-shadow(0 0 20px rgba(168,85,247,0.7)); } }
+</style>
+{% endblock %}
