@@ -1,7 +1,11 @@
 """
 SubscriptionService — Planes, MercadoPago preferences, webhooks y cupones de descuento.
 """
+import json
+import threading
 from datetime import datetime, timezone, timedelta
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 from flask import current_app
 from app import db
 from app.models import Restaurant, User, DiscountCoupon
@@ -13,6 +17,17 @@ from app.utils.subscription import (
     initialize_or_reset_token_wallet,
 )
 import mercadopago
+
+
+def _fire_n8n_reward(url: str, body: bytes, app):
+    """Envía el payload a n8n en segundo plano (fire-and-forget)."""
+    with app.app_context():
+        try:
+            req = Request(url, data=body, headers={'Content-Type': 'application/json'})
+            urlopen(req, timeout=5)
+            current_app.logger.info(f"N8N reward triggered: {body.decode()[:100]}")
+        except URLError as e:
+            current_app.logger.warning(f"N8N reward failed: {e.reason}")
 
 
 class SubscriptionService:
@@ -157,10 +172,63 @@ class SubscriptionService:
         coupon.applied_at = datetime.now(timezone.utc)
         db.session.commit()
 
+    @staticmethod
+    def _finalize_payment(restaurant, plan_type, payment_id, preference_id=None, n8n_payload=None):
+        """
+        Lógica compartida entre webhook y callback: consume el cupón reservado,
+        extiende la suscripción por la duración del plan y dispara n8n.
+        Idempotente por pago: el disparo a n8n ocurre solo la primera vez.
+        """
+        from app.models import AITokenTransaction
+
+        if AITokenTransaction.query.filter_by(
+            mp_payment_id=payment_id,
+            type='topup_plan',
+        ).first():
+            return
+
+        coupon = None
+        if preference_id:
+            coupon = DiscountCoupon.query.filter_by(
+                preference_id=preference_id,
+                status='reserved',
+            ).first()
+        if not coupon:
+            coupon = DiscountCoupon.query.filter_by(
+                restaurant_id=restaurant.id,
+                status='reserved',
+            ).order_by(DiscountCoupon.reserved_at.desc()).first()
+        if coupon:
+            SubscriptionService.apply_coupon(coupon, payment_id)
+
+        duration_days = get_plan_limits(plan_type or restaurant.plan_type).get('duration_days', 30)
+        now_utc = datetime.now(timezone.utc)
+        expires_at = restaurant.subscription_expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at and expires_at > now_utc:
+            restaurant.subscription_expires_at = expires_at + timedelta(days=duration_days)
+        else:
+            restaurant.subscription_expires_at = now_utc + timedelta(days=duration_days)
+        db.session.commit()
+
+        if n8n_payload and n8n_payload.get('url'):
+            body = json.dumps({
+                'external_reference': n8n_payload.get('external_reference'),
+                'user_id': n8n_payload.get('user_id'),
+                'payer': {'email': n8n_payload.get('payer_email', '')},
+                'streak_bonus_claim_id': n8n_payload.get('streak_bonus_claim_id'),
+            }).encode()
+            threading.Thread(
+                target=_fire_n8n_reward,
+                args=(n8n_payload['url'], body, current_app._get_current_object()),
+                daemon=True,
+            ).start()
+
     # ── Webhooks / Callbacks ────────────────────────────────
 
     @staticmethod
-    def process_payment_callback(status, restaurant_id, plan_type=None):
+    def process_payment_callback(status, restaurant_id, plan_type=None, payment_id=None, n8n_payload=None):
         """
         Process a payment callback from MercadoPago.
         Returns:
@@ -179,13 +247,19 @@ class SubscriptionService:
                 restaurant.plan_type = plan_type
             db.session.commit()
 
+            if payment_id:
+                SubscriptionService._finalize_payment(
+                    restaurant, plan_type or restaurant.plan_type, payment_id,
+                    n8n_payload=n8n_payload,
+                )
+
         sanitize_restaurant_limits(restaurant)
 
         user = User.query.filter_by(restaurant_id=restaurant.id).first()
         return restaurant, user, True
 
     @staticmethod
-    def process_mp_webhook_payment(payment_id, access_token):
+    def process_mp_webhook_payment(payment_id, access_token, n8n_payload=None):
         """
         Process a MercadoPago webhook payment notification (idempotent).
         Returns a dict with keys (restaurant_id, plan_type) if action was taken,
@@ -222,29 +296,14 @@ class SubscriptionService:
             restaurant.plan_type = plan_type
 
         # Apply discount coupon if one was reserved for this preference
-        preference_id = payment.get('preference_id')
-        if preference_id:
-            coupon = DiscountCoupon.query.filter_by(
-                preference_id=preference_id,
-                status='reserved',
-            ).first()
-            if coupon:
-                SubscriptionService.apply_coupon(coupon, payment_id)
-
-        # Subscription extension with anti-duplicate protection
-        now_utc = datetime.now(timezone.utc)
-        expires_at = restaurant.subscription_expires_at
-        if expires_at and expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-        if expires_at and (expires_at - now_utc).days > 35:
-            pass  # Bounce: already >35d remaining
-        else:
-            if expires_at and expires_at > now_utc:
-                restaurant.subscription_expires_at = expires_at + timedelta(days=30)
-            else:
-                restaurant.subscription_expires_at = now_utc + timedelta(days=30)
-            db.session.commit()
+        # y extiende la suscripción por la duración del plan (idempotente).
+        SubscriptionService._finalize_payment(
+            restaurant,
+            plan_type,
+            payment_id,
+            preference_id=payment.get('preference_id'),
+            n8n_payload=n8n_payload,
+        )
 
         # Apply limits + reset tokens
         try:

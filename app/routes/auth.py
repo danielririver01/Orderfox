@@ -319,8 +319,26 @@ def payment_callback():
         except (ValueError, IndexError):
             restaurant_id = None
 
+    # Payload n8n (Sorpresa Velzia) — lo dispara _finalize_payment una sola vez,
+    # gane el webhook o el callback la carrera por procesar el pago.
+    from app.models import User
+    from flask import current_app
+    n8n_url = current_app.config.get('N8N_REWARD_URL')
+    cb_user = User.query.filter_by(restaurant_id=restaurant_id).first() if restaurant_id else None
+    n8n_payload = None
+    if n8n_url and ext_ref and status == 'approved':
+        n8n_payload = {
+            'url': n8n_url,
+            'external_reference': ext_ref,
+            'user_id': cb_user.id if cb_user else None,
+            'payer_email': cb_user.email if cb_user else '',
+            'streak_bonus_claim_id': None,
+        }
+
     restaurant, user, _ = SubscriptionService.process_payment_callback(
-        status, restaurant_id, plan_type
+        status, restaurant_id, plan_type,
+        payment_id=request.args.get('payment_id'),
+        n8n_payload=n8n_payload,
     )
 
     if not restaurant:

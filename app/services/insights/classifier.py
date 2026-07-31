@@ -39,6 +39,38 @@ _DATA_KEYWORDS = (
     "informe", "predic", "tenden", "cuanto", "cuánto", "facturac",
 )
 
+# Preguntas de asistencia/capacidades que NO requieren datos del restaurante:
+# "qué puedes hacer", "dame consejos", "cómo empiezo", "configúrame X", etc.
+# En estos casos el LLM responde sin contexto de ventas (regla 11 del prompt),
+# así que NO deben ser bloqueadas por el guard de madurez de datos.
+_GENERAL_HELP_RE = re.compile(
+    r'(qué puedes hacer|que puedes hacer|qué puede hacer|que puede hacer|'
+    r'para qué sirves|para que sirves|qué hace copilot|que hace copilot|'
+    r'cuáles son tus funciones|cuales son tus funciones|qué funciones|'
+    r'que funciones|qué puedes analizar|que puedes analizar|qué analiza|'
+    r'que analiza|ayúdame|ayudame|dame consejos|dame tips|qué me recomiendas|'
+    r'que me recomiendas|qué consejos|que consejos|qué sugieres|que sugieres|'
+    r'qué puedo hacer|que puedo hacer|cómo puedo empezar|cómo empezar|'
+    r'como puedo empezar|como empezar|cómo empezar a vender|como empezar a '
+    r'vender|para empezar a vender|configurar mi restaurante|organizar mi '
+    r'menú|organizar mi menu|cómo funciona|cómo funciono|como funciona|'
+    r'cómo me ayudas|como me ayudas|qué es copilot|que es copilot|'
+    r'para qué sirve copilot|para que sirve copilot|qué más sabes hacer|'
+    r'que mas sabes hacer|qué sabes hacer|que sabes hacer|'
+    r'qué puedes hacer por mi|que puedes hacer por mi)',
+    re.IGNORECASE,
+)
+
+
+def is_general_assistance(text):
+    """True si el mensaje pide ayuda/capacidades y NO requiere datos del
+    restaurante. Estas preguntas el LLM las responde sin contexto de ventas,
+    así que deben saltarse los guards de madurez de datos (nivel 0/1) y de
+    ventas (has_sales)."""
+    if not text:
+        return False
+    return bool(_GENERAL_HELP_RE.search(text.lower()))
+
 # Sustantivos comunes que NO son nombre de restaurante (para el patrón "de <Nombre>").
 _COMMON_NOUNS = {
     "ayer", "hoy", "mes", "semana", "dia", "día", "año", "ano", "enero",
@@ -114,6 +146,24 @@ _DATA_VERB_RE = re.compile(
 )
 
 
+def _is_common_noun(name):
+    """True si el nombre capturado es un sustantivo común (no un restaurante).
+
+    Compara también contra el singular de plurales regulares: "reportes" →
+    "reporte", "ventas" → "venta", "pedidos" → "pedido", etc. Sin esto, frases
+    como "qué tipo de reportes" disparaban el guard de alcance porque "reportes"
+    (plural) no estaba en _COMMON_NOUNS.
+    """
+    lowered = name.lower()
+    if lowered in _COMMON_NOUNS:
+        return True
+    if lowered.endswith('es') and lowered[:-2] in _COMMON_NOUNS:
+        return True
+    if lowered.endswith('s') and lowered[:-1] in _COMMON_NOUNS:
+        return True
+    return False
+
+
 def is_foreign_restaurant_query(text, restaurant_name=None, restaurant_slug=None):
     """True si el usuario pide DATOS/análisis de un restaurante AJENO.
 
@@ -167,7 +217,7 @@ def is_foreign_restaurant_query(text, restaurant_name=None, restaurant_slug=None
     # 2) Trigger fuerte (restaurante/local/negocio + <Nombre>).
     for m in _STRONG_TRIGGER_RE.finditer(text):
         name = m.group(1).lower()
-        if name in _COMMON_NOUNS or len(name) <= 1:
+        if _is_common_noun(name) or len(name) <= 1:
             continue
         if name in own_ids:  # Menciona su propio negocio → permitir
             continue
@@ -176,7 +226,7 @@ def is_foreign_restaurant_query(text, restaurant_name=None, restaurant_slug=None
     # 3) Trigger débil (de/del/de la + <Nombre>, min 4 caracteres).
     for m in _WEAK_TRIGGER_RE.finditer(text):
         name = m.group(1).lower()
-        if name in _COMMON_NOUNS or len(name) <= 1:
+        if _is_common_noun(name) or len(name) <= 1:
             continue
         if name in own_ids:
             continue
@@ -186,7 +236,7 @@ def is_foreign_restaurant_query(text, restaurant_name=None, restaurant_slug=None
     #    "Felicia vendió mucho", "El Corral facturó 500", etc.
     for m in _DATA_VERB_RE.finditer(text):
         name = m.group(1).lower()
-        if name in _COMMON_NOUNS or len(name) <= 1:
+        if _is_common_noun(name) or len(name) <= 1:
             continue
         if name in own_ids:
             continue

@@ -21,6 +21,8 @@
 
 <body>
 
+    {% set scanner_available = config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
+
     <!-- Ambient -->
     <div class="plans-ambient">
         <div class="plans-orb plans-orb--1"></div>
@@ -113,7 +115,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>50 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</span>
                     </li>
                 </ul>
 
@@ -159,7 +161,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>250 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</span>
                     </li>
                 </ul>
 
@@ -204,7 +206,7 @@
                             <span class="material-symbols-outlined" style="color:#fbbf24;">auto_awesome</span>
                             <strong>800 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
+                        <span style="font-size:0.62rem; color:#a8968a; font-weight:600; padding-left:1.7rem;">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</span>
                     </li>
                 </ul>
 
@@ -251,7 +253,7 @@
                             <span class="material-symbols-outlined" style="color:#a78bfa;">auto_awesome</span>
                             <strong style="color:#c4b5fd;">3000 créditos IA incluidos</strong>
                         </span>
-                        <span style="font-size:0.62rem; color:#b3a6d9; font-weight:600; padding-left:1.7rem;">Para Copilot VZ y Escanear tus compras</span>
+                        <span style="font-size:0.62rem; color:#b3a6d9; font-weight:600; padding-left:1.7rem;">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</span>
                     </li>
                 </ul>
 

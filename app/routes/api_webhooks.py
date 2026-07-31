@@ -6,10 +6,6 @@ reenvíos maliciosos y race conditions.
 """
 
 import logging
-import json
-import threading
-from urllib.request import Request, urlopen
-from urllib.error import URLError
 
 from flask import Blueprint, request, jsonify, current_app
 
@@ -123,17 +119,6 @@ def clerk_webhook():
 
     logger.debug(f"CLERK WEBHOOK: Evento ignorado {event_type}")
     return jsonify({'success': True, 'status': 'ignored'}), 200
-
-
-def _fire_n8n_reward(url: str, body: bytes, app):
-    """Envía el payload a n8n en segundo plano (fire-and-forget)."""
-    with app.app_context():
-        try:
-            req = Request(url, data=body, headers={'Content-Type': 'application/json'})
-            urlopen(req, timeout=5)
-            logger.info(f"N8N reward triggered: {body.decode()[:100]}")
-        except URLError as e:
-            logger.warning(f"N8N reward failed: {e.reason}")
 
 
 def _payment_already_processed(data_id: str) -> bool:
@@ -254,19 +239,71 @@ def mercadopago_webhook():
                 except Exception:
                     logger.warning("Error detectando renovación", exc_info=True)
 
+                # ── Sistema de Fidelización Velzia (Streak) ──
+                # Se procesa ANTES del pago para que el payload n8n llegue completo.
+                from app.models import User, RewardClaim
+                from app.services.streak_service import bump_streak, reset_streak
+                from app.services.reward_service import generate_streak_reward
+                u = None
+                restaurant_id = int(rid_str) if rid_str else None
+                streak_bonus_claim_id = None
+                try:
+                    u = User.query.filter_by(restaurant_id=restaurant_id).first()
+                    r = db.session.get(Restaurant, restaurant_id)
+                    if r and not was_renewal and r.subscription_expires_at:
+                        expires = r.subscription_expires_at
+                        if expires.tzinfo is None:
+                            expires = expires.replace(tzinfo=timezone.utc)
+                        if expires < datetime.now(timezone.utc):
+                            reset_streak(restaurant_id)
+
+                    streak_result = bump_streak(restaurant_id, payment_id)
+                    if not streak_result.get('duplicate') and streak_result.get('bonus_tier') and u:
+                        bonus = generate_streak_reward(streak_result['bonus_tier'])
+                        if bonus:
+                            bonus_claim = RewardClaim(
+                                user_id=u.id,
+                                restaurant_id=restaurant_id,
+                                short_code=__import__('secrets').token_urlsafe(16),
+                                token=str(__import__('uuid').uuid4()),
+                                plan_key=r.plan_type if r else 'emprendedor',
+                                rarity=bonus['rarity'],
+                                reward_type=bonus['type'],
+                                reward_value=bonus.get('value'),
+                                reward_label=bonus['label'],
+                                status='pending',
+                            )
+                            db.session.add(bonus_claim)
+                            db.session.commit()
+                            streak_bonus_claim_id = bonus_claim.id
+                            logger.info(
+                                'Streak bonus: id=%d tier=%d label=%s para user=%d',
+                                bonus_claim.id, streak_result['bonus_tier'], bonus['label'], u.id,
+                            )
+                except Exception:
+                    logger.warning("Error procesando streak", exc_info=True)
+
                 # ── Subscription activation flow ──
+                n8n_url = current_app.config.get('N8N_REWARD_URL')
+                n8n_payload = None
+                if n8n_url and external_ref:
+                    n8n_payload = {
+                        'url': n8n_url,
+                        'external_reference': external_ref,
+                        'user_id': u.id if u else None,
+                        'payer_email': payment.get('payer', {}).get('email', ''),
+                        'streak_bonus_claim_id': streak_bonus_claim_id,
+                    }
                 result = SubscriptionService.process_mp_webhook_payment(
-                    payment_id, access_token
+                    payment_id, access_token, n8n_payload=n8n_payload
                 )
                 if result:
                     logger.info(
                         f"WEBHOOK MP: Restaurante {result.get('restaurant_id')} activado"
                     )
                     # Evaluar logros
-                    from app.models import User
                     from app.services.achievement_engine import evaluate as eval_achievement
                     try:
-                        u = User.query.filter_by(restaurant_id=result['restaurant_id']).first()
                         if u:
                             if was_renewal:
                                 eval_achievement(u.id, 'subscription_renewed', {'months_active': months_active})
@@ -275,62 +312,6 @@ def mercadopago_webhook():
                     except Exception:
                         logger.warning("Error evaluando logros de suscripción", exc_info=True)
 
-                    # ── Sistema de Fidelización Velzia (Streak) ──
-                    from app.services.streak_service import bump_streak, reset_streak
-                    from app.services.reward_service import generate_streak_reward
-                    from app.models import RewardClaim
-                    restaurant_id = result.get('restaurant_id')
-                    streak_bonus_claim_id = None
-                    try:
-                        r = db.session.get(Restaurant, restaurant_id)
-                        if r and not was_renewal and r.subscription_expires_at:
-                            expires = r.subscription_expires_at
-                            if expires.tzinfo is None:
-                                expires = expires.replace(tzinfo=timezone.utc)
-                            if expires < datetime.now(timezone.utc):
-                                reset_streak(restaurant_id)
-
-                        streak_result = bump_streak(restaurant_id, payment_id)
-                        if not streak_result.get('duplicate') and streak_result.get('bonus_tier') and u:
-                            bonus = generate_streak_reward(streak_result['bonus_tier'])
-                            if bonus:
-                                bonus_claim = RewardClaim(
-                                    user_id=u.id,
-                                    restaurant_id=restaurant_id,
-                                    short_code=__import__('secrets').token_urlsafe(16),
-                                    token=str(__import__('uuid').uuid4()),
-                                    plan_key=r.plan_type if r else 'emprendedor',
-                                    rarity=bonus['rarity'],
-                                    reward_type=bonus['type'],
-                                    reward_value=bonus.get('value'),
-                                    reward_label=bonus['label'],
-                                    status='pending',
-                                )
-                                db.session.add(bonus_claim)
-                                db.session.commit()
-                                streak_bonus_claim_id = bonus_claim.id
-                                logger.info(
-                                    'Streak bonus: id=%d tier=%d label=%s para user=%d',
-                                    bonus_claim.id, streak_result['bonus_tier'], bonus['label'], u.id,
-                                )
-                    except Exception:
-                        logger.warning("Error procesando streak", exc_info=True)
-
-                    # Disparar Sorpresa Velzia en segundo plano
-                    n8n_url = current_app.config.get('N8N_REWARD_URL')
-                    if n8n_url and external_ref:
-                        payer_email = payment.get('payer', {}).get('email', '')
-                        body = json.dumps({
-                            'external_reference': external_ref,
-                            'user_id': u.id if u else None,
-                            'payer': {'email': payer_email or ''},
-                            'streak_bonus_claim_id': streak_bonus_claim_id,
-                        }).encode()
-                        threading.Thread(
-                            target=_fire_n8n_reward,
-                            args=(n8n_url, body, current_app._get_current_object()),
-                            daemon=True
-                        ).start()
                     return jsonify({
                         'success': True,
                         'status': 'processed',

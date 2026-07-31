@@ -53,6 +53,7 @@ window.addEventListener('load', async function () {
                 if (result.success && result.redirect_url) {
                     if (result.is_new_user) {
                         const signInDiv = document.getElementById('clerk-signin');
+                        const scannerSuffix = (window.VELZIA_CONFIG && window.VELZIA_CONFIG.scanner_available) ? ' y Escanear tus compras' : '';
                         signInDiv.innerHTML = `
                             <div class="flex flex-col items-center justify-center py-12 px-6">
                                 <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-green-500/30">
@@ -61,7 +62,7 @@ window.addEventListener('load', async function () {
                                     </svg>
                                 </div>
                                 <p class="text-sm font-bold text-green-400 text-center mb-2">¡Bienvenido!</p>
-                                <p class="text-xs text-gray-500 text-center mb-4">Tu plan de Prueba Premium (90 días) está activado con 50 créditos IA para Copilot VZ y Escanear tus compras</p>
+                                <p class="text-xs text-gray-500 text-center mb-4">Tu plan de Prueba Premium (90 días) está activado con 50 créditos IA para Copilot VZ${scannerSuffix}</p>
                                 <p class="text-xs text-gray-600 text-center">Redirigiendo...</p>
                             </div>
                         `;

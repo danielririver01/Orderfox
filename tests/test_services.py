@@ -428,3 +428,207 @@ class TestDiscountCoupon:
             'emprendedor', sample_restaurant.id, 'https://velzia.co'
         )
         assert coupon.id == c1.id
+
+    def test_finalize_payment_consumes_coupon_and_extends_days(
+        self, db, sample_restaurant, sample_user, sample_coupon
+    ):
+        from app.models import AITokenTransaction
+
+        SubscriptionService.reserve_coupon(sample_coupon, 'pref_final')
+        db.session.commit()
+
+        base_expires = datetime.now(timezone.utc) + timedelta(days=10)
+        sample_restaurant.subscription_expires_at = base_expires
+        db.session.commit()
+
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_final', preference_id='pref_final'
+        )
+
+        c = db.session.get(DiscountCoupon, sample_coupon.id)
+        assert c.status == 'applied'
+        assert c.applied_to_payment_id == 'payment_final'
+
+        expected = base_expires + timedelta(days=30)
+        assert abs((sample_restaurant.subscription_expires_at - expected).total_seconds()) < 5
+
+        assert AITokenTransaction.query.filter_by(
+            mp_payment_id='payment_final', type='topup_plan'
+        ).first() is None
+
+    def test_finalize_payment_idempotent(self, db, sample_restaurant, sample_user, sample_coupon):
+        from app.models import AITokenTransaction
+
+        SubscriptionService.reserve_coupon(sample_coupon, 'pref_idem')
+        db.session.commit()
+
+        tx = AITokenTransaction(
+            user_id=sample_user.id,
+            type='topup_plan',
+            amount=250,
+            source='plan_renewal',
+            mp_payment_id='payment_idem',
+            description='ya acreditado',
+        )
+        db.session.add(tx)
+        db.session.commit()
+
+        base_expires = datetime.now(timezone.utc) + timedelta(days=10)
+        sample_restaurant.subscription_expires_at = base_expires
+        db.session.commit()
+
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_idem', preference_id='pref_idem'
+        )
+
+        c = db.session.get(DiscountCoupon, sample_coupon.id)
+        assert c.status == 'reserved'
+        assert abs((sample_restaurant.subscription_expires_at - base_expires).total_seconds()) < 5
+
+    def test_finalize_payment_fallback_reserved_coupon(
+        self, db, sample_restaurant, sample_coupon
+    ):
+        SubscriptionService.reserve_coupon(sample_coupon, 'pref_other')
+        db.session.commit()
+
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_fb', preference_id=None
+        )
+
+        c = db.session.get(DiscountCoupon, sample_coupon.id)
+        assert c.status == 'applied'
+        assert c.applied_to_payment_id == 'payment_fb'
+
+    def test_finalize_payment_fires_n8n_once(self, db, sample_restaurant, sample_coupon, monkeypatch):
+        from app.services import subscription_service
+
+        fired = []
+        def fake_thread(target, args, daemon=False):
+            fired.append((target, args))
+            class _Fake:
+                def start(self):
+                    return None
+            return _Fake()
+        monkeypatch.setattr(subscription_service.threading, 'Thread', fake_thread)
+
+        SubscriptionService.reserve_coupon(sample_coupon, 'pref_n8n')
+        db.session.commit()
+
+        payload = {
+            'url': 'http://n8n:5678/webhook/reward_immediate',
+            'external_reference': '1:emprendedor',
+            'user_id': 99,
+            'payer_email': 'cliente@test.com',
+            'streak_bonus_claim_id': None,
+        }
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_n8n',
+            preference_id='pref_n8n', n8n_payload=payload,
+        )
+        assert len(fired) == 1
+        target, args = fired[0]
+        assert target == subscription_service._fire_n8n_reward
+        assert args[0] == 'http://n8n:5678/webhook/reward_immediate'
+        body = args[1].decode()
+        assert '1:emprendedor' in body
+        assert 'cliente@test.com' in body
+
+        # Duplicado: tras crear la tx (como hace initialize_or_reset_token_wallet
+        # en el flujo real), no debe disparar de nuevo
+        from app.models import AITokenTransaction
+        db.session.add(AITokenTransaction(
+            user_id=1,
+            type='topup_plan',
+            amount=250,
+            source='plan_renewal',
+            mp_payment_id='payment_n8n',
+            description='ya acreditado',
+        ))
+        db.session.commit()
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_n8n',
+            preference_id='pref_n8n', n8n_payload=payload,
+        )
+        assert len(fired) == 1
+
+    def test_finalize_payment_no_n8n_without_payload(self, db, sample_restaurant, monkeypatch):
+        from app.services import subscription_service
+
+        fired = []
+        def fake_thread(target, args, daemon=False):
+            fired.append(target)
+        monkeypatch.setattr(subscription_service.threading, 'Thread', fake_thread)
+
+        SubscriptionService._finalize_payment(
+            sample_restaurant, 'emprendedor', 'payment_no_n8n', n8n_payload=None
+        )
+        assert fired == []
+
+
+class TestClassifier:
+    """Clasificador híbrido de Copilot VZ."""
+
+    def test_general_assistance_true(self):
+        from app.services.insights import classifier
+        for q in [
+            '¿Qué puedes hacer por mí?',
+            '¿Qué puede hacer Copilot?',
+            'Dame consejos para empezar a vender',
+            '¿Cómo puedo empezar a vender más?',
+            'Configurar mi restaurante',
+            'Organizar mi menú',
+            '¿Qué analizas de mi negocio?',
+            'Ayúdame a configurar mi restaurante',
+        ]:
+            assert classifier.is_general_assistance(q), f'debería ser general: {q}'
+
+    def test_general_assistance_false_for_data_queries(self):
+        from app.services.insights import classifier
+        for q in [
+            '¿Cuál es mi producto más vendido?',
+            'Analiza mis ventas del último mes',
+            '¿Qué puedo mejorar esta semana?',
+            '¿Cuánto vendí hoy?',
+            'Compara mis ventas de este mes con el anterior',
+        ]:
+            assert not classifier.is_general_assistance(q), f'no debería ser general: {q}'
+
+    def test_quick_patterns_still_classify_quick(self):
+        from app.services.insights import classifier
+        for q in ['¿Cuánto vendí hoy?', '¿Cuál es mi ticket promedio?', 'Analiza mis ventas del mes']:
+            cls = classifier.classify(q)
+            assert cls['level'] == 'quick', f'{q} -> {cls}'
+
+    def test_general_assistance_falls_to_analysis(self):
+        from app.services.insights import classifier
+        cls = classifier.classify('¿Qué puedes hacer por mí?')
+        assert cls['level'] == 'analysis'
+        assert cls['intent'] == 'general_analysis'
+
+    def test_scope_guard_no_false_positive_on_reportes_plural(self):
+        """'tipo de reportes' no debe disparar el guard de alcance (falso
+        positivo por el plural no incluido en _COMMON_NOUNS)."""
+        from app.services.insights import classifier
+        for q in [
+            'qué tipo de reportes vas a poder ver una vez tengas datos?',
+            'qué reportes puedo ver de mis ventas?',
+            'dame un informe de mis pedidos de la semana',
+        ]:
+            assert not classifier.is_foreign_restaurant_query(
+                q, 'Felicia', 'felicia'
+            ), f'no debería ser ajeno: {q}'
+
+    def test_scope_guard_still_detects_foreign_restaurants(self):
+        from app.services.insights import classifier
+        assert classifier.is_foreign_restaurant_query(
+            'cómo le fue a Mcdonalds en ventas?', 'Felicia', 'felicia'
+        )
+        assert classifier.is_foreign_restaurant_query(
+            'analiza las ventas del restaurante Brasa', 'Felicia', 'felicia'
+        )
+        assert classifier.is_foreign_restaurant_query(
+            'Felicia vendió mucho', 'Otro Rest', 'otro-rest'
+        )
+        assert not classifier.is_foreign_restaurant_query(
+            'analiza las ventas del restaurante Felicia', 'Felicia', 'felicia'
+        )

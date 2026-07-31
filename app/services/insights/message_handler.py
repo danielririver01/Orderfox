@@ -138,11 +138,16 @@ def handle_post_message(cid, user, conv, data):
     cls = classifier.classify(content)
 
     # ── Etapa de madurez de datos ──
+    # Solo se bloquea cuando el mensaje REQUIERE datos del restaurante.
+    # Preguntas generales ("¿qué puedes hacer por mí?", consejos, ayuda de
+    # configuración) pasan al agente aunque no haya ventas todavía.
+    general_assist = classifier.is_general_assistance(content)
     stage = data_service.get_data_stage(conv.restaurant_id)
-    if stage['level'] == 0:
-        return _empty_state_response(conv, 'no_catalog')
-    if stage['level'] == 1:
-        return _empty_state_response(conv, 'no_sales_yet')
+    if not general_assist:
+        if stage['level'] == 0:
+            return _empty_state_response(conv, 'no_catalog')
+        if stage['level'] == 1:
+            return _empty_state_response(conv, 'no_sales_yet')
 
     # ── Nivel 1: consulta rápida ──
     if cls['level'] == 'quick':
@@ -182,7 +187,7 @@ def handle_post_message(cid, user, conv, data):
         })
 
     # ── Nivel 2: análisis IA ──
-    if not data_service.has_sales(conv.restaurant_id, cls['window']):
+    if not general_assist and not data_service.has_sales(conv.restaurant_id, cls['window']):
         label = data_service.window_label_from_days(cls['window'])
         kind = 'chart_empty' if re.search(
             r'gr.ffic|chart|visualiz', content.lower(),
