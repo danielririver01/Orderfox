@@ -402,9 +402,12 @@ def generate_reward():
     if not plan or not user_id or not restaurant_id:
         return jsonify({'success': False, 'error': 'missing plan, user_id or restaurant_id'}), 400
 
-    valid_plans = ('trial', 'emprendedor', 'crecimiento', 'elite')
+    valid_plans = ('emprendedor', 'crecimiento', 'elite')
     if plan not in valid_plans:
-        return jsonify({'success': False, 'error': f'plan must be one of {valid_plans}'}), 400
+        return jsonify({
+            'success': False,
+            'error': f'plan must be one of {valid_plans} (trial no recibe recompensas)'
+        }), 400
 
     from app.services.reward_service import generate_reward as gen
     reward_data = gen(plan, last_reward_label)

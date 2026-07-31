@@ -8,16 +8,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Literal
 
-PlanKey = Literal['emprendedor', 'crecimiento', 'elite', 'trial']
+PlanKey = Literal['emprendedor', 'crecimiento', 'elite']
 
 REWARD_POOL: dict[PlanKey, dict[str, list[dict]]] = {
-    'trial': {
-        'common': [
-            {'type': 'badge', 'value': 'trial_explorer', 'label': 'Insignia Explorador Velzia'},
-            {'type': 'badge', 'value': 'trial_pioneer', 'label': 'Insignia Pionero'},
-            {'type': 'badge', 'value': 'trial_taster', 'label': 'Insignia Catador'},
-        ],
-    },
     'emprendedor': {
         'common': [
             {'type': 'ai_tokens', 'value': 10, 'label': '10 tokens IA'},
@@ -156,9 +149,8 @@ def generate_reward(
     force_rarity: Optional[str] = None,
 ) -> dict | None:
     if plan == 'trial':
-        rarity = 'common'
-    else:
-        rarity = force_rarity or _roll_rarity()
+        return None
+    rarity = force_rarity or _roll_rarity()
     reward = _pick_reward(plan, rarity, last_reward_label)
     raw_value = reward.get('value')
     value = raw_value if isinstance(raw_value, (int, float)) else None
