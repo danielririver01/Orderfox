@@ -12,6 +12,22 @@ from app.services.public_menu_service import PublicMenuService
 from app.services.qr_service import QRService
 
 
+def _stub_background_thread(monkeypatch):
+    """Evita que _finalize_payment lance un thread real que pelee por el SQLite
+    de los tests (el daemon de _deliver_sorpresa_velzia podía dejar la tabla
+    lockeada durante el teardown de `db`)."""
+    from app.services import subscription_service
+
+    class _FakeThread:
+        def start(self):
+            return None
+
+    monkeypatch.setattr(
+        subscription_service.threading, 'Thread',
+        lambda *a, **k: _FakeThread(),
+    )
+
+
 class TestAuthService:
     def test_authenticate_success(self, sample_user):
         user, error = AuthService.authenticate('admin@test.com', 'TestPass123')
@@ -430,10 +446,11 @@ class TestDiscountCoupon:
         assert coupon.id == c1.id
 
     def test_finalize_payment_consumes_coupon_and_extends_days(
-        self, db, sample_restaurant, sample_user, sample_coupon
+        self, db, sample_restaurant, sample_user, sample_coupon, monkeypatch
     ):
         from app.models import AITokenTransaction
 
+        _stub_background_thread(monkeypatch)
         SubscriptionService.reserve_coupon(sample_coupon, 'pref_final')
         db.session.commit()
 
@@ -456,9 +473,10 @@ class TestDiscountCoupon:
             mp_payment_id='payment_final', type='topup_plan'
         ).first() is None
 
-    def test_finalize_payment_idempotent(self, db, sample_restaurant, sample_user, sample_coupon):
+    def test_finalize_payment_idempotent(self, db, sample_restaurant, sample_user, sample_coupon, monkeypatch):
         from app.models import AITokenTransaction
 
+        _stub_background_thread(monkeypatch)
         SubscriptionService.reserve_coupon(sample_coupon, 'pref_idem')
         db.session.commit()
 
@@ -486,8 +504,9 @@ class TestDiscountCoupon:
         assert abs((sample_restaurant.subscription_expires_at - base_expires).total_seconds()) < 5
 
     def test_finalize_payment_fallback_reserved_coupon(
-        self, db, sample_restaurant, sample_coupon
+        self, db, sample_restaurant, sample_coupon, monkeypatch
     ):
+        _stub_background_thread(monkeypatch)
         SubscriptionService.reserve_coupon(sample_coupon, 'pref_other')
         db.session.commit()
 
@@ -499,7 +518,7 @@ class TestDiscountCoupon:
         assert c.status == 'applied'
         assert c.applied_to_payment_id == 'payment_fb'
 
-    def test_finalize_payment_fires_n8n_once(self, db, sample_restaurant, sample_coupon, monkeypatch):
+    def test_finalize_payment_delivers_sorpresa_once(self, db, sample_restaurant, sample_coupon, monkeypatch):
         from app.services import subscription_service
 
         fired = []
@@ -511,27 +530,17 @@ class TestDiscountCoupon:
             return _Fake()
         monkeypatch.setattr(subscription_service.threading, 'Thread', fake_thread)
 
-        SubscriptionService.reserve_coupon(sample_coupon, 'pref_n8n')
+        SubscriptionService.reserve_coupon(sample_coupon, 'pref_sorpresa')
         db.session.commit()
 
-        payload = {
-            'url': 'http://n8n:5678/webhook/reward_immediate',
-            'external_reference': '1:emprendedor',
-            'user_id': 99,
-            'payer_email': 'cliente@test.com',
-            'streak_bonus_claim_id': None,
-        }
         SubscriptionService._finalize_payment(
-            sample_restaurant, 'emprendedor', 'payment_n8n',
-            preference_id='pref_n8n', n8n_payload=payload,
+            sample_restaurant, 'emprendedor', 'payment_sorpresa', preference_id='pref_sorpresa'
         )
         assert len(fired) == 1
         target, args = fired[0]
-        assert target == subscription_service._fire_n8n_reward
-        assert args[0] == 'http://n8n:5678/webhook/reward_immediate'
-        body = args[1].decode()
-        assert '1:emprendedor' in body
-        assert 'cliente@test.com' in body
+        assert target == subscription_service._deliver_sorpresa_velzia
+        assert args[0] == sample_restaurant.id
+        assert args[1] == 'emprendedor'
 
         # Duplicado: tras crear la tx (como hace initialize_or_reset_token_wallet
         # en el flujo real), no debe disparar de nuevo
@@ -541,28 +550,14 @@ class TestDiscountCoupon:
             type='topup_plan',
             amount=250,
             source='plan_renewal',
-            mp_payment_id='payment_n8n',
+            mp_payment_id='payment_sorpresa',
             description='ya acreditado',
         ))
         db.session.commit()
         SubscriptionService._finalize_payment(
-            sample_restaurant, 'emprendedor', 'payment_n8n',
-            preference_id='pref_n8n', n8n_payload=payload,
+            sample_restaurant, 'emprendedor', 'payment_sorpresa', preference_id='pref_sorpresa'
         )
         assert len(fired) == 1
-
-    def test_finalize_payment_no_n8n_without_payload(self, db, sample_restaurant, monkeypatch):
-        from app.services import subscription_service
-
-        fired = []
-        def fake_thread(target, args, daemon=False):
-            fired.append(target)
-        monkeypatch.setattr(subscription_service.threading, 'Thread', fake_thread)
-
-        SubscriptionService._finalize_payment(
-            sample_restaurant, 'emprendedor', 'payment_no_n8n', n8n_payload=None
-        )
-        assert fired == []
 
 
 class TestClassifier:
@@ -632,3 +627,23 @@ class TestClassifier:
         assert not classifier.is_foreign_restaurant_query(
             'analiza las ventas del restaurante Felicia', 'Felicia', 'felicia'
         )
+
+
+class TestRewardService:
+    def test_create_reward_claim(self, db, sample_user, sample_restaurant):
+        from app.services.reward_service import create_reward_claim
+        from app.models import RewardClaim
+
+        result = create_reward_claim('emprendedor', sample_user.id, sample_restaurant.id)
+        assert result is not None
+        claim = RewardClaim.query.get(result['id'])
+        assert claim is not None
+        assert claim.status == 'pending'
+        assert claim.plan_key == 'emprendedor'
+        assert claim.rarity in ('common', 'uncommon', 'rare')
+        assert result['short_code'] in result['claim_url']
+        assert 'VELZIA' in result['email_html']
+
+    def test_create_reward_claim_trial_returns_none(self, db, sample_user, sample_restaurant):
+        from app.services.reward_service import create_reward_claim
+        assert create_reward_claim('trial', sample_user.id, sample_restaurant.id) is None

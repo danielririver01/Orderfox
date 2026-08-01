@@ -21,9 +21,21 @@ class Config:
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Pool acotado: hosts free-tier (p.ej. max_user_connections=10) se saturan
+    # con el default de SQLAlchemy (pool_size=5 + max_overflow=10 por proceso).
+    # Las opciones de QueuePool solo aplican a motores con pool (MySQL/Postgres),
+    # no a sqlite:// (StaticPool) que usa la suite de tests.
+    _is_sqlite = (SQLALCHEMY_DATABASE_URI or '').startswith('sqlite')
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 280,
         "pool_pre_ping": True,
+        **(
+            {} if _is_sqlite else {
+                "pool_size": int(os.environ.get('DB_POOL_SIZE', '2')),
+                "max_overflow": int(os.environ.get('DB_MAX_OVERFLOW', '1')),
+                "pool_timeout": int(os.environ.get('DB_POOL_TIMEOUT', '30')),
+            }
+        ),
     }
     
     # Mercado Pago
@@ -75,8 +87,13 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = False  # True en producción con HTTPS
 
-    # n8n Reward Workflow
-    N8N_REWARD_URL = os.environ.get('N8N_REWARD_URL') or 'http://n8n:5678/webhook/reward_immediate'
+    # Correo (Gmail SMTP) — reemplaza el envío que hacía n8n
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
+    MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes', 'on')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or os.environ.get('MAIL_USERNAME')
 
     # Sentry (error tracking)
     SENTRY_DSN = os.environ.get('SENTRY_DSN')

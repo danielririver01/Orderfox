@@ -1,11 +1,8 @@
 """
 SubscriptionService — Planes, MercadoPago preferences, webhooks y cupones de descuento.
 """
-import json
 import threading
 from datetime import datetime, timezone, timedelta
-from urllib.request import Request, urlopen
-from urllib.error import URLError
 from flask import current_app
 from app import db
 from app.models import Restaurant, User, DiscountCoupon
@@ -19,15 +16,39 @@ from app.utils.subscription import (
 import mercadopago
 
 
-def _fire_n8n_reward(url: str, body: bytes, app):
-    """Envía el payload a n8n en segundo plano (fire-and-forget)."""
+def _deliver_sorpresa_velzia(restaurant_id: int, plan: str, app):
+    """Genera la Sorpresa Velzia y envía el email en segundo plano (fire-and-forget)."""
+    from app.models import RewardClaim
+    from app.services.reward_service import create_reward_claim
+    from app.services.mail_service import send_email
+
     with app.app_context():
         try:
-            req = Request(url, data=body, headers={'Content-Type': 'application/json'})
-            urlopen(req, timeout=5)
-            current_app.logger.info(f"N8N reward triggered: {body.decode()[:100]}")
-        except URLError as e:
-            current_app.logger.warning(f"N8N reward failed: {e.reason}")
+            user = User.query.filter_by(restaurant_id=restaurant_id).first()
+            if not user or not user.email:
+                return
+            last_label = None
+            last_claim = (
+                RewardClaim.query.filter_by(user_id=user.id)
+                .order_by(RewardClaim.id.desc())
+                .first()
+            )
+            if last_claim:
+                last_label = last_claim.reward_label
+            result = create_reward_claim(plan, user.id, restaurant_id, last_label)
+            if not result:
+                return
+            send_email(
+                user.email,
+                f"¡Sorpresa Velzia! {result['label']}",
+                result['email_html'],
+            )
+            current_app.logger.info(
+                'Sorpresa Velzia entregada: claim=%d plan=%s user=%d',
+                result['id'], plan, user.id,
+            )
+        except Exception:
+            current_app.logger.warning('Error entregando Sorpresa Velzia', exc_info=True)
 
 
 class SubscriptionService:
@@ -173,11 +194,12 @@ class SubscriptionService:
         db.session.commit()
 
     @staticmethod
-    def _finalize_payment(restaurant, plan_type, payment_id, preference_id=None, n8n_payload=None):
+    def _finalize_payment(restaurant, plan_type, payment_id, preference_id=None):
         """
         Lógica compartida entre webhook y callback: consume el cupón reservado,
-        extiende la suscripción por la duración del plan y dispara n8n.
-        Idempotente por pago: el disparo a n8n ocurre solo la primera vez.
+        extiende la suscripción por la duración del plan y entrega la Sorpresa
+        Velzia (recompensa + email) en segundo plano.
+        Idempotente por pago: la Sorpresa ocurre solo la primera vez.
         """
         from app.models import AITokenTransaction
 
@@ -212,23 +234,21 @@ class SubscriptionService:
             restaurant.subscription_expires_at = now_utc + timedelta(days=duration_days)
         db.session.commit()
 
-        if n8n_payload and n8n_payload.get('url'):
-            body = json.dumps({
-                'external_reference': n8n_payload.get('external_reference'),
-                'user_id': n8n_payload.get('user_id'),
-                'payer': {'email': n8n_payload.get('payer_email', '')},
-                'streak_bonus_claim_id': n8n_payload.get('streak_bonus_claim_id'),
-            }).encode()
-            threading.Thread(
-                target=_fire_n8n_reward,
-                args=(n8n_payload['url'], body, current_app._get_current_object()),
-                daemon=True,
-            ).start()
+        # Sorpresa Velzia en segundo plano (fire-and-forget), sin HTTP a n8n.
+        threading.Thread(
+            target=_deliver_sorpresa_velzia,
+            args=(
+                restaurant.id,
+                plan_type or restaurant.plan_type,
+                current_app._get_current_object(),
+            ),
+            daemon=True,
+        ).start()
 
     # ── Webhooks / Callbacks ────────────────────────────────
 
     @staticmethod
-    def process_payment_callback(status, restaurant_id, plan_type=None, payment_id=None, n8n_payload=None):
+    def process_payment_callback(status, restaurant_id, plan_type=None, payment_id=None):
         """
         Process a payment callback from MercadoPago.
         Returns:
@@ -250,7 +270,6 @@ class SubscriptionService:
             if payment_id:
                 SubscriptionService._finalize_payment(
                     restaurant, plan_type or restaurant.plan_type, payment_id,
-                    n8n_payload=n8n_payload,
                 )
 
         sanitize_restaurant_limits(restaurant)
@@ -259,7 +278,7 @@ class SubscriptionService:
         return restaurant, user, True
 
     @staticmethod
-    def process_mp_webhook_payment(payment_id, access_token, n8n_payload=None):
+    def process_mp_webhook_payment(payment_id, access_token):
         """
         Process a MercadoPago webhook payment notification (idempotent).
         Returns a dict with keys (restaurant_id, plan_type) if action was taken,
@@ -302,7 +321,6 @@ class SubscriptionService:
             plan_type,
             payment_id,
             preference_id=payment.get('preference_id'),
-            n8n_payload=n8n_payload,
         )
 
         # Apply limits + reset tokens

@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, current_app, render_template, session, request, flash, redirect, url_for
+from flask import Flask, current_app, render_template, session, request, flash, redirect, url_for, has_request_context
 from .models import db, migrate,User
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import generate_csrf
@@ -304,6 +304,10 @@ def create_app():
             'user': None,
             'is_admin': False
         }
+        
+        # Renderizado fuera de un request (tareas de fondo, threads): sin datos de sesión.
+        if not has_request_context():
+            return data
         
         # Inyectar usuario si está en sesión
         try:

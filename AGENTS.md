@@ -2,7 +2,7 @@
 
 **Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MySQL 8  
 **Version:** v1.4.0  
-**Última actualización:** 2026-07-21
+**Última actualización:** 2026-07-29
 
 ## Skills & MCP (para agentes)
 
@@ -57,6 +57,19 @@ cd astro; npm run dev                 # Frontend Astro (menú público)
 - **No duplicar lógica.** Si un patrón aparece dos veces, extraerlo a un servicio o componente compartido.
 - **No agregar dependencias sin justificación.** Cada librería nueva debe resolver un problema real, no una preferencia.
 - **Las rutas no tienen lógica de negocio.** Flask routes solo orquestan: reciben request, llaman un service, devuelven response.
+- **Archivos grandes son deuda técnica.** Si un archivo supera las ~400 líneas, el agente DEBE advertir al usuario automáticamente y proponer una factorización clara (extraer a services, helpers, o dividir en módulos). No esperar a que el usuario lo pida. Ejemplos concretos de lo que se debe evitar: routes con lógica inline de 300+ líneas, services que mezclan dominios distintos, models con 10+ clases en un solo archivo.
+- **Límite pragmático:** Archivos de 400-700 líneas son aceptables si están bien organizados (una sola responsabilidad, lógica clara). Archivos de **800+ líneas** se consideran críticos y requieren factorización sí o sí antes de mergear.
+
+### Compromiso de Calidad (obligatorio, a partir de 2026-08-01)
+
+El usuario no puede revisar cada cambio: el agente es 100% responsable de que nada se rompa en producción ni en desarrollo. Todo cambio DEBE cumplir:
+
+- **Cero bugs escondidos.** Antes de dar una tarea por terminada: correr la suite completa de tests (repetida varias veces si algún resultado fue flaky), comprobar sintaxis de los archivos tocados (`py_compile`, `node --check`), y revisar manualmente los edge cases que los QA testers no cubren: concurrencia/threads, nulls, tamaños límite, reordenación de operaciones, timezones, fallos de red/externos.
+- **No confiar ciegamente en pytest.** Un test en verde no es suficiente. Si una suite falla de forma intermitente, encontrar la causa raíz y arreglarla (ej. stubbear threads/hilos que pelean por recursos, mocks), nunca ignorarla ni asumir que "no volverá a pasar".
+- **Los tests son tan importantes como el código.** Todo bug o regresión detectada se cubre con un test que lo reproduce antes de mergear.
+- **Sin efectos colaterales.** Un cambio no debe alterar comportamiento no relacionado: backward-compatible, no romper APIs existentes, no tocar lógica ajena al ticket.
+- **Verificación explícita.** Al terminar, reportar qué se validó (suite de tests, sintaxis, lint, corridas repetidas) para que el usuario vea la evidencia.
+- **Pruebas reales cuando se pueda.** Si el cambio toca emails, integraciones o flujos externos, validar con un caso real (ej. script de prueba contra el servicio) además de los mocks.
 
 ## Arquitectura
 

@@ -438,19 +438,15 @@ function previewFormImage(input) {
     const preview = document.getElementById('form-image-preview');
     const removeBtn = document.getElementById('form-remove-image');
 
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            img.src = e.target.result;
-            img.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-            preview.classList.remove('border-dashed');
-            removeBtn.classList.remove('hidden');
-            formDeleteImage = false;
-            formImageData = input.files[0];
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
+    prepareImageUpload(input, function (dataUrl) {
+        img.src = dataUrl;
+        img.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        preview.classList.remove('border-dashed');
+        removeBtn.classList.remove('hidden');
+        formDeleteImage = false;
+        formImageData = input.files[0];
+    });
 }
 
 function removeFormImage() {

@@ -10,6 +10,9 @@ import cloudinary.api
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
+# Fotos de alta resolución (cámaras de 108MP+) superan el límite por defecto de Pillow.
+Image.MAX_IMAGE_PIXELS = None
+
 def allowed_file(filename):
     if not filename:
         return False
@@ -56,7 +59,10 @@ def save_image(file, subfolder, max_size=(800, 800)):
         return upload_result.get('secure_url')
         
     except Exception as e:
-        current_app.logger.error(f"Error al subir imagen a Cloudinary: {e}")
+        filename = file.filename if file else 'unknown'
+        current_app.logger.error(
+            f"Error al subir imagen a Cloudinary ({filename}): {e}"
+        )
         return None
 
 def delete_image(image_url):

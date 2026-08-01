@@ -240,13 +240,11 @@ def mercadopago_webhook():
                     logger.warning("Error detectando renovación", exc_info=True)
 
                 # ── Sistema de Fidelización Velzia (Streak) ──
-                # Se procesa ANTES del pago para que el payload n8n llegue completo.
                 from app.models import User, RewardClaim
                 from app.services.streak_service import bump_streak, reset_streak
                 from app.services.reward_service import generate_streak_reward
                 u = None
                 restaurant_id = int(rid_str) if rid_str else None
-                streak_bonus_claim_id = None
                 try:
                     u = User.query.filter_by(restaurant_id=restaurant_id).first()
                     r = db.session.get(Restaurant, restaurant_id)
@@ -275,7 +273,6 @@ def mercadopago_webhook():
                             )
                             db.session.add(bonus_claim)
                             db.session.commit()
-                            streak_bonus_claim_id = bonus_claim.id
                             logger.info(
                                 'Streak bonus: id=%d tier=%d label=%s para user=%d',
                                 bonus_claim.id, streak_result['bonus_tier'], bonus['label'], u.id,
@@ -284,18 +281,10 @@ def mercadopago_webhook():
                     logger.warning("Error procesando streak", exc_info=True)
 
                 # ── Subscription activation flow ──
-                n8n_url = current_app.config.get('N8N_REWARD_URL')
-                n8n_payload = None
-                if n8n_url and external_ref:
-                    n8n_payload = {
-                        'url': n8n_url,
-                        'external_reference': external_ref,
-                        'user_id': u.id if u else None,
-                        'payer_email': payment.get('payer', {}).get('email', ''),
-                        'streak_bonus_claim_id': streak_bonus_claim_id,
-                    }
+                # La Sorpresa Velzia se entrega dentro de _finalize_payment
+                # (recompensa + email), sin depender de n8n.
                 result = SubscriptionService.process_mp_webhook_payment(
-                    payment_id, access_token, n8n_payload=n8n_payload
+                    payment_id, access_token
                 )
                 if result:
                     logger.info(
@@ -365,8 +354,10 @@ def trigger_achievement():
 @api_webhooks_bp.route('/rewards/generate', methods=['POST'])
 def generate_reward():
     """
-    Endpoint para que n8n genere recompensas sin duplicar lógica.
-    Protegido por SERVICE_API_KEY.
+    [DEPRECADO] Endpoint para generar recompensas de forma externa.
+    La Sorpresa Velzia ahora se entrega dentro de _finalize_payment
+    (app/services/subscription_service.py), sin pasar por n8n.
+    Se mantiene por compatibilidad. Protegido por SERVICE_API_KEY.
     Body: {"plan": str, "user_id": int, "restaurant_id": int, "last_reward_label": str?}
     """
     api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
@@ -390,51 +381,31 @@ def generate_reward():
             'error': f'plan must be one of {valid_plans} (trial no recibe recompensas)'
         }), 400
 
-    from app.services.reward_service import generate_reward as gen
-    reward_data = gen(plan, last_reward_label)
-    if not reward_data:
-        return jsonify({'success': False, 'error': 'reward generation returned None'}), 500
+    from app.services.reward_service import create_reward_claim
 
     try:
-        from app.models import RewardClaim
-        claim = RewardClaim(
-            user_id=user_id,
-            restaurant_id=restaurant_id,
-            short_code=reward_data['short_code'],
-            token=reward_data['token'],
-            plan_key=plan,
-            rarity=reward_data['rarity'],
-            reward_type=reward_data['type'],
-            reward_value=reward_data.get('value'),
-            reward_label=reward_data['label'],
-            status='pending',
-        )
-        db.session.add(claim)
-        db.session.commit()
+        result = create_reward_claim(plan, user_id, restaurant_id, last_reward_label)
+        if not result:
+            return jsonify({'success': False, 'error': 'reward generation returned None'}), 500
+        user = db.session.get(User, user_id)
         current_app.logger.info(
             'Reward generado: id=%d plan=%s rarity=%s type=%s para user=%d',
-            claim.id, plan, reward_data['rarity'], reward_data['type'], user_id,
+            result['id'], plan, result['rarity'], result['type'], user_id,
         )
-
-        from app.services.reward_service import build_email_html
-        user = db.session.get(User, user_id)
-        email = user.email if user else ''
-        claim_url = f"{current_app.config.get('BASE_URL', '')}/reclamar/{reward_data['short_code']}"
-
         return jsonify({
             'success': True,
             'data': {
-                'id': claim.id,
-                'short_code': reward_data['short_code'],
-                'rarity': reward_data['rarity'],
-                'emoji': reward_data['emoji'],
-                'color': reward_data['color'],
-                'type': reward_data['type'],
-                'value': reward_data.get('value'),
-                'label': reward_data['label'],
-                'claim_url': claim_url,
-                'email': email,
-                'email_html': build_email_html(claim_url, reward_data['label']),
+                'id': result['id'],
+                'short_code': result['short_code'],
+                'rarity': result['rarity'],
+                'emoji': result['emoji'],
+                'color': result['color'],
+                'type': result['type'],
+                'value': result['value'],
+                'label': result['label'],
+                'claim_url': result['claim_url'],
+                'email': user.email if user else '',
+                'email_html': result['email_html'],
             },
         }), 201
     except Exception as e:

@@ -97,10 +97,13 @@ class ProductService:
             is_active=is_active,
         )
 
-        if image_file:
+        if image_file and getattr(image_file, 'filename', ''):
             image_url = save_image(image_file, 'products')
             if image_url:
                 product.image_url = image_url
+            else:
+                return None, ('No se pudo subir la imagen. '
+                              'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
 
         db.session.add(product)
         db.session.commit()
@@ -149,12 +152,15 @@ class ProductService:
             product.price = price
 
         # ── Image handling ──
-        if image_file:
-            if product.image_url:
-                delete_image(product.image_url)
+        if image_file and getattr(image_file, 'filename', ''):
             image_url = save_image(image_file, 'products')
             if image_url:
+                if product.image_url:
+                    delete_image(product.image_url)
                 product.image_url = image_url
+            else:
+                return None, ('No se pudo subir la imagen. '
+                              'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
         elif delete_image_flag:
             if product.image_url:
                 delete_image(product.image_url)

@@ -139,6 +139,26 @@ def _perform_coupon_expiry():
     except Exception as e:
         current_app.logger.error(f"Coupon expiry error: {e}", exc_info=True)
 
+def send_subscription_reminders():
+    """Envía recordatorios de suscripción (días 5, 2 y 1 antes del vencimiento)."""
+    if has_app_context():
+        return _perform_reminders()
+    else:
+        with scheduler.app.app_context():
+            return _perform_reminders()
+
+
+def _perform_reminders():
+    try:
+        from app.services.reminder_service import send_subscription_reminders as _send
+        sent = _send()
+        current_app.logger.info(
+            f"[{datetime.now(timezone.utc)}] Subscription reminders sent: {sent}"
+        )
+    except Exception as e:
+        current_app.logger.error(f"CRITICAL ERROR in subscription reminders task: {e}")
+
+
 def init_tasks(scheduler):
     # Programar la tarea para las 3:00 AM todos los días
     if not scheduler.get_job('delete_inactive_accounts'):
@@ -175,4 +195,15 @@ def init_tasks(scheduler):
             func=expire_coupons,
             trigger='cron',
             minute=45,
+        )
+
+    # Recordatorios de suscripción (diario 13:00 UTC = 8:00 AM Colombia).
+    # Antes lo orquestaba n8n; ahora APScheduler envía los emails directo.
+    if not scheduler.get_job('send_subscription_reminders'):
+        scheduler.add_job(
+            id='send_subscription_reminders',
+            func=send_subscription_reminders,
+            trigger='cron',
+            hour=13,
+            minute=0,
         )

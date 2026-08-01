@@ -192,3 +192,56 @@ def apply_reward_protocol(reward: dict) -> str:
 def build_email_html(claim_url: str, reward_label: str) -> str:
     from flask import render_template
     return render_template('rewards/email_congratulations.html', claim_url=claim_url, reward_label=reward_label)
+
+
+def create_reward_claim(
+    plan: PlanKey,
+    user_id: int,
+    restaurant_id: int,
+    last_reward_label: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    Genera la recompensa (Sorpresa Velzia), persiste el RewardClaim y arma el
+    email. Es la lógica compartida entre la entrega directa post-pago y el
+    endpoint /api/webhooks/rewards/generate. Devuelve None si el plan no
+    recibe recompensas (trial).
+    """
+    from flask import current_app
+    from app import db
+    from app.models import RewardClaim
+
+    reward = generate_reward(plan, last_reward_label)
+    if not reward:
+        return None
+
+    claim = RewardClaim(
+        user_id=user_id,
+        restaurant_id=restaurant_id,
+        short_code=reward['short_code'],
+        token=reward['token'],
+        plan_key=plan,
+        rarity=reward['rarity'],
+        reward_type=reward['type'],
+        reward_value=reward.get('value'),
+        reward_label=reward['label'],
+        status='pending',
+    )
+    db.session.add(claim)
+    db.session.commit()
+
+    base_url = current_app.config.get('BASE_URL', '')
+    claim_url = f"{base_url}/reclamar/{reward['short_code']}"
+    email_html = build_email_html(claim_url, reward['label'])
+
+    return {
+        'id': claim.id,
+        'short_code': reward['short_code'],
+        'rarity': reward['rarity'],
+        'emoji': reward['emoji'],
+        'color': reward['color'],
+        'type': reward['type'],
+        'value': reward.get('value'),
+        'label': reward['label'],
+        'claim_url': claim_url,
+        'email_html': email_html,
+    }

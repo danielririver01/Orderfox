@@ -105,6 +105,7 @@ block content %}
       </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/image-upload.js') }}"></script>
     <script>
       function previewImage(input) {
         const container = document.getElementById('image_preview_container');
@@ -115,20 +116,16 @@ block content %}
         const originalImg = document.getElementById('original_img');
         const editOverlay = document.getElementById('edit_overlay');
 
-        if (input.files && input.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
-            if (placeholder) placeholder.classList.add('hidden');
-            if (originalImg) originalImg.classList.add('hidden');
-            if (editOverlay) editOverlay.classList.add('hidden');
-            removeBtn.classList.remove('hidden');
-            container.classList.remove('border-dashed');
-            deleteInput.value = 'false';
-          }
-          reader.readAsDataURL(input.files[0]);
-        }
+        prepareImageUpload(input, function (dataUrl) {
+          preview.src = dataUrl;
+          preview.classList.remove('hidden');
+          if (placeholder) placeholder.classList.add('hidden');
+          if (originalImg) originalImg.classList.add('hidden');
+          if (editOverlay) editOverlay.classList.add('hidden');
+          removeBtn.classList.remove('hidden');
+          container.classList.remove('border-dashed');
+          deleteInput.value = 'false';
+        });
       }
 
       function removeImage() {

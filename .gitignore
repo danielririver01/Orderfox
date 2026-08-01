@@ -94,3 +94,8 @@ tests/security/reports/
 # opencode agents (auto-generated)
 .opencode/agents/
 
+# Artefactos delicados de prueba local (NO van a produccion)
+/cookies.txt
+/email_recompensa.html
+/scripts/test_email_flows.py
+

@@ -50,10 +50,13 @@ class CategoryService:
             sort_order=max_order + 1
         )
 
-        if image_file:
+        if image_file and getattr(image_file, 'filename', ''):
             image_url = save_image(image_file, 'categories')
             if image_url:
                 category.image_url = image_url
+            else:
+                return None, ('No se pudo subir la imagen. '
+                              'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
 
         db.session.add(category)
         db.session.commit()
@@ -76,12 +79,15 @@ class CategoryService:
         if is_active is not None:
             category.is_active = is_active
 
-        if image_file:
-            if category.image_url:
-                delete_image(category.image_url)
+        if image_file and getattr(image_file, 'filename', ''):
             image_url = save_image(image_file, 'categories')
             if image_url:
+                if category.image_url:
+                    delete_image(category.image_url)
                 category.image_url = image_url
+            else:
+                return None, ('No se pudo subir la imagen. '
+                              'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
         elif delete_image_flag:
             if category.image_url:
                 delete_image(category.image_url)
