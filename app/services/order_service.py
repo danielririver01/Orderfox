@@ -34,7 +34,7 @@ class OrderService:
         valid_transitions = {
             'pending': ['confirmed', 'cancelled', 'expired'],
             'confirmed': ['delivered', 'cancelled'],
-            'delivered': [],
+            'delivered': ['cancelled'],
             'cancelled': ['pending'],
             'expired': []
         }
@@ -207,10 +207,10 @@ class OrderService:
         Cancel an order (set status to 'cancelled') and commit.
 
         Returns (True, None) or (False, error_message).
-        Skips if already delivered/cancelled.
+        Permite cancelar pedidos pendientes, confirmados y entregados.
         """
-        if order.status in ['delivered', 'cancelled']:
-            return False, 'No se puede cancelar un pedido entregado o ya cancelado'
+        if order.status == 'cancelled':
+            return False, 'Este pedido ya fue cancelado'
         order.status = 'cancelled'
         db.session.commit()
         return True, None
@@ -221,10 +221,10 @@ class OrderService:
         Delete an order permanently.
 
         Returns (True, None) or (False, error_message).
-        Only allows deletion of cancelled orders.
+        Solo permite eliminar pedidos cancelados o entregados.
         """
-        if order.status != 'cancelled':
-            return False, 'Solo se pueden eliminar pedidos que ya han sido cancelados'
+        if order.status not in ['cancelled', 'delivered']:
+            return False, 'Solo se pueden eliminar pedidos cancelados o entregados'
         db.session.delete(order)
         db.session.commit()
         return True, None

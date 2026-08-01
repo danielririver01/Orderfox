@@ -159,10 +159,21 @@
           <p class="text-[10px] text-gray-500 dark:text-gray-500">{{ order.customer_name }}</p>
           {% endif %}
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <span class="text-sm font-black text-gray-500 dark:text-gray-400">{{ order.total | currency }}</span>
+          <form id="deleteOrderForm{{ order.id }}" method="POST" action="{{ url_for('orders.delete', id=order.id) }}" class="hidden">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          </form>
+          <button onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
+            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Cancelar pedido">
+            <span class="material-symbols-outlined text-[18px]">cancel</span>
+          </button>
+          <button onclick="event.stopPropagation(); openDeleteModal(document.getElementById('deleteOrderForm{{ order.id }}'), '¿Eliminar este pedido entregado permanentemente?', 'Eliminar pedido')"
+            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Eliminar pedido">
+            <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+          </button>
           <button onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-green-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all">
+            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-green-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0">
             <span class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
         </div>

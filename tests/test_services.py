@@ -187,14 +187,27 @@ class TestOrderService:
         assert success is True
         assert sample_order.status == 'cancelled'
 
-    def test_cancel_order_delivered(self, sample_order, db):
+    def test_cancel_order_delivered_allowed(self, sample_order, db):
         sample_order.status = 'delivered'
+        db.session.commit()
+        success, error = OrderService.cancel_order(sample_order)
+        assert success is True
+        assert sample_order.status == 'cancelled'
+
+    def test_cancel_order_already_cancelled(self, sample_order, db):
+        sample_order.status = 'cancelled'
         db.session.commit()
         success, error = OrderService.cancel_order(sample_order)
         assert success is False
 
     def test_delete_order_success(self, sample_order, db):
         sample_order.status = 'cancelled'
+        db.session.commit()
+        success, error = OrderService.delete_order(sample_order)
+        assert success is True
+
+    def test_delete_order_delivered(self, sample_order, db):
+        sample_order.status = 'delivered'
         db.session.commit()
         success, error = OrderService.delete_order(sample_order)
         assert success is True

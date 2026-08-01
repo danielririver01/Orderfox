@@ -112,6 +112,21 @@
         <span class="material-symbols-outlined text-[18px]">print</span>
         Imprimir
     </button>
+    {% if order.status == 'delivered' %}
+    <button onclick="changeStatus({{ order.id }}, 'cancelled')"
+        class="w-full bg-gray-800 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">cancel</span>
+        Cancelar pedido
+    </button>
+    <form id="deleteOrderFormPanel" method="POST" action="{{ url_for('orders.delete', id=order.id) }}" class="hidden">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    </form>
+    <button onclick="openDeleteModal(document.getElementById('deleteOrderFormPanel'), '¿Eliminar este pedido entregado permanentemente?', 'Eliminar pedido')"
+        class="w-full bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest py-3.5 rounded-xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+        Eliminar
+    </button>
+    {% endif %}
     {% else %}
     <form id="deleteOrderFormPanel" method="POST" action="{{ url_for('orders.delete', id=order.id) }}" class="hidden">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

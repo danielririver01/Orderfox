@@ -469,8 +469,8 @@ class TestRateLimiterConcurrency:
 
 class TestOrderStatusTransitions:
 
-    def test_delivered_to_cancelled_invalid(self, db):
-        assert OrderService.validate_status_transition('delivered', 'cancelled') is False
+    def test_delivered_to_cancelled_valid(self, db):
+        assert OrderService.validate_status_transition('delivered', 'cancelled') is True
 
     def test_pending_to_delivered_invalid(self, db):
         assert OrderService.validate_status_transition('pending', 'delivered') is False
