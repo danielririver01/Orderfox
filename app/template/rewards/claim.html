@@ -469,7 +469,7 @@
       <div class="rarity-badge rarity-{{ reward.rarity }}">{{ rarity_label }}</div>
       <div class="reward-name">{{ reward.reward_label }}</div>
       <div class="reward-desc" style="color:#22c55e">✔ Ya reclamaste este regalo</div>
-      <div class="details">Reclamado el {{ reward.claimed_at.strftime('%d/%m/%Y') if reward.claimed_at else '' }}</div>
+      <div class="details">Reclamado el {{ reward.claimed_at | local_time('%d/%m/%Y') if reward.claimed_at else '' }}</div>
       <button class="btn-claim claimed" disabled><span class="material-symbols-outlined">check_circle</span> Reclamado</button>
     </div>
   </div>

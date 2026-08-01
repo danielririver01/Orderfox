@@ -290,6 +290,23 @@ def create_app():
         except (ValueError, TypeError):
             return '$0'
 
+    @app.template_filter('local_time')
+    def local_time_filter(value, fmt='%I:%M %p'):
+        """Formatea una fecha UTC a hora local de Colombia (UTC-5) en reloj 12h.
+
+        Ej: 19:25 UTC -> "2:25 PM" (sin cero a la izquierda en la hora).
+        """
+        import re
+        from app.utils.timezone import to_colombia
+        local = to_colombia(value)
+        if local is None:
+            return ''
+        out = local.strftime(fmt)
+        if '%I' in fmt:
+            # 02:25 PM -> 2:25 PM (quitar cero inicial de la hora 12h)
+            out = re.sub(r'0(\d):', r'\1:', out)
+        return out
+
     # Inyectar variables de soporte y suscripción globalmente
     @app.context_processor
     def inject_global_data():

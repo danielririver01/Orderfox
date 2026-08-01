@@ -232,7 +232,7 @@
             {% endif %}
           </div>
           {% if ach.earned and ach.earned_at %}
-          <div class="text-[10px] text-zinc-600 mt-1">{{ ach.earned_at.strftime('%d/%m/%Y') }}</div>
+          <div class="text-[10px] text-zinc-600 mt-1">{{ ach.earned_at | local_time('%d/%m/%Y') }}</div>
           {% endif %}
         </div>
 

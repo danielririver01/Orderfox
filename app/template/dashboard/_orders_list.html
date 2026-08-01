@@ -22,8 +22,8 @@
         <div>
           <div class="flex items-center gap-2 mb-1">
             <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="text-[9px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
-              {{ order.created_at.strftime('%H:%M') }}
+            <span class="md:hidden text-[9px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
+              {{ order.created_at | local_time }}
             </span>
           </div>
           {% if order.customer_name %}
@@ -93,8 +93,8 @@
         <div>
           <div class="flex items-center gap-2 mb-1">
             <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="text-[9px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
-              {{ order.created_at.strftime('%H:%M') }}
+            <span class="md:hidden text-[9px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
+              {{ order.created_at | local_time }}
             </span>
           </div>
           {% if order.customer_name %}
@@ -151,8 +151,8 @@
         <div>
           <div class="flex items-center gap-2">
             <h3 class="font-bold text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">
-              {{ order.created_at.strftime('%H:%M') }}
+            <span class="md:hidden text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">
+              {{ order.created_at | local_time }}
             </span>
           </div>
           {% if order.customer_name %}
@@ -165,11 +165,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           </form>
           <button onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
-            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Cancelar pedido">
+            class="md:hidden w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Cancelar pedido">
             <span class="material-symbols-outlined text-[18px]">cancel</span>
           </button>
           <button onclick="event.stopPropagation(); openDeleteModal(document.getElementById('deleteOrderForm{{ order.id }}'), '¿Eliminar este pedido entregado permanentemente?', 'Eliminar pedido')"
-            class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Eliminar pedido">
+            class="md:hidden w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 bg-gray-100 dark:bg-[#262626] rounded-lg transition-all flex-shrink-0" title="Eliminar pedido">
             <span class="material-symbols-outlined text-[18px]">delete_forever</span>
           </button>
           <button onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
@@ -210,8 +210,8 @@
         <div>
           <div class="flex items-center gap-2">
             <h3 class="font-bold text-gray-900 dark:text-white tracking-tight line-through">{{ order.order_number }}</h3>
-            <span class="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">
-              {{ order.created_at.strftime('%H:%M') }}
+            <span class="md:hidden text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">
+              {{ order.created_at | local_time }}
             </span>
           </div>
           {% if order.customer_name %}

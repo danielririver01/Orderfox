@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone, timedelta
 from sqlalchemy import func
 from app.models import db, Order, Restaurant, User, TrialHistory
+from app.utils.timezone import today_start_utc
 
 
 class DashboardService:
@@ -8,8 +9,8 @@ class DashboardService:
 
     @staticmethod
     def _get_today_start():
-        now = datetime.now(timezone.utc)
-        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+        """Inicio del día actual en hora de Colombia (medianoche Bogotá), en UTC."""
+        return today_start_utc()
 
     @staticmethod
     def _get_date_range(range_type):

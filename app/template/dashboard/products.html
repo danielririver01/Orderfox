@@ -16,9 +16,22 @@
             <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Productos</h1>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ products|length }} productos</p>
         </div>
-        <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white">
-            <span class="material-symbols-outlined">close</span>
-        </a>
+        <div class="flex items-center gap-2">
+            <div id="viewModeToggle"
+                class="flex items-center gap-0.5 p-1 bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#262626] rounded-xl">
+                <button id="view-mode-boxes" type="button" title="Ver por categorías"
+                    class="view-mode-btn h-8 w-8 flex items-center justify-center rounded-lg transition-all">
+                    <span class="material-symbols-outlined text-[18px]">grid_view</span>
+                </button>
+                <button id="view-mode-all" type="button" title="Ver todos los productos"
+                    class="view-mode-btn h-8 w-8 flex items-center justify-center rounded-lg transition-all">
+                    <span class="material-symbols-outlined text-[18px]">view_list</span>
+                </button>
+            </div>
+            <a href="{{ url_for('dashboard.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </a>
+        </div>
     </div>
 </header>
 
@@ -111,21 +124,23 @@
                 {% endif %}
             </div>
 
-            <!-- Grid de Categorías (se oculta cuando hay búsqueda) -->
-            <div id="categoriesGrid">
-                {% if plan_limits.max_products < 1000000 %} <div
-                    class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
-                    <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
-                        <span class="text-blue-800 dark:text-blue-400">Plan {{ plan_limits.name }}</span>
-                        <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products
-                            }} ACTIVOS</span>
-                    </div>
-                    <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
-                        <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700"
-                            style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
-                    </div>
+            <!-- Límite del plan (visible en ambos modos) -->
+            {% if plan_limits.max_products < 1000000 %}
+            <div class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+                <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
+                    <span class="text-blue-800 dark:text-blue-400">Plan {{ plan_limits.name }}</span>
+                    <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products
+                        }} ACTIVOS</span>
+                </div>
+                <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
+                    <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-700"
+                        style="width: {{ (current_active_count / plan_limits.max_products * 100)|round }}%"></div>
+                </div>
             </div>
             {% endif %}
+
+            <!-- Grid de Categorías (se oculta cuando hay búsqueda) -->
+            <div id="categoriesGrid">
 
             <!-- Grid de Categorías -->
             {% if categories %}
@@ -160,6 +175,91 @@
             <div class="text-center py-20">
                 <span class="material-symbols-outlined text-gray-300 text-5xl mb-4">inventory_2</span>
                 <p class="text-gray-500">No hay categorías</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Vista: Todos los productos -->
+        <div id="allProductsView" class="hidden">
+            {% if categories %}
+            {% for category in categories %}
+            {% set category_products = products | selectattr('category_id', 'equalto', category.id) | list %}
+            {% if category_products %}
+            <section class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                    <h2 class="font-black text-base md:text-lg text-[#f2460d] uppercase tracking-widest truncate">
+                        {{ category.name }}</h2>
+                    <span
+                        class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{{ category_products|length }}
+                        productos</span>
+                </div>
+                <div class="space-y-3">
+                    {% for product in category_products %}
+                    <div
+                        class="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all min-w-0 overflow-hidden">
+                        <!-- Imagen -->
+                        <div class="w-12 h-12 md:w-14 md:h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                            {% if product.image_url %}
+                            <img src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
+                            {% else %}
+                            <div
+                                class="w-full h-full flex items-center justify-center font-black text-xl text-[#f2460d]">
+                                {{ product.name[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-gray-900 dark:text-white truncate text-sm md:text-base">
+                                {{ product.name }}</h3>
+                            {% if product.description %}
+                            <p class="text-[10px] md:text-xs text-gray-500 truncate mb-1">{{ product.description }}
+                            </p>
+                            {% endif %}
+                            <span class="text-sm md:text-base font-black text-[#f2460d] block">${{
+                                '{:,}'.format(product.price) }}</span>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" data-product-id="{{ product.id }}"
+                                    class="sr-only peer product-toggle" {% if product.is_active %}checked{% endif %}
+                                    onchange="toggleProduct({{ product.id }}, this.checked)">
+                                <div
+                                    class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]">
+                                </div>
+                            </label>
+                            <a href="{{ url_for('products.edit', id=product.id) }}"
+                                class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#f2460d] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
+                                <span class="material-symbols-outlined">edit</span>
+                            </a>
+                            <button
+                                onclick="openModifiersModal({{ product.id }}, '{{ product.name|e }}')"
+                                class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded-lg transition-all"
+                                title="Gestionar combos">
+                                <span class="material-symbols-outlined">tune</span>
+                            </button>
+                            <form action="{{ url_for('products.delete', id=product.id) }}" method="POST"
+                                id="delete-form-all-{{ product.id }}" style="display:none;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            </form>
+                            <button
+                                onclick="openDeleteModal(document.getElementById('delete-form-all-{{ product.id }}'), 'Este producto se eliminará permanentemente del menú.', '¿Eliminar {{ product.name }}?')"
+                                class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 rounded-lg transition-all">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-20">
+                <span class="material-symbols-outlined text-gray-300 text-5xl mb-4">inventory_2</span>
+                <p class="text-gray-500">No hay productos</p>
             </div>
             {% endif %}
         </div>

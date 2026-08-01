@@ -1,5 +1,6 @@
 from datetime import datetime, date, timezone, timedelta
 from app.models import db, Order, OrderItem, Product, Table, Modifier, OrderCounter
+from app.utils.timezone import today_start_utc
 import json
 
 
@@ -54,9 +55,11 @@ class OrderService:
 
     @staticmethod
     def get_today_completed_orders_query(restaurant_id):
-        """Base query for today's completed (delivered/cancelled) orders."""
-        today = date.today()
-        today_start = datetime.combine(today, datetime.min.time())
+        """Base query for today's completed (delivered/cancelled) orders.
+
+        "Hoy" se calcula en hora de Colombia (medianoche Bogotá), no en UTC.
+        """
+        today_start = today_start_utc()
         return Order.query.filter(
             Order.restaurant_id == restaurant_id,
             Order.status.in_(['delivered', 'cancelled']),

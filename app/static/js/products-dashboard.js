@@ -2,6 +2,41 @@
  * Dashboard Products - Expansión de categorías y paginación
  */
 
+// ===== Vista: Cajones / Todos =====
+const VIEW_MODE_KEY = 'velziaProductsView';
+const VIEW_MODE_ACTIVE = 'bg-[#f2460d]/10 text-[#f2460d]';
+const VIEW_MODE_INACTIVE = 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#262626]';
+
+let currentViewMode = localStorage.getItem(VIEW_MODE_KEY) === 'all' ? 'all' : 'boxes';
+
+function setActiveViewButton(mode) {
+    const buttons = ['view-mode-boxes', 'view-mode-all'];
+    buttons.forEach((id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.classList.remove(...VIEW_MODE_ACTIVE.split(' '));
+        btn.classList.remove(...VIEW_MODE_INACTIVE.split(' '));
+        const isActive = (id === 'view-mode-boxes') === (mode === 'boxes');
+        btn.classList.add(...(isActive ? VIEW_MODE_ACTIVE : VIEW_MODE_INACTIVE).split(' '));
+    });
+}
+
+function applyViewMode(mode, searching) {
+    const grid = document.getElementById('categoriesGrid');
+    const allView = document.getElementById('allProductsView');
+    const toggle = document.getElementById('viewModeToggle');
+    if (!grid || !allView) return;
+    if (toggle) toggle.classList.toggle('hidden', !!searching);
+    if (searching) {
+        grid.classList.add('hidden');
+        allView.classList.add('hidden');
+        return;
+    }
+    grid.classList.toggle('hidden', mode !== 'boxes');
+    allView.classList.toggle('hidden', mode !== 'all');
+    setActiveViewButton(mode);
+}
+
 function toggleCategory(element, categoryId) {
     const container = element.querySelector('.products-container');
     const expandIcon = element.querySelector('.expand-icon');
@@ -93,24 +128,40 @@ function showPage(categoryElement, pageNum, itemsPerPage) {
 document.addEventListener('DOMContentLoaded', () => {
     // All products start hidden until expanded
 
+    // Modo de vista inicial (Cajones / Todos)
+    applyViewMode(currentViewMode, false);
+
+    // Listeners de cambio de vista
+    const boxesBtn = document.getElementById('view-mode-boxes');
+    const allBtn = document.getElementById('view-mode-all');
+    if (boxesBtn) boxesBtn.addEventListener('click', () => {
+        currentViewMode = 'boxes';
+        localStorage.setItem(VIEW_MODE_KEY, currentViewMode);
+        applyViewMode(currentViewMode, false);
+    });
+    if (allBtn) allBtn.addEventListener('click', () => {
+        currentViewMode = 'all';
+        localStorage.setItem(VIEW_MODE_KEY, currentViewMode);
+        applyViewMode(currentViewMode, false);
+    });
+
     // Búsqueda de productos en tiempo real
     const searchInput = document.getElementById('searchProducts');
     const searchResults = document.getElementById('searchResults');
-    const categoriesGrid = document.getElementById('categoriesGrid');
     const productItems = document.querySelectorAll('.product-result-item');
 
-    if (searchInput && searchResults && categoriesGrid && productItems.length > 0) {
+    if (searchInput && searchResults && productItems.length > 0) {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase().trim();
 
             if (searchTerm === '') {
-                // Si está vacío, mostrar categorías y ocultar resultados
+                // Si está vacío, restaurar la vista activa
                 searchResults.classList.add('hidden');
-                categoriesGrid.classList.remove('hidden');
+                applyViewMode(currentViewMode, false);
             } else {
-                // Mostrar resultados y ocultar categorías
+                // Mostrar resultados y ocultar vistas
                 searchResults.classList.remove('hidden');
-                categoriesGrid.classList.add('hidden');
+                applyViewMode(currentViewMode, true);
 
                 // Filtrar productos
                 productItems.forEach(item => {

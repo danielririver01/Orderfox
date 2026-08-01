@@ -1,8 +1,8 @@
 import json
 import requests
-from datetime import timezone, timedelta
 from flask import current_app
 from app.models import Order, Restaurant, OrderItem, Table
+from app.utils.timezone import to_colombia
 
 
 def notify_new_order(order_id):
@@ -53,12 +53,10 @@ def notify_new_order(order_id):
             lines.append(f"_{source}_")
 
             created = order.created_at
-            if created and created.tzinfo is None:
-                created = created.replace(tzinfo=timezone.utc)
-            col_tz = timezone(timedelta(hours=-5))
-            local = created.astimezone(col_tz)
-            fecha = local.strftime("%d/%m/%Y - %I:%M %p").lstrip("0").replace(" 0", " ")
-            lines.append(fecha)
+            local = to_colombia(created)
+            if local is not None:
+                fecha = local.strftime("%d/%m/%Y - %I:%M %p").lstrip("0").replace(" 0", " ")
+                lines.append(fecha)
 
             ntfy_base = app.config.get('NTFY_BASE_URL', 'https://ntfy.sh')
             requests.post(

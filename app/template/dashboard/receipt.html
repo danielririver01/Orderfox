@@ -23,7 +23,7 @@
 
         <div class="info-header">
             ID de Orden: #{{ order.order_number }}<br>
-            {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}
+            {{ order.created_at | local_time('%d/%m/%Y %I:%M %p') }}
         </div>
     </div>
 
