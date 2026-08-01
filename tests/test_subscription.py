@@ -279,3 +279,28 @@ def _create_products(db, restaurant, count, is_active=True, category_id=None):
         )
         db.session.add(p)
     db.session.commit()
+
+
+class TestEmprendedorStatusManagement:
+    """Regresión: el plan Emprendedor debe poder marcar pedidos como Entregados
+    (gate has_status_management desbloqueado para todos los planes)."""
+
+    def test_emprendedor_has_status_management(self, db, sample_restaurant):
+        assert get_plan_limits('emprendedor')['has_status_management'] is True
+        assert check_feature_access(sample_restaurant, 'has_status_management') is True
+
+    def test_emprendedor_can_change_order_to_delivered(self, client, db, sample_restaurant, sample_user, sample_order):
+        sample_order.status = 'confirmed'
+        db.session.commit()
+
+        with client.session_transaction() as sess:
+            sess['user_id'] = sample_user.id
+
+        resp = client.patch(
+            f'/api/orders/{sample_order.id}/status',
+            json={'status': 'delivered'},
+        )
+        assert resp.status_code == 200, resp.get_json()
+        data = resp.get_json()
+        assert data['success'] is True
+        assert data['data']['status'] == 'delivered'

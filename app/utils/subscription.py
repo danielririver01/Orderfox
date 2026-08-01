@@ -8,7 +8,7 @@ PLAN_LIMITS = {
         'has_qr': True,
         'has_table_qr': False,
         'has_modifiers': False,
-        'has_status_management': False,
+        'has_status_management': True,
         'has_ai_tokens': True,
         'name': 'Emprendedor',
         'price_cop': 30000,
