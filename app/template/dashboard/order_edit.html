@@ -1,23 +1,46 @@
 {% extends 'common/base.html' %}
-{% block title %}Nuevo Pedido{% endblock %}
+{% block title %}Editar Venta {{ order.order_number }}{% endblock %}
 {% block content %}
     <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-30 transition-colors">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-            <a href="{{ url_for('orders.index') }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
+            <a href="{{ url_for('orders.detail', id=order.id) }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
                 <span class="material-symbols-outlined">arrow_back</span>
             </a>
-            <h1 class="text-xl font-bold dark:text-white">Nuevo Pedido</h1>
+            <div>
+                <h1 class="text-xl font-bold dark:text-white">Editar Venta {{ order.order_number }}</h1>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                    Total actual: ${{ '{:,}'.format(order.total) }}
+                </p>
+            </div>
         </div>
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <form id="order-form" method="POST" action="{{ url_for('orders.create') }}" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Token CSRF obligatorio para peticiones POST -->
+        <form id="order-form" method="POST" action="{{ url_for('orders.edit', id=order.id) }}" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            
+
+            <!-- Cantidades actuales (JSON, en JS) -->
+            <input type="hidden" name="items" id="items-json" value='{{ order_items_json | safe }}'>
+
+            {% if order.payment_method %}
+            <div class="lg:col-span-12">
+                <div class="bg-blue-500/10 dark:bg-blue-500/10 border border-blue-500/20 rounded-2xl px-5 py-3 flex items-start gap-3">
+                    <span class="material-symbols-outlined text-blue-400 text-[18px] mt-0.5 flex-shrink-0">info</span>
+                    <p class="text-xs font-medium text-blue-700 dark:text-blue-300 leading-relaxed">
+                        Esta venta ya tiene un pago registrado
+                        {% if order.payment_method == 'cash' %}
+                        (efectivo, recibido ${{ '{:,}'.format(order.amount_received) }}).
+                        Al guardar, el cambio se recalculará con el nuevo total.
+                        {% else %}
+                        ({{ order.payment_method }}). El método de pago no cambia.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Columna Izquierda: Menú (8 columnas) -->
             <div class="lg:col-span-8 space-y-5">
-                <!-- Selección de Productos -->
                 <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm p-5 space-y-5 transition-colors">
                     <div class="flex items-center justify-between gap-4">
                         <h2 class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">
@@ -27,15 +50,19 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span class="material-symbols-outlined text-gray-400 text-[18px]">search</span>
                             </span>
-                            <input type="text" 
-                                   name="search" 
+                            <input type="text"
+                                   name="search"
                                    id="product-search"
-                                   class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400" 
+                                   class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
                                    placeholder="Buscar plato...">
                         </div>
                     </div>
 
                     <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+                        {% set order_qty = {} %}
+                        {% for item in order.items %}
+                        {% set _ = order_qty.__setitem__(item.product_name, item.quantity) %}
+                        {% endfor %}
                         {% for product in products %}
                         <div class="product-item flex items-center justify-between py-3 border-b border-gray-50 dark:border-[#262626] last:border-0">
                             <div class="flex-1 min-w-0 pr-4">
@@ -46,7 +73,7 @@
                                 <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
                                     <span class="material-symbols-outlined text-[18px]">remove</span>
                                 </button>
-                                <span id="qty-{{ product.id }}" class="w-6 text-center font-black dark:text-white">0</span>
+                                <span id="qty-{{ product.id }}" class="w-6 text-center font-black dark:text-white">{{ order_qty.get(product.name, 0) }}</span>
                                 <button type="button" onclick="updateQty('{{ product.id }}', 1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
                                     <span class="material-symbols-outlined text-[18px]">add</span>
                                 </button>
@@ -54,17 +81,12 @@
                             </div>
                         </div>
                         {% else %}
-                        <!-- Empty State -->
                         <div class="text-center py-8 flex flex-col items-center">
                             <div class="w-14 h-14 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl flex items-center justify-center mb-3 border border-dashed border-gray-200 dark:border-[#262626]">
                                 <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[28px]">inventory_2</span>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">Menú vacío</h3>
                             <p class="text-[11px] text-gray-500 dark:text-gray-500 max-w-xs mx-auto mb-4">No tienes productos creados aún.</p>
-                            <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-br from-[#f2460d] to-[#d63a0a] hover:from-[#d63a0a] hover:to-[#f2460d] text-black dark:text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 active:scale-95">
-                                <span class="material-symbols-outlined text-[16px]">add</span>
-                                Crear Producto
-                            </a>
                         </div>
                         {% endfor %}
 
@@ -80,47 +102,55 @@
 
             <!-- Columna Derecha: Cliente y Total (4 columnas) -->
             <div class="lg:col-span-4 space-y-5">
-                <!-- Datos del Cliente -->
                 <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm p-5 space-y-4 transition-colors lg:sticky lg:top-20">
                     <div class="mb-4">
                         <h2 class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Datos del Cliente</h2>
-                        <p class="text-[10px] font-medium text-gray-400 dark:text-gray-600 italic leading-tight mt-1">
-                            Opcional si el pedido es para consumo en el local.
-                        </p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
-                        <input type="text" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
-                        <input type="tel" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
                     </div>
 
-                    <!-- Total y Acción -->
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
+                        <input type="text" name="customer_name" value="{{ order.customer_name or '' }}" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
+                        <input type="tel" name="customer_phone" value="{{ order.customer_phone or '' }}" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
+                        <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc.">{{ order.notes or '' }}</textarea>
+                    </div>
+
                     <div class="pt-4 border-t border-gray-50 dark:border-[#262626]">
                         <div class="flex items-center justify-between mb-3">
                             <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black tracking-[0.2em]">Total Pedido</p>
-                            <p id="order-total" class="text-xl font-black text-[#f2460d]">$0</p>
+                            <p id="order-total" class="text-xl font-black text-[#f2460d]">${{ '{:,}'.format(order.total) }}</p>
                         </div>
                         <button type="submit" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">
-                            Crear Pedido
+                            Guardar Cambios
                         </button>
+                        <a href="{{ url_for('orders.detail', id=order.id) }}"
+                           class="block text-center text-[10px] text-gray-500 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 font-bold uppercase tracking-widest py-2 mt-2 transition-colors">
+                            Cancelar edición
+                        </a>
                     </div>
                 </div>
             </div>
-
-            <!-- Campo oculto para los items en JSON -->
-            <input type="hidden" name="items" id="items-json">
         </form>
     </div>
+    <script>
+        // Modo edición: el submit abre el modal de pago precargado para poder
+        // ajustar el método/monto del pago (sobreescribir) si hace falta.
+        window.ORDER_EDIT_MODE = true;
+        window.ORDER_EDIT_SUBTITLE = '{{ order.order_number }}';
+        {% if order.payment_method %}
+        window.ORDER_EDIT_PAYMENT = {
+            method: '{{ order.payment_method }}',
+            amount_received: {{ order.amount_received or 'null' }},
+        };
+        {% endif %}
+    </script>
     <script src="{{ url_for('static', filename='js/order_create.js') }}"></script>
     {% include 'dashboard/_payment_modal.html' %}
     <script src="{{ url_for('static', filename='js/payment-modal.js') }}"></script>

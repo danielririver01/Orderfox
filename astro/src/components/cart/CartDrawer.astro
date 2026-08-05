@@ -70,6 +70,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
   function openCart() {
     document.getElementById('cart-sidebar')?.classList.remove('translate-x-full');
     document.getElementById('cart-overlay')?.classList.remove('hidden');
+    document.getElementById('product-detail')?.classList.add('translate-x-full');
     renderCart();
   }
 
@@ -139,6 +140,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
     localStorage.removeItem(`velziaCart_${restaurantIdNum}`);
     document.dispatchEvent(new CustomEvent('cart-updated'));
     renderCart();
+    closeCart();
   });
 
   document.getElementById('cart-items')?.addEventListener('click', (e) => {
@@ -155,6 +157,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
         if (items[idx].quantity <= 0) items.splice(idx, 1);
         saveCartItems(items);
         renderCart();
+        if (items.length === 0) closeCart();
       }
     } else if (plusBtn) {
       const idx = parseInt(plusBtn.getAttribute('data-index') || '0');
@@ -170,6 +173,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
       items.splice(idx, 1);
       saveCartItems(items);
       renderCart();
+      if (items.length === 0) closeCart();
     }
   });
 

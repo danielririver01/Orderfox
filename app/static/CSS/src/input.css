@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @source "../../template/**/*.html";
+@source "../../template/dashboard/_payment_modal.html";
 @source "../../static/JS/**/*.js";
 
 /* Forzar dark mode por clase .dark en lugar de prefers-color-scheme */

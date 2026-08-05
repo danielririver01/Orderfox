@@ -128,9 +128,9 @@ La versión del prompt (`PROMPT_VERSION = "v1.3"`) se guarda en cada conversaci�
 |----------|---------|-------------|
 | `DEEPSEEK_API_KEY` | — | API key de DeepSeek |
 | `DEEPSEEK_API_URL` | `https://api.deepseek.com/v1/chat/completions` | URL base |
-| `DEEPSEEK_MODEL` | `deepseek-chat` | Modelo (chat vs reasoner) |
+| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | Modelo (chat vs reasoner) |
 
-Recomendación: usar `deepseek-chat` (Flash). Es 10x más barato que `deepseek-reasoner` y suficiente para análisis de negocio.
+Recomendación: usar `deepseek-v4-flash`. Es 10x más barato que `deepseek-reasoner` y suficiente para análisis de negocio.
 
 ### 5. Context Manager (`context_manager.py`)
 
@@ -322,11 +322,11 @@ Definidos en `event_templates.py` con:
 |----------|---------|-------------|
 | `DEEPSEEK_API_KEY` | — | API key de DeepSeek |
 | `DEEPSEEK_API_URL` | `https://api.deepseek.com/v1/chat/completions` | URL de la API |
-| `DEEPSEEK_MODEL` | `deepseek-chat` | Modelo a usar |
+| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | Modelo a usar |
 
 ### Modelo Recomendado
 
-`deepseek-chat` (DeepSeek V4 Flash). Relación costo/velocidad ideal para análisis de negocio. Costo estimado: ~$0.07/M tokens input, ~$0.27/M tokens output.
+`deepseek-v4-flash` (DeepSeek V4 Flash). Relación costo/velocidad ideal para análisis de negocio. Costo estimado: ~$0.14/M tokens input, ~$0.28/M tokens output.
 
 ---
 

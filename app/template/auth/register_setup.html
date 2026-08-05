@@ -172,6 +172,20 @@
 
                         <script src="{{ url_for('static', filename='js/register_setup.js') }}"></script>
 
+                        <!-- Aceptación de términos -->
+                        <label class="flex items-start gap-2.5 cursor-pointer select-none"
+                            style="background: rgba(20,16,12,0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.75rem; padding: 0.85rem 1rem;">
+                            {{ form.accept_terms(id="accept_terms", class="mt-0.5 w-4 h-4 accent-[#f97316] flex-shrink-0 cursor-pointer") }}
+                            <span class="text-[12px] leading-relaxed text-gray-500">
+                                Acepto los
+                                <a href="{{ url_for('auth.legal') }}#terminos" target="_blank" rel="noopener"
+                                    class="text-orange-400 font-bold hover:underline">Términos y Condiciones</a>
+                                y la
+                                <a href="{{ url_for('auth.legal') }}#privacidad" target="_blank" rel="noopener"
+                                    class="text-orange-400 font-bold hover:underline">Política de Tratamiento de Datos</a>.
+                            </span>
+                        </label>
+
                         <button id="submitBtn" disabled type="submit"
                             class="mt-2 w-full flex items-center justify-center gap-2 font-bold h-12 rounded-xl transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
                             style="background: #f97316; color: white; box-shadow: 0 10px 28px -10px rgba(249,115,22,0.65);"
@@ -262,6 +276,20 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Aceptación de términos -->
+                        <label class="flex items-start gap-2.5 cursor-pointer select-none"
+                            style="background: rgba(20,16,12,0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.75rem; padding: 0.85rem 1rem;">
+                            {{ form.accept_terms(id="accept_terms", class="mt-0.5 w-4 h-4 accent-[#f97316] flex-shrink-0 cursor-pointer") }}
+                            <span class="text-[12px] leading-relaxed text-gray-500">
+                                Acepto los
+                                <a href="{{ url_for('auth.legal') }}#terminos" target="_blank" rel="noopener"
+                                    class="text-orange-400 font-bold hover:underline">Términos y Condiciones</a>
+                                y la
+                                <a href="{{ url_for('auth.legal') }}#privacidad" target="_blank" rel="noopener"
+                                    class="text-orange-400 font-bold hover:underline">Política de Tratamiento de Datos</a>.
+                            </span>
+                        </label>
 
                         <button id="submitBtn" disabled type="submit"
                             class="mt-1 w-full flex items-center justify-center gap-2 font-bold h-12 rounded-xl transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"

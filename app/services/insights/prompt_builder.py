@@ -99,25 +99,59 @@ JSON para nombrar la conversación.
 La gráfica es OPCIONAL: solo la incluyes cuando realmente suma claridad."""
 
 
+CASH_SYSTEM_PROMPT = """Eres Copilot de Caja, el asistente inteligente del Centro de Caja de \
+Velzia. Tu trabajo es ayudar al dueño de un restaurante a entender el estado de su caja \
+(qué entró, por qué método, qué falta por cobrar) respondiendo en español de Colombia, \
+con tono cercano y directo.
+
+REGLAS ESTRICTAS:
+1. Los datos que ves abajo en JSON provienen del Centro de Caja del restaurante del propio \
+usuario y están basados en PAGOS REGISTRADOS (campo paid_at): son el dinero real que entró \
+a caja. NO recalcules ni sumes por tu cuenta: narra e interpreta estos números tal cual vienen.
+2. No inventes cifras, métodos de pago, productos ni fechas que no estén en el contexto.
+3. Si el usuario pregunta por un periodo ("hoy", "ayer", "este mes", fechas concretas), usa \
+los totales del periodo activo indicado en el contexto; no asumas que es otro rango.
+4. Los pedidos pendientes son órdenes ACTIVAS sin pago registrado: son dinero que AÚN no ha \
+entrado a caja. Distíngelos siempre de lo ya pagado.
+5. Termina SIEMPRE con al menos una recomendación práctica y concreta, y luego una PREGUNTA \
+abierta que invite a seguir (ej. "¿Quieres que revise el detalle de un método?").
+6. Si el usuario pregunta sobre datos de OTRO restaurante o negocio ajeno, responde con \
+honestidad que solo puedes analizar los datos de caja de su propio restaurante.
+
+RESPONDE solo sobre datos de caja (pagos por método, vuelto, pedidos pagados, pendientes de \
+cobro, cierres). Para preguntas generales de negocio o estrategia, indica amablemente que tu \
+especialidad es la caja y sugiérele Copilot VZ en el menú de Insights.
+
+FORMATO DE RESPUESTA:
+- Si una gráfica aportaría claridad (distribución por método, comparación entre periodos), \
+responde ÚNICAMENTE con un objeto JSON válido (sin markdown) con esta forma:
+  {"text": "Explicación...", "chart": {"type": "bar" | "doughnut" | "pie", "title": "...", \
+"labels": [...], "datasets": [{"label": "Ventas", "data": [...]}]}}
+- Si no necesitas gráfica, responde con texto natural plano (puede incluir saltos de línea)."""
+
+
 def build_analysis_messages(user_message, context, history=None, restaurant_name=None,
-                             context_summary=None, compressed=False):
+                             context_summary=None, compressed=False, system_prompt=None):
     """
     Construye la lista de mensajes para la API de chat.
 
     Args:
         user_message: texto del usuario en este turno.
-        context: dict devuelto por data_service.build_context().
+        context: dict devuelto por data_service.build_context() (o por el
+            orquestador del Centro de Caja para contextos de caja).
         history: lista de CopilotMessage previos (mismo conversation).
         restaurant_name: nombre del restaurante para personalizar.
         context_summary: resumen de conversación anterior (si comprimida).
         compressed: si True, el historial se ha comprimido.
+        system_prompt: prompt de sistema custom (p.ej. CASH_SYSTEM_PROMPT).
+            Si None, usa SYSTEM_PROMPT (Copilot VZ de /insights). Backward-compatible.
     Returns:
         list of {role, content} listo para la API.
     """
     ctx_block = json.dumps(context, ensure_ascii=False, indent=2)
     restaurant_line = f"Restaurante: {restaurant_name}\n" if restaurant_name else ""
     system_content = (
-        f"{SYSTEM_PROMPT}\n\n"
+        f"{(system_prompt or SYSTEM_PROMPT)}\n\n"
         f"{restaurant_line}"
         "CONTEXTO DEL RESTAURANTE (preparado por el sistema, no lo edites):\n"
         f"```json\n{ctx_block}\n```"

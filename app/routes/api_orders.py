@@ -4,7 +4,7 @@ from app.models import Order
 from app.utils.auth import require_auth, require_active, require_feature
 from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
-from app.services.order_service import OrderService
+from app.services.order_service import OrderService, PaymentValidationError
 from app.services.notification_service import notify_new_order
 
 api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
@@ -106,7 +106,11 @@ def get_order(id):
                 for item in order.items
             ],
             'created_at': order.created_at.isoformat() if order.created_at else None,
-            'updated_at': order.updated_at.isoformat() if order.updated_at else None
+            'updated_at': order.updated_at.isoformat() if order.updated_at else None,
+            'payment_method': order.payment_method,
+            'amount_received': order.amount_received,
+            'change_due': order.change_due,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None
         }
     })
 
@@ -148,6 +152,21 @@ def create_order():
     except ValueError as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 400
+
+    # Pago opcional (modal caja registradora)
+    payment_method = data.get('payment_method')
+    if payment_method:
+        amount_raw = data.get('amount_received')
+        try:
+            amount = int(amount_raw) if amount_raw else None
+        except (TypeError, ValueError):
+            amount = None
+        try:
+            OrderService.record_payment(order, payment_method, amount_received=amount)
+        except PaymentValidationError as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), e.status_code
+
     db.session.commit()
 
     order_id = order.id
@@ -159,9 +178,53 @@ def create_order():
             'id': order_id,
             'order_number': order.order_number,
             'total': total,
-            'status': order.status
+            'status': order.status,
+            'payment_method': order.payment_method,
+            'amount_received': order.amount_received,
+            'change_due': order.change_due
         }
     }), 201
+
+
+@api_orders_bp.route('/<int:id>/payment', methods=['POST'])
+@require_auth
+@require_active
+def register_payment(id):
+    """Registrar el pago de un pedido (mismo service que la ruta web)."""
+    restaurant = get_current_restaurant_jwt()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order:
+        return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
+
+    data = request.get_json(silent=True) or {}
+    method = data.get('payment_method') or data.get('method')
+    amount_raw = data.get('amount_received') or data.get('amount')
+    try:
+        amount = int(amount_raw) if amount_raw else None
+    except (TypeError, ValueError):
+        amount = None
+
+    try:
+        order, change = OrderService.record_payment(order, method, amount_received=amount)
+    except PaymentValidationError as e:
+        return jsonify({'success': False, 'error': str(e)}), e.status_code
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Error al registrar el pago'}), 500
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'order_id': order.id,
+            'payment_method': order.payment_method,
+            'amount_received': order.amount_received,
+            'change_due': order.change_due,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None
+        }
+    })
 
 
 @api_orders_bp.route('/<int:id>/status', methods=['PATCH'])

@@ -171,6 +171,10 @@ class PublicMenuService:
             (None, None, error_dict) on failure.
         """
         try:
+            if not cart:
+                return None, None, {'error_code': 'EMPTY_CART',
+                                    'message': 'El carrito está vacío.'}
+
             order = Order(
                 restaurant_id=restaurant.id,
                 order_number=order_number,
@@ -251,6 +255,11 @@ class PublicMenuService:
                     'qty': item['quantity'],
                     'extras': [m['name'] for m in modifiers_data]
                 })
+
+            if not validated_items:
+                db.session.rollback()
+                return None, None, {'error_code': 'EMPTY_CART',
+                                    'message': 'Los productos seleccionados ya no están disponibles.'}
 
             order.total = order_total
             db.session.commit()

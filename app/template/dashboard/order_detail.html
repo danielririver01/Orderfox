@@ -133,6 +133,47 @@
                                 }}</span>
                         </div>
                     </div>
+
+                    <!-- Pago -->
+                    {% if order.payment_method %}
+                    <div class="mt-5 pt-5 border-t border-gray-50 dark:border-[#262626]">
+                        <div class="flex items-center justify-between mb-3">
+                            <span
+                                class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Pago</span>
+                            <span
+                                class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border
+                                {% if order.payment_method == 'cash' %}bg-green-100 dark:bg-emerald-500/10 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-500/20
+                                {% elif order.payment_method in ['nequi', 'bancolombia'] %}bg-pink-100 dark:bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-200 dark:border-pink-500/20
+                                {% else %}bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20{% endif %}">
+                                {% if order.payment_method == 'cash' %}Efectivo
+                                {% elif order.payment_method == 'nequi' %}Nequi
+                                {% elif order.payment_method == 'bancolombia' %}Bancolombia
+                                {% else %}Tarjeta{% endif %}
+                            </span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            {% if order.payment_method == 'cash' %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400 font-medium">Recibido</span>
+                                <span class="font-black text-gray-900 dark:text-white">${{
+                                    '{:,}'.format(order.amount_received) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400 font-medium">Cambio</span>
+                                <span class="font-black text-emerald-600 dark:text-emerald-400">${{
+                                    '{:,}'.format(order.change_due) }}</span>
+                            </div>
+                            {% endif %}
+                            {% if order.paid_at %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400 font-medium">Pagado</span>
+                                <span class="font-bold text-gray-900 dark:text-white">{{
+                                    order.paid_at | local_time('%d/%m/%y • %I:%M %p') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Notas -->
@@ -155,6 +196,18 @@
 
                 <!-- Imprimir -->
                 {% if order.status != 'cancelled' %}
+                <a href="{{ url_for('orders.edit', id=order.id) }}"
+                    class="w-full bg-[#262626] hover:bg-[#333333] text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                    Editar Venta
+                </a>
+                {% if not order.payment_method %}
+                <button onclick="openPaymentModal({ total: {{ order.total }}, orderId: {{ order.id }}, mode: 'register', subtitle: '{{ order.order_number }}' })"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    Registrar Pago
+                </button>
+                {% endif %}
                 <button onclick="window.open('{{ url_for('orders.receipt', id=order.id) }}', '_blank')"
                     class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[20px]">print</span>
@@ -273,4 +326,6 @@
 {% include 'common/navigation.html' %}
 
 <script src="{{ url_for('static', filename='js/order_detail.js') }}"></script>
+{% include 'dashboard/_payment_modal.html' %}
+<script src="{{ url_for('static', filename='js/payment-modal.js') }}"></script>
 {% endblock %}

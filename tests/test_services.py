@@ -286,6 +286,53 @@ class TestPublicMenuService:
         r = PublicMenuService.get_restaurant_by_id(99999)
         assert r is None
 
+    def test_create_order_empty_cart_rejected(self, db, sample_restaurant):
+        order, items, error = PublicMenuService.create_order_from_cart(
+            restaurant=sample_restaurant,
+            cart={},
+            customer_name='Cliente Test',
+            customer_phone='+573001234567',
+            notes='Nota',
+            table_id=None,
+            ip_address='127.0.0.1',
+            order_number='ORD-TEST-1',
+        )
+        assert order is None
+        assert items is None
+        assert error == {'error_code': 'EMPTY_CART', 'message': 'El carrito está vacío.'}
+
+    def test_create_order_no_valid_items_rejected(self, db, sample_restaurant):
+        order, items, error = PublicMenuService.create_order_from_cart(
+            restaurant=sample_restaurant,
+            cart={999999: {'quantity': 1, 'extras': []}},
+            customer_name='Cliente Test',
+            customer_phone='+573001234567',
+            notes='Nota',
+            table_id=None,
+            ip_address='127.0.0.1',
+            order_number='ORD-TEST-2',
+        )
+        assert order is None
+        assert items is None
+        assert error == {'error_code': 'EMPTY_CART', 'message': 'Los productos seleccionados ya no están disponibles.'}
+
+    def test_create_order_valid_items_ok(self, db, sample_restaurant, sample_product):
+        order, items, total = PublicMenuService.create_order_from_cart(
+            restaurant=sample_restaurant,
+            cart={sample_product.id: {'quantity': 2, 'extras': []}},
+            customer_name='Cliente Test',
+            customer_phone='+573001234567',
+            notes='Nota',
+            table_id=None,
+            ip_address='127.0.0.1',
+            order_number='ORD-TEST-3',
+        )
+        assert order is not None
+        assert order.total == 10000
+        assert total == 10000
+        assert len(items) == 1
+        assert items[0]['name'] == sample_product.name
+
 
 class TestQRService:
     def test_generate_menu_qr_png(self):

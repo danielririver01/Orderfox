@@ -110,12 +110,12 @@ def create_app():
     # then _csrf_protect_nonapi runs CSRF check for non-API routes.
     @app.before_request
     def exempt_api_from_csrf():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/'):
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/') or request.path.startswith('/menu/api/'):
             return
 
     @app.before_request
     def _csrf_protect_nonapi():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/'):
+        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/') or request.path.startswith('/menu/api/'):
             return
         csrf_instance = current_app.extensions.get('csrf')
         if csrf_instance:
@@ -184,6 +184,7 @@ def create_app():
     from .routes.products import products_bp
     from .routes.orders import orders_bp
     from .routes.insights import insights_bp
+    from .routes.cash_register import cash_register_bp
     from .routes.public import public_bp
     from .routes.tables import tables_bp
     from .routes.api_auth import api_auth_bp
@@ -202,6 +203,7 @@ def create_app():
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(insights_bp)
+    app.register_blueprint(cash_register_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(tokens_bp)
@@ -253,13 +255,16 @@ def create_app():
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
             "cdn.jsdelivr.net cdn.tailwindcss.com "
-            "oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
+            "oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
+            "challenges.cloudflare.com *.protect.clerk.com; "
             "style-src 'self' 'unsafe-inline' "
             "fonts.googleapis.com cdn.jsdelivr.net; "
             "font-src 'self' fonts.gstatic.com data:; "
-            "img-src 'self' data: res.cloudinary.com img.clerk.com; "
-            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
-            "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop; "
+            "img-src 'self' data: blob: res.cloudinary.com img.clerk.com; "
+            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
+            "challenges.cloudflare.com *.protect.clerk.com; "
+            "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
+            "challenges.cloudflare.com *.protect.clerk.com; "
             "worker-src 'self' blob:"
         )
 

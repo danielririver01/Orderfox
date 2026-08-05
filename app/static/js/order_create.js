@@ -76,16 +76,58 @@
                 e.preventDefault();
                 showToast('Por favor selecciona al menos un producto', 'error');
                 
-                // Efecto visual: sacudir o resaltar la sección de productos
+                // Efectivo visual: sacudir o resaltar la sección de productos
                 const productSection = document.querySelector('.bg-white.rounded-lg.border.border-gray-200.shadow-sm.p-6:nth-of-type(2)');
                 if (productSection) {
                     productSection.classList.add('ring-2', 'ring-red-200');
                     setTimeout(() => productSection.classList.remove('ring-2', 'ring-red-200'), 500);
                 }
+                return;
+            }
+
+            // Modo edición: abrir modal de pago precargado con el pago actual
+            // (si existe). Confirmar sobreescribe el pago; el botón secundario
+            // "Guardar sin cambiar el pago" envía sin tocar el pago.
+            if (window.ORDER_EDIT_MODE === true) {
+                e.preventDefault();
+                const editTotal = parseInt((document.getElementById('order-total').textContent || '0').replace(/[^\d]/g, ''), 10) || 0;
+                if (typeof openPaymentModal === 'function') {
+                    const existing = window.ORDER_EDIT_PAYMENT || null;
+                    openPaymentModal({
+                        total: editTotal,
+                        mode: 'edit',
+                        form: document.getElementById('order-form'),
+                        subtitle: window.ORDER_EDIT_SUBTITLE || 'Editar venta',
+                        initialMethod: existing ? existing.method : null,
+                        initialAmount: existing ? existing.amount_received : null,
+                    });
+                } else {
+                    document.getElementById('order-form').submit();
+                }
+                return;
+            }
+
+            // Abrir modal de pago antes de enviar el formulario
+            e.preventDefault();
+            const total = parseInt((document.getElementById('order-total').textContent || '0').replace(/[^\d]/g, ''), 10) || 0;
+            if (typeof openPaymentModal === 'function') {
+                openPaymentModal({
+                    total: total,
+                    mode: 'create',
+                    form: document.getElementById('order-form'),
+                    subtitle: 'Nuevo pedido'
+                });
+            } else {
+                document.getElementById('order-form').submit();
             }
         };
 
     document.addEventListener('DOMContentLoaded', function() {
+    // Precargar cantidades desde los spans qty-* (modo edición) y total inicial.
+    if (document.getElementById('order-total')) {
+        calculateTotal();
+    }
+
     const searchInput = document.getElementById('product-search');
     const products = document.querySelectorAll('.product-item');
     const noResultsMessage = document.getElementById('no-results-message');

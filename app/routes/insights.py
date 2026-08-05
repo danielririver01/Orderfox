@@ -113,7 +113,7 @@ def api_create_conversation():
     conv = cs.create_conversation(
         user.id, user.restaurant_id, title=title,
         prompt_version=prompt_builder.PROMPT_VERSION,
-        model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
+        model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash',
     )
     stage = data_service.get_data_stage(user.restaurant_id)
     return jsonify({
@@ -144,7 +144,7 @@ def api_draft_conversation():
         draft = cs.create_conversation(
             user.id, user.restaurant_id,
             prompt_version=prompt_builder.PROMPT_VERSION,
-            model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
+            model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash',
         )
     stage = data_service.get_data_stage(user.restaurant_id)
     return jsonify({
@@ -365,7 +365,7 @@ def api_consume_event(eid):
             user.id, user.restaurant_id,
             title='Eventos del negocio',
             prompt_version=prompt_builder.PROMPT_VERSION,
-            model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
+            model=current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash',
         )
 
     # Agregar mensaje template como assistant

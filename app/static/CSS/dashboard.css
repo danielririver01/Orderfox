@@ -102,4 +102,18 @@
     background: #262629;
 }
 
+/* Date inputs: icono de calendario + picker en tema oscuro (blanco sobre dark) */
+input[type="date"] {
+    color-scheme: dark;
+}
+/* Fallback para navegadores que respetan el pseudo-elemento (blanco forzado) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.85;
+    cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
         /* End of custom CSS */

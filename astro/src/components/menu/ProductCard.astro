@@ -10,12 +10,12 @@ const hasModifiers = product.modifiers && product.modifiers.length > 0;
 ---
 
 <div
-  class="product-card cursor-pointer rounded-xl border border-white/5 bg-[#141414] shadow-sm transition hover:border-purple-500/30 hover:bg-[#1a1a1a]"
+  class="product-card flex h-full cursor-pointer flex-col rounded-xl border border-white/5 bg-[#141414] shadow-sm transition hover:border-purple-500/30 hover:bg-[#1a1a1a]"
   data-product-id={product.id}
 >
-  <div class="product-card-inner">
+  <div class="product-card-inner flex flex-1 flex-col">
     <!-- Front -->
-    <div class="product-card-front">
+    <div class="product-card-front flex flex-1 flex-col">
       <button class="btn-flip-card" data-flip-id={product.id} title="Ver info y QR">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -23,7 +23,7 @@ const hasModifiers = product.modifiers && product.modifiers.length > 0;
         </svg>
       </button>
 
-      <div class="relative aspect-square overflow-hidden bg-[#1a1a1a]">
+      <div class="relative h-36 shrink-0 overflow-hidden bg-[#1a1a1a] md:h-44">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} class="h-full w-full object-cover transition hover:scale-105" loading="lazy" />
         ) : (
@@ -33,15 +33,15 @@ const hasModifiers = product.modifiers && product.modifiers.length > 0;
         )}
       </div>
 
-      <div class="p-3">
-        <div class="mb-1 flex items-center justify-between">
+      <div class="flex flex-1 flex-col p-3">
+        <div class="mb-1 flex items-start justify-between gap-2">
           <h3 class="text-sm font-semibold text-[#f5f5f7]">{product.name}</h3>
-          <span class="text-sm font-bold text-brand-400">${product.price.toLocaleString('es-CO')}</span>
+          <span class="shrink-0 text-sm font-bold text-brand-400">${product.price.toLocaleString('es-CO')}</span>
         </div>
         {product.description && (
           <p class="mb-2 line-clamp-2 text-xs text-[#a1a1aa]">{product.description}</p>
         )}
-        <div class="flex items-center justify-between">
+        <div class="mt-auto flex items-center justify-between">
           {hasModifiers && (
             <span class="rounded-full bg-brand-500/20 px-2 py-0.5 text-xs text-brand-300">Variantes</span>
           )}

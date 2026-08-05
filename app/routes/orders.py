@@ -5,7 +5,7 @@ import json
 
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
-from app.services.order_service import OrderService
+from app.services.order_service import OrderService, PaymentValidationError
 from app.services.notification_service import notify_new_order
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
@@ -87,12 +87,82 @@ def create():
             flash(str(e), 'error')
             return redirect(url_for('orders.create'))
 
+        # Pago opcional (modal caja registradora)
+        payment_method = data.get('payment_method') or None
+        if payment_method:
+            amount_raw = data.get('amount_received') or None
+            try:
+                amount = int(amount_raw) if amount_raw else None
+            except (TypeError, ValueError):
+                amount = None
+            try:
+                OrderService.record_payment(order, payment_method, amount_received=amount)
+            except PaymentValidationError as e:
+                db.session.rollback()
+                flash(str(e), 'error')
+                return redirect(url_for('orders.create'))
+
         db.session.commit()
         notify_new_order(order.id)
         return redirect(url_for('orders.index'))
     
     products = OrderService.get_active_products(restaurant.id)
     return render_template('dashboard/order_create.html', products=products)
+
+@orders_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
+@require_auth
+@require_active
+def edit(id):
+    """Editar los items y datos de una venta (solo pedidos no cancelados)."""
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
+    if order.status == 'cancelled':
+        flash('No se puede editar un pedido cancelado', 'error')
+        return redirect(url_for('orders.detail', id=id))
+
+    if request.method == 'POST':
+        data = request.form
+
+        if data.get('customer_name'):
+            order.customer_name = data.get('customer_name')
+        order.customer_phone = data.get('customer_phone', '')
+        order.notes = data.get('notes', '')
+
+        items_data = json.loads(data.get('items', '[]'))
+
+        # Edición de pago (modal caja registradora en la pantalla de edición).
+        payment_method = data.get('payment_method') or None
+        amount_raw = data.get('amount_received') or None
+        try:
+            amount = int(amount_raw) if amount_raw else None
+        except (TypeError, ValueError):
+            amount = None
+
+        try:
+            OrderService.update_order_items(
+                order, items_data, restaurant.id,
+                payment_method=payment_method, amount_received=amount,
+            )
+        except (ValueError, PaymentValidationError) as e:
+            db.session.rollback()
+            flash(str(e), 'error')
+            return redirect(url_for('orders.edit', id=id))
+
+        flash('Venta actualizada correctamente', 'success')
+        return redirect(url_for('orders.detail', id=id))
+
+    products = OrderService.get_active_products(restaurant.id)
+    # Mapear los items actuales del pedido a product_id para precargar el carrito.
+    name_to_id = {p.name: p.id for p in products}
+    order_items_json = json.dumps([
+        {'product_id': name_to_id[item.product_name], 'quantity': item.quantity}
+        for item in order.items if item.product_name in name_to_id
+    ])
+    return render_template('dashboard/order_edit.html', order=order,
+                           products=products, order_items_json=order_items_json)
+
 
 @orders_bp.route('/<int:id>')
 @require_auth
@@ -144,6 +214,51 @@ def change_status(id):
     
     OrderService.change_order_status(order, new_status)
     return jsonify({'success': True, 'status': order.status})
+
+
+@orders_bp.route('/<int:id>/payment', methods=['POST'])
+@require_auth
+@require_active
+def register_payment(id):
+    """Registrar el pago de un pedido (modal caja registradora).
+
+    Responde JSON porque se consume desde fetch() en el modal:
+    - 200 {success, data: {payment_method, amount_received, change_due, paid_at}}
+    - 400 {success: False, error} para errores de negocio (monto insuficiente, método inválido)
+    - 409 {success: False, error} si el pedido ya tiene pago registrado
+    """
+    restaurant = get_current_restaurant()
+    if not restaurant: abort(404)
+
+    order = OrderService.get_order_for_restaurant(restaurant.id, id)
+    if not order: abort(404)
+
+    data = request.get_json(silent=True) or {}
+    method = data.get('payment_method') or data.get('method')
+    amount_raw = data.get('amount_received') or data.get('amount')
+    try:
+        amount = int(amount_raw) if amount_raw else None
+    except (TypeError, ValueError):
+        amount = None
+
+    try:
+        order, change = OrderService.record_payment(order, method, amount_received=amount)
+    except PaymentValidationError as e:
+        return jsonify({'success': False, 'error': str(e)}), e.status_code
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Error al registrar el pago'}), 500
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'order_id': order.id,
+            'payment_method': order.payment_method,
+            'amount_received': order.amount_received,
+            'change_due': order.change_due,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None
+        }
+    })
 
 @orders_bp.route('/<int:id>/cancel', methods=['POST'])
 @require_auth

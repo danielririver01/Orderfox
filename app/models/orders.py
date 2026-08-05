@@ -18,6 +18,11 @@ class Order(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     total = db.Column(db.Integer, nullable=False)
     notes = db.Column(db.Text)
+    # Pago (modal caja registradora). NULL = sin pago registrado aun.
+    payment_method = db.Column(db.String(20), nullable=True)  # cash | nequi | bancolombia | card
+    amount_received = db.Column(db.Integer, nullable=True)    # solo efectivo: lo que entregó el cliente
+    change_due = db.Column(db.Integer, nullable=True)         # solo efectivo: vuelto a devolver
+    paid_at = db.Column(AwareDateTime, nullable=True)         # cuándo se registró el pago
     # IP del cliente para rate limiting (P4)
     ip_address = db.Column(db.String(45), nullable=True, index=True)
     # Fecha de expiración para pedidos pendientes

@@ -4,8 +4,18 @@ from app.utils.timezone import today_start_utc
 import json
 
 
+class PaymentValidationError(ValueError):
+    """Error de negocio en el registro de un pago. El mensaje es seguro para mostrar al usuario."""
+    def __init__(self, message, status_code=400):
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class OrderService:
     """Business logic for Order operations. Shared by web and API routes."""
+
+    PAYMENT_METHODS = ('cash', 'nequi', 'bancolombia', 'card')
+    CASH_METHODS = ('cash',)
 
     @staticmethod
     def generate_order_number(restaurant_id):
@@ -194,6 +204,70 @@ class OrderService:
         return Product.query.filter_by(restaurant_id=restaurant_id, is_active=True).all()
 
     @staticmethod
+    def update_order_items(order, items_data, restaurant_id, payment_method=None,
+                           amount_received=None):
+        """
+        Reemplazar los items de un pedido (edición de venta) y recalcular el total.
+
+        - Solo pedidos NO cancelados pueden editarse.
+        - Conserva el snapshot de modificadores de cada producto que ya existía
+          (los OrderItem guardan nombre/precio, no FK; se matchean por nombre).
+        - Si `payment_method` viene en el request, el pago se sobreescribe con
+          las reglas de `_apply_payment` contra el NUEVO total (edición de pago).
+        - Si NO viene, y el pedido ya estaba pagado en efectivo, recalcula el
+          cambio contra el nuevo total. Si el nuevo total supera lo recibido,
+          lanza error.
+        - Los items que quedan con cantidad 0 (o no enviados) se eliminan.
+
+        Lanza ValueError (cantidad inválida) o PaymentValidationError (reglas).
+        Devuelve (total, validated_items) tras commit.
+        """
+        if order.status == 'cancelled':
+            raise PaymentValidationError('No se puede editar un pedido cancelado')
+
+        # Cantidad 0 o ausente = eliminar ese producto. Negativos se dejan pasar
+        # para que add_items_to_order los rechace con su error de validación.
+        items_data = [it for it in items_data if it.get('quantity', 1) != 0]
+
+        prev_snapshots = {item.product_name: item.modifiers_snapshot for item in order.items}
+
+        # Eliminar items actuales para reconstruirlos desde el request.
+        for item in list(order.items):
+            db.session.delete(item)
+        db.session.flush()
+
+        total, validated_items = OrderService.add_items_to_order(
+            order, items_data, restaurant_id)
+        db.session.flush()
+
+        # Conservar modificadores de productos que ya estaban y no se borraron.
+        # Recargamos los items desde la DB: la colección order.items en memoria
+        # aún contiene los viejos marcados para borrado.
+        fresh_items = OrderItem.query.filter_by(order_id=order.id).all()
+        for item in fresh_items:
+            if item.product_name in prev_snapshots and not item.modifiers_snapshot:
+                item.modifiers_snapshot = prev_snapshots[item.product_name]
+
+        order.total = total
+
+        # Edición de pago: el usuario confirmó el modal de pago en la pantalla
+        # de edición → sobreescribir con el nuevo método/monto.
+        if payment_method:
+            OrderService._apply_payment(order, payment_method, amount_received)
+        # Sin edición de pago: si ya se cobró en efectivo, recalcular el cambio.
+        elif order.payment_method == 'cash' and order.amount_received is not None:
+            if order.amount_received < total:
+                db.session.rollback()
+                raise PaymentValidationError(
+                    f'El nuevo total (${total:,}) supera el monto recibido '
+                    f'(${order.amount_received:,}). Ajusta el pago o cancela y rehaz la venta.'
+                )
+            order.change_due = order.amount_received - total
+
+        db.session.commit()
+        return total, validated_items
+
+    @staticmethod
     def change_order_status(order, new_status):
         """
         Change an order's status and commit.
@@ -203,6 +277,88 @@ class OrderService:
         order.status = new_status
         db.session.commit()
         return order
+
+    @staticmethod
+    def _apply_payment(order, method, amount_received=None):
+        """Valida y aplica los campos de pago sobre un pedido (sin commit).
+
+        Comparte las reglas de efectivo/caja entre `record_payment` (nuevo
+        pago) y `update_order_payment` (sobreescribir en edición).
+        """
+        if method not in OrderService.PAYMENT_METHODS:
+            raise PaymentValidationError('Método de pago inválido')
+
+        if order.status == 'cancelled':
+            raise PaymentValidationError('No se puede registrar un pago en un pedido cancelado')
+
+        if method in OrderService.CASH_METHODS:
+            received = amount_received
+            try:
+                received = int(received)
+            except (TypeError, ValueError):
+                raise PaymentValidationError('Debes indicar cuánto recibiste del cliente')
+            if received <= 0:
+                raise PaymentValidationError('El monto recibido debe ser mayor a 0')
+            if received < order.total:
+                falta = order.total - received
+                raise PaymentValidationError(f'Falta dinero: ${falta:,}')
+            change = received - order.total
+            order.amount_received = received
+            order.change_due = change
+        else:
+            # Métodos no-caja: ignorar cualquier monto que venga del request.
+            order.amount_received = None
+            order.change_due = None
+
+        order.payment_method = method
+        order.paid_at = datetime.now(timezone.utc)
+
+    @staticmethod
+    def record_payment(order, method, amount_received=None, change_due=None, actor=None):
+        """
+        Registrar el pago de un pedido (modal caja registradora).
+
+        Reglas (server-side, no confiar solo en la UI):
+        - `method` debe ser uno de: cash | nequi | bancolombia | card.
+        - Un pedido cancelado nunca puede recibir pago.
+        - Un pedido que ya tiene pago registrado NO puede sobreescribirse
+          (idempotencia: doble clic / reintento de red / modal reabierto).
+        - Efectivo: exige `amount_received >= order.total`, calcula el cambio
+          y lanza PaymentValidationError si falta dinero.
+        - Nequi/Bancolombia/Tarjeta: solo registran el método; los montos que
+          pudieran venir en el request se fuerzan a None.
+
+        Lanza PaymentValidationError (400) o PaymentValidationError con
+        status_code=409 si el pedido ya tiene pago.
+
+        Devuelve (order, change_due) tras commit.
+        """
+        if order.payment_method is not None:
+            raise PaymentValidationError(
+                'Este pedido ya tiene un pago registrado',
+                status_code=409,
+            )
+
+        OrderService._apply_payment(order, method, amount_received)
+        db.session.commit()
+
+        return order, order.change_due
+
+    @staticmethod
+    def update_order_payment(order, method, amount_received=None, change_due=None, actor=None):
+        """
+        Sobre-escribir el pago de un pedido (edición de venta).
+
+        A diferencia de `record_payment`, aquí el pedido PUEDE tener pago ya
+        registrado: se reemplaza con los nuevos valores. Si el pedido no tenía
+        pago, actúa igual que `record_payment`.
+
+        Lanza PaymentValidationError (400). Devuelve (order, change_due).
+        """
+        OrderService._apply_payment(order, method, amount_received)
+        db.session.commit()
+
+        return order, order.change_due
 
     @staticmethod
     def cancel_order(order):
@@ -245,5 +401,9 @@ class OrderService:
             'notes': order.notes,
             'table_name': order.table.name if order.table else None,
             'items_count': len(order.items),
+            'payment_method': order.payment_method,
+            'amount_received': order.amount_received,
+            'change_due': order.change_due,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None,
             'created_at': order.created_at.isoformat() if order.created_at else None
         }

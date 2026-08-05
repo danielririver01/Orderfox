@@ -131,9 +131,11 @@ if (!isNotFound) {
             {categories.map((cat) => (
               <section key={cat.id} id={`cat-${cat.id}`} class="mb-10">
                 <h2 class="mb-4 font-display text-lg font-bold text-[#f5f5f7]">{cat.name}</h2>
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+                <div class="flex flex-wrap gap-3">
                   {cat.products.map((product) => (
-                    <ProductCard product={product} />
+                    <div class="grow w-[calc(50%-6px)] md:w-[calc(33.333%-8px)]">
+                      <ProductCard product={product} />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -263,6 +265,8 @@ if (!isNotFound) {
           }
 
           if (detailPanel) detailPanel.classList.remove('translate-x-full');
+          document.getElementById('cart-sidebar')?.classList.add('translate-x-full');
+          document.getElementById('cart-overlay')?.classList.add('hidden');
           document.body.style.overflow = 'hidden';
         }
 

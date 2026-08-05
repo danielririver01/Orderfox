@@ -72,7 +72,7 @@ class Config:
     # Copilot VZ (DeepSeek AI) Integration
     DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY')
     DEEPSEEK_API_URL = os.environ.get('DEEPSEEK_API_URL') or 'https://api.deepseek.com/v1/chat/completions'
-    DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL') or 'deepseek-chat'
+    DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash'
 
     # JWT Configuration (Mobile API)
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')

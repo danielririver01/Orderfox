@@ -301,7 +301,7 @@ def handle_post_message(cid, user, conv, data):
         'intent': cls['intent'],
         'window': cls['window'],
         'credits_used': credits_used,
-        'model': current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat',
+        'model': current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash',
         'execution_ms': execution_ms,
         'chart': parsed['chart'] if parsed['chart'] else None,
         'suggestions': chart_service.followup_suggestions(

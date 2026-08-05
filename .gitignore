@@ -96,3 +96,8 @@ tests/security/reports/
 /email_recompensa.html
 /scripts/test_email_flows.py
 
+# Archivos temporales de diagnostico (NO van a git)
+/_inject.py
+/_render_products.py
+/_*.html
+

@@ -12,9 +12,11 @@ class CopilotConversation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    # Origen de la conversación: 'insights' (Copilot VZ) o 'cash_register' (Centro de Caja).
+    source = db.Column(db.String(30), default='insights', nullable=False, index=True)
     title = db.Column(db.String(200), nullable=True)
     prompt_version = db.Column(db.String(10), default='v1.0')
-    model = db.Column(db.String(50), default='deepseek-chat')
+    model = db.Column(db.String(50), default='deepseek-v4-flash')
     analysis_active = db.Column(db.Boolean, default=False, nullable=False)
     pinned = db.Column(db.Boolean, default=False, nullable=False)
     metadata_json = db.Column(db.Text, nullable=True)

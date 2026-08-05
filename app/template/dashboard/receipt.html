@@ -66,6 +66,27 @@
         </div>
     </div>
 
+    {% if order.payment_method %}
+    <div class="payment-row">
+        {% if order.payment_method == 'cash' %}
+        <div class="bold">EFECTIVO</div>
+        {% elif order.payment_method == 'nequi' %}
+        <div class="bold">PAGO NEQUI</div>
+        {% elif order.payment_method == 'bancolombia' %}
+        <div class="bold">PAGO BANCOLOMBIA</div>
+        {% else %}
+        <div class="bold">PAGO TARJETA</div>
+        {% endif %}
+        {% if order.payment_method == 'cash' and order.amount_received %}
+        <div>RECIBIDO: <span class="bold">{{ order.amount_received | currency }}</span></div>
+        <div>CAMBIO: <span class="bold">{{ order.change_due | currency }}</span></div>
+        {% endif %}
+        {% if order.paid_at %}
+        <div style="font-size: 10px;">{{ order.paid_at | local_time('%d/%m/%Y %I:%M %p') }}</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if order.notes %}
     <div style="margin-top: 15px; font-size: 11px;">
         <span class="bold italic">NOTAS:</span> {{ order.notes.split(' | IP:')[0].split('IP:')[0] }}

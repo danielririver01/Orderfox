@@ -22,23 +22,25 @@ const { restaurantId } = Astro.props;
   const restaurantId = document.querySelector('#cart-toggle-btn')?.getAttribute('data-restaurant-id');
   if (restaurantId) {
     const updateCount = (pulse?: boolean) => {
+      let count = 0;
       const raw = localStorage.getItem(`velziaCart_${restaurantId}`);
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        const count = parsed.items?.reduce?.((s: number, i: any) => s + (i.quantity || 0), 0) || 0;
-        const badge = document.getElementById('cart-count');
-        const btn = document.getElementById('cart-toggle-btn');
-        if (badge) badge.textContent = String(count);
-        if (btn) {
-          btn.classList.toggle('hidden', count === 0);
-          if (pulse && count > 0) {
-            btn.classList.remove('cart-pulse');
-            void (btn as HTMLElement).offsetWidth;
-            btn.classList.add('cart-pulse');
-          }
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          count = parsed.items?.reduce?.((s: number, i: any) => s + (i.quantity || 0), 0) || 0;
+        } catch {}
+      }
+      const badge = document.getElementById('cart-count');
+      const btn = document.getElementById('cart-toggle-btn');
+      if (badge) badge.textContent = String(count);
+      if (btn) {
+        btn.classList.toggle('hidden', count === 0);
+        if (pulse && count > 0) {
+          btn.classList.remove('cart-pulse');
+          void (btn as HTMLElement).offsetWidth;
+          btn.classList.add('cart-pulse');
         }
-      } catch {}
+      }
     };
     updateCount();
     window.addEventListener('storage', () => updateCount());

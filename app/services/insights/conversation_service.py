@@ -15,10 +15,10 @@ from app import db
 from app.models import CopilotConversation, CopilotMessage
 
 
-def list_conversations(user_id, limit=200):
+def list_conversations(user_id, source='insights', limit=200):
     return (
         CopilotConversation.query
-        .filter_by(user_id=user_id)
+        .filter_by(user_id=user_id, source=source)
         .order_by(
             CopilotConversation.pinned.desc(),
             CopilotConversation.updated_at.desc(),
@@ -28,7 +28,7 @@ def list_conversations(user_id, limit=200):
     )
 
 
-def search_conversations(user_id, query, limit=50):
+def search_conversations(user_id, query, source='insights', limit=50):
     """Filtra las conversaciones del usuario por texto.
 
     Busca coincidencias (case-insensitive) en el título de la conversación
@@ -40,7 +40,7 @@ def search_conversations(user_id, query, limit=50):
 
     q = f"%{query.strip().lower()}%"
     if not query or not query.strip():
-        return list_conversations(user_id, limit=limit)
+        return list_conversations(user_id, source=source, limit=limit)
 
     # Subquery: conversaciones que tienen algún mensaje cuyo contenido
     # coincide con la búsqueda.
@@ -54,6 +54,7 @@ def search_conversations(user_id, query, limit=50):
         CopilotConversation.query
         .filter(
             CopilotConversation.user_id == user_id,
+            CopilotConversation.source == source,
             or_(
                 CopilotConversation.title.ilike(q),
                 CopilotConversation.id.in_(convs_with_msg),
@@ -72,13 +73,14 @@ def get_conversation(conversation_id, user_id):
     return CopilotConversation.query.filter_by(id=conversation_id, user_id=user_id).first()
 
 
-def create_conversation(user_id, restaurant_id, title=None, prompt_version='v1.0', model='deepseek-chat'):
+def create_conversation(user_id, restaurant_id, title=None, prompt_version='v1.0', model='deepseek-v4-flash', source='insights'):
     conv = CopilotConversation(
         user_id=user_id,
         restaurant_id=restaurant_id,
         title=title,
         prompt_version=prompt_version,
         model=model,
+        source=source,
     )
     db.session.add(conv)
     db.session.commit()
@@ -134,15 +136,15 @@ def set_pinned(conversation_id, pinned):
     db.session.commit()
 
 
-def count_pinned(user_id):
-    return CopilotConversation.query.filter_by(user_id=user_id, pinned=True).count()
+def count_pinned(user_id, source='insights'):
+    return CopilotConversation.query.filter_by(user_id=user_id, pinned=True, source=source).count()
 
 
-def find_draft(user_id):
+def find_draft(user_id, source='insights'):
     """Devuelve una conversación sin mensajes (borrador) del usuario, o None."""
     return (
         CopilotConversation.query
-        .filter_by(user_id=user_id)
+        .filter_by(user_id=user_id, source=source)
         .filter(~exists().where(CopilotMessage.conversation_id == CopilotConversation.id))
         .order_by(CopilotConversation.updated_at.desc())
         .first()
@@ -157,6 +159,24 @@ def mark_analysis_active(conversation_id):
         {'analysis_active': True, 'updated_at': datetime.now(timezone.utc)}
     )
     db.session.commit()
+
+
+def clear_analysis_active(conversation_id):
+    """Limpia analysis_active cuando falla un análisis que consumió crédito."""
+    CopilotConversation.query.filter_by(id=conversation_id).update(
+        {'analysis_active': False, 'updated_at': datetime.now(timezone.utc)}
+    )
+    db.session.commit()
+
+
+def delete_message(message_id):
+    """Elimina un mensaje (rollback de un turno que falló)."""
+    msg = CopilotMessage.query.get(message_id)
+    if not msg:
+        return False
+    db.session.delete(msg)
+    db.session.commit()
+    return True
 
 
 def make_title_from_message(text, limit=60):

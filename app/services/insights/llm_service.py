@@ -33,7 +33,7 @@ def chat(messages, temperature=0.35, max_tokens=2000):
         )
 
     url = current_app.config.get('DEEPSEEK_API_URL') or 'https://api.deepseek.com/v1/chat/completions'
-    model = current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-chat'
+    model = current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash'
 
     payload = {
         'model': model,

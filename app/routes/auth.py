@@ -187,6 +187,10 @@ def setup_account():
         form.confirm_password.validators = []
 
     if form.validate_on_submit():
+        if not form.accept_terms.data:
+            flash('Debes aceptar los Términos y Condiciones y la Política de Datos para continuar.', 'warning')
+            return render_template('auth/register_setup.html', form=form,
+                                   plan=session.get('selected_plan'), user=user)
         selected_plan = session.get('selected_plan', 'emprendedor')
         is_trial = selected_plan == 'trial'
 

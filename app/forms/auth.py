@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from wtforms import BooleanField, PasswordField, StringField, SubmitField
+from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
+
 
 def password_complexity_check(form, field):
     password = field.data
@@ -37,4 +38,5 @@ class RegisterSetupForm(FlaskForm):
         DataRequired(),
         EqualTo('password', message='Las contraseñas deben coincidir.')
     ])
+    accept_terms = BooleanField('Acepto los Términos y Condiciones y la Política de Datos')
     submit = SubmitField('Finalizar y Pagar')

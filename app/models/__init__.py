@@ -13,6 +13,7 @@ migrate = Migrate()
 
 from .core import AwareDateTime, Restaurant, User, Category, Product, Modifier, Table  # noqa: F401, E402
 from .orders import Order, OrderItem, OrderCounter  # noqa: F401, E402
+from .cash import CashRegister  # noqa: F401, E402
 from .ai import CopilotConversation, CopilotMessage, CopilotBusinessEvent  # noqa: F401, E402
 from .tokens import AITokenWallet, AITokenTransaction  # noqa: F401, E402
 from .rewards import (  # noqa: F401, E402
