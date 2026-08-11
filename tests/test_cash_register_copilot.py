@@ -11,15 +11,13 @@ Cubre el flujo independiente de /insights:
 - Prompt de sistema propio (CASH_SYSTEM_PROMPT).
 """
 
-import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from app.models import AITokenWallet, CopilotConversation, Order
 from app.services.cash_register_service import CashRegisterService
 from app.services.insights import prompt_builder
-
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
@@ -66,7 +64,7 @@ class _LLMCapture:
         self.return_value = '{"text": "Respuesta de prueba", "chart": null}'
         self.error = None
 
-    def __call__(self, messages, temperature=0.35, max_tokens=2000):
+    def __call__(self, messages, temperature=0.35, max_tokens=2000, **kwargs):
         self.calls.append(messages)
         if self.error:
             raise self.error
@@ -300,6 +298,108 @@ class TestCashCopilotMessage(_Auth):
 
         conv = CopilotConversation.query.get(cid)
         assert conv.analysis_active is True
+
+    def test_follow_up_free_only_until_cap_then_charges(self, client, app, db,
+                                                        sample_user,
+                                                        sample_restaurant,
+                                                        cash_wallet,
+                                                        paid_order_factory,
+                                                        llm_capture,
+                                                        monkeypatch):
+        """Follow-ups gratis solo hasta el tope; el N+1 cobra y abre bloque nuevo."""
+        monkeypatch.setitem(app.config, 'COPILOT_MAX_FOLLOW_UPS', 2)
+        now = datetime.now(timezone.utc)
+        paid_order_factory(10000, 'cash', now, amount_received=10000)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+
+        # 1er mensaje: consume 1 token (5 → 4).
+        first = self._post_message(
+            client, cid, {'content': '¿Ventas?', 'period': {'range': 'today'}})
+        assert first.status_code == 200
+        wallet = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert wallet.plan_tokens == 4
+        assert first.get_json()['metadata']['credits_used'] == 1
+
+        # Follow-ups 1..N (tope=2): gratis.
+        for i in range(2):
+            resp = self._post_message(
+                client, cid,
+                {'content': f'¿Y en efectivo? {i}',
+                 'period': {'range': 'today'}})
+            assert resp.status_code == 200
+            assert resp.get_json()['metadata']['credits_used'] == 0
+
+        wallet = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert wallet.plan_tokens == 4
+        assert wallet.tokens_used_month == 1
+
+        conv = CopilotConversation.query.get(cid)
+        assert conv.follow_up_count == 2
+
+        # N+1: consume token nuevo y resetea el contador (bloque nuevo).
+        charged = self._post_message(
+            client, cid, {'content': '¿Y en nequi?', 'period': {'range': 'today'}})
+        assert charged.status_code == 200
+        assert charged.get_json()['metadata']['credits_used'] == 1
+        wallet = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert wallet.plan_tokens == 3
+        assert wallet.tokens_used_month == 2
+
+        conv = CopilotConversation.query.get(cid)
+        assert conv.follow_up_count == 0
+
+        # Siguiente follow-up vuelve a ser gratis (nuevo bloque).
+        free_again = self._post_message(
+            client, cid, {'content': '¿Y ayer?', 'period': {'range': 'today'}})
+        assert free_again.status_code == 200
+        assert free_again.get_json()['metadata']['credits_used'] == 0
+        wallet = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert wallet.plan_tokens == 3
+
+    def test_no_credits_at_cap_returns_no_credits(self, client, app, db,
+                                                  sample_user,
+                                                  sample_restaurant,
+                                                  paid_order_factory,
+                                                  llm_capture, monkeypatch):
+        """En el tope sin tokens → no_credits (no descuenta de más)."""
+        monkeypatch.setitem(app.config, 'COPILOT_MAX_FOLLOW_UPS', 1)
+        wallet = AITokenWallet(
+            user_id=sample_user.id, plan_limit=50, plan_tokens=1,
+            extra_tokens=0, tokens_used_month=0,
+        )
+        db.session.add(wallet)
+        db.session.commit()
+
+        now = datetime.now(timezone.utc)
+        paid_order_factory(10000, 'cash', now, amount_received=10000)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+
+        first = self._post_message(
+            client, cid, {'content': '¿Ventas?', 'period': {'range': 'today'}})
+        assert first.status_code == 200
+        assert first.get_json()['metadata']['credits_used'] == 1
+        # Consume el único token: plan_tokens 1 → 0.
+        assert AITokenWallet.query.filter_by(user_id=sample_user.id).first().plan_tokens == 0
+
+        # Follow-up gratis dentro del tope (tope=1).
+        free = self._post_message(
+            client, cid, {'content': '¿Efectivo?', 'period': {'range': 'today'}})
+        assert free.status_code == 200
+        assert free.get_json()['metadata']['credits_used'] == 0
+
+        # Siguiente: tope alcanzado y sin tokens → no_credits, sin descuento.
+        blocked = self._post_message(
+            client, cid, {'content': '¿Nequi?', 'period': {'range': 'today'}})
+        assert blocked.status_code == 200
+        body = blocked.get_json()
+        assert body['success'] is True
+        assert body['type'] == 'no_credits'
+        assert body['error_code'] == 'INSUFFICIENT_TOKENS'
+        assert AITokenWallet.query.filter_by(user_id=sample_user.id).first().plan_tokens == 0
 
     def test_custom_range_missing_dates_400_rollback(self, client, db,
                                                      sample_user,

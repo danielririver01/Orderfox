@@ -10,14 +10,13 @@ Cubre:
   (éxito + 409), print, IDOR.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.models import Order, CashRegister, Restaurant
-from app.services.cash_register_service import CashRegisterService
+from app.models import CashRegister, Order, Restaurant
+from app.services.cash_register_service import CashRegisterService, NoSalesError
 from app.utils.timezone import today_start_utc
-
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
@@ -114,8 +113,8 @@ class TestResolveRange:
         # 2026-08-03 00:00 Bogotá == 2026-08-03 05:00 UTC
         start, end = CashRegisterService.resolve_range(
             'custom', from_date='2026-08-03', to_date='2026-08-03')
-        assert start == datetime(2026, 8, 3, 5, 0)
-        assert end == datetime(2026, 8, 4, 5, 0)
+        assert start == datetime(2026, 8, 3, 5, 0)  # noqa: DTZ001
+        assert end == datetime(2026, 8, 4, 5, 0)  # noqa: DTZ001
 
     def test_custom_missing_dates_raises(self):
         with pytest.raises(ValueError):
@@ -163,7 +162,6 @@ class TestGetSummary:
         assert summary['total_orders'] == 1
 
     def test_excludes_orders_without_payment(self, db, sample_restaurant):
-        from datetime import datetime as dt
         o = Order(
             restaurant_id=sample_restaurant.id,
             order_number='CR-NOPAY',
@@ -318,7 +316,7 @@ class TestCloseRegister:
                                                 paid_order_factory, sample_user):
         """El mensaje de error debe mostrar la fecha en hora de Colombia (UTC-5)."""
         # 2026-08-03 05:00 UTC == 2026-08-03 00:00 Bogotá
-        base_utc = datetime(2026, 8, 3, 5, 0)
+        base_utc = datetime(2026, 8, 3, 5, 0)  # noqa: DTZ001
         paid_order_factory(10000, 'cash', base_utc, amount_received=10000)
 
         start, end = base_utc, base_utc + timedelta(hours=24)
@@ -330,7 +328,7 @@ class TestCloseRegister:
 
     def test_blocks_partial_overlap(self, db, sample_restaurant, paid_order_factory, sample_user):
         """Cierre existente 9am–5pm; intento 3pm–6pm → rechazado."""
-        base = datetime(2026, 8, 3, 14, 0)  # 9am Bogotá == 14:00 UTC
+        base = datetime(2026, 8, 3, 14, 0)  # 9am Bogotá == 14:00 UTC  # noqa: DTZ001
         paid_order_factory(10000, 'cash', base, amount_received=10000)
 
         start, end = base, base + timedelta(hours=8)
@@ -343,25 +341,44 @@ class TestCloseRegister:
         assert 'Ya cerraste caja' in str(exc.value)
 
     def test_allows_non_overlapping_followup(self, db, sample_restaurant, paid_order_factory, sample_user):
-        """Cierre 9am–5pm; cierre posterior 5pm–6pm → permitido."""
-        base = datetime(2026, 8, 3, 14, 0)
+        """Cierre 9am–5pm; cierre posterior 5pm–6pm → permitido (con venta en ese rango)."""
+        base = datetime(2026, 8, 3, 14, 0)  # noqa: DTZ001
         paid_order_factory(10000, 'cash', base, amount_received=10000)
 
         start, end = base, base + timedelta(hours=8)
         CashRegisterService.close_register(sample_restaurant.id, sample_user.id, start, end)
 
         next_start, next_end = end, end + timedelta(hours=1)
+        paid_order_factory(20000, 'nequi', end + timedelta(minutes=1))
         closing2 = CashRegisterService.close_register(
             sample_restaurant.id, sample_user.id, next_start, next_end)
         assert closing2.period_start == next_start.replace(tzinfo=timezone.utc)
+        assert closing2.total_sales == 20000
 
     def test_rollback_on_failure_keeps_db_clean(self, db, sample_restaurant, sample_user):
-        """Un cierre que falla no debe dejar filas a medio insertar."""
+        """Un cierre que falla (sin ventas) no debe dejar filas a medio insertar."""
         start, end = CashRegisterService.resolve_range('today')
-        # Sin ventas → snapshot válido con ceros.
+        # Sin ventas → el cierre se rechaza y la DB queda limpia.
+        with pytest.raises(ValueError) as exc:
+            CashRegisterService.close_register(sample_restaurant.id, sample_user.id, start, end)
+        assert 'No hay ventas' in str(exc.value)
+        assert CashRegister.query.filter_by(restaurant_id=sample_restaurant.id).count() == 0
+
+    def test_blocks_close_with_no_sales(self, db, sample_restaurant, sample_user):
+        """No se puede cerrar caja en un periodo sin ventas (total $0)."""
+        start, end = CashRegisterService.resolve_range('today')
+        with pytest.raises(NoSalesError) as exc:
+            CashRegisterService.close_register(sample_restaurant.id, sample_user.id, start, end)
+        assert 'No hay ventas' in str(exc.value)
+
+    def test_allows_close_with_sales(self, db, sample_restaurant, sample_user, paid_order_factory):
+        """Con ventas en el periodo el cierre sí procede."""
+        now = datetime.now(timezone.utc)
+        paid_order_factory(10000, 'cash', now, amount_received=10000)
+        start, end = CashRegisterService.resolve_range('today')
         closing = CashRegisterService.close_register(sample_restaurant.id, sample_user.id, start, end)
-        assert closing is not None
-        assert CashRegister.query.filter_by(restaurant_id=sample_restaurant.id).count() == 1
+        assert closing.total_sales == 10000
+        assert closing.total_orders == 1
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────
@@ -471,6 +488,16 @@ class TestCashRegisterRoutes:
         headers = self._csrf_headers(client)
         resp = client.post('/cash-register/close', json={'range': 'nope'}, headers=headers)
         assert resp.status_code == 400
+
+    def test_post_close_no_sales_400(self, client, db, sample_user):
+        """Sin ventas en el periodo → el cierre se rechaza con 400."""
+        self._login(client, sample_user)
+        headers = self._csrf_headers(client)
+        resp = client.post('/cash-register/close', json={'range': 'today'}, headers=headers)
+        assert resp.status_code == 400
+        body = resp.get_json()
+        assert body['success'] is False
+        assert 'No hay ventas' in body['error']
 
     def test_print_close(self, client, db, sample_restaurant, sample_user, paid_order_factory):
         now = datetime.now(timezone.utc)

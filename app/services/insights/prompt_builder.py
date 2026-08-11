@@ -131,7 +131,8 @@ responde ÚNICAMENTE con un objeto JSON válido (sin markdown) con esta forma:
 
 
 def build_analysis_messages(user_message, context, history=None, restaurant_name=None,
-                             context_summary=None, compressed=False, system_prompt=None):
+                             context_summary=None, compressed=False, system_prompt=None,
+                             max_history=None):
     """
     Construye la lista de mensajes para la API de chat.
 
@@ -145,9 +146,20 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
         compressed: si True, el historial se ha comprimido.
         system_prompt: prompt de sistema custom (p.ej. CASH_SYSTEM_PROMPT).
             Si None, usa SYSTEM_PROMPT (Copilot VZ de /insights). Backward-compatible.
+        max_history: tope de mensajes de historial a enviar (los más recientes).
+            Si None, usa COPILOT_MAX_HISTORY_MESSAGES (default 15). Aplica a
+            TODOS los planes, incluido Elite: es control de costo por llamada.
     Returns:
         list of {role, content} listo para la API.
     """
+    if max_history is None:
+        from flask import current_app, has_app_context
+        if has_app_context():
+            max_history = current_app.config.get('COPILOT_MAX_HISTORY_MESSAGES', 15)
+        else:
+            max_history = 15
+    max_history = max(1, int(max_history))
+
     ctx_block = json.dumps(context, ensure_ascii=False, indent=2)
     restaurant_line = f"Restaurante: {restaurant_name}\n" if restaurant_name else ""
     system_content = (
@@ -164,13 +176,14 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
             'role': 'system',
             'content': f'Resumen de la conversación anterior (contexto preservado):\n{context_summary}'
         })
-        # Solo los últimos 5 mensajes para contexto inmediato
-        recent = (history or [])[-5:]
+        # Solo los últimos mensajes para contexto inmediato (ya acotado por la
+        # compresión; se mantiene la ventana estricta actual, ≤ max_history).
+        recent = (history or [])[-min(max_history, 5):]
         for h in recent:
             messages.append({'role': 'user' if h.role == 'user' else 'assistant',
                              'content': h.content})
     else:
-        for h in (history or []):
+        for h in (history or [])[-max_history:]:
             messages.append({'role': 'user' if h.role == 'user' else 'assistant',
                              'content': h.content})
 

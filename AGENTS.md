@@ -1,6 +1,6 @@
 # Orderfox / Velzia — AI Agent Guide
 
-**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MySQL 8  
+**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MariaDB (XAMPP, local) / MySQL 8 (CI, prod)  
 **Version:** v1.4.0  
 **Última actualización:** 2026-07-29
 
@@ -18,9 +18,9 @@
 ### MCP Configurados
 | Servidor | Conexión | Uso |
 |----------|----------|-----|
-| `Conexion_MYSQL` | MySQL 8 local (via Docker) | Consultar DB, ver tablas, ejecutar queries |
+| `Conexion_MYSQL` | MariaDB local (XAMPP, :3306, root sin password) | Consultar DB, ver tablas, ejecutar queries |
 
-> **⚠️ IMPORTANTE:** `Conexion_MYSQL` requiere que Docker esté corriendo con el contenedor `orderfox-db` (MariaDB 11, puerto 3306). Si el MCP se ve rojo/inaccesible, ejecutar `docker start orderfox-db` o `docker compose up -d mysql` desde la raíz del proyecto.
+> **⚠️ IMPORTANTE:** `Conexion_MYSQL` apunta al **MariaDB de XAMPP** local (puerto 3306, usuario `root` sin password, base `orderfox` — ver `DATABASE_URL` en `.env`). Si el MCP se ve rojo/inaccesible, encender **MySQL** desde el XAMPP Control Panel (Start → MySQL) y verificar que el puerto 3306 esté libre. No usar el contenedor Docker `orderfox-db` para la DB local.
 
 **Regla:** Todo agente DEBE cargar los skills relevantes al iniciar su tarea usando el tool `skill`. Ningún agente debe trabajar sin sus skills cargados.
 
@@ -216,7 +216,7 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 
 ## Gotchas
 
-- Conexión MySQL requiere driver: `mysql+pymysql://user:pass@host/db`
+- Conexión local = **MariaDB XAMPP**: `mysql+pymysql://root:@localhost:3306/orderfox` (root sin password; encender **MySQL** en el XAMPP Control Panel). CI usa MySQL 8 en contenedor. Driver: `mysql+pymysql://user:pass@host/db`
 - CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
 - `settings.APP_VERSION = '1.3.0'` está desactualizado (no sincronizado con tags de git)
 - Rate limiter es in-memory (se pierde al reiniciar)

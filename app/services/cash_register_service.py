@@ -9,15 +9,20 @@ Rangos de fechas: se resuelven en hora de Colombia (UTC-5) y se convierten a
 UTC naive (patrón `today_start_utc`). `end` es SIEMPRE exclusivo.
 """
 
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
-from app.models import db, Order, CashRegister, User
-from app.utils.timezone import today_start_utc, to_colombia
+from app.models import CashRegister, Order, db
+from app.utils.timezone import to_colombia, today_start_utc
 
 PAYMENT_METHODS = ('cash', 'nequi', 'bancolombia', 'card')
 RANGE_TYPES = ('today', 'yesterday', 'last_7', 'last_30', 'last_month', 'this_year', 'custom')
+
+
+class NoSalesError(ValueError):
+    """Cierre rechazado: el periodo no tiene ventas (total $0)."""
 
 METHOD_LABELS = {
     'cash': 'Efectivo',
@@ -215,6 +220,8 @@ class CashRegisterService:
 
         - Rechaza rangos que se solapan con cierres previos (evita contar
           ventas dos veces en el cuadre físico).
+        - Rechaza periodos sin ventas (total $0): no tiene sentido cuadrar
+          una caja sin movimientos.
         - El unique (restaurant_id, period_start) actúa como red de seguridad
           contra doble clic simultáneo.
         Devuelve el CashRegister creado (tras commit).
@@ -237,6 +244,11 @@ class CashRegisterService:
             )
 
         summary = CashRegisterService.get_summary(restaurant_id, start, end)
+        if summary['total_sales'] == 0:
+            raise NoSalesError(
+                'No hay ventas en este periodo, no puedes cerrar caja. '
+                'Verifica el rango de fechas o registra pagos primero.'
+            )
         b = summary['breakdown']
 
         closing = CashRegister(
@@ -260,7 +272,7 @@ class CashRegisterService:
         db.session.add(closing)
         try:
             db.session.commit()
-        except Exception:
+        except IntegrityError:
             db.session.rollback()
             raise ValueError(
                 'Ya existe un cierre para este periodo. '

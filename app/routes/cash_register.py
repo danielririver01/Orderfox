@@ -15,20 +15,29 @@ son dueños del restaurante). Cualquier usuario logueado del restaurante puede
 cerrar caja; `closed_by` se registra para soportar roles en el futuro.
 """
 
-from flask import Blueprint, render_template, request, jsonify, abort, session, url_for
-from flask import current_app
 import json
 
-from app.models import db, User
-from app.utils.auth import require_auth, require_active
-from app.utils.restaurant import get_current_restaurant
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+    session,
+)
+
+from app.models import User
+from app.services.cash_register_copilot import handle_cash_message
 from app.services.cash_register_service import (
-    CashRegisterService,
     RANGE_TYPES,
+    CashRegisterService,
+    NoSalesError,
 )
 from app.services.insights import conversation_service as cs
 from app.services.insights import prompt_builder
-from app.services.cash_register_copilot import handle_cash_message
+from app.utils.auth import require_active, require_auth
+from app.utils.restaurant import get_current_restaurant
 
 cash_register_bp = Blueprint('cash_register', __name__, url_prefix='/cash-register')
 
@@ -153,6 +162,9 @@ def close():
     try:
         closing = CashRegisterService.close_register(
             restaurant.id, user_id, start, end)
+    except NoSalesError as e:
+        # 400: no hay ventas en el periodo → no se puede cerrar caja.
+        return jsonify({'success': False, 'error': str(e)}), 400
     except ValueError as e:
         # 409: solapamiento o duplicado → el frontend recarga el resumen.
         return jsonify({'success': False, 'error': str(e)}), 409

@@ -4,15 +4,34 @@ Shared by tokens_bp routes (app/routes/tokens.py).
 
 Pattern: @staticmethod methods returning (result, None) / (None, error_dict).
 """
-from datetime import datetime, timezone
-from flask import current_app
-from app import db
 import jwt as pyjwt
+from flask import current_app
 from jwt import PyJWKClient
-from app.models import User, AITokenWallet, AITokenTransaction
+
+from app import db
+from app.models import AITokenTransaction, AITokenWallet
 from app.utils.subscription import (
-    initialize_or_reset_token_wallet, TOP_UP_PACKS, is_subscription_active, can_use_ai,
+    initialize_or_reset_token_wallet,
 )
+
+# Descripciones legibles por fuente de consumo (para el log inmutable de tokens).
+_AI_SOURCE_DESCRIPTIONS = {
+    'scanner_ia': 'Escaneo IA',
+    'copilot_vz': 'Análisis Copilot VZ',
+    'cash_register': 'Análisis Centro de Caja',
+}
+
+
+def is_elite_user(user):
+    """True si el restaurante del usuario es plan Elite.
+
+    Elite queda exento del tope de seguimientos de Copilot (secciones 1-2 del
+    plan de cierre de costos): el contador de follow-ups no se aplica a este
+    plan, que conserva su comportamiento actual de seguimientos gratis.
+    """
+    if not user or not user.restaurant:
+        return False
+    return user.restaurant.plan_type == 'elite'
 
 
 class TokenService:
@@ -87,11 +106,16 @@ class TokenService:
     # ── Token Consumption ──────────────────────────────────────
 
     @staticmethod
-    def consume_token(user):
+    def consume_token(user, source='scanner_ia'):
         """
         Consume (deduce) 1 token del wallet del usuario.
         Primero descuenta de plan_tokens, luego de extra_tokens.
         Para usuarios Elite, solo se registra (sin deducción).
+
+        Args:
+            user: Usuario ORM object.
+            source: origen del consumo ('scanner_ia', 'copilot_vz',
+                'cash_register'). Backward-compatible: default 'scanner_ia'.
 
         Returns:
             (True, None) on success
@@ -127,8 +151,8 @@ class TokenService:
 
             tx = AITokenTransaction(
                 user_id=user.id, type='consume', amount=-1,
-                source='scanner_ia',
-                description='Escaneo IA',
+                source=source,
+                description=_AI_SOURCE_DESCRIPTIONS.get(source, 'Análisis IA'),
             )
             db.session.add(tx)
 

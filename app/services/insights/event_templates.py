@@ -2,8 +2,9 @@
 event_templates.py — Templates de mensajes para BusinessEvents de Copilot VZ.
 
 Cada template produce un mensaje de asistente sin LLM. El sistema detecta el
-evento vía SQL, el template lo convierte en texto. DeepSeek solo se llama
-si el usuario hace clic en "Analizar" y profundiza.
+evento vía SQL y el template lo convierte en texto. Al pulsar "Analizar" en el
+dashboard, ese texto queda como contexto inicial y se dispara el análisis IA
+(DeepSeek) automáticamente desde el endpoint de consume.
 """
 
 TEMPLATES = {

@@ -15,16 +15,15 @@ Diferencias clave con message_handler.py (insights):
   - Prompt propio (CASH_SYSTEM_PROMPT) con identidad de caja.
 """
 
-import json
 import time
 
-from flask import jsonify, url_for
+from flask import current_app, jsonify
 
 from app.services import cash_register_service
 from app.services.insights import conversation_service as cs
 from app.services.insights import llm_service, prompt_builder
 from app.services.insights.helpers import parse_llm_response
-from app.services.token_service import TokenService
+from app.services.token_service import TokenService, is_elite_user
 
 RANGE_LABELS = {
     'today': 'Hoy',
@@ -117,10 +116,20 @@ def handle_cash_message(restaurant, user, conv, period, content):
 
     period_label = _period_label(period)
 
-    # 3) Consumir token SOLO en el primer análisis de la conversación.
+    # 3) Consumir token SOLO en el primer análisis de la conversación o cuando
+    #    se agota el tope de seguimientos gratis (bloque nuevo).
     follow_up = conv.analysis_active
+    turn_consumed = False
+
+    # El tope de seguimientos no aplica a Elite (conserva su comportamiento
+    # actual de follow-ups gratis).
+    if follow_up and not is_elite_user(user):
+        follow_up = cs.reserve_follow_up(
+            conv.id, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
+        )
+
     if not follow_up:
-        ok, err = TokenService.consume_token(user)
+        ok, err = TokenService.consume_token(user, source='cash_register')
         if not ok:
             code = (err or {}).get('error_code')
             cs.delete_message(user_msg.id)
@@ -138,6 +147,7 @@ def handle_cash_message(restaurant, user, conv, period, content):
                 'message_id': user_msg.id,
                 'error_code': code,
             })
+        turn_consumed = True
         cs.mark_analysis_active(conv.id)
 
     # 4) Armar el contexto (misma fuente que la pantalla del Centro de Caja).
@@ -152,7 +162,10 @@ def handle_cash_message(restaurant, user, conv, period, content):
             restaurant_name=restaurant.name,
             system_prompt=prompt_builder.CASH_SYSTEM_PROMPT,
         )
-        raw = llm_service.chat(messages)
+        raw = llm_service.chat(
+            messages, source='cash_register', conversation_id=conv.id,
+            restaurant_id=restaurant.id,
+        )
     except llm_service.LLMServiceError as e:
         if not follow_up:
             cs.clear_analysis_active(conv.id)
@@ -164,7 +177,6 @@ def handle_cash_message(restaurant, user, conv, period, content):
             'message_id': user_msg.id,
         }), 502
     except Exception as e:
-        from flask import current_app
         current_app.logger.error(f"Copilot de caja analysis error: {e}")
         if not follow_up:
             cs.clear_analysis_active(conv.id)
@@ -183,7 +195,7 @@ def handle_cash_message(restaurant, user, conv, period, content):
         'type': 'analysis',
         'source': 'cash_register',
         'period': period_label,
-        'credits_used': 0 if follow_up else 1,
+        'credits_used': 1 if turn_consumed else 0,
         'model': 'deepseek-v4-flash',
         'execution_ms': execution_ms,
     }

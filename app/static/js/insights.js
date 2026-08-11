@@ -793,19 +793,24 @@
     }
 
     async function newConversationThenSend(text) {
+        isBusy = true;
+        inputEl.disabled = true;
+        sendBtn.disabled = true;
         try {
             const data = await apiSend(`${API}/draft`, {});
             if (!data.success) {
                 console.warn('[Copilot VZ] newConversationThenSend: API returned success=false', data);
+                resetComposer();
                 return;
             }
             currentConvId = data.data.id;
             _disclaimerShown = false;
             titleEl.textContent = 'New analysis';
             await loadConversations();
-            proceedSend(text, currentConvId, null);
+            await proceedSend(text, currentConvId, null);
         } catch (e) {
             console.warn('[Copilot VZ] newConversationThenSend: fetch failed', e);
+            resetComposer();
         }
     }
 
@@ -843,6 +848,7 @@
     async function proceedSend(text, convId, messageId) {
         isBusy = true;
         sendBtn.disabled = true;
+        inputEl.disabled = true;
         setMode('chat');
         const empty = document.getElementById('empty-state');
         if (empty) empty.remove();
@@ -864,9 +870,14 @@
             removeTypingIndicator();
             appendError('Could not connect to Copilot VZ. Please try again.');
         } finally {
-            isBusy = false;
-            sendBtn.disabled = false;
+            resetComposer();
         }
+    }
+
+    function resetComposer() {
+        isBusy = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (inputEl) inputEl.disabled = false;
     }
 
     function updateContextFromResponse(data) {

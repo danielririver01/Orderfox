@@ -192,7 +192,17 @@ class PublicMenuService:
             order_total = 0
             validated_items = []
 
-            product_ids = [pid for pid in cart.keys() if pid]
+            # Las claves del carrito llegan como strings (JSON) y los ids de
+            # producto son enteros: normalizar para que el lookup siempre acierte.
+            product_ids = []
+            for raw_pid in cart.keys():
+                if raw_pid is None:
+                    continue
+                try:
+                    product_ids.append(int(raw_pid))
+                except (TypeError, ValueError):
+                    continue
+
             products = Product.query.filter(
                 Product.id.in_(product_ids),
                 Product.restaurant_id == restaurant.id,
@@ -216,6 +226,10 @@ class PublicMenuService:
                 modifiers_map = {m.id: m for m in modifiers}
 
             for product_id, item in cart.items():
+                try:
+                    product_id = int(product_id)
+                except (TypeError, ValueError):
+                    continue
                 product = products_map.get(product_id)
                 if not product:
                     continue

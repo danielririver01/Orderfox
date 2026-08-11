@@ -18,27 +18,35 @@ Flujo de un mensaje (POST /insights/api/conversations/<id>/messages):
 """
 
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from flask import (
-    Blueprint, render_template, request, jsonify, session, current_app, abort,
-    url_for, g,
+    Blueprint,
+    current_app,
+    g,
+    jsonify,
+    render_template,
+    request,
+    url_for,
 )
-from app.utils.auth import require_auth, require_active
+
 from app.csrf import csrf
-from app.models import db, User, Restaurant, CopilotConversation, CopilotBusinessEvent
+from app.models import CopilotBusinessEvent, CopilotConversation, db
 from app.services.insights import (
-    data_service, conversation_service as cs, prompt_builder,
-    event_engine, event_templates, context_manager,
+    context_manager,
+    data_service,
+    event_engine,
+    event_templates,
+    prompt_builder,
+)
+from app.services.insights import (
+    conversation_service as cs,
 )
 from app.services.insights.helpers import (
     current_user as _current_user,
-    parse_llm_response as _parse_llm_response,
-    foreign_restaurant_response as _foreign_restaurant_response,
-    empty_state_response as _empty_state_response,
-    FOREIGN_RESTAURANT_MSG as _FOREIGN_RESTAURANT_MSG,
 )
 from app.services.insights.message_handler import handle_post_message
+from app.utils.auth import require_auth
 
 insights_bp = Blueprint('insights', __name__, url_prefix='/insights')
 
@@ -329,7 +337,14 @@ def api_pending_event():
 @insights_bp.route('/api/events/<int:eid>/consume', methods=['POST'])
 @require_auth
 def api_consume_event(eid):
-    """Abre el evento en Copilot: prepara conversación con mensaje template."""
+    """Abre el evento en Copilot y ejecuta el análisis automáticamente.
+
+    El usuario ya confirmó su intención al pulsar "Analizar" en el dashboard:
+    no debe responder un saludo para obtener el análisis. El mensaje template
+    queda como contexto y se dispara el pipeline real (handle_post_message)
+    con un prompt predeterminado. El evento se marca consumido antes del
+    análisis para que, ante un fallo del LLM, la tarjeta no reaparezca.
+    """
     user = _current_user()
     if not user:
         return jsonify({'success': False, 'error': 'unauthorized'}), 401
@@ -381,6 +396,19 @@ def api_consume_event(eid):
     ev.active = False
     ev.consumed_at = datetime.now(timezone.utc)
     db.session.commit()
+
+    # Ejecutar el análisis automáticamente (el usuario ya confirmó al pulsar
+    # "Analizar" en el dashboard). Reusa todo el pipeline: clasificación,
+    # contexto, DeepSeek, telemetría y cobro de 1 token en el primer análisis.
+    auto_prompt = current_app.config.get('EVENT_AUTO_ANALYSIS_PROMPT') or 'Analiza mi negocio'
+    try:
+        handle_post_message(
+            draft.id, user, draft,
+            {'content': auto_prompt},
+        )
+    except Exception:
+        current_app.logger.exception(
+            'Error generando análisis automático para evento %s', ev.id)
 
     return jsonify({
         'success': True,

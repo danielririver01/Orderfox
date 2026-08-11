@@ -35,8 +35,7 @@ def search_conversations(user_id, query, source='insights', limit=50):
     y en el contenido de sus mensajes (primer mensaje, título derivado, etc.).
     Devuelve las conversaciones ordenadas igual que list_conversations.
     """
-    from sqlalchemy import or_, and_
-    from sqlalchemy.orm import joinedload
+    from sqlalchemy import or_
 
     q = f"%{query.strip().lower()}%"
     if not query or not query.strip():
@@ -155,18 +154,48 @@ MAX_PINNED = 3
 
 
 def mark_analysis_active(conversation_id):
+    """Marca la conversación como análisis activo e inicia un bloque nuevo.
+
+    Se llama tras pagar un token (primer mensaje o al llegar al tope de
+    seguimientos): reinicia el contador de follow-ups a 0.
+    """
     CopilotConversation.query.filter_by(id=conversation_id).update(
-        {'analysis_active': True, 'updated_at': datetime.now(timezone.utc)}
+        {'analysis_active': True, 'follow_up_count': 0,
+         'updated_at': datetime.now(timezone.utc)}
     )
     db.session.commit()
 
 
 def clear_analysis_active(conversation_id):
-    """Limpia analysis_active cuando falla un análisis que consumió crédito."""
+    """Limpia analysis_active y resetea el contador de follow-ups."""
     CopilotConversation.query.filter_by(id=conversation_id).update(
-        {'analysis_active': False, 'updated_at': datetime.now(timezone.utc)}
+        {'analysis_active': False, 'follow_up_count': 0,
+         'updated_at': datetime.now(timezone.utc)}
     )
     db.session.commit()
+
+
+def reserve_follow_up(conversation_id, max_count):
+    """Reserva un follow-up gratis de forma atómica si queda espacio en el tope.
+
+    UPDATE condicional (follow_up_count < max_count) en una sola sentencia:
+    sin TOCTOU entre leer y escribir. Devuelve True si el turno quedó
+    reservado como seguimiento gratis, False si se llegó al tope (ese turno
+    deberá consumir un token nuevo para abrir un bloque).
+    """
+    result = (
+        CopilotConversation.query
+        .filter(
+            CopilotConversation.id == conversation_id,
+            CopilotConversation.follow_up_count < max_count,
+        )
+        .update(
+            {CopilotConversation.follow_up_count: CopilotConversation.follow_up_count + 1},
+            synchronize_session=False,
+        )
+    )
+    db.session.commit()
+    return result > 0
 
 
 def delete_message(message_id):

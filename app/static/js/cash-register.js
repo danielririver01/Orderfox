@@ -318,6 +318,13 @@ async function confirmClose() {
         return;
     }
 
+    // No hay ventas en el periodo → no tiene sentido cerrar caja
+    if (crState.summaryAll && crState.summaryAll.total_sales === 0) {
+        errorEl.textContent = 'No hay ventas en este periodo, no puedes cerrar caja.';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
     crState.requestInFlight = true;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Cerrando…';

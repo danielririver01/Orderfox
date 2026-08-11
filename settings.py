@@ -74,6 +74,14 @@ class Config:
     DEEPSEEK_API_URL = os.environ.get('DEEPSEEK_API_URL') or 'https://api.deepseek.com/v1/chat/completions'
     DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash'
 
+    # Copilot VZ — Control de costo por conversación
+    # Nº de seguimientos gratis por bloque de análisis (1 token por bloque).
+    # Al llegar al tope, el siguiente mensaje consume un token nuevo (bloque nuevo).
+    COPILOT_MAX_FOLLOW_UPS = int(os.environ.get('COPILOT_MAX_FOLLOW_UPS', '4'))
+    # Máx. mensajes de historial enviados al LLM por llamada (control de tokens).
+    # Aplica a TODOS los planes, incluido Elite.
+    COPILOT_MAX_HISTORY_MESSAGES = int(os.environ.get('COPILOT_MAX_HISTORY_MESSAGES', '15'))
+
     # JWT Configuration (Mobile API)
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)

@@ -9,25 +9,39 @@ consumo de créditos, respuestas de scope guard y estados vacíos.
 import json
 import re
 import time
-from datetime import datetime, timezone
 
-from flask import current_app, g, jsonify, url_for
+from flask import current_app, g, jsonify
 
-from app.models import db, CopilotConversation
-from app.utils.subscription import is_subscription_active
+from app.models import CopilotConversation
+from app.services.achievement_engine import evaluate as eval_achievement
 from app.services.insights import (
-    classifier, data_service, conversation_service as cs,
-    prompt_builder, llm_service, context_manager, chart_service,
+    chart_service,
+    classifier,
+    context_manager,
+    data_service,
+    llm_service,
+    prompt_builder,
+)
+from app.services.insights import (
+    conversation_service as cs,
+)
+from app.services.insights.helpers import (
+    CALC_IMPACT_RE as _CALC_IMPACT_RE,
+)
+from app.services.insights.helpers import (
+    LEARNING_NOTE as _LEARNING_NOTE,
+)
+from app.services.insights.helpers import (
+    empty_state_response as _empty_state_response,
+)
+from app.services.insights.helpers import (
+    foreign_restaurant_response as _foreign_restaurant_response,
 )
 from app.services.insights.helpers import (
     parse_llm_response as _parse_llm_response,
-    foreign_restaurant_response as _foreign_restaurant_response,
-    empty_state_response as _empty_state_response,
-    LEARNING_NOTE as _LEARNING_NOTE,
-    CALC_IMPACT_RE as _CALC_IMPACT_RE,
 )
-from app.services.token_service import TokenService
-from app.services.achievement_engine import evaluate as eval_achievement
+from app.services.token_service import TokenService, is_elite_user
+from app.utils.subscription import is_subscription_active
 
 
 def handle_post_message(cid, user, conv, data):
@@ -195,9 +209,18 @@ def handle_post_message(cid, user, conv, data):
         return _empty_state_response(conv, kind, window_label=label)
 
     follow_up = conv.analysis_active
+    turn_consumed = False
 
-    if not follow_up:
-        ok, err = TokenService.consume_token(user)
+    # El tope de seguimientos no aplica a Elite (conserva su comportamiento
+    # actual de follow-ups gratis). Regenerar/editar (replace_tail) tampoco
+    # incrementa el contador: no penaliza al usuario por corregir una pregunta.
+    if follow_up and not replace_tail and not is_elite_user(user):
+        follow_up = cs.reserve_follow_up(
+            cid, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
+        )
+
+    if not follow_up and not replace_tail:
+        ok, err = TokenService.consume_token(user, source='copilot_vz')
         if not ok:
             code = (err or {}).get('error_code')
             if code == 'SUBSCRIPTION_REQUIRED':
@@ -217,6 +240,7 @@ def handle_post_message(cid, user, conv, data):
                 'message_id': user_msg.id,
                 'error_code': code,
             })
+        turn_consumed = True
         cs.mark_analysis_active(cid)
 
     # ── Cálculo de impacto (seguimiento, sin LLM) ──
@@ -274,7 +298,10 @@ def handle_post_message(cid, user, conv, data):
             context_summary=ctx_summary,
             compressed=ctx_compressed,
         )
-        raw = llm_service.chat(messages)
+        raw = llm_service.chat(
+            messages, source='insights', conversation_id=cid,
+            restaurant_id=conv.restaurant_id,
+        )
     except llm_service.LLMServiceError as e:
         return jsonify({
             'success': False,
@@ -294,7 +321,7 @@ def handle_post_message(cid, user, conv, data):
     parsed = _parse_llm_response(raw)
     parsed['chart'] = chart_service.clean_chart(parsed['chart'])
     execution_ms = int((time.time() - t0) * 1000)
-    credits_used = 0 if follow_up else 1
+    credits_used = 1 if turn_consumed else 0
 
     meta = {
         'type': 'analysis',

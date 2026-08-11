@@ -224,3 +224,4 @@ Estrategia en `app/utils/rate_limiter.py`:
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|
 | 2026-06-16 | 1.0 | Versión inicial | Auditoría Documental |
+| 2026-08-06 | 1.4 | Botón "Analizar" de eventos de negocio ahora ejecuta el análisis automáticamente (`api_consume_event` llama a `handle_post_message` con prompt "Analiza mi negocio"); antes solo insertaba el saludo template y redirigía. Tests en `tests/test_business_event_consume.py`. | Agente |

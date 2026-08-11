@@ -3,7 +3,8 @@ Modelos del módulo Copilot VZ (conversaciones, mensajes, eventos de negocio).
 """
 
 from datetime import datetime, timezone
-from app.models import db, AwareDateTime
+
+from app.models import AwareDateTime, db
 
 
 class CopilotConversation(db.Model):
@@ -18,6 +19,10 @@ class CopilotConversation(db.Model):
     prompt_version = db.Column(db.String(10), default='v1.0')
     model = db.Column(db.String(50), default='deepseek-v4-flash')
     analysis_active = db.Column(db.Boolean, default=False, nullable=False)
+    # Contador de seguimientos gratis dentro del bloque de análisis actual.
+    # Se reinicia a 0 al pagar un token nuevo (mark_analysis_active) o al
+    # limpiar analysis_active. El tope lo define COPILOT_MAX_FOLLOW_UPS.
+    follow_up_count = db.Column(db.Integer, default=0, nullable=False)
     pinned = db.Column(db.Boolean, default=False, nullable=False)
     metadata_json = db.Column(db.Text, nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
@@ -68,3 +73,33 @@ class CopilotBusinessEvent(db.Model):
 
     def __repr__(self):
         return f'<CopilotBusinessEvent {self.id} kind={self.kind} p={self.priority}>'
+
+
+class AILlmCall(db.Model):
+    """
+    Telemetría de costo por llamada al LLM (DeepSeek).
+
+    Registro inmutable de cada invocación para separar el gasto real por
+    fuente (insights vs cash_register) y por restaurante, y para decidir más
+    adelante si Elite necesita un techo de uso justo. No afecta el flujo de
+    negocio: es observabilidad.
+    """
+
+    __tablename__ = 'ai_llm_calls'
+
+    id = db.Column(db.Integer, primary_key=True)
+    source = db.Column(db.String(30), nullable=False, index=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('copilot_conversations.id', ondelete='SET NULL'),
+                                nullable=True, index=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'),
+                              nullable=False, index=True)
+    model = db.Column(db.String(50), nullable=False)
+    input_tokens_est = db.Column(db.Integer, nullable=False, default=0)
+    output_tokens_est = db.Column(db.Integer, nullable=False, default=0)
+    execution_ms = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    conversation = db.relationship('CopilotConversation', backref=db.backref('llm_calls', lazy='dynamic'))
+
+    def __repr__(self):
+        return f'<AILlmCall {self.id} source={self.source} model={self.model}>'

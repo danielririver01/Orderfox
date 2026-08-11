@@ -184,7 +184,9 @@ def api_ai_stats():
 @require_auth
 @require_active
 def productos():
-    return render_template('dashboard/productos.html')
+    # La página canónica de productos vive en /products/ (blueprint products),
+    # que renderiza dashboard/products.html con todos sus datos.
+    return redirect(url_for('products.index'))
 
 @dashboard_bp.route('/settings')
 @require_auth
