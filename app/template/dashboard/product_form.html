@@ -69,6 +69,15 @@ block content %}
         <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1">
           * Recomendado: 800x800px. Máx 5MB.
         </p>
+
+        {% if not (product and product.image_url) %}
+        <div class="flex items-start gap-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 px-4 py-3">
+          <span class="material-symbols-outlined text-orange-500 text-lg mt-0.5">lightbulb</span>
+          <p class="text-[11px] text-orange-700 dark:text-orange-300 font-medium leading-relaxed">
+            Los platos con foto generan hasta 3x más pedidos — sube una foto para destacarlo
+          </p>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Nombre y Categoría -->
@@ -205,6 +214,41 @@ block content %}
         </label>
         <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">PRODUCTO
           DISPONIBLE</span>
+      </div>
+
+      <!-- Badges menú público -->
+      <div class="flex items-center gap-3 px-1">
+        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
+          style="flex-shrink: 0; min-width: 48px;">
+          {{ form.is_vegetarian(class="sr-only peer") }}
+          <div
+            class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"
+            style="flex-shrink: 0; min-width: 48px;"></div>
+        </label>
+        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">VEGETARIANO</span>
+      </div>
+
+      <div class="flex items-center gap-3 px-1">
+        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
+          style="flex-shrink: 0; min-width: 48px;">
+          {{ form.is_spicy(class="sr-only peer") }}
+          <div
+            class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"
+            style="flex-shrink: 0; min-width: 48px;"></div>
+        </label>
+        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">PICANTE</span>
+      </div>
+
+      <div class="flex items-center gap-3 px-1">
+        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
+          style="flex-shrink: 0; min-width: 48px;">
+          {{ form.is_featured(class="sr-only peer") }}
+          <div
+            class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"
+            style="flex-shrink: 0; min-width: 48px;"></div>
+        </label>
+        <span class="ml-5 text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">DESTACADO
+          (MÁS PEDIDO)</span>
       </div>
 
     </div>

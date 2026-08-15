@@ -263,6 +263,34 @@ QUICK_PATTERNS = [
 ]
 
 
+# ── Ventanas de tiempo dinámicas ─────────────────────────────────────────────
+# "analiza mis ventas de los últimos 15 días" → ventana = 15.
+# Aplica al análisis (Nivel 2): las consultas rápidas conservan sus ventanas
+# fijas (hoy/ayer/semana/mes) definidas en QUICK_PATTERNS.
+MAX_WINDOW_DAYS = 365
+CUSTOM_WINDOW_RE = re.compile(
+    r'(?:últimos?|ultimos?|últimas?|ultimas?|pasados?|pasadas?|hace|hasta|en los|en las)\s+'
+    r'(\d{1,3})\s+(?:días?|dias?)',
+    re.IGNORECASE,
+)
+
+
+def extract_custom_window(text):
+    """Extrae una ventana explícita de tipo 'últimos X días'.
+
+    Retorna int entre 1 y MAX_WINDOW_DAYS, o None si no hay un número
+    explícito de días (la ventana por defecto la decide classify()).
+    Ejemplos: 'últimos 15 días' → 15 · 'hace 45 dias' → 45 · 'último mes' → None.
+    """
+    if not text:
+        return None
+    m = CUSTOM_WINDOW_RE.search(text)
+    if not m:
+        return None
+    n = int(m.group(1))
+    return max(1, min(MAX_WINDOW_DAYS, n))
+
+
 def classify(text):
     """
     Retorna dict:
@@ -281,7 +309,11 @@ def classify(text):
         if re.search(pattern, norm):
             return {'level': 'quick', 'intent': intent, 'window': _window_for_intent(intent)}
 
-    return {'level': 'analysis', 'intent': _analysis_intent(norm), 'window': 90}
+    return {
+        'level': 'analysis',
+        'intent': _analysis_intent(norm),
+        'window': extract_custom_window(norm) or 90,
+    }
 
 
 def _window_for_intent(intent):

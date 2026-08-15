@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 import json
 
 from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table, Modifier
+from app.utils.cover_bank import resolve_cover
 from app.utils.subscription import is_subscription_active, check_feature_access
 
 
@@ -312,6 +313,11 @@ class PublicMenuService:
                 active_products = [p for p in cat.products if p.is_active]
                 active_count = len(active_products)
 
+                # Rediseño menú público: categorías sin productos activos no
+                # aparecen (ni en pills ni en sidebar). Backend-first.
+                if active_count == 0:
+                    continue
+
                 products_data = []
                 for p in active_products:
                     modifiers = [
@@ -325,6 +331,9 @@ class PublicMenuService:
                         'price': p.price,
                         'image_url': p.image_url,
                         'modifiers': modifiers,
+                        'is_vegetarian': bool(p.is_vegetarian),
+                        'is_spicy': bool(p.is_spicy),
+                        'is_featured': bool(p.is_featured),
                     })
 
                 categories_data.append({
@@ -348,6 +357,10 @@ class PublicMenuService:
                     'whatsapp_phone': restaurant.whatsapp_phone,
                     'is_open': restaurant.is_open,
                     'ordering_disabled': not is_active_sub,
+                    'cover_image': resolve_cover(restaurant),
+                    'estimated_time': restaurant.estimated_time,
+                    'brand_color': restaurant.brand_color,
+                    'cuisine_type': restaurant.cuisine_type,
                 },
                 'categories': categories_data,
             }
@@ -389,6 +402,9 @@ class PublicMenuService:
                     'price': p.price,
                     'image_url': p.image_url,
                     'modifiers': modifiers,
+                    'is_vegetarian': bool(p.is_vegetarian),
+                    'is_spicy': bool(p.is_spicy),
+                    'is_featured': bool(p.is_featured),
                 })
 
             category_data = {
@@ -433,6 +449,9 @@ class PublicMenuService:
                     'image_url': p.image_url,
                     'category_name': p.category.name if p.category else None,
                     'created_at': p.created_at.isoformat() if p.created_at else None,
+                    'is_vegetarian': bool(p.is_vegetarian),
+                    'is_spicy': bool(p.is_spicy),
+                    'is_featured': bool(p.is_featured),
                 })
 
             pagination = {

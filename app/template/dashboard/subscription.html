@@ -264,7 +264,12 @@
     </a>
 
     <button onclick="openAccountDeleteModal()"
-        class="w-full text-red-600 dark:text-red-400 font-medium py-2 flex items-center justify-center gap-1.5 transition-all active:scale-95 text-xs hover:underline">
+        class="w-full text-xs text-red-600 dark:text-red-400
+               border border-red-500/30 hover:border-red-500/60
+               bg-red-500/5 dark:bg-red-500/10 hover:bg-red-500/15
+               font-medium py-2 rounded-lg
+               flex items-center justify-center gap-1.5
+               transition-colors active:scale-95">
         <span class="material-symbols-outlined text-[14px]">delete_forever</span>
         Eliminar mi cuenta
     </button>
@@ -322,5 +327,9 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
+<script>
+        // URL real de login generada por Flask (auth.login está en la raíz "/")
+        window.VELZIA_LOGIN_URL = "{{ url_for('auth.login') }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/subscription.js') }}"></script>
 {% endblock %}

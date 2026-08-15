@@ -159,32 +159,6 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" id="form-category-id" value="">
 
-                        <!-- Imagen -->
-                        <div class="space-y-3 mb-6">
-                            <label
-                                class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">IMAGEN
-                                (OPCIONAL)</label>
-                            <div class="relative group">
-                                <input type="file" id="form-image" class="hidden" accept="image/*"
-                                    onchange="previewFormImage(this)">
-                                <div id="form-image-preview" onclick="document.getElementById('form-image').click()"
-                                    class="relative w-full aspect-video rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 border-dashed border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
-                                    <div id="form-image-placeholder" class="flex flex-col items-center gap-2">
-                                        <span class="material-symbols-outlined text-4xl">add_a_photo</span>
-                                        <span class="text-[10px] font-bold uppercase tracking-widest">Subir
-                                            Imagen</span>
-                                    </div>
-                                    <img id="form-image-img" class="hidden w-full h-full object-cover absolute inset-0">
-                                </div>
-                                <button type="button" id="form-remove-image" onclick="removeFormImage()"
-                                    class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
-                                    <span class="material-symbols-outlined text-sm">close</span>
-                                </button>
-                            </div>
-                            <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1">*
-                                Recomendado: 800x800px. Máx 5MB.</p>
-                        </div>
-
                         <!-- Nombre -->
                         <div class="mb-5">
                             <label

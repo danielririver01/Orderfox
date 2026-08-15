@@ -1,49 +1,95 @@
 ---
 export interface Props {
   restaurantId: number;
+  variant?: 'fab' | 'sidebar';
 }
 
-const { restaurantId } = Astro.props;
+const { restaurantId, variant = 'fab' } = Astro.props;
 ---
 
-<button
-  id="cart-toggle-btn"
-  class="fixed bottom-6 left-6 z-30 hidden items-center gap-2 rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-brand-600 lg:left-6 lg:ml-72"
-  data-restaurant-id={restaurantId}
->
-  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-  </svg>
-  <span>Pedido</span>
-  <span id="cart-count" class="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs">0</span>
-</button>
+{variant === 'fab' ? (
+  <button
+    id="cart-toggle-btn"
+    class="fixed bottom-6 left-6 z-30 hidden items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-cta-ink shadow-xl transition hover:brightness-90 lg:hidden"
+    data-restaurant-id={restaurantId}
+    data-cart-ctrl
+  >
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+    </svg>
+    <span>Pedido</span>
+    <span id="cart-count" class="flex h-5 min-w-5 items-center justify-center rounded-full bg-base/25 px-1.5 text-xs font-bold text-cta-ink">0</span>
+  </button>
+) : (
+  <div id="sidebar-cart-wrap" class="mt-5 hidden border-t border-border-subtle pt-4" data-restaurant-id={restaurantId} data-cart-ctrl>
+    <button
+      id="sidebar-cart-btn"
+      class="btn-primary hidden w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold shadow-md"
+      data-cart-ctrl
+    >
+      <span class="flex items-center gap-2">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+        </svg>
+        Ver pedido
+      </span>
+      <span class="flex items-center gap-2">
+        <span id="sidebar-cart-count" class="font-bold">0</span>
+        <span id="sidebar-cart-total" class="opacity-80">$0</span>
+      </span>
+    </button>
+  </div>
+)}
 
 <script>
-  const restaurantId = document.querySelector('#cart-toggle-btn')?.getAttribute('data-restaurant-id');
-  if (restaurantId) {
-    const updateCount = (pulse?: boolean) => {
-      let count = 0;
+  const ctrls = document.querySelectorAll('[data-cart-ctrl]');
+  const btn = document.getElementById('cart-toggle-btn');
+  const sidebarBtn = document.getElementById('sidebar-cart-btn');
+  const sidebarWrap = document.getElementById('sidebar-cart-wrap');
+  const badge = document.getElementById('cart-count');
+  const sideCount = document.getElementById('sidebar-cart-count');
+  const sideTotal = document.getElementById('sidebar-cart-total');
+
+  const restaurantId = parseInt(ctrls[0]?.getAttribute('data-restaurant-id') || '0', 10);
+
+  function readCart(): any[] {
+    if (!restaurantId) return [];
+    try {
       const raw = localStorage.getItem(`velziaCart_${restaurantId}`);
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          count = parsed.items?.reduce?.((s: number, i: any) => s + (i.quantity || 0), 0) || 0;
-        } catch {}
-      }
-      const badge = document.getElementById('cart-count');
-      const btn = document.getElementById('cart-toggle-btn');
-      if (badge) badge.textContent = String(count);
-      if (btn) {
-        btn.classList.toggle('hidden', count === 0);
-        if (pulse && count > 0) {
-          btn.classList.remove('cart-pulse');
-          void (btn as HTMLElement).offsetWidth;
-          btn.classList.add('cart-pulse');
-        }
-      }
-    };
-    updateCount();
-    window.addEventListener('storage', () => updateCount());
-    document.addEventListener('cart-updated', () => updateCount(true));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return parsed.items || [];
+    } catch {
+      return [];
+    }
   }
+
+  function updateCount(pulse?: boolean): void {
+    const items = readCart();
+    const count = items.reduce((s: number, i: any) => s + (i.quantity || 0), 0);
+
+    if (badge) badge.textContent = String(count);
+    if (btn) btn.classList.toggle('hidden', count === 0);
+
+    if (sidebarWrap) sidebarWrap.classList.toggle('hidden', count === 0);
+    if (sidebarBtn) sidebarBtn.classList.toggle('hidden', count === 0);
+    if (sideCount) sideCount.textContent = String(count);
+    if (sideTotal) {
+      const total = items.reduce((s: number, item: any) => {
+        const extras = (item.selectedModifiers || []).reduce((m: number, mod: any) => m + (mod.extra_price || 0), 0) || 0;
+        return s + (item.product.price + extras) * item.quantity;
+      }, 0);
+      sideTotal.textContent = '$' + total.toLocaleString('es-CO');
+    }
+
+    if (pulse && count > 0 && btn) {
+      btn.classList.remove('cart-pulse');
+      void (btn as HTMLElement).offsetWidth;
+      btn.classList.add('cart-pulse');
+    }
+  }
+
+  updateCount();
+  window.addEventListener('storage', () => updateCount());
+  document.addEventListener('cart-updated', () => updateCount(true));
 </script>

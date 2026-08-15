@@ -4,7 +4,7 @@
 
 {% block settings_content %}
 
-<form action="{{ url_for('dashboard.profile') }}" method="POST" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors space-y-8">
+<form action="{{ url_for('dashboard.profile') }}" method="POST" enctype="multipart/form-data" class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors space-y-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <div class="flex flex-col items-center">
@@ -31,6 +31,113 @@
 
         <div class="py-2">
             <div class="h-px bg-gray-100 dark:bg-[#262626] w-full"></div>
+        </div>
+
+        <!-- ── Menú público (v1.5) ── -->
+        <div class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">PORTADA DEL MENÚ PÚBLICO</label>
+                <div class="relative group">
+                    <input type="file" name="cover_image" id="cover_image" class="hidden" accept="image/*">
+                    <div id="cover_preview_container" onclick="document.getElementById('cover_image').click()"
+                        class="relative w-full h-32 rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not restaurant.cover_image else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
+                        {% if restaurant.cover_image %}
+                        <img id="cover_original" src="{{ restaurant.cover_image }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div id="cover_placeholder" class="flex flex-col items-center gap-2">
+                            <span class="material-symbols-outlined text-3xl">add_a_photo</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">Subir Portada</span>
+                        </div>
+                        {% endif %}
+                        <img id="cover_new_preview" class="hidden w-full h-full object-cover absolute inset-0">
+                        <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent"></div>
+                    </div>
+                    <input type="hidden" name="delete_cover_image" id="delete_cover_input" value="false">
+                    <button type="button" id="remove_cover_btn" onclick="removeCover()"
+                        class="{{ 'hidden' if not restaurant.cover_image else '' }} absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-all z-10">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                </div>
+                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1 mt-2">
+                    * Si no subes portada, se usa una imagen por tipo de cocina automáticamente.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">TIEMPO ESTIMADO (MIN)</label>
+                    <input type="number" name="estimated_time" value="{{ restaurant.estimated_time if restaurant.estimated_time is not none else '' }}" min="1" max="600" placeholder="Ej: 25"
+                        class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">COLOR DE MARCA</label>
+                    <div class="px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626]">
+                        <span class="text-[9px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">BOTONES, PRECIOS Y CATEGORÍA ACTIVA</span>
+                        <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-1 ml-0.5 mb-3">Los temas vienen ya calibrados para verse bien en el menú.</p>
+
+                        <!-- Temas predefinidos -->
+                        <div class="flex flex-wrap gap-3" id="brand-themes-row">
+                            {% for theme in brand_themes %}
+                            {% set active = (restaurant.brand_color or '#FF7A29') | lower == theme.hex | lower %}
+                            {% set locked = not branding.themes_allowed and not active %}
+                            <button type="button" data-theme-key="{{ theme.key }}" data-theme-hex="{{ theme.hex }}"
+                                {% if locked %}disabled{% endif %}
+                                class="theme-circle group relative h-10 w-10 rounded-full transition-all active:scale-95 {{ 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0a0a0a] ring-[#f2460d] scale-110' if active else 'hover:scale-110' }} {{ 'opacity-40 cursor-not-allowed' if locked else 'cursor-pointer' }}"
+                                style="background-color: {{ theme.hex }};" aria-label="{{ theme.name }}">
+                                {% if locked %}
+                                <span class="absolute inset-0 flex items-center justify-center text-white/90">
+                                    <span class="material-symbols-outlined text-sm drop-shadow">lock</span>
+                                </span>
+                                <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-black px-2.5 py-1.5 text-[10px] font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                                    {{ theme.name }} — Disponible en plan Crecimiento <span class="text-[#f2460d]">→</span> <a href="{{ url_for('auth.plans') }}" class="text-[#f2460d] underline">Ver planes</a>
+                                </span>
+                                {% else %}
+                                <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-black px-2.5 py-1.5 text-[10px] font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                                    {{ theme.name }}
+                                </span>
+                                {% endif %}
+                            </button>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Personalizado (hex libre) -->
+                        <div class="mt-4 flex items-center gap-3 {{ 'opacity-60' if not branding.custom_allowed else '' }}">
+                            <input type="hidden" name="brand_color" id="brand_color_hidden"
+                                value="{{ restaurant.brand_color if restaurant.brand_color else '#FF7A29' }}">
+                            <input type="color" id="brand_color_input"
+                                value="{{ restaurant.brand_color if restaurant.brand_color else '#FF7A29' }}"
+                                {% if not branding.custom_allowed %}disabled{% endif %}
+                                class="w-10 h-10 rounded-xl border border-gray-200 dark:border-[#262626] bg-transparent {{ 'cursor-not-allowed' if not branding.custom_allowed else 'cursor-pointer' }}">
+                            <div class="min-w-0">
+                                <span class="text-[9px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">COLOR PERSONALIZADO</span>
+                                {% if branding.custom_allowed %}
+                                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-0.5">Elige cualquier color con el selector.</p>
+                                {% else %}
+                                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-0.5">Disponible en plan Élite — <a href="{{ url_for('auth.plans') }}" class="text-[#f2460d] underline font-bold">Ver planes</a></p>
+                                {% endif %}
+                            </div>
+                            <button type="button" id="reset_brand_btn"
+                                class="ml-auto text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest px-3 py-1.5 rounded-full border border-gray-200 dark:border-[#262626] hover:text-[#f2460d] hover:border-[#f2460d]/40 transition-all">
+                                Restablecer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">TIPO DE COCINA</label>
+                <select name="cuisine_type"
+                    class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white">
+                    {% for ct in cuisine_types %}
+                    <option value="{{ ct }}" {% if (restaurant.cuisine_type or 'general') == ct %}selected{% endif %}>{{ ct | title }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic ml-1 mt-2">
+                    * Define la portada por defecto del menú público.
+                </p>
+            </div>
         </div>
 
         <!-- Usuario -->
@@ -61,6 +168,95 @@
         </button>
     </div>
 </form>
+
+<script>
+    function previewCover(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById('cover_new_preview');
+            const placeholder = document.getElementById('cover_placeholder');
+            const original = document.getElementById('cover_original');
+            const removeBtn = document.getElementById('remove_cover_btn');
+            const container = document.getElementById('cover_preview_container');
+            const deleteInput = document.getElementById('delete_cover_input');
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (original) original.classList.add('hidden');
+            removeBtn.classList.remove('hidden');
+            container.classList.remove('border-dashed');
+            deleteInput.value = 'false';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeCover() {
+        const input = document.getElementById('cover_image');
+        const preview = document.getElementById('cover_new_preview');
+        const placeholder = document.getElementById('cover_placeholder');
+        const original = document.getElementById('cover_original');
+        const removeBtn = document.getElementById('remove_cover_btn');
+        const deleteInput = document.getElementById('delete_cover_input');
+        const container = document.getElementById('cover_preview_container');
+
+        input.value = '';
+        preview.classList.add('hidden');
+        preview.src = '';
+        if (original) {
+            original.classList.add('hidden');
+            deleteInput.value = 'true';
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        removeBtn.classList.add('hidden');
+        container.classList.add('border-dashed');
+    }
+
+    document.getElementById('cover_image').addEventListener('change', function () { previewCover(this); });
+    document.getElementById('remove_cover_btn').addEventListener('click', function (e) { e.stopPropagation(); removeCover(); });
+
+    const resetBrandBtn = document.getElementById('reset_brand_btn');
+    const brandColorInput = document.getElementById('brand_color_input');
+    const brandColorHidden = document.getElementById('brand_color_hidden');
+    const themeCircles = Array.from(document.querySelectorAll('.theme-circle'));
+    const DEFAULT_BRAND_COLOR = '#FF7A29';
+
+    function setActiveTheme(hex) {
+        const target = hex.toLowerCase();
+        themeCircles.forEach((btn) => {
+            const isActive = btn.dataset.themeHex.toLowerCase() === target;
+            btn.classList.toggle('ring-2', isActive);
+            btn.classList.toggle('ring-offset-2', isActive);
+            btn.classList.toggle('ring-offset-white', isActive);
+            btn.classList.toggle('ring-[#f2460d]', isActive);
+            btn.classList.toggle('scale-110', isActive);
+        });
+        if (brandColorHidden) brandColorHidden.value = hex;
+    }
+
+    themeCircles.forEach((btn) => {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            const hex = btn.dataset.themeHex;
+            if (brandColorInput) brandColorInput.value = hex;
+            setActiveTheme(hex);
+        });
+    });
+
+    if (brandColorInput) {
+        brandColorInput.addEventListener('input', function () {
+            setActiveTheme(brandColorInput.value);
+        });
+    }
+
+    if (resetBrandBtn && brandColorInput) {
+        resetBrandBtn.addEventListener('click', function () {
+            brandColorInput.value = DEFAULT_BRAND_COLOR;
+            setActiveTheme(DEFAULT_BRAND_COLOR);
+        });
+    }
+</script>
 
 <p class="text-[9px] text-center text-gray-300 dark:text-gray-700 mt-10 font-black uppercase tracking-[0.3em] cursor-default">
     VELZIA CLOUD SYSTEM v{{ restaurant.id + 2000 }}

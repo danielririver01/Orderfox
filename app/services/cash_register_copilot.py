@@ -15,6 +15,7 @@ Diferencias clave con message_handler.py (insights):
   - Prompt propio (CASH_SYSTEM_PROMPT) con identidad de caja.
 """
 
+import re
 import time
 
 from flask import current_app, jsonify
@@ -50,7 +51,63 @@ def _period_label(period):
     return label
 
 
-def build_cash_context(restaurant_id, start, end, period_label):
+# ── Filtro por método de pago ───────────────────────────────────────────────
+# "solo nequi", "en efectivo", "ventas de tarjeta" → restringe el contexto del
+# LLM a ese método. Determinista (regex), sin costo de LLM ni de tokens.
+_METHOD_TRIGGERS = [
+    ('nequi',       re.compile(r'\bnequi\b', re.IGNORECASE)),
+    ('cash',        re.compile(r'\befectiv[oa]?\b|\bcash\b|\bcontado\b', re.IGNORECASE)),
+    ('bancolombia', re.compile(r'\bbancolombia\b', re.IGNORECASE)),
+    ('card',        re.compile(r'\btarjetas?\b|\bcard\b|\bcr[eé]dito\b|\bd[eé]bito\b', re.IGNORECASE)),
+]
+
+
+def extract_payment_methods(text):
+    """Detecta TODOS los métodos de pago mencionados en el mensaje.
+
+    Retorna lista de claves internas ('cash' | 'nequi' | 'bancolombia' |
+    'card') en orden fijo de triggers y sin duplicados, o [] si no menciona
+    ninguno. Ej: 'solo nequi y efectivo' → ['nequi', 'cash'].
+    """
+    if not text:
+        return []
+    found = []
+    for method, pattern in _METHOD_TRIGGERS:
+        if pattern.search(text) and method not in found:
+            found.append(method)
+    return found
+
+
+def extract_payment_method(text):
+    """Backward-compat: primer método detectado o None."""
+    methods = extract_payment_methods(text)
+    return methods[0] if methods else None
+
+
+def _join_labels(labels):
+    """Une etiquetas en español: 1 → 'Nequi', 2 → 'Nequi y Efectivo',
+    3+ → 'Nequi, Efectivo y Tarjeta'."""
+    if len(labels) == 0:
+        return ''
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f'{labels[0]} y {labels[1]}'
+    return f"{', '.join(labels[:-1])} y {labels[-1]}"
+
+
+def _methods_filter(methods):
+    """Dict {methods, label} para el contexto/meta, o None si no hay filtro."""
+    if not methods:
+        return None
+    labels = [cash_register_service.METHOD_LABELS.get(m, m) for m in methods]
+    return {
+        'methods': methods,
+        'label': _join_labels(labels),
+    }
+
+
+def build_cash_context(restaurant_id, start, end, period_label, methods=None):
     """Arma el contexto JSON que recibe el LLM (misma fuente que la pantalla).
 
     Contiene:
@@ -58,23 +115,29 @@ def build_cash_context(restaurant_id, start, end, period_label):
       - summary: totales + desglose por método (paid_at).
       - paid_orders: últimos pedidos pagados en el rango (detalle).
       - pending: pedidos activos sin cobrar (dinero que aún no entra a caja).
+      - filter: método(s) de pago activos, si el usuario pidió segmentar
+        ("solo nequi" → summary y paid_orders llegan filtrados a esos métodos).
     """
     summary = cash_register_service.CashRegisterService.get_summary(
-        restaurant_id, start, end,
+        restaurant_id, start, end, method=methods,
     )
     paid_orders = cash_register_service.CashRegisterService.get_paid_orders(
-        restaurant_id, start, end,
+        restaurant_id, start, end, method=methods,
     )
     pending = cash_register_service.CashRegisterService.get_pending(
         restaurant_id,
     )
 
-    return {
+    context = {
         'period': {'label': period_label},
         'summary': summary,
         'paid_orders': paid_orders[:50],
         'pending': pending[:30],
     }
+    filter_info = _methods_filter(methods)
+    if filter_info:
+        context['filter'] = filter_info
+    return context
 
 
 def handle_cash_message(restaurant, user, conv, period, content):
@@ -94,6 +157,9 @@ def handle_cash_message(restaurant, user, conv, period, content):
         return jsonify({'success': False, 'error': 'empty_content'}), 400
 
     t0 = time.time()
+
+    # Filtro de método(s) de pago explícito: "solo nequi", "nequi y efectivo", ...
+    methods = extract_payment_methods(content)
 
     # 1) Guardar el mensaje del usuario.
     user_msg = cs.add_message(conv.id, 'user', content)
@@ -152,7 +218,9 @@ def handle_cash_message(restaurant, user, conv, period, content):
 
     # 4) Armar el contexto (misma fuente que la pantalla del Centro de Caja).
     try:
-        context = build_cash_context(restaurant.id, start, end, period_label)
+        context = build_cash_context(
+            restaurant.id, start, end, period_label, methods=methods,
+        )
         history = cs.get_messages(conv.id)
         history_for_llm = [m for m in history if m.id != user_msg.id]
         messages = prompt_builder.build_analysis_messages(
@@ -199,6 +267,9 @@ def handle_cash_message(restaurant, user, conv, period, content):
         'model': 'deepseek-v4-flash',
         'execution_ms': execution_ms,
     }
+    filter_info = _methods_filter(methods)
+    if filter_info:
+        meta['filter'] = filter_info
 
     if parsed.get('title') and not conv.title:
         cs.set_title(conv.id, parsed['title'][:200])

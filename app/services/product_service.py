@@ -62,7 +62,8 @@ class ProductService:
 
     @staticmethod
     def create_product(restaurant_id, category_id, name, price,
-                       description='', is_active=True, image_file=None):
+                       description='', is_active=True, image_file=None,
+                       is_vegetarian=False, is_spicy=False, is_featured=False):
         """
         Create a new product.
 
@@ -95,6 +96,9 @@ class ProductService:
             description=description,
             price=price,
             is_active=is_active,
+            is_vegetarian=is_vegetarian,
+            is_spicy=is_spicy,
+            is_featured=is_featured,
         )
 
         if image_file and getattr(image_file, 'filename', ''):
@@ -112,7 +116,8 @@ class ProductService:
     @staticmethod
     def update_product(product, name=None, description=None, price=None,
                        category_id=None, is_active=None,
-                       image_file=None, delete_image_flag=False):
+                       image_file=None, delete_image_flag=False,
+                       is_vegetarian=None, is_spicy=None, is_featured=None):
         """
         Update an existing product (partial update pattern).
 
@@ -120,6 +125,7 @@ class ProductService:
 
         Only updates fields that are not None.
         For is_active: validates product limit when going inactive → active.
+        For badges (is_vegetarian/is_spicy/is_featured): None = no tocar.
         Image: if image_file provided, replaces existing;
                if delete_image_flag=True, removes existing image.
         Category change validates the new category belongs to same restaurant.
@@ -150,6 +156,14 @@ class ProductService:
             product.description = description
         if price is not None:
             product.price = price
+
+        # ── Badges (menú público) ──
+        if is_vegetarian is not None:
+            product.is_vegetarian = is_vegetarian
+        if is_spicy is not None:
+            product.is_spicy = is_spicy
+        if is_featured is not None:
+            product.is_featured = is_featured
 
         # ── Image handling ──
         if image_file and getattr(image_file, 'filename', ''):

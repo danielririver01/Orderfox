@@ -7,17 +7,28 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
 
 <div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
-    <!-- Header Premium -->
-    <header class="flex justify-between items-center mb-8 md:mb-10">
-        <div class="flex flex-col">
-            <h1
-                class="text-2xl md:text-3xl lg:text-4xl font-black tracking-[-0.06em] text-white leading-none uppercase">
-                {{ restaurant.name }}
-            </h1>
-            <div class="flex items-center gap-3 mt-2">
-                <span class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Workspace</span>
 
-                <!-- Range Toggle Premium -->
+    <!-- HERO NARRATIVO -->
+    <header class="mb-6 md:mb-8">
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex flex-col">
+                <h1 class="text-xl md:text-2xl lg:text-3xl font-black tracking-[-0.04em] text-white leading-tight">
+                    {{ narrative.saludo }}{% if narrative.nombre %}, {{ narrative.nombre }}{% else %}, Bienvenido{% endif %}
+                </h1>
+                <p id="hero-context" class="text-xs md:text-sm text-gray-500 font-medium mt-1.5">
+                    {% if comparative.verdict == 'comparativa' %}
+                        Ayer cerraste con ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }} en {{ comparative.previous_orders }} pedidos
+                    {% elif comparative.verdict == 'primeras_ventas' %}
+                        &#x1F195; &#x00A1;Primeras ventas del d&#x00ED;a!
+                    {% elif comparative.verdict == 'sin_ventas_hoy' %}
+                        Hoy a&#x00FAn sin ventas. Ayer cerraste con ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }}.
+                    {% else %}
+                        Sin ventas registradas a&#x00FAn
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="flex items-center gap-4 flex-shrink-0">
                 <div class="flex items-center bg-[#0f0f10] p-1 rounded-xl border border-white/5">
                     <button id="range-today"
                         class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all bg-white text-black shadow-lg"
@@ -26,31 +37,75 @@
                         class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300"
                         onclick="setDashboardRange('month')">Mes</button>
                 </div>
+
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer">
+                    <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
+                    <span class="ml-8 text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-500 peer-checked:hidden">CERRADO</span>
+                    <span class="ml-8 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 hidden peer-checked:block">ABIERTO</span>
+                </label>
             </div>
         </div>
 
-        <!-- Toggle Tienda -->
-        <div class="flex items-center gap-4">
-            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer">
-                <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer 
-                                peer-checked:after:translate-x-6 peer-checked:after:border-white 
-                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
-                                after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full 
-                                after:h-5 after:w-5 after:transition-all 
-                                peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0"
-                    style="min-width: 48px;"></div>
-                <span
-                    class="ml-8 text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-500 peer-checked:hidden">CERRADO</span>
-                <span
-                    class="ml-8 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 hidden peer-checked:block">ABIERTO</span>
-            </label>
+        <!-- Numero grande: ventas del dia/mes + delta -->
+        <div class="flex items-baseline gap-3 flex-wrap">
+            <div class="flex items-baseline gap-2">
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500" id="hero-label">HOY LLEVAS</span>
+                <span id="hero-sales" class="text-2xl md:text-3xl font-black text-white tracking-tight">
+                    ${{ "{:,.0f}".format(total_sales).replace(",", ".") }}
+                </span>
+            </div>
+            {% if comparative.delta_pct is not none %}
+            <span id="hero-delta"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                    {% if comparative.delta_pct > 0 %}bg-emerald-500/10 text-emerald-400{% elif comparative.delta_pct < 0 %}bg-rose-500/10 text-rose-400{% else %}bg-gray-500/10 text-gray-400{% endif %}">
+                {% if comparative.delta_pct > 0 %}&#x25B2;{% elif comparative.delta_pct < 0 %}&#x25BC;{% endif %}
+                {{ comparative.delta_pct|abs }}% vs ayer
+            </span>
+            {% endif %}
         </div>
     </header>
 
+    <!-- SECCION: NECESITA ATENCION -->
+    {% if pending_total_count > 0 %}
+    <section id="atencion" class="mb-6 md:mb-8" aria-label="Pedidos pendientes">
+        <div class="bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/[0.04] dark:to-orange-500/[0.03] rounded-2xl border border-amber-200/30 dark:border-amber-500/10 p-4 md:p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-500 text-base">notification_important</span>
+                    <span class="text-xs font-black uppercase tracking-[0.15em] text-amber-500">
+                        {{ pending_total_count }} pedido{{ 's' if pending_total_count != 1 else '' }} esperando confirmaci&#x00F3;n
+                    </span>
+                </div>
+                <a href="{{ url_for('orders.index') }}"
+                    class="text-[10px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+                    Ver todos
+                    <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </a>
+            </div>
 
+            <div class="space-y-2">
+                {% for order in recent_pending %}
+                <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.03] dark:bg-white/[0.02] border border-white/[0.04]">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="text-xs font-black text-amber-400/80">{{ order.order_number }}</span>
+                        <span class="text-xs font-bold text-white truncate">{{ order.customer_name }}</span>
+                        {% if order.table_name %}
+                        <span class="text-[9px] font-bold text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">{{ order.table_name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <span class="text-xs font-black text-gray-300">${{ "{:,.0f}".format(order.total).replace(",", ".") }}</span>
+                        <span class="text-[9px] font-bold text-gray-500">{{ order.elapsed }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
-    <!-- Copilot Insights Event Card -->
+    <!-- COPILLOT VZ EVENT CARD -->
     <div id="insights-event-card" class="hidden mb-6 md:mb-8">
         <div class="bg-gradient-to-br from-orange-500/5 to-orange-600/5 dark:from-orange-500/[0.04] dark:to-orange-600/[0.03] rounded-2xl border border-orange-200/50 dark:border-orange-500/10 p-5 md:p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none"></div>
@@ -77,178 +132,94 @@
         </div>
     </div>
 
-    <!-- Section 1: Business Operations -->
-    <section class="mb-6 md:mb-8" aria-label="Métricas Operativas">
+    <!-- CONTADORES (3 cards) -->
+    <section class="mb-6 md:mb-8" aria-label="Metricas Operativas">
         <div class="grid grid-cols-3 gap-2 md:gap-4">
-            <!-- Pendientes -->
-            <div
-                class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-orange-100 dark:border-orange-500/10 shadow-sm flex flex-col items-center">
-                <span
-                    class="text-[8px] md:text-[10px] font-black uppercase text-orange-600/60 dark:text-orange-400/60 tracking-widest">Pendientes</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ pending_count
-                    }}</span>
-            </div>
-            <!-- Confirmados -->
+            <a href="#atencion"
+                class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-orange-100 dark:border-orange-500/10 shadow-sm flex flex-col items-center transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <span class="text-[8px] md:text-[10px] font-black uppercase text-orange-600/60 dark:text-orange-400/60 tracking-widest">Pendientes</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ pending_count }}</span>
+                <span class="text-[8px] md:text-[9px] font-bold text-gray-400 dark:text-gray-500 mt-0.5">{{ pending_count }} esperando confirmaci&#x00F3;n</span>
+            </a>
             <div
                 class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-blue-100 dark:border-blue-500/10 shadow-sm flex flex-col items-center">
-                <span
-                    class="text-[8px] md:text-[10px] font-black uppercase text-blue-600/60 dark:text-blue-400/60 tracking-widest">Confirmados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ confirmed_count
-                    }}</span>
+                <span class="text-[8px] md:text-[10px] font-black uppercase text-blue-600/60 dark:text-blue-400/60 tracking-widest">Confirmados</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ confirmed_count }}</span>
             </div>
-            <!-- Entregados -->
             <div
                 class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-green-100 dark:border-green-500/10 shadow-sm flex flex-col items-center">
-                <span
-                    class="text-[8px] md:text-[10px] font-black uppercase text-green-600/60 dark:text-green-400/60 tracking-widest">Entregados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ delivered_count
-                    }}</span>
+                <span class="text-[8px] md:text-[10px] font-black uppercase text-green-600/60 dark:text-green-400/60 tracking-widest">Entregados</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ delivered_count }}</span>
             </div>
         </div>
     </section>
 
-    <!-- Section: El Corazón Financiero + Menú Digital (Side by side on Desktop) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
-
-        <!-- Centro de Control Financiero -->
-        <section aria-label="Operación Matemática">
-            <div
-                class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-5 md:p-6 shadow-sm h-full">
-                <div class="flex items-center justify-between mb-4">
-                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
-                        Centro de
-                        Control Financiero</h4>
-                    <span
-                        class="material-symbols-outlined text-gray-300 dark:text-[#262626] text-lg">account_balance_wallet</span>
-                </div>
-
-                <div class="space-y-4">
-                    <!-- Ventas (Input) -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
-                            </div>
-                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Ingresos Menú
-                                Digital</span>
-                        </div>
-<span id="stat-ventas"
-    class="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{{ total_sales | currency }}</span>
-                    </div>
-
-                    <!-- Gastos (Output) -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-rose-600 text-sm">payments</span>
-                            </div>
-                            <span class="text-xs font-bold text-gray-600 dark:text-gray-400">Registros de tus
-                                gastos</span>
-                        </div>
-                        <div id="stat-gastos-container" class="flex items-center">
-                            <div id="stat-gastos-loading"
-                                class="animate-spin h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full mr-2">
-                            </div>
-                            <span id="stat-gastos"
-                                class="text-sm font-black text-rose-600 dark:text-rose-400 tracking-tighter">Cargando...</span>
-                        </div>
-                    </div>
-
-                    <div class="h-px bg-gray-50 dark:bg-[#262626] my-2"></div>
-
-                    <!-- Utilidad Real (Resultado) -->
-                    <div id="utilidad-card"
-                        class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#0c0c0c] transition-all duration-500">
-                        <div class="flex items-center gap-3">
-                            <div id="utilidad-icon-bg"
-                                class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center transition-colors">
-                                <span id="utilidad-icon"
-                                    class="material-symbols-outlined text-emerald-600 text-xl">trending_up</span>
-                            </div>
-                            <div class="flex flex-col">
-                                <span
-                                    class="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mb-1">Utilidad
-                                    Operativa</span>
-                                <span id="utilidad-status"
-                                    class="text-[9px] font-bold text-emerald-500 uppercase">Balance
-                                    Positivo</span>
-                            </div>
-                        </div>
-                        <span id="stat-utilidad"
-                            class="text-xl font-black tracking-tighter text-gray-300 dark:text-[#262626]">$ --</span>
-                    </div>
-                </div>
+    <!-- TICKET PROMEDIO + PLATO ESTRELLA -->
+    <section class="mb-6 md:mb-8" aria-label="Resumen del dia">
+        <div class="grid grid-cols-2 gap-2 md:gap-4">
+            <div class="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Ticket promedio</span>
+                <p id="hero-ticket" class="text-lg font-black text-white mt-1 tracking-tight">
+                    {% if comparative.current_orders > 0 %}
+                        ${{ "{:,.0f}".format((total_sales / comparative.current_orders)|int).replace(",", ".") }}
+                    {% else %}
+                        $0
+                    {% endif %}
+                </p>
             </div>
-        </section>
-
-        <!-- Section 2: Digital Identity -->
-        <section
-            class="bg-white dark:bg-[#141414] rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-[#262626] p-5 md:p-6 overflow-hidden relative"
-            aria-label="Menú Digital">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex flex-col">
-                    <h3 class="font-extrabold text-xl text-text-main dark:text-white tracking-tight">Tu Menú Digital
-                    </h3>
-                    <p
-                        class="text-[11px] text-gray-500 dark:text-gray-500 font-medium uppercase tracking-widest mt-0.5">
-                        Visibilidad en Tiempo Real</p>
-                </div>
-                <div id="menu-status-badge"
-                    class="flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300
-                        {{ 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' if is_open else 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20' }}">
-                    <span id="menu-status-dot" class="relative flex h-2 w-2">
-                        <span id="menu-status-ping"
-                            class="{{ 'animate-ping' if is_open else '' }} absolute inline-flex h-full w-full rounded-full {{ 'bg-emerald-400' if is_open else 'bg-rose-400' }} opacity-75"></span>
-                        <span id="menu-status-dot-inner"
-                            class="relative inline-flex rounded-full h-2 w-2 {{ 'bg-emerald-500' if is_open else 'bg-rose-500' }}"></span>
-                    </span>
-                    <span id="menu-status-text"
-                        class="text-[10px] font-black uppercase tracking-widest {{ 'text-emerald-700 dark:text-emerald-400' if is_open else 'text-rose-700 dark:text-rose-400' }}">
-                        {{ 'Activo' if is_open else 'Inactivo' }}
-                    </span>
-                </div>
+            <div class="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Plato estrella (30d)</span>
+                {% if top_product %}
+                <p class="text-lg font-black text-white mt-1 tracking-tight truncate">{{ top_product.name }}</p>
+                {% else %}
+                <p class="text-sm font-bold text-gray-500 mt-2">Sin datos aun</p>
+                {% endif %}
             </div>
+        </div>
+    </section>
 
-            <div class="relative group">
-                <div class="absolute -inset-1 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200
-                    dark:opacity-6 dark:group-hover:opacity-12 pointer-events-none"></div>
-
+    <!-- MENU DIGITAL - COMPACTO -->
+    <section class="mb-6 md:mb-8" aria-label="Menu Digital">
+        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div id="menu-status-badge"
+                        class="flex items-center gap-2 px-2.5 py-1 rounded-full border flex-shrink-0
+                            {{ 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' if is_open else 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20' }}">
+                        <span id="menu-status-dot" class="relative flex h-2 w-2">
+                            <span id="menu-status-ping"
+                                class="{{ 'animate-ping' if is_open else '' }} absolute inline-flex h-full w-full rounded-full {{ 'bg-emerald-400' if is_open else 'bg-rose-400' }} opacity-75"></span>
+                            <span id="menu-status-dot-inner"
+                                class="relative inline-flex rounded-full h-2 w-2 {{ 'bg-emerald-500' if is_open else 'bg-rose-500' }}"></span>
+                        </span>
+                        <span id="menu-status-text"
+                            class="text-[9px] font-black uppercase tracking-widest {{ 'text-emerald-700 dark:text-emerald-400' if is_open else 'text-rose-700 dark:text-rose-400' }}">
+                            {{ 'Activo' if is_open else 'Inactivo' }}
+                        </span>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-extrabold text-white tracking-tight">Tu Menu Digital</h3>
+                        <span class="text-[10px] font-bold text-[#f2460d] dark:text-orange-400 truncate block">{{ menu_url }}</span>
+                    </div>
+                </div>
                 <button
-                    class="relative z-0 w-full bg-gradient-to-br from-[#f2460d] to-[#d63a0a] hover:from-[#d63a0a] hover:to-[#f2460d] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-orange-500/30 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
-                    onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('¡Link copiado con éxito!', 'success')">
-
-                    <div class="absolute inset-x-0 top-0 h-px bg-white/20"></div>
-
-                    <span
-                        class="material-symbols-outlined text-[22px] group-hover:rotate-12 transition-transform">share</span>
-                    <span class="tracking-tight uppercase">Compartir Menú Digital</span>
-
-                    <div
-                        class="absolute -left-[100%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-[-25deg] group-hover:left-[150%] transition-all duration-1000">
-                    </div>
+                    class="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                    onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('Link copiado con exito!', 'success')">
+                    <span class="material-symbols-outlined text-[16px]">share</span>
+                    <span class="hidden sm:inline">Compartir</span>
                 </button>
             </div>
+        </div>
+    </section>
 
-            <div class="mt-6 flex flex-col items-center gap-2">
-                <div class="w-full h-px bg-gray-50 dark:bg-[#262626]"></div>
-                <span
-                    class="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest mt-2">Enlace
-                    de tu tienda</span>
-                <span
-                    class="text-[12px] font-bold text-[#f2460d] dark:text-orange-400 break-all select-all font-mono">{{
-                    menu_url }}</span>
-            </div>
-        </section>
-
-    </div>
 </div>
 {% include 'common/navigation.html' %}
+
 <script>
     const SCANNER_IA_URL = "{{ SCANNER_IA_URL }}";
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
 <script>
 (function() {
     const card = document.getElementById('insights-event-card');
@@ -258,15 +229,12 @@
     const dismissBtn = document.getElementById('event-card-dismiss');
     const sidebarBadge = document.getElementById('sidebar-insights-badge');
     const mobileBadge = document.getElementById('mobile-insights-badge');
-
     let currentEventId = null;
     let analyzing = false;
-
     function setBadge(show) {
         if (sidebarBadge) sidebarBadge.classList.toggle('hidden', !show);
         if (mobileBadge) mobileBadge.classList.toggle('hidden', !show);
     }
-
     function fetchPendingEvent() {
         fetch('/insights/api/events/pending')
             .then(function(r) { return r.json(); })
@@ -284,12 +252,8 @@
                     currentEventId = null;
                 }
             })
-            .catch(function() {
-                card.classList.add('hidden');
-                setBadge(false);
-            });
+            .catch(function() { card.classList.add('hidden'); setBadge(false); });
     }
-
     function consumeEvent() {
         if (!currentEventId || analyzing) return;
         analyzing = true;
@@ -298,25 +262,12 @@
         fetch('/insights/api/events/' + currentEventId + '/consume', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success && data.redirect) {
-                    window.location.href = data.redirect;
-                } else {
-                    card.classList.add('hidden');
-                    setBadge(false);
-                    currentEventId = null;
-                }
+                if (data.success && data.redirect) { window.location.href = data.redirect; }
+                else { card.classList.add('hidden'); setBadge(false); currentEventId = null; }
             })
-            .catch(function() {
-                card.classList.add('hidden');
-                setBadge(false);
-            })
-            .finally(function() {
-                analyzing = false;
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = 'Analizar';
-            });
+            .catch(function() { card.classList.add('hidden'); setBadge(false); })
+            .finally(function() { analyzing = false; analyzeBtn.disabled = false; analyzeBtn.textContent = 'Analizar'; });
     }
-
     function dismissEvent() {
         if (!currentEventId) return;
         var eid = currentEventId;
@@ -325,10 +276,8 @@
         setBadge(false);
         fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' }).catch(function() {});
     }
-
     if (analyzeBtn) analyzeBtn.addEventListener('click', consumeEvent);
     if (dismissBtn) dismissBtn.addEventListener('click', dismissEvent);
-
     fetchPendingEvent();
     setInterval(fetchPendingEvent, 30000);
 })();

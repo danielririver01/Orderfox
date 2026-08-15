@@ -21,6 +21,21 @@ PAYMENT_METHODS = ('cash', 'nequi', 'bancolombia', 'card')
 RANGE_TYPES = ('today', 'yesterday', 'last_7', 'last_30', 'last_month', 'this_year', 'custom')
 
 
+def _normalize_methods(method):
+    """Normaliza un filtro de método: str | iterable | None → lista de métodos válidos.
+
+    Acepta 'nequi', ['nequi', 'cash'] o ('nequi', 'cash'); descarta valores
+    no válidos, None y tipos inesperados.
+    """
+    if method is None:
+        return []
+    if isinstance(method, str):
+        method = [method]
+    elif not isinstance(method, (list, tuple)):
+        return []
+    return [m for m in method if m in PAYMENT_METHODS]
+
+
 class NoSalesError(ValueError):
     """Cierre rechazado: el periodo no tiene ventas (total $0)."""
 
@@ -107,9 +122,17 @@ class CashRegisterService:
         )
 
     @staticmethod
-    def get_summary(restaurant_id, start, end):
-        """Totales y desglose por método de un periodo (basado en paid_at)."""
+    def get_summary(restaurant_id, start, end, method=None):
+        """Totales y desglose por método de un periodo (basado en paid_at).
+
+        Si `method` es un método válido o una lista de métodos (PAYMENT_METHODS),
+        filtra todo el resumen a esos métodos (análisis segmentados del
+        Copilot de Caja, p.ej. "solo Nequi" o "Nequi y Efectivo").
+        """
         base = CashRegisterService._paid_base_query(restaurant_id, start, end)
+        methods = _normalize_methods(method)
+        if methods:
+            base = base.filter(Order.payment_method.in_(methods))
 
         total_sales = db.session.query(func.coalesce(func.sum(Order.total), 0)).filter(
             Order.id.in_(base.with_entities(Order.id))
@@ -151,11 +174,12 @@ class CashRegisterService:
 
     @staticmethod
     def get_paid_orders(restaurant_id, start, end, method=None, search=None):
-        """Pedidos pagados en el periodo, filtrables por método y búsqueda."""
+        """Pedidos pagados en el periodo, filtrables por método(s) y búsqueda."""
         query = CashRegisterService._paid_base_query(restaurant_id, start, end)
 
-        if method in PAYMENT_METHODS:
-            query = query.filter(Order.payment_method == method)
+        methods = _normalize_methods(method)
+        if methods:
+            query = query.filter(Order.payment_method.in_(methods))
 
         if search:
             like = f'%{search.strip()}%'

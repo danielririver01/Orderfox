@@ -108,14 +108,19 @@ def create_app():
     # Selective CSRF: skip /api/ and /insights/ routes (they use JWT not session).
     # csrf_protect runs first (set False above), then exempt_api runs,
     # then _csrf_protect_nonapi runs CSRF check for non-API routes.
+    # /webhook: webhook legacy de Mercado Pago (firma HMAC propia; MP no envía
+    # tokens CSRF). El decorador @csrf.exempt no funciona con Flask-WTF 1.2.2,
+    # así que la exención se hace aquí, como /api/ e /insights/api/.
+    CSRF_EXEMPT_PREFIXES = ('/api/', '/insights/api/', '/reclamar/', '/menu/api/')
+
     @app.before_request
     def exempt_api_from_csrf():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/') or request.path.startswith('/menu/api/'):
+        if request.path.startswith(CSRF_EXEMPT_PREFIXES) or request.path == '/webhook':
             return
 
     @app.before_request
     def _csrf_protect_nonapi():
-        if request.path.startswith('/api/') or request.path.startswith('/insights/api/') or request.path.startswith('/reclamar/') or request.path.startswith('/menu/api/'):
+        if request.path.startswith(CSRF_EXEMPT_PREFIXES) or request.path == '/webhook':
             return
         csrf_instance = current_app.extensions.get('csrf')
         if csrf_instance:

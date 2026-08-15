@@ -92,6 +92,62 @@ class TestDashboardService:
         assert error is None
         assert sample_restaurant.name == 'New Name'
 
+    def test_update_profile_brand_color_valid(self, sample_restaurant, sample_user, db):
+        success, _ = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            brand_color='#FF7A29',
+        )
+        assert success is True
+        assert sample_restaurant.brand_color == '#FF7A29'
+
+    def test_update_profile_brand_color_invalid(self, sample_restaurant, sample_user, db):
+        success, error = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            brand_color='rojo',
+        )
+        assert success is False
+        assert 'formato' in error.lower() or '#' in error
+
+    def test_update_profile_cuisine_valid(self, sample_restaurant, sample_user, db):
+        success, _ = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            cuisine_type='italiana',
+        )
+        assert success is True
+        assert sample_restaurant.cuisine_type == 'italiana'
+
+    def test_update_profile_cuisine_invalid(self, sample_restaurant, sample_user, db):
+        success, _ = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            cuisine_type='marciana',
+        )
+        assert success is False
+        assert sample_restaurant.cuisine_type == 'general'
+
+    def test_update_profile_estimated_time(self, sample_restaurant, sample_user, db):
+        success, _ = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            estimated_time='25',
+        )
+        assert success is True
+        assert sample_restaurant.estimated_time == 25
+
+    def test_update_profile_estimated_time_zero_clears(self, sample_restaurant, sample_user, db):
+        sample_restaurant.estimated_time = 25
+        db.session.commit()
+        success, _ = DashboardService.update_profile(
+            sample_restaurant, sample_user,
+            sample_restaurant.name, sample_restaurant.whatsapp_phone, 'admin',
+            estimated_time='0',
+        )
+        assert success is True
+        assert sample_restaurant.estimated_time is None
+
     def test_update_profile_duplicate_name(self, db, sample_restaurant):
         other = Restaurant(
             name='Other Restaurant',
@@ -263,6 +319,47 @@ class TestProductService:
         pagination = ProductService.get_products_paginated(sample_restaurant.id, sample_category.id)
         assert len(pagination.items) == 0
         assert pagination.total == 0
+
+    def test_create_product_with_badges(self, sample_restaurant, sample_category, db):
+        product, error = ProductService.create_product(
+            restaurant_id=sample_restaurant.id,
+            category_id=sample_category.id,
+            name='Picante Vegano',
+            price=12000,
+            is_vegetarian=True,
+            is_spicy=True,
+            is_featured=True,
+        )
+        assert error is None
+        assert product is not None
+        assert product.is_vegetarian is True
+        assert product.is_spicy is True
+        assert product.is_featured is True
+
+    def test_update_product_partial_keeps_badges(self, sample_restaurant, sample_category, db):
+        product, _ = ProductService.create_product(
+            restaurant_id=sample_restaurant.id,
+            category_id=sample_category.id,
+            name='Destacado',
+            price=9000,
+            is_featured=True,
+        )
+        updated, error = ProductService.update_product(product, name='Destacado V2')
+        assert error is None
+        assert updated.name == 'Destacado V2'
+        assert updated.is_featured is True
+
+    def test_update_product_badges_unset(self, sample_restaurant, sample_category, db):
+        product, _ = ProductService.create_product(
+            restaurant_id=sample_restaurant.id,
+            category_id=sample_category.id,
+            name='Toggle',
+            price=9000,
+            is_spicy=True,
+        )
+        updated, error = ProductService.update_product(product, is_spicy=False)
+        assert error is None
+        assert updated.is_spicy is False
 
 
 class TestPublicMenuService:
@@ -505,6 +602,28 @@ class TestDiscountCoupon:
         )
         assert coupon.id == c1.id
 
+    def test_build_preference_omits_auto_return_on_localhost(
+        self, db, sample_restaurant
+    ):
+        # MercadoPago rechaza auto_return + back_urls de localhost (error
+        # invalid_auto_return). En local la preferencia NO debe incluir
+        # auto_return para que la creación no falle con 400.
+        data, _, _ = SubscriptionService.build_mp_preference_data(
+            'emprendedor', sample_restaurant.id, 'http://localhost:5000'
+        )
+        assert 'auto_return' not in data
+        assert data['back_urls']['success'] == 'http://localhost:5000/payment-callback'
+
+    def test_build_preference_includes_auto_return_on_public_url(
+        self, db, sample_restaurant
+    ):
+        # En producción (https) auto_return se mantiene activo para que el
+        # cliente vuelva automáticamente tras pagar.
+        data, _, _ = SubscriptionService.build_mp_preference_data(
+            'emprendedor', sample_restaurant.id, 'https://velzia.co'
+        )
+        assert data.get('auto_return') == 'approved'
+
     def test_finalize_payment_consumes_coupon_and_extends_days(
         self, db, sample_restaurant, sample_user, sample_coupon, monkeypatch
     ):
@@ -659,6 +778,51 @@ class TestClassifier:
         cls = classifier.classify('¿Qué puedes hacer por mí?')
         assert cls['level'] == 'analysis'
         assert cls['intent'] == 'general_analysis'
+
+    def test_custom_window_extraction(self):
+        """'últimos X días' con cualquier número debe fijar la ventana del análisis."""
+        from app.services.insights import classifier
+        cases = [
+            ('analiza mis ventas de los últimos 15 días', 15),
+            ('ventas de los ultimos 3 dias', 3),
+            ('hace 45 días', 45),
+            ('¿cuánto vendí en los últimos 120 días?', 120),
+            ('analiza mis ventas hasta 10 días', 10),
+            ('últimos 999 días', classifier.MAX_WINDOW_DAYS),  # tope
+            ('últimos 0 días', 1),                              # mínimo
+        ]
+        for q, expected in cases:
+            cls = classifier.classify(q)
+            assert cls['level'] == 'analysis', f'{q} -> {cls}'
+            assert cls['window'] == expected, f'{q} -> {cls}'
+
+    def test_custom_window_absent_keeps_default(self):
+        from app.services.insights import classifier
+        for q in ['analiza mis ventas', '¿Qué puedes hacer por mí?', 'dame recomendaciones']:
+            cls = classifier.classify(q)
+            assert cls['window'] == 90, f'{q} -> {cls}'
+
+    def test_custom_window_guards(self):
+        """Expresiones de tiempo sin número de días no deben fijar ventana."""
+        from app.services.insights import classifier
+        # 'horas' no es 'días' → sin ventana explícita (default 90).
+        assert classifier.extract_custom_window('hace 2 horas') is None
+        # Números de 4 dígitos no matchean el regex (el tope es 365 de todos modos).
+        assert classifier.extract_custom_window('últimos 1000 días') is None
+        # Sin número → sin ventana explícita.
+        assert classifier.extract_custom_window('ventas de la semana pasada') is None
+
+    def test_custom_window_does_not_break_quick(self):
+        from app.services.insights import classifier
+        for q, expected_window in [
+            ('¿Cuánto vendí hoy?', 1),
+            ('Analiza mis ventas del mes', 30),
+            ('¿Cuál es mi ticket promedio?', 30),
+            ('Ventas de esta semana', 7),
+        ]:
+            cls = classifier.classify(q)
+            assert cls['level'] == 'quick', f'{q} -> {cls}'
+            assert cls['window'] == expected_window, f'{q} -> {cls}'
 
     def test_scope_guard_no_false_positive_on_reportes_plural(self):
         """'tipo de reportes' no debe disparar el guard de alcance (falso

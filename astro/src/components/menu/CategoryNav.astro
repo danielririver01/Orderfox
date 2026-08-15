@@ -1,0 +1,24 @@
+---
+import type { Category } from '../lib/types';
+
+export interface Props {
+  categories: Category[];
+}
+
+const { categories } = Astro.props;
+---
+
+<nav data-nav-mode="side" aria-label="Categorías" class="flex flex-col gap-0.5">
+  {categories.map((cat) => (
+    <a
+      key={cat.id}
+      href={`#cat-${cat.id}`}
+      data-nav-item
+      data-nav-id={cat.id}
+      class="nav-side-item"
+    >
+      <span class="truncate">{cat.name}</span>
+      <span class="shrink-0 text-xs text-ink-faint">{cat.product_count}</span>
+    </a>
+  ))}
+</nav>

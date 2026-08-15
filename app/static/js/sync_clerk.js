@@ -58,10 +58,25 @@ async function startSync() {
             if (result.success && result.redirect_url) {
                 console.log("Sincronización exitosa, redirigiendo a:", result.redirect_url);
 
-                if (result.is_new_user) {
-                    syncMessage.innerText = result.message || '¡Bienvenido! Tu plan de Prueba Premium (90 días) está activado.';
-                    syncMessage.classList.add('text-green-500');
+                // Bug 3c: el mensaje "trial activado" solo se muestra si el
+                // usuario es GENUINAMENTE nuevo (nunca tuvo cuenta). Un usuario
+                // que ya usó el trial antes NO debe ver ese mensaje.
+                if (result.is_new_user && result.is_first_time) {
+                    if (result.trial_plan) {
+                        syncMessage.innerText = result.message || '¡Bienvenido! Tu plan de Prueba Premium (60 días) está activado.';
+                        syncMessage.classList.add('text-green-500');
+                    } else {
+                        syncMessage.innerText = result.message || '¡Bienvenido! Completa tu registro para activar tu plan.';
+                        syncMessage.classList.add('text-green-500');
+                    }
 
+                    setTimeout(() => {
+                        window.location.href = result.redirect_url;
+                    }, 1500);
+                } else if (result.is_new_user && result.trial_blocked) {
+                    // El correo ya usó el trial → ir a planes (Bug 3)
+                    syncMessage.innerText = result.message || 'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.';
+                    syncMessage.classList.add('text-amber-500');
                     setTimeout(() => {
                         window.location.href = result.redirect_url;
                     }, 1500);

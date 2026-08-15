@@ -34,6 +34,10 @@ class RestaurantSchema(Schema):
     plan_type = fields.String()
     is_active = fields.Boolean()
     is_open = fields.Boolean()
+    cover_image = fields.String(dump_default=None)
+    estimated_time = fields.Integer(dump_default=None)
+    brand_color = fields.String(dump_default=None)
+    cuisine_type = fields.String(dump_default='general')
 
 class UserSchema(Schema):
     id = fields.Integer(dump_only=True)
@@ -62,6 +66,9 @@ class ProductSchema(Schema):
     description = fields.String(dump_default=None)
     price = fields.Integer()
     is_active = fields.Boolean()
+    is_vegetarian = fields.Boolean(dump_default=False)
+    is_spicy = fields.Boolean(dump_default=False)
+    is_featured = fields.Boolean(dump_default=False)
     image_url = fields.String(dump_default=None)
     category_id = fields.Integer()
     category_name = fields.String(dump_default=None)
@@ -75,6 +82,9 @@ class ProductCreate(Schema):
     price = fields.Integer(required=True)
     category_id = fields.Integer(required=True)
     is_active = fields.Boolean(dump_default=True)
+    is_vegetarian = fields.Boolean(dump_default=False)
+    is_spicy = fields.Boolean(dump_default=False)
+    is_featured = fields.Boolean(dump_default=False)
 
 class OrderItemSchema(Schema):
     id = fields.Integer(dump_only=True)

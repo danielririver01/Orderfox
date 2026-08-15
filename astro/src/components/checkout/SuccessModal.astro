@@ -9,30 +9,31 @@ const { whatsappPhone } = Astro.props;
 
 <div
   id="success-modal"
-  class="fixed inset-0 z-50 mx-auto my-auto hidden h-fit w-full max-w-md translate-y-8 transform overflow-hidden rounded-2xl bg-[#0f0f0f] shadow-2xl transition-all duration-300"
+  class="fixed inset-0 z-50 mx-auto my-auto hidden h-fit w-full max-w-md translate-y-8 transform overflow-hidden rounded-2xl border border-border-subtle bg-card shadow-2xl transition-all duration-300"
   data-whatsapp={whatsappPhone}
 >
-  <div class="bg-gradient-to-br from-green-500 to-emerald-600 px-6 py-10 text-center text-white">
-    <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+  <div class="bg-accent px-6 py-10 text-center text-cta-ink">
+    <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-cta-ink/15">
       <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
       </svg>
     </div>
-    <h2 class="text-xl font-bold">Pedido confirmado</h2>
-    <p class="mt-1 text-sm text-white/80">Tu pedido ha sido recibido</p>
+    <h2 class="font-display text-xl font-bold">Pedido confirmado</h2>
+    <p class="mt-1 text-sm text-cta-ink/80">Tu pedido ha sido recibido</p>
   </div>
   <div class="p-6 text-center">
-    <p class="text-sm text-[#a1a1aa]">Número de pedido</p>
-    <p id="success-order-number" class="mt-1 text-2xl font-bold text-[#f5f5f7]">ORD-000</p>
-    <p id="success-total" class="mt-2 text-lg font-bold text-brand-400"></p>
+    <p class="text-sm text-ink-muted">Número de pedido</p>
+    <p id="success-order-number" class="mt-1 text-2xl font-bold text-ink">ORD-000</p>
+    <p id="success-total" class="mt-2 text-lg font-bold text-price"></p>
+    <p id="success-table" class="mt-1 hidden text-sm font-medium text-ink-muted"></p>
     <div class="mt-6 flex flex-col gap-3">
       <button id="whatsapp-confirm"
-        class="w-full rounded-xl bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+        class="w-full rounded-xl bg-veg py-3 text-sm font-semibold text-cta-ink transition hover:brightness-90"
       >
         Confirmar por WhatsApp
       </button>
       <button id="success-close"
-        class="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-[#a1a1aa] transition hover:bg-white/5"
+        class="w-full rounded-xl border border-border-subtle py-3 text-sm font-semibold text-ink-muted transition hover:bg-card-hover"
       >
         Seguir viendo el menú
       </button>
@@ -49,6 +50,11 @@ const { whatsappPhone } = Astro.props;
     lastResult = e.detail;
     document.getElementById('success-order-number')!.textContent = e.detail.order_number;
     document.getElementById('success-total')!.textContent = '$' + e.detail.total.toLocaleString('es-CO');
+    const tableEl = document.getElementById('success-table');
+    if (tableEl && e.detail.table_name) {
+      tableEl.textContent = `Mesa: ${e.detail.table_name}`;
+      tableEl.classList.remove('hidden');
+    }
     document.getElementById('success-modal')?.classList.remove('hidden', 'translate-y-8');
     document.getElementById('success-overlay')?.classList.remove('hidden');
   }) as EventListener);
@@ -56,7 +62,8 @@ const { whatsappPhone } = Astro.props;
   document.getElementById('whatsapp-confirm')?.addEventListener('click', () => {
     if (!lastResult) return;
     const items = lastResult.items?.map((i: any) => `• ${i.name} x${i.qty}`).join('\n') || '';
-    const text = `¡Hola! Quiero confirmar mi pedido:\n\n*N°:* ${lastResult.order_number}\n*Total:* $${lastResult.total.toLocaleString('es-CO')}\n\n${items}`;
+    const tableLine = lastResult.table_name ? `*Mesa:* ${lastResult.table_name}\n` : '';
+    const text = `¡Hola! Quiero confirmar mi pedido:\n\n*N°:* ${lastResult.order_number}\n*Total:* $${lastResult.total.toLocaleString('es-CO')}\n${tableLine}\n${items}`;
     window.open(`https://wa.me/${wpPhone}?text=${encodeURIComponent(text)}`, '_blank');
   });
 

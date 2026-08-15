@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, session,
 from app import db
 from app.forms import LoginForm
 from app.forms.auth import RegisterSetupForm
-from app.models import Restaurant
+from app.models import Restaurant, TrialHistory
 from app.utils.subscription import initialize_or_reset_token_wallet
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.services.auth_service import AuthService
@@ -33,11 +33,26 @@ def sync_clerk():
             'success': False,
             'message': error.get('message', 'Verification failed'),
             'error_code': error.get('error_code', 'VERIFICATION_FAILED')
-        }), 401 if error.get('error_code') in ('INVALID_SESSION', 'INVALID_USER', 'EMAIL_MISMATCH') else 500
+        }), 401 if error.get('error_code') in ('INVALID_SESSION', 'INVALID_USER', 'EMAIL_MISMATCH', 'SESSION_USER_MISMATCH') else 500
 
     email = verified_email
 
     username = data.get('username') or email.split('@')[0]
+
+    # El plan elegido en /planes queda en session['selected_plan'] pero el
+    # servicio solo lo respeta si existe un PreRegistration. Sin esto, un
+    # correo que ya usó el trial y viene a COMPRAR un plan de pago era
+    # tratado como 'trial' por defecto → TRIAL_ALREADY_USED → loop
+    # planes→register→login→planes. Persistirlo aquí rompe ese ciclo.
+    selected_plan = session.get('selected_plan')
+    if selected_plan and selected_plan != 'trial':
+        try:
+            AuthService.save_plan_selection(email, selected_plan)
+        except Exception:
+            current_app.logger.warning(
+                f"sync_clerk: no se pudo persistir plan {selected_plan} para {email}",
+                exc_info=True,
+            )
 
     # 2. Delegar sync / creación de usuario al servicio
     user, is_new, plan_or_error = AuthService.sync_or_create_user(
@@ -45,6 +60,23 @@ def sync_clerk():
     )
 
     if user is None:
+        # Bug 3: el correo ya usó el trial gratuito → redirigir a planes
+        # con mensaje claro en vez de regalar otro trial.
+        if plan_or_error.get('error_code') == 'TRIAL_ALREADY_USED':
+            # El usuario tiene sesión Clerk válida pero NO cuenta local
+            # (trial bloqueado). Guardar su identidad para que /planes
+            # muestre logout y deshabilite el botón del plan trial, en vez
+            # de tratarlo como visitante anónimo.
+            session['clerk_id'] = clerk_id
+            session['trial_blocked'] = True
+            flash(plan_or_error.get('message'), 'warning')
+            return jsonify({
+                'success': True,
+                'redirect_url': url_for('auth.plans'),
+                'message': plan_or_error.get('message'),
+                'trial_blocked': True,
+            })
+
         return jsonify({
             'success': False,
             'message': plan_or_error.get('message', 'Error de registro'),
@@ -57,16 +89,43 @@ def sync_clerk():
 
     if is_new:
         session['selected_plan'] = plan_or_error  # plan string
+        # Bug 3c: "primera vez" = usuario recién creado Y sin historial de
+        # trial previo. Sin esto, el frontend mostraba "trial activado" a
+        # cualquiera con is_new_user=True aunque ya hubiera tenido cuenta.
+        is_first_time = not TrialHistory.query.filter_by(email=email).first()
         return jsonify({
             'success': True,
             'message': f'¡Bienvenido! Completa tu registro para activar tu plan {plan_or_error}.',
             'is_new_user': True,
+            'is_first_time': is_first_time,
+            'trial_plan': plan_or_error == 'trial',
             'redirect_url': url_for('auth.setup_account')
         })
 
     redirect_url = url_for('dashboard.index')
     if not user.restaurant:
-        redirect_url = url_for('auth.setup_account')
+        # Usuario existente sin restaurante.
+        if session.get('selected_plan'):
+            # Ya eligió un plan (trial o pago en /planes → /register) → completar
+            # el registro en setup-account con ese plan.
+            redirect_url = url_for('auth.setup_account')
+        else:
+            # Sin plan elegido en esta sesión:
+            #  - ya usó el trial → debe elegir un plan pago en /planes (antes caía
+            #    en setup-account con plan=None → el template mostraba elite $50.000).
+            #  - no usó el trial → setup con plan trial por defecto.
+            already_used_trial = TrialHistory.query.filter_by(email=email).first() is not None
+            if already_used_trial:
+                session['clerk_id'] = clerk_id
+                session['trial_blocked'] = True
+                flash(
+                    'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.',
+                    'warning'
+                )
+                redirect_url = url_for('auth.plans')
+            else:
+                session['selected_plan'] = 'trial'
+                redirect_url = url_for('auth.setup_account')
 
     return jsonify({
         'success': True,
@@ -82,6 +141,18 @@ def sync_clerk_redirect():
 @auth_bp.route('/', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
+        user = AuthService.get_user(session['user_id'])
+        # Cuenta logueada sin restaurante: NO ir a dashboard.index (require_active
+        # lanza "Tu cuenta no está asociada a ningún restaurante" y redirige en
+        # loop). Llevar al flujo correcto según su estado.
+        if user and not user.restaurant:
+            if session.get('selected_plan'):
+                return redirect(url_for('auth.setup_account'))
+            used_trial = TrialHistory.query.filter_by(email=user.email).first() is not None
+            if used_trial:
+                session['trial_blocked'] = True
+                return redirect(url_for('auth.plans'))
+            return redirect(url_for('auth.setup_account'))
         return redirect(url_for('dashboard.index'))
     form = LoginForm()
     if form.validate_on_submit():
@@ -120,11 +191,19 @@ def legal():
 
 @auth_bp.route('/planes')
 def plans():
+    has_restaurant = False
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])
-        if user and not user.restaurant:
-            return redirect(url_for('auth.setup_account'))
-    return render_template('auth/plans.html')
+        if user:
+            has_restaurant = user.restaurant is not None
+            # Usuario con cuenta local pero sin restaurante. Si ya usó el trial,
+            # DEBE poder ver /planes para elegir un plan pago; solo se le fuerza
+            # a setup-account si todavía no usó el trial (flujo de registro).
+            if not user.restaurant:
+                used_trial = TrialHistory.query.filter_by(email=user.email).first() is not None
+                if not used_trial:
+                    return redirect(url_for('auth.setup_account'))
+    return render_template('auth/plans.html', has_restaurant=has_restaurant)
 
 
 @auth_bp.route('/register', methods=['GET'])
@@ -132,6 +211,15 @@ def register():
     plan = request.args.get('plan')
     if plan:
         session['selected_plan'] = plan
+
+    # Usuario ya autenticado que eligió un plan desde /planes. No debe pasar
+    # por register_verify (que redirige a /login → dashboard.index → 404 por
+    # require_active "sin restaurante"). Va directo a setup-account con el
+    # plan ya guardado en sesión.
+    if 'user_id' in session:
+        user = AuthService.get_user(session['user_id'])
+        if user and not user.restaurant:
+            return redirect(url_for('auth.setup_account'))
 
     selected_plan = session.get('selected_plan', 'emprendedor')
     return render_template('auth/register_verify.html', step='email', plan=selected_plan)
@@ -179,6 +267,20 @@ def setup_account():
     if user.restaurant:
         return redirect(url_for('dashboard.index'))
 
+    # Defensivo: usuario sin restaurante que ya usó el trial y aún no eligió
+    # plan. No debe quedar en setup-account con plan=None (el template lo
+    # muestra como elite $50.000/mes). Forzar elección en /planes.
+    if not session.get('selected_plan') and user.email:
+        used_trial = TrialHistory.query.filter_by(email=user.email).first() is not None
+        if used_trial:
+            session['clerk_id'] = user.clerk_id
+            session['trial_blocked'] = True
+            flash(
+                'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.',
+                'warning'
+            )
+            return redirect(url_for('auth.plans'))
+
     email = user.email
 
     if user.clerk_id:
@@ -220,6 +322,9 @@ def setup_account():
                                    plan=selected_plan, user=user)
 
         if is_trial:
+            # Email de bienvenida justo después de crear el restaurante en DB.
+            # No bloquea el flujo si el envío falla.
+            AuthService.send_welcome_email(restaurant, user)
             session['username'] = user.username
             return redirect(url_for('dashboard.index'))
         else:
@@ -382,9 +487,14 @@ def webhook():
             if topic == 'payment':
                 payment_id = request.args.get('id') or request.args.get('data.id')
 
-        # Verificación HMAC si hay secret configurado
+        # Fail-closed (alineado con /api/v1/webhooks/mercadopago): sin secret
+        # configurado NO se procesa nada; con secret, la firma es obligatoria.
         webhook_secret = current_app.config.get('MP_WEBHOOK_SECRET')
-        if webhook_secret and payment_id:
+        if not webhook_secret:
+            current_app.logger.error("WEBHOOK LEGACY: MP_WEBHOOK_SECRET no configurado")
+            return jsonify({'success': False, 'error': 'webhook_not_configured'}), 503
+
+        if payment_id:
             ts, v1 = extract_mp_signature(request.headers)
             if not verify_mp_signature(str(payment_id), ts, v1, webhook_secret):
                 current_app.logger.warning(

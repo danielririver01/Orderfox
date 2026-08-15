@@ -1,138 +1,82 @@
 ---
 import type { Product } from '../../lib/types';
+import { productImage } from '../../lib/brand';
 
 export interface Props {
   product: Product;
+  ordering: boolean;
+  categoryName?: string | null;
 }
 
-const { product } = Astro.props;
+const { product, ordering, categoryName } = Astro.props;
 const hasModifiers = product.modifiers && product.modifiers.length > 0;
+const hasBadges = product.is_vegetarian || product.is_spicy || product.is_featured;
+const imageSrc = productImage(product.image_url, categoryName);
 ---
 
 <div
-  class="product-card flex h-full cursor-pointer flex-col rounded-xl border border-white/5 bg-[#141414] shadow-sm transition hover:border-purple-500/30 hover:bg-[#1a1a1a]"
+  class="group flex h-full cursor-pointer overflow-hidden rounded-2xl border border-border-subtle bg-card transition hover:border-accent/40 hover:bg-card-hover lg:flex-col"
   data-product-id={product.id}
 >
-  <div class="product-card-inner flex flex-1 flex-col">
-    <!-- Front -->
-    <div class="product-card-front flex flex-1 flex-col">
-      <button class="btn-flip-card" data-flip-id={product.id} title="Ver info y QR">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-        </svg>
-      </button>
+  <!-- Imagen (móvil: 104px a la izquierda; desktop: arriba) -->
+  <div class="relative h-24 w-24 shrink-0 overflow-hidden lg:h-40 lg:w-full">
+    <img
+        src={imageSrc}
+        alt={product.name}
+        class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+        loading="lazy"
+      />
 
-      <div class="relative h-36 shrink-0 overflow-hidden bg-[#1a1a1a] md:h-44">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} class="h-full w-full object-cover transition hover:scale-105" loading="lazy" />
-        ) : (
-          <div class="flex h-full w-full items-center justify-center text-2xl font-bold text-[#4a4a4a]">
-            {product.name.charAt(0)}
-          </div>
+    {hasBadges && (
+      <div class="absolute left-2 top-2 flex flex-wrap gap-1">
+        {product.is_vegetarian && (
+          <span class="flex items-center gap-1 rounded-full bg-veg/90 px-2 py-0.5 text-[10px] font-semibold text-cta-ink backdrop-blur">
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            Veg
+          </span>
+        )}
+        {product.is_spicy && (
+          <span class="rounded-full bg-accent-strong/90 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+            Picante
+          </span>
+        )}
+        {product.is_featured && (
+          <span class="rounded-full bg-accent/90 px-2 py-0.5 text-[10px] font-semibold text-cta-ink backdrop-blur">
+            Más pedido
+          </span>
         )}
       </div>
+    )}
+  </div>
 
-      <div class="flex flex-1 flex-col p-3">
-        <div class="mb-1 flex items-start justify-between gap-2">
-          <h3 class="text-sm font-semibold text-[#f5f5f7]">{product.name}</h3>
-          <span class="shrink-0 text-sm font-bold text-brand-400">${product.price.toLocaleString('es-CO')}</span>
-        </div>
-        {product.description && (
-          <p class="mb-2 line-clamp-2 text-xs text-[#a1a1aa]">{product.description}</p>
-        )}
-        <div class="mt-auto flex items-center justify-between">
-          {hasModifiers && (
-            <span class="rounded-full bg-brand-500/20 px-2 py-0.5 text-xs text-brand-300">Variantes</span>
-          )}
-          <button class="ml-auto flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white transition hover:bg-brand-500" data-add-id={product.id} title="Agregar al pedido">+</button>
-        </div>
-      </div>
+  <!-- Contenido -->
+  <div class="flex min-w-0 flex-1 flex-col p-3 lg:flex-1 lg:flex-none">
+    <div class="flex items-start justify-between gap-2">
+      <h3 class="text-sm font-semibold text-ink">{product.name}</h3>
+      <span class="shrink-0 text-sm font-bold text-price">${product.price.toLocaleString('es-CO')}</span>
     </div>
+    {product.description && (
+      <p class="mt-0.5 line-clamp-2 text-xs text-ink-muted">{product.description}</p>
+    )}
 
-    <!-- Back (QR & Share) -->
-    <div class="product-card-back" style="background: #141414;">
-      <button class="btn-flip-card" data-flip-id={product.id}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
+    <div class="mt-auto flex items-center gap-2 pt-2">
+      {hasModifiers && (
+        <span class="rounded-full border border-border-subtle bg-accent-bg px-2 py-0.5 text-[11px] font-medium text-accent">
+          Variantes
+        </span>
+      )}
+      <button
+        type="button"
+        class="btn-primary ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-md transition"
+        data-add-id={product.id}
+        title={ordering ? 'Agregar al pedido' : 'Pedidos desactivados'}
+        disabled={!ordering}
+        aria-label={`Agregar ${product.name} al pedido`}
+      >
+        +
       </button>
-      <div class="flex flex-col items-center justify-center gap-3 w-full">
-        <div class="text-xs text-[#71717a]">Generando QR...</div>
-        <img class="qr-image qr-target" data-qr-id={product.id} src="" alt={`QR ${product.name}`} style="display:none" />
-        <button class="btn-share-premium" data-share-id={product.id} data-share-name={product.name}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          Compartir
-        </button>
-      </div>
     </div>
   </div>
 </div>
-
-<script>
-  // Card click → open detail (skip flip buttons, share buttons)
-  document.addEventListener('click', (e) => {
-    const card = (e.target as HTMLElement).closest('[data-product-id]') as HTMLElement;
-    if (!card) return;
-    if ((e.target as HTMLElement).closest('.btn-flip-card, .btn-share-premium, [data-add-id]')) return;
-    const id = parseInt(card.getAttribute('data-product-id') || '0');
-    document.dispatchEvent(new CustomEvent('open-product', { detail: { productId: id } }));
-  });
-
-  // Flip buttons
-  document.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('[data-flip-id]') as HTMLElement;
-    if (!btn) return;
-    e.stopPropagation();
-    const id = btn.getAttribute('data-flip-id');
-    const card = document.querySelector(`[data-product-id="${id}"]`);
-    if (!card) return;
-    card.classList.toggle('flipped');
-    if (card.classList.contains('flipped')) loadQR(Number(id));
-  });
-
-  // Add buttons (+)
-  document.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('[data-add-id]') as HTMLElement;
-    if (!btn) return;
-    e.stopPropagation();
-    const id = parseInt(btn.getAttribute('data-add-id') || '0');
-    document.dispatchEvent(new CustomEvent('open-product', { detail: { productId: id } }));
-  });
-
-  // Share buttons
-  document.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('.btn-share-premium') as HTMLElement;
-    if (!btn) return;
-    e.stopPropagation();
-    const id = parseInt(btn.getAttribute('data-share-id') || '0');
-    const name = btn.getAttribute('data-share-name') || '';
-    window.shareProduct(id, name);
-  });
-
-  function loadQR(productId: number) {
-    const img = document.querySelector(`.qr-target[data-qr-id="${productId}"]`) as HTMLImageElement;
-    if (!img || img.dataset.loaded === 'true') return;
-    const url = `${window.location.origin}${window.location.pathname}#product-${productId}`;
-    img.onload = () => {
-      img.style.display = 'block';
-      const loader = img.previousElementSibling;
-      if (loader) (loader as HTMLElement).style.display = 'none';
-      img.dataset.loaded = 'true';
-    };
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-  }
-
-  window.shareProduct = async function (productId: number, productName: string) {
-    const url = `${window.location.origin}${window.location.pathname}#product-${productId}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: productName, text: `¡Prueba ${productName}!`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        if ((window as any).showToast) (window as any).showToast('Enlace copiado', 'success');
-      }
-    } catch (e) {}
-  };
-</script>

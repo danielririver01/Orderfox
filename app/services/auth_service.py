@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import re
 import secrets
 import unicodedata
-from flask import current_app
+from flask import current_app, render_template
 from werkzeug.security import generate_password_hash
 
 from app.models import db, User, Restaurant, TrialHistory, AITokenWallet, PreRegistration
@@ -17,6 +17,7 @@ from app.utils.subscription import (
     AI_TOKEN_LIMITS,
 )
 from app.utils.constants import RESERVED_SLUGS
+from app.services.mail_service import send_email
 from flask_jwt_extended import create_access_token, create_refresh_token, decode_token
 
 
@@ -77,6 +78,18 @@ class AuthService:
                 pre_reg = PreRegistration.query.filter_by(email=email).first()
                 selected_plan = pre_reg.selected_plan if pre_reg else 'trial'
 
+                # Bug 3: un correo que ya usó el trial gratuito NO puede recibir
+                # otro. Se consulta TrialHistory ANTES de crear el usuario, para
+                # no "regalar" trial en el flujo Clerk (donde el check de
+                # setup_account llega demasiado tarde).
+                if selected_plan == 'trial':
+                    already_used = TrialHistory.query.filter_by(email=email).first()
+                    if already_used:
+                        return None, False, {
+                            'error_code': 'TRIAL_ALREADY_USED',
+                            'message': 'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.'
+                        }
+
                 user = User(
                     restaurant_id=None,
                     username=username,
@@ -127,7 +140,7 @@ class AuthService:
         Save or update a pre-registration plan selection.
         Returns (pre_reg, None) or (None, error_dict).
         """
-        valid_plans = ['trial', 'emprendedor', 'premium', 'elite']
+        valid_plans = ['trial', 'emprendedor', 'crecimiento', 'elite']
         if plan not in valid_plans:
             return None, {'error_code': 'INVALID_PLAN',
                           'message': f'Plan inválido: {plan}'}
@@ -192,7 +205,7 @@ class AuthService:
         is_trial = (selected_plan == 'trial')
 
         if is_trial:
-            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=90)
+            trial_expires_at = datetime.now(timezone.utc) + timedelta(days=60)
             restaurant = Restaurant(
                 name=restaurant_name,
                 slug=slug,
@@ -201,7 +214,7 @@ class AuthService:
                 is_active=True,
                 subscription_expires_at=trial_expires_at,
                 is_open=True,
-                has_used_trial=False,
+                has_used_trial=True,  # Bug 3: marca que el trial fue usado (antes quedaba False, código muerto)
                 ntfy_topic=secrets.token_hex(16),
             )
         else:
@@ -240,6 +253,41 @@ class AuthService:
             db.session.rollback()
             current_app.logger.error(f"Error creating restaurant from setup: {e}")
             return None, 'Error al crear la cuenta. Inténtalo de nuevo.'
+
+    @staticmethod
+    def send_welcome_email(restaurant, user):
+        """Email de bienvenida tras el registro exitoso con plan trial.
+
+        Se dispara justo después de crear el restaurante en DB (lo llama la
+        ruta de registro). No bloquea el flujo: si el envío falla (SMTP, red),
+        el registro continúa igual; el envío real lo hace mail_service.
+        """
+        if not restaurant or not user or not user.email:
+            return False
+
+        base_url = current_app.config.get('BASE_URL', '')
+        dashboard_url = f"{base_url}/dashboard/"
+
+        html = render_template(
+            'email/welcome.html',
+            restaurant_name=restaurant.name,
+            dashboard_url=dashboard_url,
+        )
+        text = (
+            f'¡Bienvenido a Velzia, {restaurant.name}!\n\n'
+            'Tu restaurante ya está listo. Tienes 60 días para explorar todo '
+            'lo que Velzia puede hacer por tu negocio: tu menú digital, '
+            'pedidos por WhatsApp y todas las herramientas operativas.\n\n'
+            f'Sube tu primer producto al menú: {dashboard_url}\n\n'
+            'Un abrazo,\nDaniel — Fundador de Velzia'
+        )
+
+        return send_email(
+            to=user.email,
+            subject=f'¡Bienvenido a Velzia, {restaurant.name}!',
+            html_body=html,
+            text_body=text,
+        )
 
     # ── Mercado Pago (delegado a SubscriptionService) ────────
     # Métodos movidos a app/services/subscription_service.py:
@@ -287,9 +335,22 @@ class AuthService:
                 timeout=5
             )
 
-            if session_resp.status_code != 200 or session_resp.json().get('status') != 'active':
+            if session_resp.status_code != 200:
                 return None, {'error_code': 'INVALID_SESSION',
                               'message': 'Invalid or inactive session'}
+
+            session_data = session_resp.json()
+            if session_data.get('status') != 'active':
+                return None, {'error_code': 'INVALID_SESSION',
+                              'message': 'Invalid or inactive session'}
+
+            # Seguridad: la sesión debe pertenecer al clerk_id declarado por el
+            # cliente. Sin esto, cualquiera con una sesión Clerk activa (la suya)
+            # podía enviar el clerk_id + email de otra persona y secuestrar su
+            # cuenta local (GET /v1/sessions/{id} devuelve user_id en el objeto).
+            if session_data.get('user_id') != clerk_id:
+                return None, {'error_code': 'SESSION_USER_MISMATCH',
+                              'message': 'La sesión no pertenece a este usuario'}
 
             response = requests.get(
                 f"https://api.clerk.com/v1/users/{clerk_id}",
@@ -325,6 +386,39 @@ class AuthService:
                           'message': 'Verification failed'}
 
     # ── AI Scan Token ──────────────────────────────────────
+
+    @staticmethod
+    def delete_clerk_user(clerk_id):
+        """
+        Elimina un usuario de Clerk por completo (DELETE /v1/users/{clerk_id}).
+
+        Devuelve (True, None) si Clerk confirmó la eliminación (200 o 404:
+        el 404 significa que ya no existía, que es el estado deseado) o
+        (False, mensaje_error) si Clerk rechazó la llamada.
+        """
+        if not clerk_id:
+            return True, None
+
+        import requests
+        clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
+        if not clerk_secret:
+            return False, 'Clerk no está configurado. No se pudo eliminar la cuenta.'
+
+        try:
+            response = requests.delete(
+                f"https://api.clerk.com/v1/users/{clerk_id}",
+                headers={"Authorization": f"Bearer {clerk_secret}"},
+                timeout=10
+            )
+            if response.status_code in (200, 404):
+                return True, None
+            current_app.logger.error(
+                f"Clerk delete user failed: {response.status_code} {response.text[:300]}"
+            )
+            return False, 'No se pudo eliminar tu cuenta en el sistema de autenticación. Inténtalo de nuevo.'
+        except Exception as e:
+            current_app.logger.error(f"Error deleting Clerk user: {e}")
+            return False, 'Error de red al eliminar tu cuenta. Inténtalo de nuevo.'
 
     @staticmethod
     def generate_ai_scan_token(user, app_config):

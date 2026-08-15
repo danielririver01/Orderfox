@@ -1,7 +1,20 @@
-from datetime import date, datetime, timezone, timedelta
+import logging
+import re
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import func
-from app.models import db, Order, Restaurant, User, TrialHistory
-from app.utils.timezone import today_start_utc
+
+from app.models import Order, OrderItem, Restaurant, TrialHistory, User, db
+from app.services.theme_service import (
+    BRAND_THEMES,
+    DEFAULT_BRAND_COLOR,
+    get_branding_permissions,
+)
+from app.utils.cover_bank import CUISINE_TYPES
+from app.utils.image_handler import delete_image, save_image
+from app.utils.timezone import COLOMBIA_TZ, today_start_utc
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardService:
@@ -108,6 +121,29 @@ class DashboardService:
         }
 
     @staticmethod
+    def get_top_product_30d(restaurant_id):
+        """Producto más vendido por ingresos en los últimos 30 días."""
+        since_30d = (datetime.now(timezone.utc) - timedelta(days=30)).date()
+        row = (
+            db.session.query(
+                OrderItem.product_name,
+                func.sum(OrderItem.subtotal).label('revenue'),
+            )
+            .join(Order, Order.id == OrderItem.order_id)
+            .filter(
+                OrderItem.restaurant_id == restaurant_id,
+                Order.status != 'cancelled',
+                func.date(Order.created_at) >= since_30d,
+            )
+            .group_by(OrderItem.product_name)
+            .order_by(func.sum(OrderItem.subtotal).desc())
+            .first()
+        )
+        if row:
+            return {'name': row.product_name, 'revenue': int(row.revenue)}
+        return None
+
+    @staticmethod
     def get_order_polling(restaurant_id):
         """
         Return dict with last_id, pending_count, and recent pending orders.
@@ -141,6 +177,208 @@ class DashboardService:
                 for o in recent_orders
             ]
         }
+
+    # ── Dashboard Inicio: narrativa + comparativa ─────────────────────────────
+
+    @staticmethod
+    def _delta_pct(current, previous):
+        """Porcentaje de cambio seguro (nunca Infinity/NaN)."""
+        if not previous or previous <= 0:
+            return None
+        return round(((current - previous) / previous) * 100)
+
+    @staticmethod
+    def get_comparative_stats(restaurant_id, range_type='today'):
+        """
+        Devuelve {current, previous, delta_pct, verdict} para Hoy vs Ayer
+        o Mes vs Mes anterior.
+        """
+        now_utc = datetime.now(timezone.utc)
+
+        if range_type == 'today':
+            # Hoy: medianoche Colombia → UTC
+            today_start = today_start_utc()
+            yesterday_start = today_start - timedelta(days=1)
+
+            current_sales = db.session.query(func.sum(Order.total)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= today_start,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            current_orders = db.session.query(func.count(Order.id)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= today_start,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            previous_sales = db.session.query(func.sum(Order.total)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= yesterday_start,
+                Order.created_at < today_start,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            previous_orders = db.session.query(func.count(Order.id)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= yesterday_start,
+                Order.created_at < today_start,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+        else:  # month
+            now_col = datetime.now(COLOMBIA_TZ)
+            this_month_start_col = now_col.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            this_month_start_utc = this_month_start_col.astimezone(timezone.utc).replace(tzinfo=None)
+
+            last_month_end_col = this_month_start_col - timedelta(days=1)
+            last_month_start_col = last_month_end_col.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            last_month_start_utc = last_month_start_col.astimezone(timezone.utc).replace(tzinfo=None)
+            last_month_end_utc = this_month_start_utc
+
+            current_sales = db.session.query(func.sum(Order.total)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= this_month_start_utc,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            current_orders = db.session.query(func.count(Order.id)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= this_month_start_utc,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            previous_sales = db.session.query(func.sum(Order.total)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= last_month_start_utc,
+                Order.created_at < last_month_end_utc,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+            previous_orders = db.session.query(func.count(Order.id)).filter(
+                Order.restaurant_id == restaurant_id,
+                Order.created_at >= last_month_start_utc,
+                Order.created_at < last_month_end_utc,
+                Order.status.in_(['confirmed', 'delivered'])
+            ).scalar() or 0
+
+        delta_pct = DashboardService._delta_pct(int(current_sales), int(previous_sales))
+
+        # Veredicto textual
+        cur = int(current_sales)
+        prev = int(previous_sales)
+        if cur > 0 and prev > 0:
+            verdict = 'comparativa'
+        elif cur > 0 and prev == 0:
+            verdict = 'primeras_ventas'
+        elif cur == 0 and prev > 0:
+            verdict = 'sin_ventas_hoy'
+        else:
+            verdict = 'sin_datos'
+
+        return {
+            'current_sales': cur,
+            'current_orders': int(current_orders),
+            'previous_sales': prev,
+            'previous_orders': int(previous_orders),
+            'delta_pct': delta_pct,
+            'verdict': verdict,
+        }
+
+    @staticmethod
+    def get_home_narrative(restaurant_id, user):
+        """
+        Narrativa del hero: saludo + frase contextúa + plato estrella 30d.
+        Sin cache en v1.
+        """
+        import time
+        t0 = time.monotonic()
+
+        now_col = datetime.now(COLOMBIA_TZ)
+        hour = now_col.hour
+        if 5 <= hour < 12:
+            saludo = 'Buenos días'
+        elif 12 <= hour < 18:
+            saludo = 'Buenas tardes'
+        else:
+            saludo = 'Buenas noches'
+
+        nombre = (user.username or '').strip() or None if user else None
+
+        # Plato estrella 30 días
+        since_30d = (datetime.now(timezone.utc) - timedelta(days=30)).date()
+        top_row = (
+            db.session.query(
+                OrderItem.product_name,
+                func.sum(OrderItem.quantity).label('qty'),
+            )
+            .join(Order, Order.id == OrderItem.order_id)
+            .filter(
+                OrderItem.restaurant_id == restaurant_id,
+                Order.status != 'cancelled',
+                func.date(Order.created_at) >= since_30d,
+            )
+            .group_by(OrderItem.product_name)
+            .order_by(func.sum(OrderItem.quantity).desc())
+            .first()
+        )
+
+        elapsed_ms = round((time.monotonic() - t0) * 1000)
+        logger.debug(
+            'get_home_narrative restaurant=%d plato_estrella_ms=%d',
+            restaurant_id, elapsed_ms
+        )
+
+        plato_estrella = top_row.product_name if top_row else None
+
+        return {
+            'saludo': saludo,
+            'nombre': nombre,
+            'plato_estrella': plato_estrella,
+        }
+
+    @staticmethod
+    def get_recent_pending_limited(restaurant_id, limit=3):
+        """
+        Retorna (orders_list, total_pending) para la sección de atención.
+        Cada order: {id, order_number, customer_name, total, table_name, elapsed}.
+        """
+        total_pending = Order.query.filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status == 'pending'
+        ).count()
+
+        recent = Order.query.filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status == 'pending'
+        ).order_by(Order.created_at.desc()).limit(limit).all()
+
+        now_utc = datetime.now(timezone.utc)
+        orders = []
+        for o in recent:
+            elapsed = ''
+            if o.created_at:
+                diff = now_utc - (o.created_at if o.created_at.tzinfo else o.created_at.replace(tzinfo=timezone.utc))
+                mins = int(diff.total_seconds() / 60)
+                if mins < 1:
+                    elapsed = 'ahora'
+                elif mins < 60:
+                    elapsed = f'hace {mins}m'
+                else:
+                    hours = mins // 60
+                    elapsed = f'hace {hours}h'
+
+            table_name = o.table.name if o.table else None
+            orders.append({
+                'id': o.id,
+                'order_number': o.order_number,
+                'customer_name': o.customer_name or 'Cliente',
+                'total': o.total,
+                'table_name': table_name,
+                'elapsed': elapsed,
+            })
+
+        return orders, total_pending
 
     @staticmethod
     def toggle_status(restaurant, is_open):
@@ -177,12 +415,22 @@ class DashboardService:
             return 0
 
     @staticmethod
-    def delete_restaurant(restaurant):
+    def delete_restaurant(restaurant, clerk_id=None):
         """
         Delete a restaurant and clear session on success.
 
+        Orden crítico (Bug 2): primero se elimina el usuario en Clerk;
+        SOLO si Clerk confirma se borra en DB. Si Clerk falla, no se toca
+        la DB (no dejar la cuenta en estado intermedio).
+
         Returns (True, message_dict) or (False, error_dict).
         """
+        if clerk_id:
+            from app.services.auth_service import AuthService
+            clerk_ok, clerk_error = AuthService.delete_clerk_user(clerk_id)
+            if not clerk_ok:
+                return False, {'message': clerk_error, 'clerk_error': True}
+
         try:
             db.session.delete(restaurant)
             db.session.commit()
@@ -192,12 +440,48 @@ class DashboardService:
             return False, {'message': 'Error al eliminar la cuenta'}
 
     @staticmethod
-    def update_profile(restaurant, user, restaurant_name, whatsapp_phone, username):
+    def _can_apply_brand_color(restaurant, new_color):
         """
-        Update restaurant name, phone, and user display name.
+        Valida si un restaurante puede aplicar un brand_color según su plan.
+
+        Reglas:
+        - Élite / Trial (custom_allowed): cualquier hex válido pasa.
+        - Crecimiento (themes_allowed, sin custom): solo hex de BRAND_THEMES.
+        - Emprendedor (sin themes ni custom): solo el color por defecto.
+        - Downgrade: si el restaurante ya tiene un color guardado (de un plan
+          superior), se respeta — solo se bloquea el cambio a un color nuevo.
+        """
+        current = (restaurant.brand_color or '').strip().lower()
+        new = new_color.strip().lower()
+
+        # Respetar el color ya guardado (regla de downgrade): si es el mismo,
+        # no es un cambio, se permite.
+        if current and current == new:
+            return True
+
+        perms = get_branding_permissions(restaurant.plan_type)
+        if perms['custom_allowed']:
+            return True
+
+        theme_hexes = [t['hex'].lower() for t in BRAND_THEMES]
+        if perms['themes_allowed']:
+            return new in theme_hexes
+
+        # Emprendedor: solo el color por defecto.
+        return new == DEFAULT_BRAND_COLOR.lower()
+
+    @staticmethod
+    def update_profile(restaurant, user, restaurant_name, whatsapp_phone, username,
+                       cover_image=None, estimated_time=None, brand_color=None,
+                       cuisine_type=None, delete_cover_image=False):
+        """
+        Update restaurant name, phone, user display name, and public menu
+        branding fields (cover_image, estimated_time, brand_color, cuisine_type).
 
         Returns (True, None) on success or (False, error_message) on failure.
         Checks for name/phone conflicts.
+        All new fields are optional (None = no tocar) → backward-compatible
+        con call-sites existentes (web + API).
         """
         try:
             if restaurant_name != restaurant.name:
@@ -219,6 +503,45 @@ class DashboardService:
                 ).first()
                 if phone_in_trial or phone_in_other:
                     return False, 'No es posible usar este número. Intenta con otro.'
+
+            # ── Menú público: validaciones antes de escribir ──
+            if brand_color is not None and brand_color.strip():
+                bc = brand_color.strip()
+                if not re.fullmatch(r'#[0-9A-Fa-f]{6}', bc):
+                    return False, 'El color de marca debe tener formato #RRGGBB.'
+                if not DashboardService._can_apply_brand_color(restaurant, bc):
+                    return False, 'Tu plan no permite ese color de marca. Mejora tu plan para personalizarlo.'
+                restaurant.brand_color = bc
+            elif brand_color is not None:
+                restaurant.brand_color = None
+
+            if cuisine_type is not None and cuisine_type.strip():
+                ct = cuisine_type.strip()
+                if ct not in CUISINE_TYPES:
+                    return False, 'Tipo de cocina no válido.'
+                restaurant.cuisine_type = ct
+
+            if estimated_time is not None:
+                try:
+                    et = int(estimated_time)
+                except (TypeError, ValueError):
+                    et = -1
+                if et < 0 or et > 600:
+                    return False, 'El tiempo estimado debe ser entre 0 y 600 minutos.'
+                restaurant.estimated_time = et if et > 0 else None
+
+            # Portada: subir nueva, o borrar si se pide
+            if cover_image and getattr(cover_image, 'filename', ''):
+                new_url = save_image(cover_image, 'restaurants')
+                if not new_url:
+                    return False, 'No se pudo subir la portada. Usa una imagen JPG, PNG o WebP de menos de 10MB.'
+                if restaurant.cover_image:
+                    delete_image(restaurant.cover_image)
+                restaurant.cover_image = new_url
+            elif delete_cover_image:
+                if restaurant.cover_image:
+                    delete_image(restaurant.cover_image)
+                restaurant.cover_image = None
 
             restaurant.name = restaurant_name
             restaurant.whatsapp_phone = whatsapp_phone
@@ -261,6 +584,6 @@ class DashboardService:
             user.email = new_email
             db.session.commit()
             return True, '¡Correo actualizado con exito!', None
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             return False, 'Error al intentar cambiar el correo. Intenta de nuevo.', 500

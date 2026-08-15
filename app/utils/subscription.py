@@ -10,6 +10,8 @@ PLAN_LIMITS = {
         'has_modifiers': False,
         'has_status_management': True,
         'has_ai_tokens': True,
+        'brand_themes': False,
+        'brand_custom_color': False,
         'name': 'Emprendedor',
         'price_cop': 30000,
         'duration_days': 30
@@ -21,6 +23,8 @@ PLAN_LIMITS = {
         'has_modifiers': False,
         'has_status_management': True,
         'has_ai_tokens': True,
+        'brand_themes': True,
+        'brand_custom_color': False,
         'name': 'Crecimiento',
         'price_cop': 40000,
         'duration_days': 30
@@ -32,6 +36,8 @@ PLAN_LIMITS = {
         'has_modifiers': True,
         'has_status_management': True,
         'has_ai_tokens': True,
+        'brand_themes': True,
+        'brand_custom_color': True,
         'name': 'Élite',
         'price_cop': 50000,
         'duration_days': 30
@@ -43,9 +49,11 @@ PLAN_LIMITS = {
         'has_modifiers': True,
         'has_status_management': True,
         'has_ai_tokens': True,
-        'name': 'Prueba Premium · 90 días',
+        'brand_themes': True,
+        'brand_custom_color': True,
+        'name': 'Prueba Premium · 60 días',
         'price_cop': 0,
-        'duration_days': 90
+        'duration_days': 60
     }
 }
 

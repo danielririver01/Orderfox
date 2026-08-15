@@ -10,13 +10,9 @@ def get_menu(slug):
     if error:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
-    if not restaurant.is_open:
-        return jsonify({
-            'success': False,
-            'error': 'closed',
-            'message': 'El restaurante está cerrado en este momento.'
-        }), 403
-
+    # Rediseño menú público: un restaurante cerrado muestra el menú con
+    # is_open=false (badge "Cerrado", botones de agregar deshabilitados en el
+    # frontend). Los pedidos siguen bloqueados server-side en /api/order.
     menu_data = PublicMenuService.get_menu_api_data(restaurant)
     if menu_data is None:
         return jsonify({'success': False, 'error': 'Error al cargar el menú'}), 500

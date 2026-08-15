@@ -65,6 +65,7 @@ cd astro; npm run dev                 # Frontend Astro (menú público)
 El usuario no puede revisar cada cambio: el agente es 100% responsable de que nada se rompa en producción ni en desarrollo. Todo cambio DEBE cumplir:
 
 - **Cero bugs escondidos.** Antes de dar una tarea por terminada: correr la suite completa de tests (repetida varias veces si algún resultado fue flaky), comprobar sintaxis de los archivos tocados (`py_compile`, `node --check`), y revisar manualmente los edge cases que los QA testers no cubren: concurrencia/threads, nulls, tamaños límite, reordenación de operaciones, timezones, fallos de red/externos.
+  - **Alcance proporcional a la superficie tocada:** si el cambio NO toca código Python (solo frontend Astro/JS, CSS, docs, config, etc.), basta con `node --check`/build + los tests JS relevantes — no es obligatorio correr pytest. Si toca Python (services, models, routes, utils), correr la suite completa de pytest al menos una vez al terminar.
 - **No confiar ciegamente en pytest.** Un test en verde no es suficiente. Si una suite falla de forma intermitente, encontrar la causa raíz y arreglarla (ej. stubbear threads/hilos que pelean por recursos, mocks), nunca ignorarla ni asumir que "no volverá a pasar".
 - **Los tests son tan importantes como el código.** Todo bug o regresión detectada se cubre con un test que lo reproduce antes de mergear.
 - **Sin efectos colaterales.** Un cambio no debe alterar comportamiento no relacionado: backward-compatible, no romper APIs existentes, no tocar lógica ajena al ticket.

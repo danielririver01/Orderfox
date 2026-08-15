@@ -511,3 +511,158 @@ class TestCashCopilotPrompt(_Auth):
             'hola', ctx, system_prompt=prompt_builder.CASH_SYSTEM_PROMPT)
         assert prompt_builder.CASH_SYSTEM_PROMPT.split('\n')[0] in custom[0]['content']
         assert prompt_builder.SYSTEM_PROMPT.split('\n')[0] not in custom[0]['content']
+
+
+# ── Filtro por método de pago ──────────────────────────────────────────────
+
+class TestCashCopilotMethodFilter(_Auth):
+    """El Copilot de Caja segmenta el contexto por método cuando se lo piden."""
+
+    def _conv_id(self, client):
+        resp = client.post('/cash-register/copilot/conversations', json={},
+                           headers=self._csrf_headers(client))
+        return resp.get_json()['data']['id']
+
+    def _post_message(self, client, cid, payload):
+        return client.post(
+            f'/cash-register/copilot/conversations/{cid}/messages',
+            json=payload, headers=self._csrf_headers(client))
+
+    def test_extract_payment_methods_mappings(self):
+        from app.services.cash_register_copilot import extract_payment_methods
+        cases = [
+            ('solo nequi', ['nequi']),
+            ('analiza mis ventas de Nequi', ['nequi']),
+            ('en efectivo', ['cash']),
+            ('cuánto vendí en efectivo?', ['cash']),
+            ('al contado', ['cash']),
+            ('por tarjeta', ['card']),
+            ('con tarjetas', ['card']),
+            ('crédito', ['card']),
+            ('débito', ['card']),
+            ('bancolombia', ['bancolombia']),
+            # Combinaciones de métodos
+            ('solo nequi y efectivo', ['nequi', 'cash']),
+            ('nequi y tarjeta', ['nequi', 'card']),
+            ('efectivo y bancolombia', ['cash', 'bancolombia']),
+            ('nequi, efectivo y tarjeta', ['nequi', 'cash', 'card']),
+            ('¿cómo vendí hoy?', []),
+            ('dame recomendaciones', []),
+            ('hace 2 horas', []),
+        ]
+        for text, expected in cases:
+            got = extract_payment_methods(text)
+            assert got == expected, f'{text!r} -> {got!r}, expected {expected!r}'
+
+    def test_extract_payment_method_compat_first_or_none(self):
+        from app.services.cash_register_copilot import extract_payment_method
+        assert extract_payment_method('solo nequi y efectivo') == 'nequi'
+        assert extract_payment_method('¿cómo vendí hoy?') is None
+
+    def test_normalize_methods_accepts_str_list_tuple(self):
+        from app.services.cash_register_service import _normalize_methods
+        assert _normalize_methods(None) == []
+        assert _normalize_methods('nequi') == ['nequi']
+        assert _normalize_methods(['nequi', 'cash']) == ['nequi', 'cash']
+        assert _normalize_methods(('nequi', 'cash')) == ['nequi', 'cash']
+        assert _normalize_methods(['nequi', 'desconocido']) == ['nequi']
+        assert _normalize_methods(123) == []
+        assert _normalize_methods('') == []
+
+    def test_message_solo_nequi_filters_context(self, client, db, sample_user,
+                                                sample_restaurant, cash_wallet,
+                                                paid_order_factory, llm_capture):
+        """'solo nequi' entrega al LLM SOLO los totales de Nequi (sin efectivo)."""
+        now = datetime.now(timezone.utc)
+        paid_order_factory(25000, 'cash', now, amount_received=30000)
+        paid_order_factory(15000, 'nequi', now)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        resp = self._post_message(
+            client, cid,
+            {'content': 'analiza solo mis ventas de nequi',
+             'period': {'range': 'today'}})
+        assert resp.status_code == 200
+        assert resp.get_json()['metadata']['filter']['methods'] == ['nequi']
+
+        assert llm_capture.calls, 'el LLM debió ser invocado'
+        system = llm_capture.calls[0][0]['content']
+        assert '"filter": {' in system
+        assert '"methods": [' in system
+        assert '"total_sales": 15000' in system
+        assert '"total_sales": 40000' not in system  # el efectivo queda fuera
+
+    def test_message_efectivo_filters_context(self, client, db, sample_user,
+                                              sample_restaurant, cash_wallet,
+                                              paid_order_factory, llm_capture):
+        """'en efectivo' filtra el contexto a efectivo (sin Nequi)."""
+        now = datetime.now(timezone.utc)
+        paid_order_factory(25000, 'cash', now, amount_received=30000)
+        paid_order_factory(15000, 'nequi', now)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        resp = self._post_message(
+            client, cid,
+            {'content': '¿cuánto vendí en efectivo?',
+             'period': {'range': 'today'}})
+        assert resp.status_code == 200
+        assert resp.get_json()['metadata']['filter']['methods'] == ['cash']
+
+        assert llm_capture.calls
+        system = llm_capture.calls[0][0]['content']
+        assert '"methods": [' in system
+        assert '"total_sales": 25000' in system
+        assert '"total_sales": 40000' not in system
+
+    def test_message_combined_methods_filters_context(self, client, db, sample_user,
+                                                      sample_restaurant, cash_wallet,
+                                                      paid_order_factory, llm_capture):
+        """'solo nequi y efectivo' suma ambos métodos y excluye los demás."""
+        now = datetime.now(timezone.utc)
+        paid_order_factory(25000, 'cash', now, amount_received=30000)
+        paid_order_factory(15000, 'nequi', now)
+        paid_order_factory(50000, 'card', now)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        resp = self._post_message(
+            client, cid,
+            {'content': 'solo nequi y efectivo',
+             'period': {'range': 'today'}})
+        assert resp.status_code == 200
+        filtro = resp.get_json()['metadata']['filter']
+        assert filtro['methods'] == ['nequi', 'cash']
+        assert filtro['label'] == 'Nequi y Efectivo'
+
+        assert llm_capture.calls
+        system = llm_capture.calls[0][0]['content']
+        assert '"methods": [' in system
+        assert '"label": "Nequi y Efectivo"' in system
+        assert '"total_sales": 40000' in system          # nequi + efectivo
+        assert '"total_sales": 90000' not in system      # la tarjeta queda fuera
+
+    def test_message_without_method_keeps_full_context(self, client, db,
+                                                       sample_user,
+                                                       sample_restaurant,
+                                                       cash_wallet,
+                                                       paid_order_factory,
+                                                       llm_capture):
+        """Sin mención de método: el contexto conserva todos los métodos."""
+        now = datetime.now(timezone.utc)
+        paid_order_factory(25000, 'cash', now, amount_received=30000)
+        paid_order_factory(15000, 'nequi', now)
+
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        resp = self._post_message(
+            client, cid,
+            {'content': '¿cómo vendí hoy?', 'period': {'range': 'today'}})
+        assert resp.status_code == 200
+        assert 'filter' not in resp.get_json()['metadata']
+
+        assert llm_capture.calls
+        system = llm_capture.calls[0][0]['content']
+        assert '"total_sales": 40000' in system
+        assert '"filter": {' not in system

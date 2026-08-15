@@ -37,6 +37,9 @@ def list_products():
                     'description': p.description,
                     'price': p.price,
                     'is_active': p.is_active,
+                    'is_vegetarian': p.is_vegetarian,
+                    'is_spicy': p.is_spicy,
+                    'is_featured': p.is_featured,
                     'image_url': p.image_url,
                     'category_id': p.category_id,
                     'category_name': p.category.name if p.category else None,
@@ -79,6 +82,9 @@ def get_product(id):
             'description': product.description,
             'price': product.price,
             'is_active': product.is_active,
+            'is_vegetarian': product.is_vegetarian,
+            'is_spicy': product.is_spicy,
+            'is_featured': product.is_featured,
             'image_url': product.image_url,
             'category_id': product.category_id,
             'category_name': product.category.name if product.category else None,
@@ -121,6 +127,9 @@ def create_product():
         description=request.form.get('description', '').strip(),
         is_active=request.form.get('is_active', 'true').lower() == 'true',
         image_file=request.files.get('image'),
+        is_vegetarian=request.form.get('is_vegetarian', 'false').lower() == 'true',
+        is_spicy=request.form.get('is_spicy', 'false').lower() == 'true',
+        is_featured=request.form.get('is_featured', 'false').lower() == 'true',
     )
     if error:
         return jsonify({'success': False, 'error': error}), 400
@@ -162,6 +171,17 @@ def update_product(id):
     if is_active is not None:
         is_active_bool = is_active.lower() == 'true'
 
+    # Badges del menú público: ausente = no tocar (partial update).
+    # Un valor explícito 'true'/'false' permite desmarcar.
+    def _badge(value):
+        if value is None:
+            return None
+        return value.lower() in ('true', '1', 'on', 'y', 'yes')
+
+    badge_v = _badge(request.form.get('is_vegetarian'))
+    badge_s = _badge(request.form.get('is_spicy'))
+    badge_f = _badge(request.form.get('is_featured'))
+
     image_file = request.files.get('image')
     delete_image_flag = request.form.get('delete_image') == 'true'
 
@@ -174,6 +194,9 @@ def update_product(id):
         is_active=is_active_bool,
         image_file=image_file,
         delete_image_flag=delete_image_flag,
+        is_vegetarian=badge_v,
+        is_spicy=badge_s,
+        is_featured=badge_f,
     )
     if error:
         return jsonify({'success': False, 'error': error}), 400

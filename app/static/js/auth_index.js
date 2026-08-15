@@ -22,81 +22,11 @@ window.addEventListener('load', async function () {
             }
         });
 
-        // Silent Sync — if user already has a Clerk session, sync and redirect
-        const hasFlashMessages = document.querySelector('.flash-message') !== null;
-        if (window.Clerk.user && !hasFlashMessages) {
-            const signInDiv = document.getElementById('clerk-signin');
-
-            signInDiv.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12">
-                    <div class="auth-spinner mb-4"></div>
-                    <p class="text-xs font-black text-orange-400/70 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
-                </div>
-            `;
-
-            try {
-                const token = await window.Clerk.session.getToken();
-                const response = await fetch('/api/sync-clerk', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        clerk_id: window.Clerk.user.id,
-                        email: window.Clerk.user.primaryEmailAddress.emailAddress,
-                        session_id: window.Clerk.session.id
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success && result.redirect_url) {
-                    if (result.is_new_user) {
-                        const signInDiv = document.getElementById('clerk-signin');
-                        const scannerSuffix = (window.VELZIA_CONFIG && window.VELZIA_CONFIG.scanner_available) ? ' y Escanear tus compras' : '';
-                        signInDiv.innerHTML = `
-                            <div class="flex flex-col items-center justify-center py-12 px-6">
-                                <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-green-500/30">
-                                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                </div>
-                                <p class="text-sm font-bold text-green-400 text-center mb-2">¡Bienvenido!</p>
-                                <p class="text-xs text-gray-500 text-center mb-4">Tu plan de Prueba Premium (90 días) está activado con 50 créditos IA para Copilot VZ${scannerSuffix}</p>
-                                <p class="text-xs text-gray-600 text-center">Redirigiendo...</p>
-                            </div>
-                        `;
-                        setTimeout(() => {
-                            window.location.href = result.redirect_url;
-                        }, 1500);
-                    } else {
-                        window.location.href = result.redirect_url;
-                    }
-                } else if (result.error_code === 'USER_NOT_REGISTERED') {
-                    await window.Clerk.signOut();
-                    const message = result.message || 'Debe registrarse en la plataforma para poder acceder.';
-                    const signInDiv = document.getElementById('clerk-signin');
-                    signInDiv.innerHTML = `
-                        <div class="flex flex-col items-center justify-center py-12 px-6">
-                            <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/30">
-                                <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </div>
-                            <p class="text-sm font-bold text-red-400 text-center mb-4">${message}</p>
-                            <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
-                                Intentar de nuevo
-                            </button>
-                        </div>
-                    `;
-                    return;
-                } else {
-                    throw new Error("Sync failed");
-                }
-            } catch (error) {
-                console.error("Silent sync failed, falling back to manual sign in", error);
-                window.location.reload();
-            }
+        // Si hay una sesión Clerk activa, mostrar la tarjeta "Continuar como..."
+        // en vez de sincronizar automáticamente. El usuario decide si entra con
+        // esa cuenta o cambia a otra (evita el "secuestro" de sesión de Clerk).
+        if (window.Clerk.user) {
+            showContinueCard();
             return;
         }
 
@@ -144,3 +74,115 @@ window.addEventListener('load', async function () {
         });
     }
 });
+
+function showContinueCard() {
+    const user = window.Clerk.user;
+    const email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+    const avatar = user.imageUrl || '';
+    const signInDiv = document.getElementById('clerk-signin');
+
+    signInDiv.innerHTML = `
+        <div class="flex flex-col items-center gap-5 py-8 w-full">
+            <div class="flex items-center gap-3 w-full">
+                <div class="w-12 h-12 rounded-full ring-2 ring-orange-500/30 flex items-center justify-center overflow-hidden flex-shrink-0 bg-[rgba(249,115,22,0.1)]">
+                    ${avatar
+                        ? `<img src="${avatar}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">`
+                        : `<span class="material-symbols-outlined text-orange-400 text-[20px]">person</span>`}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Continuar como</p>
+                    <p class="text-sm font-bold text-[#f5f0eb] truncate">${email}</p>
+                </div>
+            </div>
+            <button id="continue-btn" class="w-full h-12 rounded-xl font-bold text-sm bg-[#f97316] hover:bg-[#ea6c0a] text-white transition-all shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)]">
+                Continuar
+            </button>
+            <button id="switch-btn" class="w-full h-11 rounded-xl font-semibold text-xs text-gray-400 border border-gray-600/40 hover:text-white hover:border-orange-500/40 transition-all">
+                Cerrar sesión
+            </button>
+        </div>
+    `;
+
+    document.getElementById('continue-btn').addEventListener('click', runSilentSync);
+    document.getElementById('switch-btn').addEventListener('click', async function () {
+        try {
+            await window.Clerk.signOut();
+        } catch (e) {
+            console.error('Error cerrando sesión de Clerk', e);
+        }
+        window.location.reload();
+    });
+}
+
+async function runSilentSync() {
+    const signInDiv = document.getElementById('clerk-signin');
+
+    signInDiv.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12">
+            <div class="auth-spinner mb-4"></div>
+            <p class="text-xs font-black text-orange-400/70 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
+        </div>
+    `;
+
+    try {
+        const token = await window.Clerk.session.getToken();
+        const response = await fetch('/api/sync-clerk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                clerk_id: window.Clerk.user.id,
+                email: window.Clerk.user.primaryEmailAddress.emailAddress,
+                session_id: window.Clerk.session.id
+            })
+        });
+
+        const result = await response.json();
+        if (result.success && result.redirect_url) {
+            if (result.is_new_user) {
+                const scannerSuffix = (window.VELZIA_CONFIG && window.VELZIA_CONFIG.scanner_available) ? ' y Escanear tus compras' : '';
+                signInDiv.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 px-6">
+                        <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-green-500/30">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-bold text-green-400 text-center mb-2">¡Bienvenido!</p>
+                        <p class="text-xs text-gray-500 text-center mb-4">Tu plan de Prueba Premium (60 días) está activado con 50 créditos IA para Copilot VZ${scannerSuffix}</p>
+                        <p class="text-xs text-gray-600 text-center">Redirigiendo...</p>
+                    </div>
+                `;
+                setTimeout(() => {
+                    window.location.href = result.redirect_url;
+                }, 1500);
+            } else {
+                window.location.href = result.redirect_url;
+            }
+        } else if (result.error_code === 'USER_NOT_REGISTERED') {
+            await window.Clerk.signOut();
+            const message = result.message || 'Debe registrarse en la plataforma para poder acceder.';
+            signInDiv.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 px-6">
+                    <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/30">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-bold text-red-400 text-center mb-4">${message}</p>
+                    <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
+                        Intentar de nuevo
+                    </button>
+                </div>
+            `;
+            return;
+        } else {
+            throw new Error("Sync failed");
+        }
+    } catch (error) {
+        console.error("Silent sync failed, falling back to manual sign in", error);
+        window.location.reload();
+    }
+}

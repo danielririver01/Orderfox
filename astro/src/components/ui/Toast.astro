@@ -14,9 +14,9 @@ const { id = 'toast-container' } = Astro.props;
   (window as any).showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     if (!container) return;
     const colors = {
-      success: 'bg-green-600 text-white',
+      success: 'bg-veg text-cta-ink',
       error: 'bg-red-600 text-white',
-      info: 'bg-gray-800 text-white',
+      info: 'bg-card text-ink border border-border-subtle',
     };
     const toast = document.createElement('div');
     toast.className = `rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ${colors[type]}`;

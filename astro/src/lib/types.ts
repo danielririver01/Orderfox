@@ -5,6 +5,10 @@ export interface Restaurant {
   whatsapp_phone: string;
   is_open: boolean;
   ordering_disabled: boolean;
+  cover_image?: string | null;
+  estimated_time?: number | null;
+  brand_color?: string | null;
+  cuisine_type?: string | null;
 }
 
 export interface Modifier {
@@ -20,6 +24,9 @@ export interface Product {
   price: number;
   image_url: string | null;
   modifiers: Modifier[];
+  is_vegetarian?: boolean;
+  is_spicy?: boolean;
+  is_featured?: boolean;
 }
 
 export interface Category {

@@ -208,7 +208,10 @@ def delete_account():
     if not data or data.get('confirmation') != 'ELIMINAR':
         return jsonify({'success': False, 'error': 'Confirmación requerida: escribe ELIMINAR'}), 400
 
-    success, result = DashboardService.delete_restaurant(restaurant)
+    success, result = DashboardService.delete_restaurant(
+        restaurant,
+        clerk_id=user.clerk_id if (user := get_current_user_jwt()) else None,
+    )
     if success:
         return jsonify({'success': True, 'message': result['message']})
     else:

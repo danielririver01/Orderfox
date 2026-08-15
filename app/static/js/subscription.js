@@ -90,7 +90,17 @@ async function deleteAccount() {
             deleteBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
             deleteBtn.classList.add('bg-green-600');
             setTimeout(function() {
-                window.location.href = '/';
+                // 1) Cerrar sesión en Clerk (invalida la cookie __session)
+                // 2) Redirigir al login real (url_for('auth.login') → "/") — no
+                //    hardcodear '/login' porque esa ruta no existe (404, Bug fix)
+                const loginUrl = window.VELZIA_LOGIN_URL || '/';
+                if (window.Clerk && typeof window.Clerk.signOut === 'function') {
+                    window.Clerk.signOut().finally(function () {
+                        window.location.href = loginUrl;
+                    });
+                } else {
+                    window.location.href = loginUrl;
+                }
             }, 1000);
         } else {
             if (window.showToast) {

@@ -44,6 +44,11 @@ class Restaurant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
     whatsapp_phone = db.Column(db.String(20), nullable=False)
+    # Rediseño menú público (v1.5): identidad visual y metadata del menú.
+    cover_image = db.Column(db.String(255), nullable=True)      # URL propia (Cloudinary); null = banco por cuisine_type
+    estimated_time = db.Column(db.Integer, nullable=True)        # Minutos de preparación; null = ocultar en UI
+    brand_color = db.Column(db.String(7), nullable=True)         # Hex '#RRGGBB'; null = acento por defecto (#FF7A29)
+    cuisine_type = db.Column(db.String(30), nullable=False, default='general')  # ver CUISINE_TYPES en app/utils/cover_bank.py
     plan_type = db.Column(db.String(20), default='emprendedor', nullable=False)
     subscription_expires_at = db.Column(AwareDateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=False, nullable=False)
@@ -133,6 +138,10 @@ class Product(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Integer, nullable=False)  # En pesos colombianos
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    # Badges del menú público (v1.5): resaltan atributos en la tarjeta.
+    is_vegetarian = db.Column(db.Boolean, nullable=False, default=False)
+    is_spicy = db.Column(db.Boolean, nullable=False, default=False)
+    is_featured = db.Column(db.Boolean, nullable=False, default=False)  # "Más pedido"
     image_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),

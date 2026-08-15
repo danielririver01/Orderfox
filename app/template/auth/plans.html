@@ -46,7 +46,7 @@
             </a>
             {% endif %}
 
-            {% if 'user_id' in session %}
+            {% if 'user_id' in session or 'clerk_id' in session %}
             <a href="{{ url_for('auth.logout') }}"
                 style="font-size:0.75rem; font-weight:700; color:#e07070; text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
                 <span class="material-symbols-outlined" style="font-size:1rem;">logout</span>
@@ -54,6 +54,26 @@
             </a>
             {% endif %}
         </div>
+
+        <!-- Flash messages (ej: "Ya usaste tu período de prueba gratuito. Elige un plan para continuar.") -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="max-width:34rem; margin:0 auto 2.5rem;">
+                {% for category, message in messages %}
+                <div
+                    style="display:flex; align-items:flex-start; gap:0.6rem; padding:0.85rem 1.1rem; border-radius:0.9rem; font-size:0.85rem; font-weight:600; line-height:1.5;
+                           {% if category == 'warning' %}background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.35); color:#fbbf24;
+                           {% elif category == 'error' or category == 'danger' %}background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.35); color:#f87171;
+                           {% else %}background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35); color:#93c5fd;{% endif %}">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem; margin-top:0.1rem;">
+                        {% if category == 'warning' %}warning{% elif category == 'error' or category == 'danger' %}error{% else %}info{% endif %}
+                    </span>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
 
         <!-- Header -->
         <div style="text-align:center; margin-bottom:4rem;">
@@ -90,7 +110,7 @@
 
                 <div style="margin-bottom:1.5rem;">
                     <h2 style="font-size:1.05rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Empieza hoy</h2>
-                    <p style="font-size:0.78rem; color:#6b6058; margin:0 0 1rem;">90 días incluidos, prueba todo sin tarjeta.</p>
+                    <p style="font-size:0.78rem; color:#6b6058; margin:0 0 1rem;">60 días incluidos, prueba todo sin tarjeta.</p>
                     <div style="display:flex; align-items:baseline; gap:0.25rem;">
                         <span class="plan-price plan-price--zero">$0</span>
                     </div>
@@ -119,8 +139,8 @@
                     </li>
                 </ul>
 
-                {% if 'user_id' in session %}
-                <span class="btn-disabled">Solo nuevos usuarios</span>
+                {% if 'user_id' in session or 'clerk_id' in session %}
+                <span class="btn-disabled">{% if session.get('trial_blocked') %}Ya usaste tu prueba{% else %}Solo nuevos usuarios{% endif %}</span>
                 {% else %}
                 <a href="{{ url_for('auth.register', plan='trial') }}" class="btn-primary">
                     Comenzar prueba gratis
@@ -165,7 +185,7 @@
                     </li>
                 </ul>
 
-                {% if 'user_id' in session %}
+                {% if has_restaurant %}
                 <a href="{{ url_for('auth.renew', plan='emprendedor') }}" class="btn-secondary">
                     Elegir Emprendedor
                 </a>
@@ -210,7 +230,7 @@
                     </li>
                 </ul>
 
-                {% if 'user_id' in session %}
+                {% if has_restaurant %}
                 <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="btn-primary">
                     Elegir Crecimiento
                 </a>
@@ -257,7 +277,7 @@
                     </li>
                 </ul>
 
-                {% if 'user_id' in session %}
+                {% if has_restaurant %}
                 <a href="{{ url_for('auth.renew', plan='elite') }}" class="btn-secondary">
                     Elegir Élite
                 </a>

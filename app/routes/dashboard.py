@@ -19,6 +19,7 @@ import qrcode
 import re
 import unicodedata
 from app.utils.restaurant import get_current_restaurant
+from app.utils.cover_bank import CUISINE_TYPES
 from app.utils.subscription import (
     check_feature_access,
     get_plan_limits,
@@ -26,6 +27,7 @@ from app.utils.subscription import (
     AI_TOKEN_LIMITS,
     get_subscription_status
 )
+from app.services.theme_service import get_branding_permissions, BRAND_THEMES
 
 
 def _astro_menu_url(slug):
@@ -70,18 +72,38 @@ def ai_scan_redirect():
 def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
-    
+
     menu_url = _astro_menu_url(restaurant.slug)
     stats = DashboardService.get_today_overview(restaurant.id)
-     
-    return render_template('dashboard/index.html', 
+
+    # Narrativa hero
+    user = DashboardService.get_user(session.get('user_id'))
+    narrative = DashboardService.get_home_narrative(restaurant.id, user)
+
+    # Pedidos recientes para sección de atención (máx 3)
+    recent_pending, pending_total_count = DashboardService.get_recent_pending_limited(
+        restaurant.id, limit=3
+    )
+
+    # Estadísticas comparativas (Hoy)
+    comparative = DashboardService.get_comparative_stats(restaurant.id, 'today')
+
+    # Plato estrella 30d
+    top_product = DashboardService.get_top_product_30d(restaurant.id)
+
+    return render_template('dashboard/index.html',
                          restaurant=restaurant,
                          pending_count=stats['pending'],
                          confirmed_count=stats['confirmed'],
                          delivered_count=stats['delivered'],
                          total_sales=stats['today_sales_cop'],
                          is_open=restaurant.is_open,
-                         menu_url=menu_url)
+                         menu_url=menu_url,
+                         narrative=narrative,
+                         recent_pending=recent_pending,
+                         pending_total_count=pending_total_count,
+                         comparative=comparative,
+                         top_product=top_product)
 
 @dashboard_bp.route('/toggle-status', methods=['POST'])
 @require_auth
@@ -135,13 +157,17 @@ def api_stats():
     try:
         range_type = request.args.get('range', 'today')
         data = DashboardService.get_extended_stats(restaurant.id, range_type)
+        comparative = DashboardService.get_comparative_stats(restaurant.id, range_type)
 
         return jsonify({
             'success': True,
             'total_sales': data['total_sales_cop'],
             'total_orders': data['total_orders'],
             'avg_order_value': data['avg_order_value_cop'],
-            'range': range_type
+            'range': range_type,
+            'previous_period_sales': comparative['previous_sales'],
+            'delta_pct': comparative['delta_pct'],
+            'verdict': comparative['verdict'],
         })
     except Exception as e:
         logger.exception(f"Error en api_stats: {e}")
@@ -345,10 +371,13 @@ def delete_account():
     if not restaurant: 
         return jsonify({'success': False, 'message': 'Restaurante no encontrado'}), 404
     
-    success, result = DashboardService.delete_restaurant(restaurant)
+    success, result = DashboardService.delete_restaurant(
+        restaurant,
+        clerk_id=session.get('clerk_id'),
+    )
     if success:
         session.clear()
-        return jsonify(result)
+        return jsonify({'success': True, **result})
     else:
         return jsonify({'success': False, 'message': result['message']}), 500
 
@@ -360,27 +389,44 @@ def profile():
     if not restaurant: abort(404)
     
     user = DashboardService.get_user(session.get('user_id'))
+    branding = get_branding_permissions(restaurant.plan_type)
+    render_ctx = {
+        'restaurant': restaurant,
+        'user': user,
+        'cuisine_types': CUISINE_TYPES,
+        'branding': branding,
+        'brand_themes': BRAND_THEMES,
+    }
     
     if request.method == 'POST':
         restaurant_name = request.form.get('restaurant_name')
         whatsapp_phone = request.form.get('whatsapp_phone')
         username = request.form.get('username')
-        
+
         if not restaurant_name or not whatsapp_phone or not username:
             flash('Todos los campos son obligatorios.', 'error')
-            return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
-        
-        success, error = DashboardService.update_profile(restaurant, user, restaurant_name, whatsapp_phone, username)
+            return render_template('dashboard/profile_form.html', **render_ctx)
+
+        # Menú público: campos opcionales
+        estimated_raw = request.form.get('estimated_time')
+        estimated_time = estimated_raw.strip() if estimated_raw and estimated_raw.strip() else None
+
+        success, error = DashboardService.update_profile(
+            restaurant, user, restaurant_name, whatsapp_phone, username,
+            cover_image=request.files.get('cover_image'),
+            estimated_time=estimated_time,
+            brand_color=request.form.get('brand_color'),
+            cuisine_type=request.form.get('cuisine_type'),
+            delete_cover_image=request.form.get('delete_cover_image') == 'true',
+        )
         if not success:
             flash(error, 'error')
-            return render_template('dashboard/profile_form.html', restaurant=restaurant, user=user)
+            return render_template('dashboard/profile_form.html', **render_ctx)
         
         flash('¡Perfil actualizado correctamente!', 'success')
         return redirect(url_for('dashboard.profile'))
             
-    return render_template('dashboard/profile_form.html', 
-                         restaurant=restaurant, 
-                         user=user)
+    return render_template('dashboard/profile_form.html', **render_ctx)
 
 @dashboard_bp.route('/change-email', methods=['GET', 'POST'])
 @require_auth

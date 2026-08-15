@@ -2,136 +2,170 @@
 
 @theme {
   --font-sans: Inter, system-ui, sans-serif;
-  --font-display: Outfit, system-ui, sans-serif;
-  --color-brand-50: #f3e8ff;
-  --color-brand-100: #e9d5ff;
-  --color-brand-200: #d8b4fe;
-  --color-brand-300: #c084fc;
-  --color-brand-400: #a855f7;
-  --color-brand-500: #8b5cf6;
-  --color-brand-600: #7c3aed;
-  --color-brand-700: #6d28d9;
-  --color-brand-800: #5b21b6;
-  --color-brand-900: #4c1d95;
-  --color-surface: #141414;
-  --color-surface-2: #0f0f0f;
-  --color-surface-3: #1a1a1a;
+  --font-display: "Fraunces", Georgia, serif;
+
+  /* Paleta oscura / naranja (v1.5) */
+  --color-base: #15120F;
+  --color-card: #1F1A15;
+  --color-card-hover: #262019;
+  --color-border-subtle: #2C251E;
+  --color-ink: #F5EFE7;
+  --color-ink-muted: #A89A88;
+  --color-ink-faint: #8A7B68;
+  --color-accent: #FF7A29;
+  --color-accent-hover: #C9541A;
+  --color-accent-strong: #B84A12;
+  --color-accent-bg: #3A2214;
+  --color-cta-ink: #1A120A;
+  --color-veg: #7BAE7F;
+
+  --breakpoint-lg: 900px;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* 3D Flip Cards */
-.product-card {
-  perspective: 1000px;
+:root {
+  /* Color de marca del restaurante (lo setea brand.ts). Default naranja. */
+  --brand: #FF7A29;
+  --brand-ink: #1A120A;
+  /* Altura del header sticky (medida por JS) */
+  --header-h: 56px;
 }
 
-.product-card-inner {
-  position: relative;
-  width: 100%;
-  transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-  transform-style: preserve-3d;
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
-.product-card.flipped .product-card-inner {
-  transform: rotateY(180deg);
+/* ── Botón primario (usa brand_color del restaurante) ── */
+.btn-primary {
+  background-color: var(--brand);
+  color: var(--brand-ink);
+}
+.btn-primary:hover {
+  filter: brightness(0.9);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  filter: none;
+  cursor: not-allowed;
 }
 
-.product-card-front,
-.product-card-back {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+.text-price {
+  color: var(--brand);
 }
 
-.product-card-back {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotateY(180deg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-}
-
-.qr-image {
-  width: 140px;
-  height: 140px;
-  background: white;
-  padding: 8px;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-}
-
-.btn-flip-card {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 30px;
-  height: 30px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+/* ── Navegación por categorías ── */
+.nav-pill {
+  white-space: nowrap;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-card);
+  color: var(--color-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
   transition: all 0.2s;
-  z-index: 5;
+}
+.nav-pill:hover {
+  color: var(--color-ink);
+  background-color: var(--color-card-hover);
+}
+.nav-pill-active {
+  background-color: var(--brand);
+  color: var(--brand-ink);
+  border-color: transparent;
+}
+.nav-pill-active:hover {
+  background-color: var(--brand);
+  color: var(--brand-ink);
 }
 
-.btn-flip-card:hover {
-  background: rgba(124, 58, 237, 0.3);
-  border-color: rgba(124, 58, 237, 0.5);
-}
-
-.btn-share-premium {
-  background: #7c3aed;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 14px;
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
+.nav-side-item {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  transition: all 0.2s;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border-left: 3px solid transparent;
+  border-radius: 0.375rem;
+  color: var(--color-ink-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.nav-side-item:hover {
+  color: var(--color-ink);
+  background-color: var(--color-card);
+}
+.nav-side-active {
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-left: 3px solid var(--brand);
+}
+.nav-side-active:hover {
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
 }
 
-.btn-share-premium:hover {
-  background: #6d28d9;
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
+/* ── Grid de productos: 1 columna móvil; auto-fill minmax(220px, 1fr) en desktop ── */
+.product-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
 }
 
-/* Cart button pulse feedback */
+/* ── Sidebar sticky de categorías (desktop ≥900px) ── */
+.sidebar-sticky {
+  position: sticky;
+  top: var(--header-h, 56px);
+  max-height: calc(100vh - var(--header-h, 56px));
+}
+
+.sidebar-scroll {
+  scrollbar-width: none;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Compensar el header sticky al hacer scroll a una categoría */
+section[id^="cat-"] {
+  scroll-margin-top: calc(var(--header-h, 56px) + 12px);
+}
+
+/* ── Feedback del botón del carrito (pulse) ── */
 @keyframes cart-pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); }
-  50% { transform: scale(1.12); box-shadow: 0 0 0 12px rgba(168, 85, 247, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 122, 41, 0.5);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 12px rgba(255, 122, 41, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 122, 41, 0);
+  }
 }
 
 .cart-pulse {
   animation: cart-pulse 0.5s ease-out;
 }
 
-/* Custom dark scrollbars — replaces ugly native browser scrollbar */
+/* ── Scrollbars oscuros ── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a2a2a transparent;
+  scrollbar-color: #3a342b transparent;
 }
 
 *::-webkit-scrollbar {
@@ -144,14 +178,14 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #2a2a2a;
+  background-color: #3a342b;
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #3a3a3a;
+  background-color: #4a4238;
   background-clip: content-box;
 }
 

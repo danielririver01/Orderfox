@@ -87,6 +87,9 @@ def handle_post_message(cid, user, conv, data):
     if not conv.title:
         cs.set_title(cid, cs.make_title_from_message(content))
 
+    # ── Clasificación híbrida (primero: define el nivel y la ventana de tiempo) ──
+    cls = classifier.classify(content)
+
     # ── Gestión de contexto: estimar uso y comprimir si es necesario ──
     g.context_usage = 0
     g.context_optimized = False
@@ -98,7 +101,7 @@ def handle_post_message(cid, user, conv, data):
         ctx_summary = ctx_meta.get('summary')
         ctx_compressed = ctx_meta.get('compressed', False)
         context_json = json.dumps(
-            data_service.build_context(conv.restaurant_id, days=90),
+            data_service.build_context(conv.restaurant_id, days=cls['window']),
             ensure_ascii=False,
         )
         total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
@@ -147,9 +150,6 @@ def handle_post_message(cid, user, conv, data):
     restaurant_slug = restaurant.slug if restaurant else None
     if classifier.is_foreign_restaurant_query(content, restaurant_name, restaurant_slug):
         return _foreign_restaurant_response(conv, user_msg.id)
-
-    # 3) Clasificación híbrida
-    cls = classifier.classify(content)
 
     # ── Etapa de madurez de datos ──
     # Solo se bloquea cuando el mensaje REQUIERE datos del restaurante.
@@ -287,7 +287,7 @@ def handle_post_message(cid, user, conv, data):
 
     # ── Llamar al LLM ──
     try:
-        context = data_service.build_context(conv.restaurant_id, days=90)
+        context = data_service.build_context(conv.restaurant_id, days=cls['window'])
         history = cs.get_messages(cid)
         history_for_llm = [m for m in history if m.id != user_msg.id]
         messages = prompt_builder.build_analysis_messages(

@@ -128,6 +128,10 @@ class SubscriptionService:
             db.session.commit()
             applied_discount = None
 
+        # MercadoPago rechaza auto_return cuando las back_urls son localhost
+        # (URL no pública). Solo se envía auto_return con URLs https.
+        is_public_url = base_url.startswith("https://")
+
         preference_data = {
             "items": [
                 {
@@ -142,7 +146,7 @@ class SubscriptionService:
                 "failure": f"{base_url}/payment",
                 "pending": f"{base_url}/payment-callback",
             },
-            "auto_return": "approved",
+            **({"auto_return": "approved"} if is_public_url else {}),
             "external_reference": f"{restaurant_id}:{plan_key}",
         }
         return preference_data, plan_info, applied_discount

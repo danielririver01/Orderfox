@@ -1,0 +1,60 @@
+---
+import SearchBar from './SearchBar.astro';
+import type { Category } from '../lib/types';
+
+export interface Props {
+  restaurantName: string;
+  isOpen: boolean;
+  estimatedTime?: number | null;
+  showSearch: boolean;
+  categories: Category[];
+}
+
+const { restaurantName, isOpen, estimatedTime, showSearch, categories } = Astro.props;
+---
+
+<header id="menu-header" class="sticky top-0 z-30 border-b border-border-subtle bg-base/95 backdrop-blur supports-[backdrop-filter]:bg-base/85">
+  <div class="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 lg:px-6">
+    <span class="truncate font-display text-lg font-semibold tracking-tight text-ink">{restaurantName}</span>
+    <span class:list={[
+      'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold',
+      isOpen ? 'bg-accent-bg text-accent' : 'bg-border-subtle text-ink-muted',
+    ]}>
+      {isOpen ? 'Abierto' : 'Cerrado'}
+    </span>
+    {estimatedTime != null && estimatedTime > 0 && (
+      <span class="ml-auto hidden shrink-0 items-center gap-1 text-xs font-medium text-ink-muted sm:flex">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        ≈ {estimatedTime} min
+      </span>
+    )}
+  </div>
+
+  {showSearch && (
+    <div class="px-4 pb-3 lg:px-6">
+      <SearchBar />
+    </div>
+  )}
+
+  {/* Pills móviles: sticky bajo el header para que la activa siempre sea visible */}
+  <nav
+    id="pills-nav"
+    data-nav-mode="pills"
+    aria-label="Categorías"
+    class="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden lg:px-6 sidebar-scroll"
+  >
+    {categories.map((cat) => (
+      <a
+        key={cat.id}
+        href={`#cat-${cat.id}`}
+        data-nav-item
+        data-nav-id={cat.id}
+        class="nav-pill shrink-0"
+      >
+        {cat.name}
+      </a>
+    ))}
+  </nav>
+</header>

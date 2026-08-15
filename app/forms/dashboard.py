@@ -19,6 +19,10 @@ class ProductForm(FlaskForm):
     price = IntegerField('Precio', validators=[DataRequired(), NumberRange(min=1, message='El precio debe ser mayor a 0')])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activo', default=True)
+    # Badges del menú público (v1.5)
+    is_vegetarian = BooleanField('Vegetariano', default=False)
+    is_spicy = BooleanField('Picante', default=False)
+    is_featured = BooleanField('Destacado (Más pedido)', default=False)
     image = FileField('Imagen (Opcional)', validators=[
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')

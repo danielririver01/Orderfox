@@ -1,0 +1,18 @@
+---
+import ProductCard from './ProductCard.astro';
+import type { Product } from '../../lib/types';
+
+export interface Props {
+  products: Product[];
+  ordering: boolean;
+  categoryName?: string | null;
+}
+
+const { products, ordering, categoryName } = Astro.props;
+---
+
+<div class="product-grid">
+  {products.map((product) => (
+    <ProductCard product={product} ordering={ordering} categoryName={categoryName} />
+  ))}
+</div>

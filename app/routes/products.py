@@ -98,6 +98,9 @@ def create():
             description=form.description.data,
             is_active=form.is_active.data,
             image_file=form.image.data,
+            is_vegetarian=form.is_vegetarian.data,
+            is_spicy=form.is_spicy.data,
+            is_featured=form.is_featured.data,
         )
         if error:
             flash(error, 'error')
@@ -143,6 +146,9 @@ def edit(id):
             is_active=form.is_active.data,
             image_file=form.image.data,
             delete_image_flag=request.form.get('delete_image') == 'true',
+            is_vegetarian=form.is_vegetarian.data,
+            is_spicy=form.is_spicy.data,
+            is_featured=form.is_featured.data,
         )
         if error:
             flash(error, 'error')

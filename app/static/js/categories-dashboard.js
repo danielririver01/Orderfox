@@ -4,8 +4,6 @@
  */
 
 let editingCategoryId = null;
-let formImageData = null;
-let formDeleteImage = false;
 
 function openCategoryForm(categoryId = null) {
     const grid = document.getElementById('categories-grid');
@@ -96,21 +94,6 @@ function resetForm() {
     document.getElementById('form-name-error').classList.add('hidden');
     document.getElementById('form-name-error').textContent = '';
 
-    formImageData = null;
-    formDeleteImage = false;
-
-    const img = document.getElementById('form-image-img');
-    const placeholder = document.getElementById('form-image-placeholder');
-    const preview = document.getElementById('form-image-preview');
-    const removeBtn = document.getElementById('form-remove-image');
-
-    img.classList.add('hidden');
-    img.src = '';
-    placeholder.classList.remove('hidden');
-    preview.classList.add('border-dashed');
-    removeBtn.classList.add('hidden');
-    document.getElementById('form-image').value = '';
-
     const saveBtn = document.getElementById('form-save-btn');
     saveBtn.disabled = false;
     saveBtn.innerHTML = 'Guardar';
@@ -134,20 +117,6 @@ async function loadCategoryData(id) {
         document.getElementById('form-name').value = cat.name;
         document.getElementById('form-description').value = cat.description || '';
         document.getElementById('form-is-active').checked = cat.is_active;
-
-        if (cat.image_url) {
-            const img = document.getElementById('form-image-img');
-            const placeholder = document.getElementById('form-image-placeholder');
-            const preview = document.getElementById('form-image-preview');
-            const removeBtn = document.getElementById('form-remove-image');
-
-            img.src = getFullImageUrl(cat.image_url);
-            img.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-            preview.classList.remove('border-dashed');
-            removeBtn.classList.remove('hidden');
-            formDeleteImage = false;
-        }
     } catch (err) {
         showToast(err.message || 'Error al cargar categoría', 'error');
     } finally {
@@ -183,14 +152,6 @@ async function saveCategory(e) {
         formData.append('description', description);
         formData.append('is_active', isActive);
         formData.append('csrf_token', csrfToken);
-
-        const imageInput = document.getElementById('form-image');
-        if (imageInput.files && imageInput.files[0]) {
-            formData.append('image', imageInput.files[0]);
-        }
-        if (formDeleteImage) {
-            formData.append('delete_image', 'true');
-        }
 
         let res;
         if (editingCategoryId) {
@@ -430,39 +391,6 @@ async function executeDelete(id) {
         saveBtn.disabled = false;
         saveBtn.innerHTML = 'Guardar';
     }
-}
-
-function previewFormImage(input) {
-    const img = document.getElementById('form-image-img');
-    const placeholder = document.getElementById('form-image-placeholder');
-    const preview = document.getElementById('form-image-preview');
-    const removeBtn = document.getElementById('form-remove-image');
-
-    prepareImageUpload(input, function (dataUrl) {
-        img.src = dataUrl;
-        img.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        preview.classList.remove('border-dashed');
-        removeBtn.classList.remove('hidden');
-        formDeleteImage = false;
-        formImageData = input.files[0];
-    });
-}
-
-function removeFormImage() {
-    const img = document.getElementById('form-image-img');
-    const placeholder = document.getElementById('form-image-placeholder');
-    const preview = document.getElementById('form-image-preview');
-    const removeBtn = document.getElementById('form-remove-image');
-
-    img.classList.add('hidden');
-    img.src = '';
-    placeholder.classList.remove('hidden');
-    preview.classList.add('border-dashed');
-    removeBtn.classList.add('hidden');
-    document.getElementById('form-image').value = '';
-    formImageData = null;
-    formDeleteImage = true;
 }
 
 function getFullImageUrl(imagePath) {

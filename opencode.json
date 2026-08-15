@@ -14,12 +14,20 @@
       "type": "local",
       "command": ["opencode", "x", "@f4ww4z/mcp-mysql-server"],
       "enabled": true,
-      "env": {
+      "environment": {
         "MYSQL_HOST": "localhost",
         "MYSQL_PORT": "3306",
         "MYSQL_USER": "orderfox",
         "MYSQL_PASSWORD": "orderfox",
         "MYSQL_DATABASE": "orderfox"
+      }
+    },
+    "clerk": {
+      "type": "local",
+      "command": ["npx", "-y", "@clerk/agent-toolkit", "-p", "local-mcp", "--tools", "users"],
+      "enabled": true,
+      "environment": {
+        "CLERK_SECRET_KEY": "{env:CLERK_SECRET_KEY}"
       }
     }
   }

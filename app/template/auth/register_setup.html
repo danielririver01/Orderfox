@@ -72,6 +72,19 @@
 
                 <div class="auth-card" style="max-width: 100%;">
 
+                    {% if 'user_id' in session or 'clerk_id' in session %}
+                    <!-- Session escape link -->
+                    <div
+                        style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; font-size:0.75rem; font-weight:700;">
+                        <span style="color:#6b7280;">Configuración</span>
+                        <a href="{{ url_for('auth.logout') }}" id="setup-logout-link"
+                            style="color:#e07070; text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                            <span class="material-symbols-outlined" style="font-size:1rem;">logout</span>
+                            Cerrar sesión
+                        </a>
+                    </div>
+                    {% endif %}
+
                     <!-- Header -->
                     <div class="mb-6">
                         <!-- Mobile icon -->
@@ -119,7 +132,7 @@
                                 Plan seleccionado</p>
                             <p class="text-sm font-bold text-orange-300 capitalize leading-none">{{ plan }}
                                 <span class="text-gray-500 font-normal text-xs ml-1">
-                                    {% if plan == 'trial' %}· 90 días gratis
+                                    {% if plan == 'trial' %}· 60 días gratis
                                     {% elif plan == 'emprendedor' %}· $30.000/mes
                                     {% elif plan == 'crecimiento' %}· $40.000/mes
                                     {% else %}· $50.000/mes{% endif %}
