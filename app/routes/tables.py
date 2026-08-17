@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, abort
-from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.auth import require_auth, require_active, require_feature, require_role_check
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
 from app.services.table_service import TableService
@@ -7,6 +7,12 @@ from app.services.qr_service import QRService
 import unicodedata, re
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/dashboard/tables')
+
+
+@tables_bp.before_request
+def _require_dashboard_owner():
+    """Todas las rutas de mesas son del dueño: bloquea empleados (v2.1.1)."""
+    return require_role_check('owner')
 
 
 def _astro_table_url(slug, table_id):

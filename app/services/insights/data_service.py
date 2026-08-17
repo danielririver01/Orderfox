@@ -777,3 +777,88 @@ def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=No
         suggestions = [_enrich_followup(s, restaurant_id) for s in suggestions]
 
     return suggestions
+
+
+# ── Datos para dashboard weekly stats ────────────────────────────────────────
+
+def weekly_sales_by_day(restaurant_id, days=7):
+    """Ventas e pedidos por día de la semana (0=lun..6=dom).
+
+    Devuelve ``{labels: [...], money: [...], orders: [...]}``.
+    Ligero — solo dos queries pequeñas, sin build_context completo.
+    """
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = today - timedelta(days=days - 1)
+
+    # Dinero por día de semana
+    wk_money = db.session.query(
+        func.dayofweek(Order.created_at).label('dow'),
+        func.coalesce(func.sum(Order.total), 0).label('total'),
+    ).filter(
+        Order.restaurant_id == restaurant_id,
+        Order.status != 'cancelled',
+        Order.created_at >= start,
+    ).group_by(func.dayofweek(Order.created_at)).all()
+
+    # Pedidos por día de semana
+    wk_orders = db.session.query(
+        func.dayofweek(Order.created_at).label('dow'),
+        func.count(Order.id).label('cnt'),
+    ).filter(
+        Order.restaurant_id == restaurant_id,
+        Order.status != 'cancelled',
+        Order.created_at >= start,
+    ).group_by(func.dayofweek(Order.created_at)).all()
+
+    labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    money = {i: 0 for i in range(7)}
+    orders = {i: 0 for i in range(7)}
+
+    for r in wk_money:
+        idx = (int(r.dow) - 2) % 7
+        money[idx] = int(r.total)
+
+    for r in wk_orders:
+        idx = (int(r.dow) - 2) % 7
+        orders[idx] = int(r.cnt)
+
+    return {
+        'labels': labels,
+        'money': [money[i] for i in range(7)],
+        'orders': [orders[i] for i in range(7)],
+    }
+
+
+# ── Tendencia de ingresos 30 días ──────────────────────────────────────────
+
+def revenue_trend_30d(restaurant_id):
+    """Ventas diarias de los últimos 30 días agrupadas por día.
+
+    Devuelve ``{labels: [...], values: [...]}``.
+    labels formateados como "01 Ene", "02 Ene", etc.
+    """
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = today - timedelta(days=29)
+
+    rows = db.session.query(
+        func.date(Order.created_at).label('d'),
+        func.coalesce(func.sum(Order.total), 0).label('total'),
+    ).filter(
+        Order.restaurant_id == restaurant_id,
+        Order.status != 'cancelled',
+        Order.created_at >= start,
+    ).group_by(func.date(Order.created_at)).order_by(func.date(Order.created_at)).all()
+
+    months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+              'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+    data_map = {str(r.d): int(r.total) for r in rows}
+    labels = []
+    values = []
+    for i in range(30):
+        day = start + timedelta(days=i)
+        day_str = str(day.date())
+        labels.append(f'{day.day:02d} {months[day.month - 1]}')
+        values.append(data_map.get(day_str, 0))
+
+    return {'labels': labels, 'values': values}

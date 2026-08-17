@@ -4,6 +4,134 @@ Todas las fechas en UTC.
 
 ---
 
+## [1.5.0] — 2026-08-17
+
+### Rediseño del Dashboard Home
+
+Reestructuración completa del dashboard principal con layout de grid 2 columnas, cards de color semáforo, gráficas Chart.js y métricas de caja en tiempo real.
+
+### Añadido
+
+- **Layout grid 2 columnas** en `index.html`: Hero 100%, 3 contadores 33% cada uno, barras+dona 50/50, productos+revenue 50/50, menú digital 100%. Mobile stacks a 1 columna.
+- **3 cards de estado con color semáforo**: Pendientes `#FF7A29` naranja, Confirmados `#30A46C` verde, Entregados `#3B82F6` azul. Fondos `rgba()` al 12% opacidad, sin bordes, texto blanco.
+- **Gráfica de barras** (`initWeeklyChart`): ventas semanales por día con toggle `$`/`#`.
+- **Gráfica de dona** (`initDoughnutChart`): distribución pendientes/confirmados/entregados. Colores: `['#FF7A29', '#30A46C', '#3B82F6']`.
+- **Gráfica de tendencia de ingresos** (`initRevenueChart`): línea con 30 días de datos, área sombreada.
+- **Sección de productos Top 5** con toggle Hoy/30d.
+- **Alerta de pedidos expirados**: visible solo cuando `expired_count > 0`. Fondo `#2D1A0A`, borde `#FF7A29`, texto naranja.
+- **Métrica "Cobrado hoy"** en hero: muestra pagos reales en caja. Oculta cuando `vendido == cobrado` o ambos cero. Alerta `#FF7A29` cuando `vendido > cobrado`.
+- **4 endpoints API** con `@require_role('owner')`:
+  - `GET /dashboard/api/weekly-stats` → ventas e pedidos por día (7 días)
+  - `GET /dashboard/api/top-products?days=30` → productos más vendidos
+  - `GET /dashboard/api/collected-today` → vendido vs cobrado
+  - `GET /dashboard/api/revenue-trend` → tendencia 30 días
+- **`weekly_sales_by_day()`** en `data_service.py`: ventas diarias por día de la semana en TZ Colombia.
+- **`revenue_trend_30d()`** en `data_service.py`: ventas diarias de los últimos 30 días.
+- **`expired_today`** en `get_today_overview()`: cuenta pedidos expirados hoy (query por `updated_at`).
+- **`CSP connect-src`**: agregado `cdn.jsdelivr.net` para Chart.js source maps.
+- **Employee logout**: ahora redirige al login del empleado (no al admin). Guarda `session['employee_slug']` al login.
+- **Confirmación al cancelar**: `orders.js` muestra `confirm()` antes de cancelar un pedido desde la lista.
+
+### Cambiado
+
+- **`dashboard_service.py:_get_date_range()`** — rangos calculados en hora de Colombia (UTC-5), consistente con CashRegisterService. Retorna `(start, end)` donde `end` es exclusivo.
+- **`dashboard_service.py:get_today_overview()`** — ventas ahora usan `_paid_base_query` (pagados, status != cancelled, payment_method NOT NULL). Antes usaba `status.in_(['confirmed', 'delivered'])` que incluía no pagados.
+- **`dashboard_service.py:get_extended_stats()`** — alineado con mismos criterios de caja.
+- **`dashboard.js` v4** — refactor completo: `setChartMode($/#)`, `setProductsMode(Hoy/30d)`, `fetchCollectedToday()`, `fetchTopProducts()`, `initRevenueChart()`. Polling cada 30s.
+- **`_orders_list.html`** — badges y bordes de pedidos usan colores semáforo. Headers de sección coloreados.
+- **`order_detail.html`** — mensaje de cancelar corregido: "El pedido cambiará a estado cancelado. Puedes restaurarlo después desde la lista de cancelados."
+- **`order_create.html` / `order_create_pos.html`** — nombre del cliente ahora es opcional. Eliminado `required` y texto "obligatorio".
+- **`order_service.py:create_order()`** — `customer_name` ya no lanza `ValueError` si está vacío.
+- **`cashier.html`** — 4 botones de pago: Efectivo, Nequi, **Bancolombia** (amarillo), Tarjeta. Grid `grid-cols-2`.
+- **`auth.py` login** — limpia `session['employee_slug']` al entrar como dueño.
+
+### Seguridad
+
+- **4 endpoints de dashboard** protegidos con `@require_role('owner')`: stats, ai-stats, weekly-stats, top-products, collected-today, revenue-trend.
+- **Dashboard index** protegido con `@require_role('owner')`.
+
+### Seguridad — Roles y permisos (v2.1.0)
+
+Implementación completa del sistema de roles: `owner`, `cashier`, `waiter`.
+
+#### Añadido
+
+- **`require_role(*roles)`** en `app/utils/auth.py`: decorador que verifica que el usuario autenticado tiene uno de los roles permitidos. Soporta sesión Flask y Bearer JWT (API móvil). Redirige a portal de empleado si no tiene permisos.
+- **`require_role_check(*roles)`** en `app/utils/auth.py`: función reutilizable para `before_request`. Retorna None si pasa; respuesta JSON 403 o redirect si no.
+- **`_EMPLOYEE_ALLOWED_ENDPOINTS`** en `app/routes/orders.py`: whitelist de endpoints que los empleados pueden usar desde su portal (`change_status`, `register_payment`).
+- **`_require_dashboard_owner()`** en `app/routes/orders.py`: `before_request` que bloquea empleados en rutas de pedidos del dashboard, salvo los endpoints permitidos.
+- **`app/routes/employees.py`** (nuevo): portal de empleado con login PIN, menú de pedidos, caja registradora.
+
+#### Cambiado
+
+- **`require_auth`** — ahora acepta `employee_id` en sesión (portal del empleado). Antes solo aceptaba `user_id`.
+- **`_get_restaurant_unified`** — busca restaurante por `user_id` O `employee_id`.
+- **`require_active`** — identifica al dueño por `role='owner'` (no `users[0]`). Corrige bug donde el primer usuario podía ser un empleado.
+- **`require_role('owner')`** agregado a endpoints protegidos:
+  - `GET /dashboard/` — solo dueño
+  - `GET /dashboard/api/stats` — solo dueño
+  - `GET /dashboard/api/ai-stats` — solo dueño
+  - `GET /dashboard/api/weekly-stats` — solo dueño
+  - `GET /dashboard/api/top-products` — solo dueño
+  - `GET /dashboard/api/collected-today` — solo dueño
+  - `GET /dashboard/api/revenue-trend` — solo dueño
+  - `POST /orders/create` — solo dueño
+  - `POST /orders/<id>/cancel` — solo dueño
+  - `POST /orders/<id>/delete` — solo dueño
+- **`require_role('owner', 'cashier', 'waiter')`** en `PATCH /orders/<id>/status` — todos los roles pueden cambiar estado.
+- **`require_role('owner', 'cashier')`** en `POST /orders/<id>/payment` — solo dueño y cajero registran pago.
+- **`app/routes/dashboard.py:achievements()`** — identifica dueño por `role='owner'` (no `users[0]`).
+
+#### Flujo de empleados
+
+1. **Login**: empleado ingresa PIN en `/empleado/<slug>` → sesión `employee_id`
+2. **Portal**: ve pedidos activos, puede cambiar estados, registrar pagos
+3. **Bloqueo**: no puede acceder a `/dashboard/`, `/orders/create`, cancelar/eliminar pedidos
+4. **Logout**: vuelve al login del empleado (no al admin)
+
+#### Archivos modificados (roles)
+
+| Archivo | Cambios |
+|---------|---------|
+| `app/utils/auth.py` | `require_role`, `require_role_check`, `require_auth` acepta `employee_id` |
+| `app/routes/orders.py` | `before_request` con whitelist, `@require_role` en endpoints |
+| `app/routes/dashboard.py` | `@require_role('owner')` en index y 6 API endpoints |
+| `app/routes/employees.py` | **Nuevo**: portal completo de empleado |
+
+---
+
+### Archivos modificados (rediseño dashboard)
+
+| Archivo | Cambios |
+|---------|---------|
+| `app/routes/dashboard.py` | 4 endpoints API, `cobrado_hoy`, `expired_count`, `@require_role('owner')` |
+| `app/services/dashboard_service.py` | `_get_date_range()` en Colombia TZ, `expired_today`, ventas con `_paid_base_query` |
+| `app/services/insights/data_service.py` | `weekly_sales_by_day()`, `revenue_trend_30d()` |
+| `app/static/js/dashboard.js` | v4 completo: charts, polling, toggles |
+| `app/static/js/orders.js` | `confirm()` antes de cancelar |
+| `app/template/dashboard/index.html` | Layout grid 2-col, cards color, dona, revenue, alerta expirados |
+| `app/template/dashboard/_orders_list.html` | Colores semáforo en badges y bordes |
+| `app/template/dashboard/order_detail.html` | Mensaje de cancelar corregido |
+| `app/template/dashboard/order_create.html` | Nombre opcional |
+| `app/template/employees/order_create_pos.html` | Nombre opcional, details colapsado |
+| `app/template/employees/cashier.html` | 4 botones de pago (Bancolombia agregado) |
+| `app/services/order_service.py` | `customer_name` opcional |
+| `app/routes/employees.py` | **Nuevo**: logout redirige a login del empleado, guarda `employee_slug` en sesión |
+| `app/routes/auth.py` | Limpieza de `employee_slug` en login |
+| `app/routes/employees.py` | Logout redirige a login del empleado |
+| `app/__init__.py` | CSP `cdn.jsdelivr.net` en `connect-src` |
+
+### Cómo probar
+
+1. **Dashboard**: `python run.py` → ir a `/dashboard/` → verificar grid 2-col, cards de color, gráficas con datos.
+2. **Alerta expirados**: crear un pedido pending, esperar 24h (o modificar `expires_at` en DB), verificar que aparece la alerta.
+3. **Cancelar desde lista**: presionar "Rechazar" → verificar que aparece `confirm()`.
+4. **Logout empleado**: login con PIN → cerrar sesión → verificar que vuelve al login del empleado, no al admin.
+5. **Roles**: login como empleado → intentar acceder a `/dashboard/` → debe redirigir al portal del empleado. Login como dueño → puede acceder a todo.
+6. **Tests**: `pytest tests/ -x -q` → 434 tests pasan.
+
+---
+
 ## [1.4.2] — 2026-07-21
 
 ### Seguridad — Race conditions en tokens IA

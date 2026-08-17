@@ -31,7 +31,8 @@ def require_auth(f):
                     'error': 'unauthorized',
                     'message': 'Token inválido o expirado. Por favor inicia sesión nuevamente.'
                 }), 401
-        elif 'user_id' in session:
+        elif 'user_id' in session or 'employee_id' in session:
+            # user_id = dueño; employee_id = empleado (portal PIN).
             return f(*args, **kwargs)
         else:
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -65,7 +66,7 @@ def _get_restaurant_unified():
             pass
         return None
 
-    if 'user_id' in session:
+    if 'user_id' in session or 'employee_id' in session:
         return get_current_restaurant()
     return None
 
@@ -95,10 +96,11 @@ def require_active(f):
             return return_error('Tu cuenta ha sido suspendida. Contacta a soporte para más información.')
 
         has_tokens = False
-        if restaurant.users:
-            owner = restaurant.users[0]
-            if owner.token_wallet and owner.token_wallet.can_scan():
-                has_tokens = True
+        # v2.1.0: el dueño se identifica por role, nunca por orden en la lista
+        # (users[0]). El primer usuario puede ser un empleado.
+        owner = next((u for u in restaurant.users if u.role == 'owner'), None)
+        if owner and owner.token_wallet and owner.token_wallet.can_scan():
+            has_tokens = True
 
         if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
             return return_error('Tu periodo de gracia ha terminado. Por favor renueva tu plan para recuperar el acceso.', redirect_to='dashboard.subscription')
@@ -134,6 +136,86 @@ def require_feature(feature_name):
                 flash(f'Actualiza tu plan para acceder a esta función.', 'warning')
                 return redirect(url_for('dashboard.subscription'))
 
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def require_role_check(*roles):
+    """
+    Chequeo de rol reutilizable (v2.1.0). Verifica que el usuario autenticado
+    tiene uno de los roles permitidos y está activo.
+
+    Roles válidos: owner | cashier | waiter.
+
+    Retorna None si pasa; si no, retorna una respuesta:
+    - Web (sesión Flask): flash + redirect a /empleado/<slug> (portal del
+      empleado) o /login si es dueño.
+    - API móvil (Bearer JWT) / JSON: 403 JSON.
+
+    Sirve tanto para el decorador @require_role como para
+    blueprint.before_request.
+    """
+    from app.models import User
+
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+        user = None
+        try:
+            verify_jwt_in_request()
+            user = User.query.get(get_jwt_identity())
+        except Exception:
+            user = None
+        if not user or user.role not in roles or not user.is_active:
+            return jsonify({
+                'success': False,
+                'error': 'forbidden',
+                'message': 'No tienes permisos para realizar esta acción.',
+            }), 403
+        return None
+
+    # v2.1.2: la sesión del empleado vive en 'employee_id' (no 'user_id').
+    # Si ambas claves coexisten (estado residual del mismo navegador), el
+    # dueño (user_id) tiene prioridad. Normalmente nunca coexisten: cada
+    # login explícito limpia la clave del otro rol (última acción gana).
+    user_id = session.get('user_id')
+    employee_id = session.get('employee_id')
+    user = None
+    if user_id:
+        user = User.query.get(user_id)
+    elif employee_id:
+        user = User.query.get(employee_id)
+    if not user or user.role not in roles or not user.is_active:
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'error': 'forbidden',
+                'message': 'No tienes permisos para realizar esta acción.',
+            }), 403
+        if user and user.role == 'owner':
+            flash('Tu sesión no tiene permisos para esta sección.', 'warning')
+            return redirect(url_for('auth.login'))
+        if user and user.restaurant:
+            flash('No tienes permisos para esta sección.', 'error')
+            return redirect(url_for('employee_portal.login', slug=user.restaurant.slug))
+        flash('Debes iniciar sesión para acceder.', 'warning')
+        return redirect(url_for('auth.login'))
+    return None
+
+
+def require_role(*roles):
+    """
+    Decorador de roles (v2.1.0). Verifica que el usuario autenticado tiene uno
+    de los roles permitidos y está activo. Debe usarse después de
+    @require_auth y @require_active.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            response = require_role_check(*roles)
+            if response is not None:
+                return response
             return f(*args, **kwargs)
         return decorated_function
     return decorator

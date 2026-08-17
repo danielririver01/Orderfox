@@ -743,16 +743,14 @@ class TestPlansShowsFlash:
 
 class TestSessionEscape:
 
-    def test_login_js_shows_continue_card(self, app):
-        """auth_index.js con sesión Clerk muestra la tarjeta 'Continuar como' en
-        vez de sincronizar automáticamente."""
+    def test_login_js_auto_sync_no_flash_guard(self, app):
+        """auth_index.js sincroniza automáticamente con la sesión Clerk activa
+        (sin pasos extra para el usuario). El anti-patrón viejo que secuestraba
+        la sesión condicionando a flash messages ya no existe."""
         import pathlib
         js_path = pathlib.Path(app.root_path).parent / 'app' / 'static' / 'js' / 'auth_index.js'
         content = js_path.read_text(encoding='utf-8')
-        assert 'showContinueCard' in content
-        assert 'Continuar como' in content
-        assert 'Cerrar sesión' in content
-        # Ya no existe el auto-sync incondicional que secuestraba la sesión
+        assert 'runSilentSync()' in content
         assert 'window.Clerk.user && !hasFlashMessages' not in content
 
     def test_setup_account_has_escape_links(self, app):
@@ -964,6 +962,41 @@ class TestExistingUserNoRestaurantTrialUsed:
         })
         data = r.get_json()
         assert data['redirect_url'] == '/setup-account'
+
+    def test_setup_post_trial_blocked_redirects_planes(self, app, db):
+        """POST /setup-account con plan trial + teléfono que ya usó trial
+        (correo nuevo pero número repetido) → redirige a /planes con
+        trial_blocked, NO deja atascado en setup-account con plan trial."""
+        from tests.test_auth_setup_terms import _csrf_headers, _valid_payload
+
+        user = User(
+            restaurant_id=None, username='newmail',
+            email='newmail@test.com', password='x',
+            clerk_id='user_newmail_1',
+        )
+        db.session.add(user)
+        # El correo es NUEVO, pero el teléfono ya usó trial (otro usuario)
+        db.session.add(TrialHistory(email='otro@test.com', whatsapp_phone='573009999999'))
+        db.session.commit()
+
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = user.id
+            sess['selected_plan'] = 'trial'
+
+        resp = client.post(
+            '/setup-account',
+            data=_valid_payload({'phone': '573009999999', 'accept_terms': 'y'}),
+            headers=_csrf_headers(client),
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+        assert resp.headers['Location'].endswith('/planes')
+        with client.session_transaction() as sess:
+            assert sess.get('trial_blocked') is True
+        # No debe crearse restaurante
+        from app.models import Restaurant
+        assert Restaurant.query.filter_by(whatsapp_phone='573009999999').count() == 0
 
 
 # ───────────── Webhook legacy MP: fail-closed ─────────────

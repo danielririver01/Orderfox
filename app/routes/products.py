@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import ProductForm
 from app.models import Product
-from app.utils.auth import require_auth, require_active
+from app.utils.auth import require_auth, require_active, require_role_check
 
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access, get_plan_limits
@@ -9,6 +9,12 @@ from app.services.product_service import ProductService
 from app.services.category_service import CategoryService
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
+
+
+@products_bp.before_request
+def _require_dashboard_owner():
+    """Todas las rutas de productos son del dueño: bloquea empleados (v2.1.1)."""
+    return require_role_check('owner')
 
 
 @products_bp.route('/')

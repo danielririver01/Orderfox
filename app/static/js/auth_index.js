@@ -22,11 +22,9 @@ window.addEventListener('load', async function () {
             }
         });
 
-        // Si hay una sesión Clerk activa, mostrar la tarjeta "Continuar como..."
-        // en vez de sincronizar automáticamente. El usuario decide si entra con
-        // esa cuenta o cambia a otra (evita el "secuestro" de sesión de Clerk).
+        // Si hay una sesión Clerk activa, sincronizar automáticamente.
         if (window.Clerk.user) {
-            showContinueCard();
+            runSilentSync();
             return;
         }
 
@@ -75,48 +73,10 @@ window.addEventListener('load', async function () {
     }
 });
 
-function showContinueCard() {
-    const user = window.Clerk.user;
-    const email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
-    const avatar = user.imageUrl || '';
-    const signInDiv = document.getElementById('clerk-signin');
-
-    signInDiv.innerHTML = `
-        <div class="flex flex-col items-center gap-5 py-8 w-full">
-            <div class="flex items-center gap-3 w-full">
-                <div class="w-12 h-12 rounded-full ring-2 ring-orange-500/30 flex items-center justify-center overflow-hidden flex-shrink-0 bg-[rgba(249,115,22,0.1)]">
-                    ${avatar
-                        ? `<img src="${avatar}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">`
-                        : `<span class="material-symbols-outlined text-orange-400 text-[20px]">person</span>`}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Continuar como</p>
-                    <p class="text-sm font-bold text-[#f5f0eb] truncate">${email}</p>
-                </div>
-            </div>
-            <button id="continue-btn" class="w-full h-12 rounded-xl font-bold text-sm bg-[#f97316] hover:bg-[#ea6c0a] text-white transition-all shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)]">
-                Continuar
-            </button>
-            <button id="switch-btn" class="w-full h-11 rounded-xl font-semibold text-xs text-gray-400 border border-gray-600/40 hover:text-white hover:border-orange-500/40 transition-all">
-                Cerrar sesión
-            </button>
-        </div>
-    `;
-
-    document.getElementById('continue-btn').addEventListener('click', runSilentSync);
-    document.getElementById('switch-btn').addEventListener('click', async function () {
-        try {
-            await window.Clerk.signOut();
-        } catch (e) {
-            console.error('Error cerrando sesión de Clerk', e);
-        }
-        window.location.reload();
-    });
-}
-
 async function runSilentSync() {
     const signInDiv = document.getElementById('clerk-signin');
 
+    // Mostrar spinner de carga inmediatamente
     signInDiv.innerHTML = `
         <div class="flex flex-col items-center justify-center py-12">
             <div class="auth-spinner mb-4"></div>

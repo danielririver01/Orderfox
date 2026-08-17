@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app import db
 from app.models import Order
-from app.utils.auth import require_auth, require_active, require_feature
+from app.utils.auth import require_auth, require_active, require_feature, require_role
 from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
 from app.services.order_service import OrderService, PaymentValidationError
@@ -139,14 +139,17 @@ def create_order():
             return jsonify({'success': False, 'error': 'Mesa no encontrada'}), 404
 
     order_data = {
-        'customer_name': data.get('customer_name', 'Cliente'),
+        'customer_name': data.get('customer_name', ''),
         'customer_phone': data.get('customer_phone', ''),
         'notes': data.get('notes', ''),
         'table_id': table_id,
         'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
     }
 
-    order = OrderService.create_order(restaurant.id, order_data)
+    try:
+        order = OrderService.create_order(restaurant.id, order_data)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
     try:
         total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
     except ValueError as e:
@@ -189,6 +192,7 @@ def create_order():
 @api_orders_bp.route('/<int:id>/payment', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner', 'cashier')
 def register_payment(id):
     """Registrar el pago de un pedido (mismo service que la ruta web)."""
     restaurant = get_current_restaurant_jwt()
@@ -230,6 +234,7 @@ def register_payment(id):
 @api_orders_bp.route('/<int:id>/status', methods=['PATCH'])
 @require_auth
 @require_active
+@require_role('owner', 'cashier', 'waiter')
 def change_status(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -272,6 +277,7 @@ def change_status(id):
 @api_orders_bp.route('/<int:id>/cancel', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def cancel_order(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
@@ -336,6 +342,7 @@ def get_receipt(id):
 @api_orders_bp.route('/<int:id>', methods=['DELETE'])
 @require_auth
 @require_active
+@require_role('owner')
 def delete_order(id):
     restaurant = get_current_restaurant_jwt()
     if not restaurant:

@@ -1,4 +1,9 @@
 async function changeStatus(orderId, newStatus) {
+  if (newStatus === 'cancelled') {
+    const confirmed = confirm('¿Cancelar este pedido? Esta acción cambiará el pedido a estado cancelado.');
+    if (!confirmed) return;
+  }
+
   try {
     const response = await fetch(`/orders/${orderId}/status`, {
       method: "PATCH",

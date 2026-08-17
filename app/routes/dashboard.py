@@ -12,7 +12,7 @@ from flask import (
     session,
     current_app
 )
-from app.utils.auth import require_auth, require_active
+from app.utils.auth import require_auth, require_active, require_role
 from app.models import db, Restaurant, User
 from datetime import datetime, timezone, timedelta
 import qrcode
@@ -39,6 +39,7 @@ import logging
 from app.services.dashboard_service import DashboardService
 from app.services.auth_service import AuthService
 from app.services.qr_service import QRService
+from app.services.cash_register_service import CashRegisterService
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ def ai_scan_redirect():
 @dashboard_bp.route('/')
 @require_auth
 @require_active
+@require_role('owner')
 def index():
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
@@ -88,6 +90,11 @@ def index():
     # Estadísticas comparativas (Hoy)
     comparative = DashboardService.get_comparative_stats(restaurant.id, 'today')
 
+    # Cobrado hoy (pagos reales en caja)
+    cr_start, cr_end = CashRegisterService.resolve_range('today')
+    summary = CashRegisterService.get_summary(restaurant.id, cr_start, cr_end)
+    cobrado_hoy = summary['total_sales']
+
     # Plato estrella 30d
     top_product = DashboardService.get_top_product_30d(restaurant.id)
 
@@ -96,7 +103,9 @@ def index():
                          pending_count=stats['pending'],
                          confirmed_count=stats['confirmed'],
                          delivered_count=stats['delivered'],
+                         expired_count=stats['expired_today'],
                          total_sales=stats['today_sales_cop'],
+                         cobrado_hoy=cobrado_hoy,
                          is_open=restaurant.is_open,
                          menu_url=menu_url,
                          narrative=narrative,
@@ -149,6 +158,7 @@ def api_check_orders():
 @dashboard_bp.route('/api/stats')
 @require_auth
 @require_active
+@require_role('owner')
 def api_stats():
     """Endpoint para obtener estadísticas filtradas por rango (hoy/mes)."""
     restaurant = get_current_restaurant()
@@ -180,6 +190,7 @@ def api_stats():
 @dashboard_bp.route('/api/ai-stats')
 @require_auth
 @require_active
+@require_role('owner')
 def api_ai_stats():
     user_id = session.get('user_id')
     user = DashboardService.get_user(user_id)
@@ -205,6 +216,69 @@ def api_ai_stats():
         'totalExpenses': total_expenses,
         'success': True
     })
+
+# ── Endpoints aditivos para dashboard home ──────────────────────────────────
+
+@dashboard_bp.route('/api/weekly-stats')
+@require_auth
+@require_active
+@require_role('owner')
+def api_weekly_stats():
+    """Ventas e pedidos por día de la semana (últimos 7 días)."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    from app.services.insights.data_service import weekly_sales_by_day
+    return jsonify({'success': True, 'data': weekly_sales_by_day(restaurant.id)})
+
+
+@dashboard_bp.route('/api/top-products')
+@require_auth
+@require_active
+@require_role('owner')
+def api_top_products():
+    """Productos más vendidos (por ingresos) en un período."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    days = request.args.get('days', 30, type=int)
+    from app.services.insights.data_service import top_products
+    result = top_products(restaurant.id, days=days, limit=5)
+    return jsonify({'success': True, 'data': result.get('items', [])})
+
+
+@dashboard_bp.route('/api/collected-today')
+@require_auth
+@require_active
+@require_role('owner')
+def api_collected_today():
+    """Ventas pagadas (caja) y vendidas (confirmed+delivered) hoy."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    cr_start, cr_end = CashRegisterService.resolve_range('today')
+    summary = CashRegisterService.get_summary(restaurant.id, cr_start, cr_end)
+    return jsonify({
+        'success': True,
+        'data': {
+            'collected': summary['total_sales'],
+            'sold': summary['total_orders'],
+        }
+    })
+
+
+@dashboard_bp.route('/api/revenue-trend')
+@require_auth
+@require_active
+@require_role('owner')
+def api_revenue_trend():
+    """Ventas diarias de los últimos 30 días."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    from app.services.insights.data_service import revenue_trend_30d
+    return jsonify({'success': True, 'data': revenue_trend_30d(restaurant.id)})
+
 
 @dashboard_bp.route('/Productos')
 @require_auth
@@ -480,7 +554,8 @@ def achievements():
         abort(404)
 
     from app.services.achievement_engine import get_profile
-    owner = restaurant.users[0] if restaurant.users else None
+    # v2.1.0: dueño identificado por role (nunca users[0]).
+    owner = next((u for u in restaurant.users if u.role == 'owner'), None)
     if not owner:
         abort(404)
     profile = get_profile(owner.id)

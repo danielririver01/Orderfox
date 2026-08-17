@@ -46,9 +46,16 @@ from app.services.insights.helpers import (
     current_user as _current_user,
 )
 from app.services.insights.message_handler import handle_post_message
-from app.utils.auth import require_auth
+from app.utils.auth import require_auth, require_role
 
 insights_bp = Blueprint('insights', __name__, url_prefix='/insights')
+
+# v2.1.0: Copilot VZ analiza datos de ventas → SOLO dueños (owner).
+@insights_bp.before_request
+def _require_owner():
+    from app.utils.auth import require_role_check
+    return require_role_check('owner')
+
 
 @insights_bp.after_request
 def _add_context_to_response(response):
@@ -69,7 +76,7 @@ def _add_context_to_response(response):
 # ── Página principal ─────────────────────────────────────────────────────────
 
 @insights_bp.route('/', strict_slashes=False)
-@require_auth
+@require_role('owner')
 def index():
     user = _current_user()
     restaurant_name = None

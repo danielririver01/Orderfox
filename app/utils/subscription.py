@@ -5,6 +5,7 @@ from app.models import db, Product, AITokenWallet, AITokenTransaction
 PLAN_LIMITS = {
     'emprendedor': {
         'max_products': 25,
+        'max_employees': 1,   # v2.1.0: empleados (cashier/waiter) por plan
         'has_qr': True,
         'has_table_qr': False,
         'has_modifiers': False,
@@ -18,6 +19,7 @@ PLAN_LIMITS = {
     },
     'crecimiento': {
         'max_products': 100,
+        'max_employees': 5,
         'has_qr': True,
         'has_table_qr': True,
         'has_modifiers': False,
@@ -31,6 +33,7 @@ PLAN_LIMITS = {
     },
     'elite': {
         'max_products': float('inf'),
+        'max_employees': None,  # None = ilimitado
         'has_qr': True,
         'has_table_qr': True,
         'has_modifiers': True,
@@ -44,6 +47,7 @@ PLAN_LIMITS = {
     },
     'trial': {
         'max_products': float('inf'),
+        'max_employees': None,  # None = ilimitado
         'has_qr': True,
         'has_table_qr': True,
         'has_modifiers': True,

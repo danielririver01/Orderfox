@@ -1,9 +1,9 @@
 import os
 import logging
-from flask import Flask, current_app, render_template, session, request, flash, redirect, url_for, has_request_context
+from flask import Flask, current_app, render_template, session, request, flash, redirect, url_for, has_request_context, jsonify
 from .models import db, migrate,User
 from flask_apscheduler import APScheduler
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from whitenoise import WhiteNoise
@@ -124,11 +124,28 @@ def create_app():
             return
         csrf_instance = current_app.extensions.get('csrf')
         if csrf_instance:
-            csrf_instance.protect()
+            try:
+                csrf_instance.protect()
+            except CSRFError:
+                # v2.1.1: token obsoleto — la sesión se limpió/regeneró entre
+                # que se cargó la página y se envió el form (p. ej. logout del
+                # admin en otra pestaña del mismo navegador). En vez del 400
+                # crudo, redirigir con un mensaje claro para reintentar.
+                if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({
+                        'success': False,
+                        'error': 'Tu sesión expiró. Recarga la página e inténtalo de nuevo.',
+                    }), 400
+                flash('Tu sesión expiró. Recarga la página e inténtalo de nuevo.', 'error')
+                return redirect(request.referrer or request.path or url_for('auth.login'))
 
     if sentry_dsn:
         from app.utils.jwt_auth import get_current_user_jwt
-        from app.utils.restaurant import get_current_restaurant
+        # NOTA: get_current_restaurant ya está importado a nivel de módulo.
+        # Importarlo aquí (dentro de create_app) hacía que Python lo tratara
+        # como variable local de create_app y block_grace_period_crud (que lo
+        # referencia en su closure) reventaba con NameError cuando SENTRY_DSN
+        # no estaba configurado.
 
         @app.before_request
         def set_sentry_context():
@@ -202,6 +219,7 @@ def create_app():
     from .routes.api_email import api_email_bp
     from .routes.api_webhooks import api_webhooks_bp
     from .routes.rewards import rewards_bp
+    from .routes.employees import employees_bp, employee_portal_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -223,6 +241,8 @@ def create_app():
     app.register_blueprint(api_email_bp)
     app.register_blueprint(api_webhooks_bp)
     app.register_blueprint(rewards_bp)
+    app.register_blueprint(employees_bp)
+    app.register_blueprint(employee_portal_bp)
     csrf.exempt(api_email_bp)
     csrf.exempt(rewards_bp)
     @app.before_request
@@ -266,7 +286,7 @@ def create_app():
             "fonts.googleapis.com cdn.jsdelivr.net; "
             "font-src 'self' fonts.gstatic.com data:; "
             "img-src 'self' data: blob: res.cloudinary.com img.clerk.com; "
-            "connect-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
+            "connect-src 'self' cdn.jsdelivr.net oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
             "challenges.cloudflare.com *.protect.clerk.com; "
             "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
             "challenges.cloudflare.com *.protect.clerk.com; "

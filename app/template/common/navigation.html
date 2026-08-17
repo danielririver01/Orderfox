@@ -90,6 +90,12 @@
                 <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
                 Gestión de Mesas
             </a>
+            <a href="{{ url_for('employees.team') }}" onclick="closeMobileNav()"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                <span class="material-symbols-outlined text-[20px]">group</span>
+                Equipo
+            </a>
             <button onclick="closeMobileNav(); openTokenModal()" id="mobile-token-link"
                 class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
                 <span class="material-symbols-outlined text-[20px] text-orange-500">bolt</span>

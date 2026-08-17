@@ -164,6 +164,11 @@
                     <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
                     Gestión de Mesas
                 </a>
+                <a href="{{ url_for('employees.team') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                    Equipo
+                </a>
                 {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
                 <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">

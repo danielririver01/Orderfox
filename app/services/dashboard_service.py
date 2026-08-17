@@ -27,13 +27,32 @@ class DashboardService:
 
     @staticmethod
     def _get_date_range(range_type):
-        """Return (start_date,) based on range_type. Supported: today, week, month."""
-        now = datetime.now(timezone.utc)
+        """Return (start, end) UTC-naive based on range_type.
+
+        Rangos resueltos en hora de Colombia (UTC-5), igual que CashRegisterService.
+        ``end`` es SIEMPRE exclusivo.
+        Supported: today, week, month.
+        """
+        today_start = today_start_utc()
+        now_col = datetime.now(COLOMBIA_TZ)
         if range_type == 'month':
-            return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            start_col = now_col.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            start = start_col.astimezone(timezone.utc).replace(tzinfo=None)
+            if start_col.month == 12:
+                next_month = start_col.replace(year=start_col.year + 1, month=1)
+            else:
+                next_month = start_col.replace(month=start_col.month + 1)
+            end = next_month.astimezone(timezone.utc).replace(tzinfo=None)
         elif range_type == 'week':
-            return (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+            start_col = (now_col - timedelta(days=now_col.weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            start = start_col.astimezone(timezone.utc).replace(tzinfo=None)
+            end = today_start + timedelta(days=1)
+        else:  # today
+            start = today_start
+            end = today_start + timedelta(days=1)
+        return start, end
 
     @staticmethod
     def get_today_overview(restaurant_id):
@@ -41,8 +60,10 @@ class DashboardService:
         Return dict with today's order counts and sales.
         Active orders (pending/confirmed) — no date filter.
         Completed orders (delivered/cancelled) — filtered to today.
-        Sales — confirmed + delivered today.
+        Sales — paid orders today (paid_at, same criteria as cash register).
         """
+        from app.services.cash_register_service import CashRegisterService
+
         today_start = DashboardService._get_today_start()
 
         # Active orders: no date filter
@@ -62,17 +83,26 @@ class DashboardService:
             Order.created_at >= today_start
         ).group_by(Order.status).all()
 
+        # Expired orders: today only (updated_at since status change marks expiry)
+        expired_today = db.session.query(
+            func.count(Order.id)
+        ).filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status == 'expired',
+            Order.updated_at >= today_start
+        ).scalar() or 0
+
         # Merge counts
         counts = {}
         for s, c in active_stats + completed_stats:
             counts[s] = counts.get(s, 0) + c
 
-        # Today sales
-        total_sales = db.session.query(func.sum(Order.total)).filter(
-            Order.restaurant_id == restaurant_id,
-            Order.created_at >= today_start,
-            Order.status.in_(['confirmed', 'delivered'])
-        ).scalar() or 0
+        # Today sales — paid only (aligned with cash register)
+        end = today_start + timedelta(days=1)
+        base = CashRegisterService._paid_base_query(restaurant_id, today_start, end)
+        total_sales = db.session.query(
+            func.coalesce(func.sum(Order.total), 0)
+        ).filter(Order.id.in_(base.with_entities(Order.id))).scalar() or 0
 
         return {
             'today_orders': sum(counts.values()),
@@ -81,6 +111,7 @@ class DashboardService:
             'preparing': counts.get('preparing', 0),
             'delivered': counts.get('delivered', 0),
             'cancelled': counts.get('cancelled', 0),
+            'expired_today': expired_today,
             'today_sales_cop': int(total_sales),
         }
 
@@ -88,30 +119,35 @@ class DashboardService:
     def get_extended_stats(restaurant_id, range_type='today'):
         """
         Return extended stats for a date range.
-        Returns total_orders, total_sales, avg_order_value, orders_by_status.
+
+        Total-sales y total-orders usan SOLO pedidos pagados (`paid_at`),
+        mismos criterios que CashRegisterService (excluye cancelled y
+        payment_method IS NULL).  Esto garantiza que el ticket promedio
+        del dashboard coincida exactamente con el de la Caja.
         """
-        start_date = DashboardService._get_date_range(range_type)
+        from app.services.cash_register_service import CashRegisterService
 
-        total_sales = db.session.query(func.sum(Order.total)).filter(
-            Order.restaurant_id == restaurant_id,
-            Order.created_at >= start_date,
-            Order.status.in_(['confirmed', 'delivered'])
-        ).scalar() or 0
+        start_date, end_date = DashboardService._get_date_range(range_type)
 
-        total_orders = Order.query.filter(
-            Order.restaurant_id == restaurant_id,
-            Order.created_at >= start_date
-        ).count()
+        base = CashRegisterService._paid_base_query(restaurant_id, start_date, end_date)
+
+        total_sales = db.session.query(
+            func.coalesce(func.sum(Order.total), 0)
+        ).filter(Order.id.in_(base.with_entities(Order.id))).scalar() or 0
+
+        total_orders = base.count()
 
         orders_by_status = db.session.query(
             Order.status, func.count(Order.id)
         ).filter(
             Order.restaurant_id == restaurant_id,
-            Order.created_at >= start_date
+            Order.paid_at >= start_date,
+            Order.paid_at < end_date,
+            Order.status != 'cancelled',
         ).group_by(Order.status).all()
 
         status_counts = {s: c for s, c in orders_by_status}
-        avg_order_value = int(total_sales) / total_orders if total_orders > 0 else 0
+        avg_order_value = round(total_sales / total_orders) if total_orders > 0 else 0
 
         return {
             'total_orders': total_orders,
@@ -192,26 +228,28 @@ class DashboardService:
         """
         Devuelve {current, previous, delta_pct, verdict} para Hoy vs Ayer
         o Mes vs Mes anterior.
+
+        ``current_sales`` y ``current_orders`` usan pedidos pagados (paid_at)
+        para que el ticket promedio del hero coincida con la Caja.
+        ``previous_sales`` usa confirmed+delivered (created_at) porque no
+        tenemos paid_at histórico de periodos anteriores.
         """
-        now_utc = datetime.now(timezone.utc)
+        from app.services.cash_register_service import CashRegisterService
 
         if range_type == 'today':
             # Hoy: medianoche Colombia → UTC
             today_start = today_start_utc()
             yesterday_start = today_start - timedelta(days=1)
 
-            current_sales = db.session.query(func.sum(Order.total)).filter(
-                Order.restaurant_id == restaurant_id,
-                Order.created_at >= today_start,
-                Order.status.in_(['confirmed', 'delivered'])
-            ).scalar() or 0
+            # Current — paid orders only (same as cash register)
+            end_today = today_start + timedelta(days=1)
+            base_today = CashRegisterService._paid_base_query(restaurant_id, today_start, end_today)
+            current_sales = db.session.query(
+                func.coalesce(func.sum(Order.total), 0)
+            ).filter(Order.id.in_(base_today.with_entities(Order.id))).scalar() or 0
+            current_orders = base_today.count()
 
-            current_orders = db.session.query(func.count(Order.id)).filter(
-                Order.restaurant_id == restaurant_id,
-                Order.created_at >= today_start,
-                Order.status.in_(['confirmed', 'delivered'])
-            ).scalar() or 0
-
+            # Previous — confirmed+delivered (no paid_at historical)
             previous_sales = db.session.query(func.sum(Order.total)).filter(
                 Order.restaurant_id == restaurant_id,
                 Order.created_at >= yesterday_start,
@@ -236,18 +274,16 @@ class DashboardService:
             last_month_start_utc = last_month_start_col.astimezone(timezone.utc).replace(tzinfo=None)
             last_month_end_utc = this_month_start_utc
 
-            current_sales = db.session.query(func.sum(Order.total)).filter(
-                Order.restaurant_id == restaurant_id,
-                Order.created_at >= this_month_start_utc,
-                Order.status.in_(['confirmed', 'delivered'])
-            ).scalar() or 0
+            # Current — paid orders only
+            today_start = today_start_utc()
+            end_month = today_start + timedelta(days=1)
+            base_month = CashRegisterService._paid_base_query(restaurant_id, this_month_start_utc, end_month)
+            current_sales = db.session.query(
+                func.coalesce(func.sum(Order.total), 0)
+            ).filter(Order.id.in_(base_month.with_entities(Order.id))).scalar() or 0
+            current_orders = base_month.count()
 
-            current_orders = db.session.query(func.count(Order.id)).filter(
-                Order.restaurant_id == restaurant_id,
-                Order.created_at >= this_month_start_utc,
-                Order.status.in_(['confirmed', 'delivered'])
-            ).scalar() or 0
-
+            # Previous — confirmed+delivered
             previous_sales = db.session.query(func.sum(Order.total)).filter(
                 Order.restaurant_id == restaurant_id,
                 Order.created_at >= last_month_start_utc,

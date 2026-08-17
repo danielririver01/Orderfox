@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} · Caja</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-[#0a0a0a] min-h-screen antialiased"
+    data-last-id="{{ orders[0].id if orders else 0 }}"
+    data-pending-count="{{ orders|length }}">
+    {% set brand = restaurant.brand_color or '#FF7A29' %}
+
+    <!-- Barra superior -->
+    <header class="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/5">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-orange-500 text-[18px]">account_balance_wallet</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-display text-sm font-black text-white truncate">{{ restaurant.name }}</p>
+                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">Modo cajero</p>
+                </div>
+            </div>
+            <a href="{{ url_for('employee_portal.logout') }}"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest">
+                <span class="material-symbols-outlined text-[15px]">logout</span>
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-3xl mx-auto px-4 pt-4 space-y-2">
+        {% for category, message in messages %}
+        <div class="text-xs font-bold px-4 py-3 rounded-xl border
+            {% if category == 'error' %}bg-red-500/10 border-red-500/20 text-red-400
+            {% else %}bg-emerald-500/10 border-emerald-500/20 text-emerald-400{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Total del día (solo el número, sin desglose) -->
+    <div class="max-w-3xl mx-auto px-4 pt-5">
+        <div class="rounded-2xl border border-[#262626] p-6 flex items-center justify-between"
+            style="background: linear-gradient(135deg, {{ brand }}22, transparent 60%);">
+            <div>
+                <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Total del día</p>
+                <p class="font-display text-4xl font-black text-white mt-1 tracking-tighter">{{ day_total|currency }}</p>
+                <p class="text-[10px] text-gray-600 font-bold mt-1">{{ day_orders }} pedido(s) cobrado(s)</p>
+            </div>
+            <span class="material-symbols-outlined text-[40px] text-gray-700">payments</span>
+        </div>
+    </div>
+
+    <!-- Pedidos por cobrar -->
+    <main class="max-w-3xl mx-auto px-4 py-5 space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Por cobrar</h2>
+            <span class="text-[10px] font-black text-gray-600 uppercase tracking-widest">{{ orders|length }}
+                pendiente(s)</span>
+        </div>
+
+        {% if orders %}
+        {% for order in orders %}
+        <div class="bg-[#141414] rounded-2xl border border-[#262626] overflow-hidden" data-order-id="{{ order.id }}">
+            <div class="p-4 flex items-center gap-4">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <p class="font-display text-base font-black text-white">{{ order.order_number }}</p>
+                        <span
+                            class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md
+                            {% if order.status == 'pending' %}bg-yellow-500/10 text-yellow-400
+                            {% elif order.status == 'delivered' %}bg-emerald-500/10 text-emerald-400
+                            {% else %}bg-blue-500/10 text-blue-400{% endif %}">
+                            {% if order.status == 'pending' %}Pendiente
+                            {% elif order.status == 'delivered' %}Entregado
+                            {% else %}Confirmado{% endif %}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-400 font-medium mt-0.5 truncate">{{ order.customer_name or 'Cliente' }}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="font-display text-lg font-black text-white">{{ order.total|currency }}</p>
+                </div>
+                <button onclick="togglePayPanel({{ order.id }})"
+                    class="flex-shrink-0 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 text-white"
+                    style="background: {{ brand }};">
+                    <span class="material-symbols-outlined text-[16px] align-[-3px]">point_of_sale</span>
+                    Cobrar
+                </button>
+                {% if order.status == 'pending' %}
+                <form method="POST" id="cancel-form-{{ order.id }}"
+                    action="{{ url_for('employee_portal.cancel_order', slug=restaurant.slug, order_id=order.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="button" onclick="confirmCancel(this, 'cancel-form-{{ order.id }}')"
+                        class="flex-shrink-0 px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20">
+                        <span class="material-symbols-outlined text-[15px]">close</span>
+                        Cancelar
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Panel de cobro (oculto) -->
+            <div id="pay-panel-{{ order.id }}" class="hidden border-t border-[#262626] px-4 py-4 space-y-3 bg-[#0f0f0f]">
+                <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">¿Cómo recibe el pago?</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openCash({{ order.id }})"
+                        class="py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-black transition-all active:scale-95">
+                        Efectivo
+                    </button>
+                    <button type="button" onclick="payOrder({{ order.id }}, 'nequi')"
+                        class="py-3 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-black transition-all active:scale-95">
+                        Nequi
+                    </button>
+                    <button type="button" onclick="payOrder({{ order.id }}, 'bancolombia')"
+                        class="py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-black transition-all active:scale-95">
+                        Bancolombia
+                    </button>
+                    <button type="button" onclick="payOrder({{ order.id }}, 'card')"
+                        class="py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black transition-all active:scale-95">
+                        Tarjeta
+                    </button>
+                </div>
+
+                <!-- Efectivo: monto recibido -->
+                <div id="cash-box-{{ order.id }}" class="hidden space-y-2">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest">¿Con cuánto
+                        pagó?</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-gray-500 font-black text-sm">$</span>
+                            <input type="text" inputmode="numeric" id="cash-amount-{{ order.id }}"
+                                placeholder="0" autocomplete="off"
+                                class="w-full pl-8 pr-3 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl outline-none transition-all font-black text-white placeholder-gray-700 focus:border-[#f2460d]"
+                                oninput="updateChangePreview({{ order.id }}, {{ order.total }})">
+                        <input type="hidden" id="order-total-{{ order.id }}" value="{{ order.total }}">
+                        </div>
+                        <button onclick="payCash({{ order.id }})"
+                            class="confirm-cash-btn px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20">
+                            Confirmar
+                        </button>
+                    </div>
+                    <p id="cash-error-{{ order.id }}" class="hidden text-[11px] font-bold text-red-400"></p>
+                    <div id="change-preview-{{ order.id }}" class="hidden mt-2 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Vuelto</span>
+                            <span id="change-value-{{ order.id }}" class="font-display text-lg font-black text-emerald-400">$0</span>
+                        </div>
+                        <p id="cash-warn-{{ order.id }}" class="hidden text-[11px] font-bold text-red-400 mt-1.5">
+                            El vuelto es mayor que el total del pedido. Verifica el monto recibido.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="bg-[#141414] rounded-2xl border border-dashed border-[#262626] p-10 text-center">
+            <span class="material-symbols-outlined text-[32px] text-gray-700">point_of_sale</span>
+            <p class="text-sm font-bold text-gray-500 mt-3">No hay pedidos por cobrar</p>
+            <p class="text-xs text-gray-600 mt-1">Los pedidos listos para cobrar aparecerán aquí.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Modal de vuelto (pago en efectivo con cambio) -->
+    <div id="change-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeChangeModal()"></div>
+        <div class="relative w-full max-w-xs bg-[#141414] rounded-3xl border border-[#262626] shadow-2xl p-6 text-center">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-emerald-400 text-[26px]">payments</span>
+            </div>
+            <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mt-4">Pago registrado · Debes devolver</p>
+            <p id="change-amount" class="font-display text-4xl font-black text-white mt-1">$0</p>
+            <p class="text-[10px] text-gray-600 font-bold mt-1">Vuelto en efectivo</p>
+            <button onclick="closeChangeModal()"
+                class="w-full mt-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95"
+                style="background: {{ brand }};">
+                Listo, ya devolví
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        function togglePayPanel(orderId) {
+            const panel = document.getElementById(`pay-panel-${orderId}`);
+            if (panel) panel.classList.toggle('hidden');
+        }
+
+        function openCash(orderId) {
+            const box = document.getElementById(`cash-box-${orderId}`);
+            if (box) box.classList.toggle('hidden');
+        }
+
+        async function registerPayment(orderId, method, amountReceived) {
+            const body = { payment_method: method };
+            if (amountReceived !== null) body.amount_received = amountReceived;
+            const res = await fetch(`/orders/${orderId}/payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: JSON.stringify(body)
+            });
+            return res.json();
+        }
+
+        function showChangeModal(change) {
+            document.getElementById('change-amount').textContent = '$' + Number(change).toLocaleString('es-CO');
+            const modal = document.getElementById('change-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeChangeModal() {
+            const modal = document.getElementById('change-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            window.location.reload();
+        }
+
+        function parseMoney(raw) {
+            // "20.000" o "20 000" → 20000. El punto es separador de miles en
+            // Colombia, no decimal. parseInt crudo devolvía 20 y el sistema
+            // calculaba mal el vuelto.
+            if (raw === null || raw === undefined) return 0;
+            const cleaned = String(raw).replace(/[.\s]/g, '').trim();
+            const n = parseInt(cleaned, 10);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function updateChangePreview(orderId, orderTotal) {
+            const input = document.getElementById(`cash-amount-${orderId}`);
+            const preview = document.getElementById(`change-preview-${orderId}`);
+            const value = document.getElementById(`change-value-${orderId}`);
+            const warn = document.getElementById(`cash-warn-${orderId}`);
+            const amount = parseMoney(input.value);
+            if (amount <= 0) {
+                preview.classList.add('hidden');
+                return;
+            }
+            const diff = amount - orderTotal;
+            if (diff > orderTotal) {
+                // El vuelto supera el valor del pedido: posible error del cajero.
+                value.textContent = '$' + diff.toLocaleString('es-CO');
+                value.className = 'font-display text-lg font-black text-red-400';
+                preview.classList.remove('hidden');
+                preview.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                preview.style.background = 'rgba(239, 68, 68, 0.04)';
+                if (warn) warn.classList.remove('hidden');
+            } else if (diff > 0) {
+                value.textContent = '$' + diff.toLocaleString('es-CO');
+                value.className = 'font-display text-lg font-black text-emerald-400';
+                preview.classList.remove('hidden');
+                preview.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                preview.style.background = 'rgba(16, 185, 129, 0.03)';
+                if (warn) warn.classList.add('hidden');
+            } else if (diff === 0) {
+                value.textContent = '$0';
+                value.className = 'font-display text-lg font-black text-white';
+                preview.classList.remove('hidden');
+                preview.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                preview.style.background = 'rgba(255, 255, 255, 0.02)';
+                if (warn) warn.classList.add('hidden');
+            } else {
+                value.textContent = 'Falta $' + Math.abs(diff).toLocaleString('es-CO');
+                value.className = 'font-display text-lg font-black text-red-400';
+                preview.classList.remove('hidden');
+                preview.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                preview.style.background = 'rgba(239, 68, 68, 0.03)';
+                if (warn) warn.classList.add('hidden');
+            }
+        }
+
+        async function payOrder(orderId, method) {
+            const btn = event.target;
+            if (btn) { btn.disabled = true; btn.style.opacity = 0.5; }
+            try {
+                const data = await registerPayment(orderId, method, null);
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'No se pudo registrar el pago');
+                    if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+                }
+            } catch (e) {
+                alert('Error de conexión. Inténtalo de nuevo.');
+                if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+            }
+        }
+
+        async function payCash(orderId) {
+            const input = document.getElementById(`cash-amount-${orderId}`);
+            const errBox = document.getElementById(`cash-error-${orderId}`);
+            const btn = document.querySelector(`#pay-panel-${orderId} .confirm-cash-btn`) || null;
+            const amount = parseMoney(input.value);
+            if (!amount || amount <= 0) {
+                if (errBox) { errBox.textContent = 'Indica cuánto recibiste del cliente'; errBox.classList.remove('hidden'); }
+                return;
+            }
+            if (errBox) errBox.classList.add('hidden');
+            if (btn) { btn.disabled = true; btn.style.opacity = 0.5; }
+            try {
+                const data = await registerPayment(orderId, 'cash', amount);
+                if (data.success) {
+                    const change = data.data?.change_due || 0;
+                    if (change > 0) {
+                        showChangeModal(change);  // muestra el vuelto antes de recargar
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    if (errBox) {
+                        errBox.textContent = data.error || 'No se pudo registrar el pago';
+                        errBox.classList.remove('hidden');
+                    } else {
+                        alert(data.error || 'No se pudo registrar el pago');
+                    }
+                    if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+                }
+            } catch (e) {
+                alert('Error de conexión. Inténtalo de nuevo.');
+                if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+            }
+        }
+
+        // Confirmación de doble toque para cancelar (sin alerts nativos).
+        function confirmCancel(btn, formId) {
+            if (btn.dataset.armed === '1') {
+                document.getElementById(formId).submit();
+                return;
+            }
+            btn.dataset.armed = '1';
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[15px]">warning</span> ¿Seguro?';
+            btn.classList.remove('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+            btn.classList.add('bg-red-500', 'border-red-500', 'text-white');
+            setTimeout(function () {
+                btn.dataset.armed = '';
+                btn.innerHTML = original;
+                btn.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+                btn.classList.remove('bg-red-500', 'border-red-500', 'text-white');
+            }, 3000);
+        }
+
+        // Polling cada 30 segundos: si cambió la cantidad de pedidos, recargar.
+        (function () {
+            const body = document.body;
+            const lastId = parseInt(body.dataset.lastId || '0', 10);
+            const pendingCount = parseInt(body.dataset.pendingCount || '0', 10);
+            setInterval(async function () {
+                try {
+                    const res = await fetch('/dashboard/api/check-orders');
+                    const data = await res.json();
+                    if (data && (data.pending_count !== pendingCount || (data.last_id || 0) !== lastId)) {
+                        window.location.reload();
+                    }
+                } catch (e) { /* sin conexión: reintenta en el siguiente tick */ }
+            }, 30000);
+        })();
+    </script>
+</body>
+
+</html>

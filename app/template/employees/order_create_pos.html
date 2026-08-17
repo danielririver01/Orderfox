@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} · Nuevo pedido</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-[#0a0a0a] min-h-screen antialiased">
+    {% set brand = restaurant.brand_color or '#FF7A29' %}
+
+    <!-- Barra superior -->
+    <header class="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/5">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <a href="{{ url_for('employee_portal.waiter', slug=restaurant.slug) }}"
+                    class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/25 transition-colors flex-shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                </a>
+                <div class="min-w-0">
+                    <p class="font-display text-sm font-black text-white truncate">{{ restaurant.name }}</p>
+                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">Nuevo pedido</p>
+                </div>
+            </div>
+            <a href="{{ url_for('employee_portal.logout') }}"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
+                <span class="material-symbols-outlined text-[15px]">logout</span>
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <form method="POST" action="{{ url_for('employee_portal.order_create', slug=restaurant.slug) }}" id="pos-form"
+        class="max-w-5xl mx-auto px-4 py-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
+
+            <!-- Columna izquierda: menú -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Menú</h2>
+                    <span class="text-[10px] font-black text-gray-600 uppercase tracking-widest">{{ products|length }} producto(s)</span>
+                </div>
+
+                <input type="text" id="product-search" placeholder="Buscar plato..."
+                    class="w-full px-4 py-3 bg-[#141414] border border-[#262626] rounded-xl text-sm text-white outline-none focus:border-orange-500 transition-colors placeholder-gray-600">
+
+                {% if products %}
+                <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {% for product in products %}
+                    <button type="button" onclick="addProduct({{ product.id }}, '{{ product.name|e }}', {{ product.price }})"
+                        class="product-card text-left bg-[#141414] rounded-2xl border border-[#262626] p-4 hover:border-orange-500/40 active:scale-[0.97] transition-all">
+                        <p class="font-display text-sm font-black text-white truncate">{{ product.name }}</p>
+                        <p class="text-xs font-black mt-1" style="color: {{ brand }};">${{ '{:,}'.format(product.price) }}</p>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-gray-600">Toca para agregar</span>
+                            <span class="w-6 h-6 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[14px] text-gray-400">add</span>
+                            </span>
+                        </div>
+                    </button>
+                    {% endfor %}
+                </div>
+                <div id="no-results-message" class="hidden py-8 text-center text-sm font-bold text-gray-600">
+                    Sin resultados
+                </div>
+                {% else %}
+                <div class="bg-[#141414] rounded-2xl border border-dashed border-[#262626] p-10 text-center">
+                    <span class="material-symbols-outlined text-[32px] text-gray-700">inventory_2</span>
+                    <p class="text-sm font-bold text-gray-500 mt-3">Menú vacío</p>
+                    <p class="text-xs text-gray-600 mt-1">El dueño debe agregar productos desde el panel.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Columna derecha: carrito -->
+            <div class="bg-[#141414] rounded-2xl border border-[#262626] p-4 lg:sticky lg:top-20 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Pedido</h2>
+                    <span class="text-[10px] font-black text-gray-600 uppercase tracking-widest" id="cart-count">0 items</span>
+                </div>
+
+                <div id="cart-items" class="space-y-2 max-h-[38vh] overflow-y-auto custom-scrollbar">
+                    <p class="text-xs text-gray-600 font-medium text-center py-6" id="cart-empty">
+                        Toca los productos del menú para agregarlos
+                    </p>
+                </div>
+
+                <div class="pt-3 border-t border-[#262626] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em]">Total</p>
+                        <p id="pos-total" class="font-display text-2xl font-black text-white">$0</p>
+                    </div>
+                    <button type="submit"
+                        class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg"
+                        style="background: {{ brand }}; box-shadow: 0 10px 28px -10px {{ brand }}66;">
+                        <span class="material-symbols-outlined text-[18px]">check</span>
+                        Confirmar pedido
+                    </button>
+                </div>
+
+                <details class="group">
+                    <summary class="flex items-center justify-between cursor-pointer text-[10px] font-black text-gray-500 uppercase tracking-widest select-none">
+                        Datos del cliente (opcional)
+                        <span class="material-symbols-outlined text-[16px] group-open:rotate-180 transition-transform">expand_more</span>
+                    </summary>
+                    <div class="mt-3 space-y-3">
+                        <input type="text" name="customer_name" placeholder="Nombre (ej: Juan Pérez)"
+                            class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white outline-none focus:border-orange-500 transition-colors placeholder-gray-600">
+                        <input type="tel" name="customer_phone" placeholder="Teléfono / WhatsApp"
+                            class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white outline-none focus:border-orange-500 transition-colors placeholder-gray-600">
+                        <textarea name="notes" rows="2" placeholder="Notas (ej: sin cebolla)"
+                            class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white outline-none focus:border-orange-500 transition-colors placeholder-gray-600 resize-none"></textarea>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <input type="hidden" name="items" id="items-json">
+    </form>
+
+    <script>
+        const cart = {};
+
+        function addProduct(productId, name, price) {
+            if (!cart[productId]) cart[productId] = { name, price, qty: 0 };
+            cart[productId].qty += 1;
+            renderCart();
+        }
+
+        function changeQty(productId, delta) {
+            if (!cart[productId]) return;
+            cart[productId].qty += delta;
+            if (cart[productId].qty <= 0) delete cart[productId];
+            renderCart();
+        }
+
+        function formatMoney(value) {
+            return '$' + Number(value).toLocaleString('es-CO');
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const ids = Object.keys(cart);
+            const empty = document.getElementById('cart-empty');
+            const countSpan = document.getElementById('cart-count');
+            const totalSpan = document.getElementById('pos-total');
+            const itemsInput = document.getElementById('items-json');
+
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-600 font-medium text-center py-6">Toca los productos del menú para agregarlos</p>';
+                countSpan.textContent = '0 items';
+                totalSpan.textContent = '$0';
+                itemsInput.value = '[]';
+                return;
+            }
+
+            container.innerHTML = '';
+            let total = 0;
+            const items = [];
+
+            ids.forEach(id => {
+                const item = cart[id];
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                items.push({ product_id: parseInt(id, 10), quantity: item.qty });
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3 bg-[#0a0a0a] rounded-xl border border-[#262626] px-3 py-2';
+                row.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-white truncate">${item.name}</p>
+                        <p class="text-[10px] text-gray-500 font-bold">${formatMoney(item.price)} c/u</p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" onclick="changeQty(${id}, -1)"
+                            class="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[14px]">remove</span>
+                        </button>
+                        <span class="w-5 text-center text-sm font-black text-white">${item.qty}</span>
+                        <button type="button" onclick="changeQty(${id}, 1)"
+                            class="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[14px]">add</span>
+                        </button>
+                    </div>
+                    <p class="text-xs font-black text-white w-16 text-right flex-shrink-0">${formatMoney(subtotal)}</p>`;
+                container.appendChild(row);
+            });
+
+            countSpan.textContent = ids.length + ' item(s)';
+            totalSpan.textContent = formatMoney(total);
+            itemsInput.value = JSON.stringify(items);
+        }
+
+        document.getElementById('pos-form').addEventListener('submit', function (e) {
+            const items = JSON.parse(document.getElementById('items-json').value || '[]');
+            if (items.length === 0) {
+                e.preventDefault();
+                alert('Selecciona al menos un producto para crear el pedido.');
+                return;
+            }
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.style.opacity = 0.6;
+        });
+
+        // Búsqueda en el menú
+        document.getElementById('product-search')?.addEventListener('input', function (e) {
+            const term = e.target.value.toLowerCase().trim();
+            let visible = 0;
+            document.querySelectorAll('.product-card').forEach(card => {
+                const name = card.querySelector('p').textContent.toLowerCase();
+                const show = name.includes(term);
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            document.getElementById('no-results-message').classList.toggle('hidden', visible > 0);
+        });
+    </script>
+</body>
+
+</html>

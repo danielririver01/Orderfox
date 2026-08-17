@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.models import db
-from app.utils.auth import require_auth, require_active
+from app.utils.auth import (
+    require_auth, require_active, require_role, require_role_check,
+)
 import json
 
 from app.utils.restaurant import get_current_restaurant
@@ -9,6 +11,21 @@ from app.services.order_service import OrderService, PaymentValidationError
 from app.services.notification_service import notify_new_order
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
+
+# Endpoints de /orders/* que usan los empleados desde su portal (v2.1.1):
+# - orders.change_status     → mesero (y cajero): cambiar estado del pedido
+# - orders.register_payment  → cajero (y dueño): registrar pago
+# El resto de rutas de /orders/* es solo del dueño.
+_EMPLOYEE_ALLOWED_ENDPOINTS = {'orders.change_status', 'orders.register_payment'}
+
+
+@orders_bp.before_request
+def _require_dashboard_owner():
+    """Bloquea empleados en las rutas de pedidos del dashboard, salvo los
+    endpoints que usan desde su portal (v2.1.1)."""
+    if request.endpoint in _EMPLOYEE_ALLOWED_ENDPOINTS:
+        return None
+    return require_role_check('owner')
 
 @orders_bp.route('/')
 @require_auth
@@ -63,21 +80,28 @@ def fragment():
 @orders_bp.route('/create', methods=['GET', 'POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def create():
-    """Crear nuevo pedido (simplificado para MVP)"""
+    """Crear nuevo pedido (simplificado para MVP). Solo dueño: los empleados
+    usan su propia ruta POS (employee_portal.order_create)."""
     restaurant = get_current_restaurant()
     if not restaurant: abort(404)
     if request.method == 'POST':
         data = request.form
 
         order_data = {
-            'customer_name': data.get('customer_name'),
+            'customer_name': data.get('customer_name', ''),
             'customer_phone': data.get('customer_phone', ''),
             'notes': data.get('notes', ''),
             'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
         }
 
-        order = OrderService.create_order(restaurant.id, order_data)
+        try:
+            order = OrderService.create_order(restaurant.id, order_data)
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), 'error')
+            return redirect(url_for('orders.create'))
 
         items_data = json.loads(data.get('items', '[]'))
         try:
@@ -189,6 +213,7 @@ def detail_fragment(id):
 @orders_bp.route('/<int:id>/status', methods=['PATCH'])
 @require_auth
 @require_active
+@require_role('owner', 'cashier', 'waiter')
 def change_status(id):
     """Cambiar estado del pedido"""
     restaurant = get_current_restaurant()
@@ -219,6 +244,7 @@ def change_status(id):
 @orders_bp.route('/<int:id>/payment', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner', 'cashier')
 def register_payment(id):
     """Registrar el pago de un pedido (modal caja registradora).
 
@@ -263,6 +289,7 @@ def register_payment(id):
 @orders_bp.route('/<int:id>/cancel', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def cancel(id):
     """Cancelar pedido"""
     restaurant = get_current_restaurant()
@@ -291,6 +318,7 @@ def receipt(id):
 @orders_bp.route('/<int:id>/delete', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def delete(id):
     """Eliminar pedido permanentemente"""
     restaurant = get_current_restaurant()

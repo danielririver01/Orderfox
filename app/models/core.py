@@ -93,6 +93,16 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     # v2.0.0: ID de Clerk para lookup desde JWT (Scanner IA)
     clerk_id = db.Column(db.String(100), unique=True, nullable=True, index=True)
+    # v2.1.0: Sistema de roles. Valores: owner | cashier | waiter.
+    # Todos los usuarios existentes quedan como 'owner' vía server_default.
+    role = db.Column(db.String(20), default='owner', nullable=False, server_default='owner')
+    # PIN (hash) solo para empleados (cashier/waiter). El dueño no tiene PIN.
+    pin_hash = db.Column(db.String(255), nullable=True)
+    # v2.1.3: Protección contra fuerza bruta de PIN.
+    failed_pin_attempts = db.Column(db.Integer, default=0, server_default='0', nullable=False)
+    locked_until = db.Column(AwareDateTime, nullable=True)
+    # Permite desactivar empleados sin borrarlos. El dueño siempre queda activo.
+    is_active = db.Column(db.Boolean, default=True, server_default='1', nullable=False)
 
     # Relación con Restaurant
     restaurant = db.relationship('Restaurant', backref=db.backref('users', lazy=True, cascade='all, delete-orphan'))

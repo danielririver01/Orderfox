@@ -94,6 +94,9 @@ class OrderService:
     @staticmethod
     def create_order(restaurant_id, order_data, ip_address=None):
         """Core order creation logic shared by all entry points."""
+
+        customer_name = (order_data.get('customer_name') or '').strip()
+
         order_number = OrderService.generate_order_number(restaurant_id)
         expiry_hours = order_data.get('pending_expiry_hours', 24)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=expiry_hours)
@@ -101,7 +104,7 @@ class OrderService:
         order = Order(
             restaurant_id=restaurant_id,
             order_number=order_number,
-            customer_name=order_data.get('customer_name', 'Cliente'),
+            customer_name=customer_name,
             customer_phone=order_data.get('customer_phone', ''),
             notes=order_data.get('notes', ''),
             total=0,

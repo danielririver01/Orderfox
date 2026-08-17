@@ -1,10 +1,16 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from app.forms import CategoryForm
-from app.utils.auth import require_auth, require_active
+from app.utils.auth import require_auth, require_active, require_role_check
 from app.utils.restaurant import get_current_restaurant
 from app.services.category_service import CategoryService
 
 categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
+
+
+@categories_bp.before_request
+def _require_dashboard_owner():
+    """Todas las rutas de categorías son del dueño: bloquea empleados (v2.1.1)."""
+    return require_role_check('owner')
 
 @categories_bp.route('/')
 @require_auth

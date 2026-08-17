@@ -5,10 +5,11 @@
 {% block content %}
 <!-- Custom Style for Dashboard -->
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
 <div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
 
-    <!-- HERO NARRATIVO -->
+    <!-- HERO -->
     <header class="mb-6 md:mb-8">
         <div class="flex justify-between items-start mb-4">
             <div class="flex flex-col">
@@ -47,14 +48,12 @@
             </div>
         </div>
 
-        <!-- Numero grande: ventas del dia/mes + delta -->
-        <div class="flex items-baseline gap-3 flex-wrap">
-            <div class="flex items-baseline gap-2">
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500" id="hero-label">HOY LLEVAS</span>
-                <span id="hero-sales" class="text-2xl md:text-3xl font-black text-white tracking-tight">
-                    ${{ "{:,.0f}".format(total_sales).replace(",", ".") }}
-                </span>
-            </div>
+        <!-- Mes + Ventas/Cobrado hoy -->
+        <div class="flex items-center gap-3 flex-wrap mb-2">
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500" id="hero-label">HOY LLEVAS</span>
+            <span id="hero-sales" class="text-2xl md:text-3xl font-black text-white tracking-tight">
+                ${{ "{:,.0f}".format(total_sales).replace(",", ".") }}
+            </span>
             {% if comparative.delta_pct is not none %}
             <span id="hero-delta"
                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
@@ -64,6 +63,20 @@
             </span>
             {% endif %}
         </div>
+        {% if cobrado_hoy > 0 or total_sales > 0 %}
+        {% if cobrado_hoy < total_sales %}
+        <div class="flex items-center gap-4 text-[11px] font-bold text-gray-500">
+            <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
+            <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
+            <span class="text-[#FF7A29]">&#x26A0; ${{ "{:,.0f}".format(total_sales - cobrado_hoy).replace(",", ".") }} sin cobrar</span>
+        </div>
+        {% elif cobrado_hoy > total_sales %}
+        <div class="flex items-center gap-4 text-[11px] font-bold text-gray-500">
+            <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
+            <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
+        </div>
+        {% endif %}
+        {% endif %}
     </header>
 
     <!-- SECCION: NECESITA ATENCION -->
@@ -132,48 +145,106 @@
         </div>
     </div>
 
-    <!-- CONTADORES (3 cards) -->
+    <!-- 3 CONTADORES (fila, mismo tamaño) -->
     <section class="mb-6 md:mb-8" aria-label="Metricas Operativas">
         <div class="grid grid-cols-3 gap-2 md:gap-4">
             <a href="#atencion"
-                class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-orange-100 dark:border-orange-500/10 shadow-sm flex flex-col items-center transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <span class="text-[8px] md:text-[10px] font-black uppercase text-orange-600/60 dark:text-orange-400/60 tracking-widest">Pendientes</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ pending_count }}</span>
-                <span class="text-[8px] md:text-[9px] font-bold text-gray-400 dark:text-gray-500 mt-0.5">{{ pending_count }} esperando confirmaci&#x00F3;n</span>
+                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
+                style="background: rgba(255,122,41,0.12);">
+                <span class="text-[8px] md:text-[10px] font-black uppercase tracking-widest" style="color: #FF7A29;">Pendientes</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-white">{{ pending_count }}</span>
+                <span class="text-[8px] md:text-[9px] font-bold mt-0.5" style="color: rgba(255,122,41,0.5);">{{ pending_count }} esperando</span>
             </a>
             <div
-                class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-blue-100 dark:border-blue-500/10 shadow-sm flex flex-col items-center">
-                <span class="text-[8px] md:text-[10px] font-black uppercase text-blue-600/60 dark:text-blue-400/60 tracking-widest">Confirmados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ confirmed_count }}</span>
+                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center min-h-[100px] md:min-h-[120px]"
+                style="background: rgba(48,164,108,0.12);">
+                <span class="text-[8px] md:text-[10px] font-black uppercase tracking-widest" style="color: #30A46C;">Confirmados</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-white">{{ confirmed_count }}</span>
             </div>
             <div
-                class="bg-white dark:bg-[#141414] p-3 md:p-5 rounded-xl border border-green-100 dark:border-green-500/10 shadow-sm flex flex-col items-center">
-                <span class="text-[8px] md:text-[10px] font-black uppercase text-green-600/60 dark:text-green-400/60 tracking-widest">Entregados</span>
-                <span class="text-xl md:text-2xl font-black mt-1 text-text-main dark:text-white">{{ delivered_count }}</span>
+                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center min-h-[100px] md:min-h-[120px]"
+                style="background: rgba(59,130,246,0.12);">
+                <span class="text-[8px] md:text-[10px] font-black uppercase tracking-widest" style="color: #3B82F6;">Entregados</span>
+                <span class="text-xl md:text-2xl font-black mt-1 text-white">{{ delivered_count }}</span>
             </div>
         </div>
     </section>
 
-    <!-- TICKET PROMEDIO + PLATO ESTRELLA -->
-    <section class="mb-6 md:mb-8" aria-label="Resumen del dia">
-        <div class="grid grid-cols-2 gap-2 md:gap-4">
-            <div class="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
-                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Ticket promedio</span>
-                <p id="hero-ticket" class="text-lg font-black text-white mt-1 tracking-tight">
-                    {% if comparative.current_orders > 0 %}
-                        ${{ "{:,.0f}".format((total_sales / comparative.current_orders)|int).replace(",", ".") }}
-                    {% else %}
-                        $0
-                    {% endif %}
-                </p>
+    <!-- ALERTA: PEDIDOS EXPIRADOS (solo si hay) -->
+    {% if expired_count > 0 %}
+    <div class="mb-6 md:mb-8 p-3 md:p-4 rounded-xl flex items-center gap-3"
+         style="background: #2D1A0A; border: 1px solid #FF7A29;">
+        <span class="text-lg md:text-xl">⚠</span>
+        <span class="text-sm md:text-base font-bold" style="color: #FF7A29;">
+            {{ expired_count }} pedido{{ 's' if expired_count > 1 else '' }}
+            expiró{{ 'ron' if expired_count > 1 else '' }} hoy sin ser confirmado{{ 's' if expired_count > 1 else '' }}
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- GRAFICAS: BARRAS + DONA (2 columnas desktop) -->
+    <section class="mb-6 md:mb-8" aria-label="Gráficas">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+            <!-- Ventas semana -->
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Ventas semana</span>
+                    <div id="chart-mode-toggle" class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
+                        <button id="chart-mode-money"
+                            class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black"
+                            onclick="setChartMode('money')">$</button>
+                        <button id="chart-mode-orders"
+                            class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300"
+                            onclick="setChartMode('orders')">#</button>
+                    </div>
+                </div>
+                <div class="w-full h-[160px] md:h-[200px]">
+                    <canvas id="weekly-bar-chart"></canvas>
+                </div>
             </div>
-            <div class="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
-                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Plato estrella (30d)</span>
-                {% if top_product %}
-                <p class="text-lg font-black text-white mt-1 tracking-tight truncate">{{ top_product.name }}</p>
+            <!-- Distribución pedidos (dona) -->
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col items-center justify-center">
+                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-2">Distribuci&#x00F3;n pedidos</span>
+                {% if pending_count == 0 and confirmed_count == 0 and delivered_count == 0 %}
+                    <p class="text-sm font-bold text-gray-500">Sin datos a&#x00FAn</p>
                 {% else %}
-                <p class="text-sm font-bold text-gray-500 mt-2">Sin datos aun</p>
+                    <div class="w-full h-[160px] md:h-[200px] flex items-center justify-center">
+                        <canvas id="orders-pie-chart"></canvas>
+                    </div>
                 {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- PRODUCTOS + PLACEHOLDER (2 columnas desktop) -->
+    <section class="mb-6 md:mb-8" aria-label="Productos y más">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+            <!-- Productos más vendidos -->
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Productos m&#x00E1;s vendidos</span>
+                    <div class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
+                        <button id="products-mode-today"
+                            class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300"
+                            onclick="setProductsMode('today')">Hoy</button>
+                        <button id="products-mode-30d"
+                            class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black"
+                            onclick="setProductsMode('30d')">30d</button>
+                    </div>
+                </div>
+                <div id="top-products-list" class="space-y-2">
+                    <p class="text-sm font-bold text-gray-500">Cargando...</p>
+                </div>
+            </div>
+            <!-- Tendencia de ingresos -->
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Tendencia de ingresos</span>
+                    <span class="text-[8px] font-bold text-gray-500">Últimos 30 días</span>
+                </div>
+                <div class="w-full h-[160px] md:h-[200px]">
+                    <canvas id="revenue-trend-chart"></canvas>
+                </div>
             </div>
         </div>
     </section>
@@ -220,17 +291,72 @@
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
+<!-- PIE CHART (rendered from Jinja2 values) -->
+{% if pending_count > 0 or confirmed_count > 0 or delivered_count > 0 %}
 <script>
 (function() {
-    const card = document.getElementById('insights-event-card');
-    const title = document.getElementById('event-card-title');
-    const preview = document.getElementById('event-card-preview');
-    const analyzeBtn = document.getElementById('event-card-analyze');
-    const dismissBtn = document.getElementById('event-card-dismiss');
-    const sidebarBadge = document.getElementById('sidebar-insights-badge');
-    const mobileBadge = document.getElementById('mobile-insights-badge');
-    let currentEventId = null;
-    let analyzing = false;
+    var ctx = document.getElementById('orders-pie-chart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendientes', 'Confirmados', 'Entregados'],
+            datasets: [{
+                data: [{{ pending_count }}, {{ confirmed_count }}, {{ delivered_count }}],
+                backgroundColor: ['#FF7A29', '#30A46C', '#3B82F6'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#9CA3AF',
+                        font: { size: 10, weight: 'bold' },
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        borderRadius: 3,
+                        useBorderRadius: true,
+                        padding: 8
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15,15,16,0.9)',
+                    titleFont: { weight: 'bold', size: 11 },
+                    bodyFont: { size: 11 },
+                    padding: 8,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.label + ': ' + ctx.raw + ' pedidos';
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endif %}
+
+<!-- INSIGHTS EVENT CARD -->
+<script>
+(function() {
+    var card = document.getElementById('insights-event-card');
+    var title = document.getElementById('event-card-title');
+    var preview = document.getElementById('event-card-preview');
+    var analyzeBtn = document.getElementById('event-card-analyze');
+    var dismissBtn = document.getElementById('event-card-dismiss');
+    var sidebarBadge = document.getElementById('sidebar-insights-badge');
+    var mobileBadge = document.getElementById('mobile-insights-badge');
+    var currentEventId = null;
+    var analyzing = false;
     function setBadge(show) {
         if (sidebarBadge) sidebarBadge.classList.toggle('hidden', !show);
         if (mobileBadge) mobileBadge.classList.toggle('hidden', !show);

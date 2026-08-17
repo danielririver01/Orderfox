@@ -36,7 +36,7 @@ from app.services.cash_register_service import (
 )
 from app.services.insights import conversation_service as cs
 from app.services.insights import prompt_builder
-from app.utils.auth import require_active, require_auth
+from app.utils.auth import require_active, require_auth, require_role
 from app.utils.restaurant import get_current_restaurant
 
 cash_register_bp = Blueprint('cash_register', __name__, url_prefix='/cash-register')
@@ -45,6 +45,7 @@ cash_register_bp = Blueprint('cash_register', __name__, url_prefix='/cash-regist
 @cash_register_bp.route('/')
 @require_auth
 @require_active
+@require_role('owner', 'cashier')
 def index():
     """Página principal del Centro de Caja."""
     restaurant = get_current_restaurant()
@@ -56,6 +57,7 @@ def index():
 @cash_register_bp.route('/api/summary')
 @require_auth
 @require_active
+@require_role('owner')
 def api_summary():
     """Resumen + desglose por método de un periodo."""
     restaurant = get_current_restaurant()
@@ -82,6 +84,7 @@ def api_summary():
 @cash_register_bp.route('/api/orders')
 @require_auth
 @require_active
+@require_role('owner')
 def api_orders():
     """Pedidos pagados en el periodo (filtro por método + búsqueda)."""
     restaurant = get_current_restaurant()
@@ -112,6 +115,7 @@ def api_orders():
 @cash_register_bp.route('/api/pending')
 @require_auth
 @require_active
+@require_role('owner', 'cashier')
 def api_pending():
     """Pedidos activos sin pago (pendientes de cobrar)."""
     restaurant = get_current_restaurant()
@@ -125,6 +129,7 @@ def api_pending():
 @cash_register_bp.route('/api/closes')
 @require_auth
 @require_active
+@require_role('owner')
 def api_closes():
     """Historial de cierres recientes."""
     restaurant = get_current_restaurant()
@@ -138,6 +143,7 @@ def api_closes():
 @cash_register_bp.route('/close', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def close():
     """Crear un cierre de caja para un rango. Responde JSON (fetch del JS)."""
     restaurant = get_current_restaurant()
@@ -178,6 +184,7 @@ def close():
 @cash_register_bp.route('/close/<int:close_id>/print')
 @require_auth
 @require_active
+@require_role('owner')
 def print_close(close_id):
     """Vista imprimible de un cierre."""
     restaurant = get_current_restaurant()
@@ -203,6 +210,7 @@ def print_close(close_id):
 @cash_register_bp.route('/copilot/conversations', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def copilot_create_conversation():
     """Crea una conversación de Copilot de Caja."""
     user = session.get('user_id')
@@ -234,6 +242,7 @@ def copilot_create_conversation():
 @cash_register_bp.route('/copilot/conversations', methods=['GET'])
 @require_auth
 @require_active
+@require_role('owner')
 def copilot_list_conversations():
     """Lista las conversaciones de Copilot de Caja del usuario."""
     user = session.get('user_id')
@@ -266,6 +275,7 @@ def copilot_list_conversations():
 @cash_register_bp.route('/copilot/conversations/<int:cid>', methods=['GET'])
 @require_auth
 @require_active
+@require_role('owner')
 def copilot_get_conversation(cid):
     """Devuelve una conversación de Copilot de Caja con su historial de mensajes."""
     user = session.get('user_id')
@@ -304,6 +314,7 @@ def copilot_get_conversation(cid):
 @cash_register_bp.route('/copilot/conversations/<int:cid>/messages', methods=['POST'])
 @require_auth
 @require_active
+@require_role('owner')
 def copilot_send_message(cid):
     """Envía un mensaje al Copilot de Caja y obtiene su respuesta."""
     user = session.get('user_id')

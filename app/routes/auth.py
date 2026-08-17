@@ -83,6 +83,11 @@ def sync_clerk():
             'error_code': plan_or_error.get('error_code', 'REGISTRATION_ERROR')
         }), 500
 
+    # v2.1.2: última acción de login gana. Si en este navegador había una
+    # sesión de empleado (employee_id), el dueño la toma al autenticarse.
+    session.pop('employee_id', None)
+    session.pop('employee_login', None)
+    session.pop('employee_slug', None)
     session['user_id'] = user.id
     session['username'] = user.username
     session['clerk_id'] = clerk_id
@@ -142,6 +147,16 @@ def sync_clerk_redirect():
 def login():
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])
+        # v2.1.1: cookie de sesión VIEJA (pre-fix) donde el login del empleado
+        # guardaba user_id. Un empleado (tiene PIN) nunca debe ser tratado como
+        # dueño: limpiar la sesión y mostrar el login del admin, para no quedar
+        # atrapado en el loop raíz → dashboard → portal del empleado.
+        if user is not None and user.pin_hash is not None:
+            session.pop('user_id', None)
+            session.pop('username', None)
+            session.pop('clerk_id', None)
+            form = LoginForm()
+            return render_template('auth/index.html', form=form)
         # Cuenta logueada sin restaurante: NO ir a dashboard.index (require_active
         # lanza "Tu cuenta no está asociada a ningún restaurante" y redirige en
         # loop). Llevar al flujo correcto según su estado.
@@ -160,6 +175,10 @@ def login():
             form.email.data, form.password.data
         )
         if user:
+            # v2.1.2: última acción de login gana. Si en este navegador había
+            # una sesión de empleado, el dueño la toma al iniciar sesión.
+            session.pop('employee_id', None)
+            session.pop('employee_login', None)
             session['user_id'] = user.id
             session['username'] = user.username
 
@@ -302,9 +321,12 @@ def setup_account():
                 email, form.phone.data
             )
             if blocked:
+                # No dejar al usuario atascado en setup-account con plan trial:
+                # redirigir a /planes para que elija un plan pago. register()
+                # con user_id en sesión lo devolverá aquí con el plan ya elegido.
+                session['trial_blocked'] = True
                 flash(msg, 'warning')
-                return render_template('auth/register_setup.html', form=form,
-                                       plan=selected_plan)
+                return redirect(url_for('auth.plans'))
 
         restaurant, error_msg = AuthService.create_restaurant_from_setup(
             user=user,

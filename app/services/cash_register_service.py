@@ -208,10 +208,14 @@ class CashRegisterService:
 
     @staticmethod
     def get_pending(restaurant_id):
-        """Pedidos activos sin pago registrado (pending/confirmed)."""
+        """Pedidos sin pago registrado (pending/confirmed/delivered).
+
+        Incluye delivered SIN pago: un pedido entregado que nadie cobró no
+        debe desaparecer del radar — el cajero tiene que poder cobrarlo.
+        """
         orders = Order.query.filter(
             Order.restaurant_id == restaurant_id,
-            Order.status.in_(['pending', 'confirmed']),
+            Order.status.in_(['pending', 'confirmed', 'delivered']),
             Order.payment_method.is_(None),
         ).order_by(Order.created_at.asc()).all()
 
