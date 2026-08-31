@@ -267,6 +267,9 @@ class SubscriptionService:
 
         if status == 'approved':
             restaurant.is_active = True
+            if restaurant.subscription_state in ('dormant', 'cancellation_pending'):
+                restaurant.subscription_state = 'active'
+                restaurant.cancellation_requested_at = None
             if plan_type and plan_type in ('emprendedor', 'crecimiento', 'elite'):
                 restaurant.plan_type = plan_type
             db.session.commit()
@@ -315,6 +318,9 @@ class SubscriptionService:
 
         # Activate restaurant
         restaurant.is_active = True
+        if restaurant.subscription_state in ('dormant', 'cancellation_pending'):
+            restaurant.subscription_state = 'active'
+            restaurant.cancellation_requested_at = None
         if plan_type and plan_type in ('emprendedor', 'crecimiento', 'elite'):
             restaurant.plan_type = plan_type
 

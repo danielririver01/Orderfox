@@ -14,7 +14,7 @@
    - **Copilot VZ**: asistente conversacional con clasificador híbrido (consultas `quick` directas a SQL + análisis profundo con DeepSeek), wallet de tokens, compresión de contexto en 2 fases y prompt versionado.
    - **Scanner IA**: escáner de facturas/compras para control de gastos (servicio externo integrado vía JWT/API key).
 
-3. **Ingresos recurrentes en dos frentes** — Suscripción mensual (4 planes: Trial 90 días, Emprendedor, Crecimiento, Élite) + recargas de tokens IA. El pago con Mercado Pago es idempotente (webhooks con verificación de firma HMAC-SHA256 y protección de race conditions).
+3. **Ingresos recurrentes en dos frentes** — Suscripción mensual (4 planes: Trial 60 días, Emprendedor, Crecimiento, Élite) + recargas de tokens IA. El pago con Mercado Pago es idempotente (webhooks con verificación de firma HMAC-SHA256 y protección de race conditions).
 
 4. **Seguridad auditada y endurecida** — Suite de seguridad activa: k6 (headers + JWT audit), OWASP ZAP (DAST), Gitleaks (secretos, pre-commit), Trivy (Docker), pip-audit/npm audit (0 HIGH). Locks pesimistas `SELECT FOR UPDATE` cierran TOCTOU en tokens IA y pagos.
 
@@ -24,7 +24,7 @@
 
 7. **Pensado para Colombia** — Mercado Pago (pasarela líder), precios en COP con formato colombiano, interfaz en español, notificaciones vía ntfy.sh sin costo por SMS, y soporte de zona horaria de Colombia (UTC + helpers de conversión).
 
-8. **Prueba gratuita sin riesgo** — 90 días gratis con todas las funciones, sin tarjeta de crédito, con sistema anti-reuso de trial por email/WhatsApp (TrialHistory).
+8. **Prueba gratuita sin riesgo** — 60 días gratis con todas las funciones, sin tarjeta de crédito, con sistema anti-reuso de trial por email/WhatsApp (TrialHistory).
 
 9. **Un restaurante por cuenta con aislamiento** — Cada negocio tiene su espacio, menú, mesas y configuración propios.
 
@@ -103,10 +103,10 @@
 ## Estrategias derivadas
 
 ### Crecimiento (Fortalezas + Oportunidades)
-- **Activar el Scanner IA como argumento de venta** del trial de 90 días: quitarlo de "oculto" cuando haya infraestructura y usarlo como gancho de conversión.
+- **Activar el Scanner IA como argumento de venta** del trial de 60 días: quitarlo de "oculto" cuando haya infraestructura y usarlo como gancho de conversión.
 - Usar Copilot VZ como diferenciador en landing y demo (análisis en español + contexto colombiano).
 - Integrar WhatsApp Business API para notificaciones/confirmaciones en el canal dominante.
-- Aprovechar la prueba de 90 días sin tarjeta para bajar la fricción de compra.
+- Aprovechar la prueba de 60 días sin tarjeta para bajar la fricción de compra.
 
 ### Mejora (Debilidades + Oportunidades)
 - Subir la cobertura de tests al 40-50% (cash register, insights, rewards, pagos).

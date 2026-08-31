@@ -31,7 +31,7 @@ from app.services.insights import conversation_service as cs
 @pytest.fixture(autouse=True)
 def _mock_data_context(monkeypatch):
     """build_context usa dayofweek() (MySQL), que no existe en SQLite."""
-    def _fake_build_context(restaurant_id, days=90):
+    def _fake_build_context(restaurant_id, days=60):
         return {
             'period_days': days,
             'currency': 'COP',

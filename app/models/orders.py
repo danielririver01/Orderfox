@@ -59,6 +59,34 @@ class OrderItem(db.Model):
         return f'<OrderItem {self.product_name} x{self.quantity}>'
 
 
+class OrderEvent(db.Model):
+    """Traza de eventos de un pedido (trazabilidad completa, v1.4.0).
+
+    - `order_id` → CASCADE: si se elimina el pedido, se eliminan sus eventos.
+    - `actor_id` → SET NULL: si se borra el usuario, la traza sobrevive.
+    - `event_data` es la columna `metadata` (JSON); el atributo se llama
+      `event_data` porque `metadata` está reservado por la API declarativa
+      de SQLAlchemy.
+    """
+    __tablename__ = 'order_events'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id', ondelete='CASCADE'),
+                         nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    actor_role = db.Column(db.String(20), nullable=True)
+    event_type = db.Column(db.String(30), nullable=False)
+    event_data = db.Column('metadata', db.JSON, nullable=True)
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    order = db.relationship('Order', backref=db.backref('events', lazy=True,
+                                                        cascade='all, delete-orphan'))
+    actor = db.relationship('User', backref=db.backref('order_events', lazy=True))
+
+    def __repr__(self):
+        return f'<OrderEvent {self.event_type} order={self.order_id}>'
+
+
 class OrderCounter(db.Model):
     """Atomic counter for order numbers per restaurant per day (P5)."""
     __tablename__ = 'order_counters'

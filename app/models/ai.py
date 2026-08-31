@@ -1,7 +1,11 @@
 """
 Modelos del módulo Copilot VZ (conversaciones, mensajes, eventos de negocio).
+
+Incluye PlatformBenchmark: snapshots anónimos (medianas) para benchmarking
+entre restaurantes con k-anonymity.
 """
 
+import json
 from datetime import datetime, timezone
 
 from app.models import AwareDateTime, db
@@ -103,3 +107,38 @@ class AILlmCall(db.Model):
 
     def __repr__(self):
         return f'<AILlmCall {self.id} source={self.source} model={self.model}>'
+
+
+class PlatformBenchmark(db.Model):
+    """
+    Snapshot de benchmarks ANONIMIZADOS de la plataforma (solo medianas).
+
+    Un registro por cohorte ('global' o cuisine_type del restaurante).
+    Se recalcula cada noche vía APScheduler. Solo se publica una cohorte si
+    cumple k-anonymity (>= K_MIN restaurantes con datos suficientes), y se
+    usan medianas para que ningún restaurante atípico distorsione el valor
+    ni permita inferir datos de un competidor individual.
+
+    El contenido real vive en metrics_json (dict con las métricas agregadas);
+    las columnas escalares existen para consultas y depuración rápidas.
+    """
+
+    __tablename__ = 'platform_benchmarks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Cohorte: 'global' o el cuisine_type del grupo de restaurantes.
+    cohort = db.Column(db.String(30), nullable=False, unique=True, index=True)
+    restaurant_count = db.Column(db.Integer, nullable=False, default=0)
+    period_days = db.Column(db.Integer, nullable=False, default=30)
+    metrics_json = db.Column(db.Text, nullable=False)
+    computed_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<PlatformBenchmark {self.cohort} n={self.restaurant_count}>'
+
+    @property
+    def metrics(self):
+        try:
+            return json.loads(self.metrics_json)
+        except (ValueError, TypeError):
+            return {}

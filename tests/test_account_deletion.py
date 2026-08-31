@@ -1,14 +1,16 @@
 """
-Tests de las 3 correcciones de eliminación de cuenta (Bug 1-3).
+Tests de las correcciones de eliminación de cuenta y cancelación diferida.
 
 Cubre:
-- Bug 1: la ruta web /dashboard/delete-account responde success: True y el
-  frontend redirige a /login.
+- Bug 1: la ruta web /dashboard/cancel-account responde success: True con
+  cancelación diferida (cancellation_pending, acceso hasta vencimiento).
 - Bug 2: DELETE /v1/users/{clerk_id} se llama ANTES de borrar en DB; si Clerk
   falla NO se borra la DB (sin estado intermedio); 404 = éxito.
 - Bug 3: sync_or_create_user no regala trial a correos con TrialHistory;
   create_restaurant_from_setup marca has_used_trial=True; el response de
   /api/sync-clerk distingue is_first_time.
+- Cancelación diferida: cancelAccount() → cancellation_pending (is_active=True),
+  resumeSubscription() → active, lifecycle vencido → dormant.
 """
 from datetime import datetime, timezone
 
@@ -39,7 +41,7 @@ class TestDeleteAccountRoute:
         ser = URLSafeTimedSerializer(current_app.secret_key, salt='wtf-csrf-token')
 
         resp = client.post(
-            '/dashboard/delete-account',
+            '/dashboard/cancel-account',
             headers={'X-CSRFToken': ser.dumps(raw)},
         )
         assert resp.status_code == 200
@@ -47,8 +49,12 @@ class TestDeleteAccountRoute:
         assert data['success'] is True
         assert 'message' in data
 
-        # La cuenta quedó borrada en DB
-        assert Restaurant.query.get(sample_restaurant.id) is None
+        # La cuenta quedó con cancelación diferida (cancellation_pending):
+        # NO se borra, is_active sigue True, acceso hasta vencimiento.
+        r = Restaurant.query.get(sample_restaurant.id)
+        assert r is not None
+        assert r.is_active is True
+        assert r.subscription_state == 'cancellation_pending'
 
 
 # ───────────── Bug 2: orden Clerk → DB ─────────────
@@ -253,11 +259,12 @@ class TestE2EAccountLifecycle:
     """Flujo completo sin intervención manual (Clerk mockeado):
 
     1. Crear cuenta nueva → recibe trial (restaurante trial + TrialHistory).
-    2. Eliminar cuenta → response success: True (frontend redirige a /login),
-       Clerk recibe DELETE, DB borrada.
-    3. Re-registro del MISMO email → NO recibe trial, redirige a /planes.
-    4. El usuario fue eliminado en Clerk (DELETE /v1/users/{id} llamado).
-    5. TrialHistory persiste después de la eliminación.
+    2. Cancelar cuenta → response success: True (cancelación diferida:
+       subscription_state='cancellation_pending', is_active=True, acceso
+       hasta vencimiento, NO se llama a DELETE en Clerk).
+    3. Re-sync del MISMO email → re-enlaza la cuenta existente (cancellation_pending,
+       sigue activa, reactivable).
+    4. TrialHistory persiste después de la cancelación.
     """
 
     @staticmethod
@@ -351,27 +358,30 @@ class TestE2EAccountLifecycle:
         assert restaurant.has_used_trial is True
         assert TrialHistory.query.filter_by(email='e2e@test.com').first() is not None
 
-        # ── Paso 2: eliminar cuenta → success: True (→ /login) ──
-        r_del = client.post('/dashboard/delete-account', headers=self._csrf_headers(client))
+        # ── Paso 2: cancelar cuenta → success: True ──
+        r_del = client.post('/dashboard/cancel-account', headers=self._csrf_headers(client))
         data_del = r_del.get_json()
         assert r_del.status_code == 200
         assert data_del['success'] is True
         assert 'message' in data_del
 
-        # ── Paso 4: el usuario fue eliminado en Clerk ──
-        assert any('user_e2e_1' in u for u in deleted_clerk_urls), \
-            f"DELETE a Clerk nunca se llamó: {deleted_clerk_urls}"
-
-        # DB borrada (usuario + restaurante)
-        assert User.query.filter_by(email='e2e@test.com').first() is None
-        assert Restaurant.query.get(restaurant.id) is None
+        # Cancelación diferida: la cuenta pasa a cancellation_pending
+        # (is_active=True, acceso hasta vencimiento). No se borra nada.
+        cancelled = Restaurant.query.get(restaurant.id)
+        assert cancelled is not None
+        assert cancelled.is_active is True
+        assert cancelled.subscription_state == 'cancellation_pending'
+        assert User.query.filter_by(email='e2e@test.com').first() is not None
+        assert deleted_clerk_urls == []
 
         # ── Paso 5: TrialHistory persiste tras la eliminación ──
         th = TrialHistory.query.filter_by(email='e2e@test.com').first()
         assert th is not None
         assert th.whatsapp_phone == '573009990001'
 
-        # ── Paso 3: re-registro del MISMO email → NO trial, va a /planes ──
+        # ── Paso 3: re-sync del MISMO email tras cancelar ──
+        # Con cancelación diferida la cuenta NO se borró: el mismo email re-enlaza
+        # a la cuenta existente (cancellation_pending, sigue activa).
         r3 = client.post('/api/sync-clerk', json={
             'clerk_id': 'user_e2e_2',
             'email': 'e2e@test.com',
@@ -381,11 +391,14 @@ class TestE2EAccountLifecycle:
         data3 = r3.get_json()
         assert r3.status_code == 200
         assert data3['success'] is True
-        assert data3['trial_blocked'] is True
-        assert data3['redirect_url'] == '/planes'
-        assert 'Ya usaste tu período de prueba gratuito' in data3['message']
-        # No se creó un usuario local nuevo con trial
-        assert User.query.filter_by(email='e2e@test.com').first() is None
+        # Usuario existente (no nuevo): re-enlaza la cuenta y redirige al dashboard.
+        assert data3['redirect_url'].endswith('/dashboard/')
+        # La cuenta sigue existiendo con cancelación diferida (reactivable)
+        user3 = User.query.filter_by(email='e2e@test.com').first()
+        assert user3 is not None
+        assert user3.restaurant is not None
+        assert user3.restaurant.is_active is True
+        assert user3.restaurant.subscription_state == 'cancellation_pending'
 
 
 # ───────────── Bug 1b: redirect post-eliminación apunta a /login que NO existe ─────────────

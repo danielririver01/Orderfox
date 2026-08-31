@@ -2,7 +2,7 @@
 seed_demo_data.py — Genera datos ficticios para probar Copilot VZ.
 
 Crea categorías, productos, extras (modifiers) y ~120 pedidos repartidos en
-los últimos 90 días con patrones realistas:
+los últimos 60 días con patrones realistas:
   • Picos de venta a la hora del almuerzo (12-14) y cena (19-21).
   • Fines de semana más fuertes que los lunes.
   • Productos "top" que venden más.
@@ -122,7 +122,7 @@ def seed(restaurant):
     print(f"   ✓ {len(CATALOG)} categorías, {len(product_objs)} productos, "
           f"{sum(len(v) for v in modifier_map.values())} extras.")
 
-    # 2) Pedidos en los últimos 90 días.
+    # 2) Pedidos en los últimos 60 días.
     weight_by_name = {n: w for (_c, items) in CATALOG for (n, _p, w) in items}
     prod_by_name = {p.name: p for p in product_objs}
     prod_names = list(prod_by_name.keys())
@@ -142,7 +142,7 @@ def seed(restaurant):
     cancelled = 0
     oldest = today
 
-    for d in range(90, -1, -1):
+    for d in range(60, -1, -1):
         day = today - timedelta(days=d)
         # Garantizar datos en hoy y ayer para que las consultas "Hoy"/"Ayer"
         # del Copilot VZ siempre devuelvan información en la demo.

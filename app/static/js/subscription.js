@@ -1,5 +1,8 @@
 // JavaScript para la vista de suscripción
 
+// URL de login (expuesta por subscription.html vía window.VELZIA_LOGIN_URL)
+const LOGIN_URL = window.VELZIA_LOGIN_URL || '/';
+
 // Leer cookie por nombre
 function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -8,60 +11,60 @@ function getCookie(name) {
     return '';
 }
 
-// Abrir modal de eliminación de cuenta
-function openAccountDeleteModal() {
-    const modal = document.getElementById('accountDeleteModal');
+// Abrir modal de cancelación de cuenta
+function openAccountCancelModal() {
+    const modal = document.getElementById('accountCancelModal');
     if (modal) {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     } else {
-        console.error('ERROR: No se encontró el elemento con id="accountDeleteModal"');
+        console.error('ERROR: No se encontró el elemento con id="accountCancelModal"');
     }
 }
 
-// Cerrar modal de eliminación de cuenta
-function closeAccountDeleteModal() {
-    const modal = document.getElementById('accountDeleteModal');
+// Cerrar modal de cancelación de cuenta
+function closeAccountCancelModal() {
+    const modal = document.getElementById('accountCancelModal');
     if (modal) {
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
-        const checkbox = document.getElementById('confirmAccountDelete');
+        const checkbox = document.getElementById('confirmAccountCancel');
         if (checkbox) {
             checkbox.checked = false;
         }
-        updateDeleteButton();
+        updateCancelButton();
     }
 }
 
-// Actualizar estado del botón de eliminar
-function updateDeleteButton() {
-    const checkbox = document.getElementById('confirmAccountDelete');
-    const deleteBtn = document.getElementById('confirmAccountDeleteBtn');
-    if (checkbox && deleteBtn) {
-        deleteBtn.disabled = !checkbox.checked;
+// Actualizar estado del botón de cancelar
+function updateCancelButton() {
+    const checkbox = document.getElementById('confirmAccountCancel');
+    const cancelBtn = document.getElementById('confirmAccountCancelBtn');
+    if (checkbox && cancelBtn) {
+        cancelBtn.disabled = !checkbox.checked;
     }
 }
 
-// Eliminar cuenta
-async function deleteAccount() {
-    const checkbox = document.getElementById('confirmAccountDelete');
+// Cancelar suscripción (cancellation_pending: acceso hasta vencimiento)
+async function cancelAccount() {
+    const checkbox = document.getElementById('confirmAccountCancel');
 
     if (!checkbox || !checkbox.checked) {
         if (window.showToast) {
-            window.showToast('Debes confirmar que entiendes las consecuencias de eliminar tu cuenta', 'error');
+            window.showToast('Debes confirmar que entiendes que tu suscripción se cancelará al vencer', 'error');
         }
         return;
     }
 
-    const deleteBtn = document.getElementById('confirmAccountDeleteBtn');
-    const originalText = deleteBtn.textContent;
+    const cancelBtn = document.getElementById('confirmAccountCancelBtn');
+    const originalText = cancelBtn.textContent;
 
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = 'Eliminando...';
+    cancelBtn.disabled = true;
+    cancelBtn.textContent = 'Cancelando...';
 
     try {
         const csrfToken = getCookie('csrf_token');
-        const response = await fetch('/dashboard/delete-account', {
+        const response = await fetch('/dashboard/cancel-account', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -70,7 +73,6 @@ async function deleteAccount() {
             }
         });
 
-        // Si hubo un redirect a login (sesión expirada), recargar
         if (response.redirected || response.status === 401) {
             window.location.href = '/';
             return;
@@ -80,64 +82,105 @@ async function deleteAccount() {
         try {
             data = await response.json();
         } catch (e) {
-            // Respuesta no es JSON (ej: redirect HTML del servidor)
             window.location.href = '/';
             return;
         }
 
         if (data.success) {
-            deleteBtn.textContent = 'Cuenta eliminada';
-            deleteBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            deleteBtn.classList.add('bg-green-600');
+            closeAccountCancelModal();
+            if (window.showToast) {
+                window.showToast(data.message, 'success');
+            }
             setTimeout(function() {
-                // 1) Cerrar sesión en Clerk (invalida la cookie __session)
-                // 2) Redirigir al login real (url_for('auth.login') → "/") — no
-                //    hardcodear '/login' porque esa ruta no existe (404, Bug fix)
-                const loginUrl = window.VELZIA_LOGIN_URL || '/';
-                if (window.Clerk && typeof window.Clerk.signOut === 'function') {
-                    window.Clerk.signOut().finally(function () {
-                        window.location.href = loginUrl;
-                    });
-                } else {
-                    window.location.href = loginUrl;
-                }
+                window.location.reload();
+            }, 1500);
+        } else {
+            if (window.showToast) {
+                window.showToast(data.message || 'Error al cancelar. Por favor, intenta de nuevo.', 'error');
+            }
+            cancelBtn.disabled = false;
+            cancelBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Error al cancelar suscripción:', error);
+        if (window.showToast) {
+            window.showToast('Error al cancelar. Por favor, intenta de nuevo.', 'error');
+        }
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = originalText;
+    }
+}
+
+// Reanudar suscripción (undo cancellation_pending → active)
+async function resumeSubscription() {
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span> Reactivando...';
+
+    try {
+        const csrfToken = getCookie('csrf_token');
+        const response = await fetch('/dashboard/resume-subscription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            window.location.reload();
+            return;
+        }
+
+        if (data.success) {
+            if (window.showToast) {
+                window.showToast(data.message, 'success');
+            }
+            setTimeout(function() {
+                window.location.reload();
             }, 1000);
         } else {
             if (window.showToast) {
-                window.showToast(data.message || 'Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
+                window.showToast(data.message || 'Error al reactivar. Intenta de nuevo.', 'error');
             }
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = originalText;
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     } catch (error) {
-        console.error('Error al eliminar cuenta:', error);
+        console.error('Error al reactivar suscripción:', error);
         if (window.showToast) {
-            window.showToast('Error al eliminar la cuenta. Por favor, intenta de nuevo.', 'error');
+            window.showToast('Error al reactivar. Intenta de nuevo.', 'error');
         }
-        deleteBtn.disabled = false;
-        deleteBtn.textContent = originalText;
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const checkbox = document.getElementById('confirmAccountDelete');
+    const checkbox = document.getElementById('confirmAccountCancel');
     if (checkbox) {
-        checkbox.addEventListener('change', updateDeleteButton);
+        checkbox.addEventListener('change', updateCancelButton);
     }
 
-    const modal = document.getElementById('accountDeleteModal');
+    const modal = document.getElementById('accountCancelModal');
     if (modal) {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
-                closeAccountDeleteModal();
+                closeAccountCancelModal();
             }
         });
     }
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            closeAccountDeleteModal();
+            closeAccountCancelModal();
         }
     });
 });

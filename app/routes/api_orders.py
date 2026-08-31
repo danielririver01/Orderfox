@@ -4,7 +4,12 @@ from app.models import Order
 from app.utils.auth import require_auth, require_active, require_feature, require_role
 from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.utils.subscription import check_feature_access
-from app.services.order_service import OrderService, PaymentValidationError
+from app.services.order_service import (
+    OrderService,
+    PaymentValidationError,
+    log_event,
+    resolve_actor,
+)
 from app.services.notification_service import notify_new_order
 
 api_orders_bp = Blueprint('api_orders', __name__, url_prefix='/api/orders')
@@ -156,6 +161,9 @@ def create_order():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 400
 
+    actor_id, actor_role = resolve_actor()
+    log_event(order.id, 'order_created', actor_id=actor_id, actor_role=actor_role)
+
     # Pago opcional (modal caja registradora)
     payment_method = data.get('payment_method')
     if payment_method:
@@ -165,6 +173,9 @@ def create_order():
         except (TypeError, ValueError):
             amount = None
         try:
+            log_event(order.id, 'payment_registered', actor_id=actor_id,
+                      actor_role=actor_role,
+                      metadata={'method': payment_method, 'amount': amount})
             OrderService.record_payment(order, payment_method, amount_received=amount)
         except PaymentValidationError as e:
             db.session.rollback()
@@ -212,6 +223,10 @@ def register_payment(id):
         amount = None
 
     try:
+        actor_id, actor_role = resolve_actor()
+        log_event(order.id, 'payment_registered', actor_id=actor_id,
+                  actor_role=actor_role,
+                  metadata={'method': method, 'amount': amount})
         order, change = OrderService.record_payment(order, method, amount_received=amount)
     except PaymentValidationError as e:
         return jsonify({'success': False, 'error': str(e)}), e.status_code
@@ -262,6 +277,17 @@ def change_status(id):
             'error': f'No se puede cambiar de {order.status} a {new_status}'
         }), 400
 
+    actor_id, actor_role = resolve_actor()
+    if order.status == 'cancelled' and new_status == 'pending':
+        log_event(order.id, 'order_restored', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+    elif new_status == 'cancelled':
+        log_event(order.id, 'order_cancelled', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+    else:
+        log_event(order.id, 'status_changed', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+
     OrderService.change_order_status(order, new_status)
 
     return jsonify({
@@ -286,6 +312,11 @@ def cancel_order(id):
     order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order:
         return jsonify({'success': False, 'error': 'Orden no encontrada'}), 404
+
+    actor_id, actor_role = resolve_actor()
+    if order.status != 'cancelled':
+        log_event(order.id, 'order_cancelled', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': 'cancelled'})
 
     success, error = OrderService.cancel_order(order)
     if not success:

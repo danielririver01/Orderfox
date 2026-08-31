@@ -208,7 +208,7 @@ Ver `app/tasks.py`:
 
 | Tarea | Horario | Acción |
 |-------|---------|--------|
-| `delete_inactive_accounts()` | Diario 3:00 AM | Elimina restaurantes inactivos >24h (cascade: users, orders, products) |
+| `manage_subscription_lifecycle()` | Diario 3:00 AM | Marca restaurantes inactivos >30d o expirados >grace period como `dormant` (SIN borrar datos; reactivables en 1 clic) |
 | `expire_pending_orders()` | Cada hora | Marca orders como 'expired' si pasaron expires_at |
 
 ---

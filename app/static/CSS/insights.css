@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════
    Copilot VZ — Velzia Obsidian Design (v2 Stitch)
-   Tokens: --bg-deep, --bg-surface, --primary (#f97316)
+    Tokens: --bg-deep, --bg-surface, --primary (#6366f1)
    ═══════════════════════════════════════════════════ */
 
 /* ── Base ── */
 :root {
-    --primary: #f97316;
+    --primary: #6366f1;
     --bg-deep: #050505;
     --bg-surface: #0f0f10;
     --bg-surface-hover: #161618;
@@ -183,7 +183,7 @@ body {
     color: var(--text-dim);
 }
 .vz-search-input:focus {
-    border-color: rgba(249, 115, 22, 0.5);
+    border-color: rgba(99, 102, 241, 0.5);
 }
 
 /* ── Conversation List ── */
@@ -295,7 +295,7 @@ body {
     background: rgba(255, 255, 255, 0.04);
 }
 .conv-item.active {
-    background: rgba(249, 115, 22, 0.08);
+    background: rgba(99, 102, 241, 0.08);
     color: var(--text-main);
 }
 .conv-item.removing {
@@ -554,7 +554,7 @@ body {
     max-height: 160px;
     resize: vertical;
     background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(249, 115, 22, 0.35);
+    border: 1px solid rgba(99, 102, 241, 0.35);
     border-radius: 12px;
     padding: 0.5rem 0.65rem;
     color: var(--text-main);
@@ -585,8 +585,8 @@ body {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 .vz-glass-composer:focus-within {
-    border-color: rgba(249, 115, 22, 0.3);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.05);
 }
 
 .vz-glass-attach:hover {
@@ -594,7 +594,7 @@ body {
 }
 
 .vz-send-glow {
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
 }
 
 #chat-input {
@@ -638,7 +638,7 @@ body {
     text-transform: uppercase;
 }
 .vz-chip:hover {
-    background: rgba(249, 115, 22, 0.1);
+    background: rgba(99, 102, 241, 0.1);
 }
 
 /* ── Typing indicator ── */
@@ -806,7 +806,7 @@ body {
     padding: 0.625rem 0.625rem 0.625rem 1.25rem;
 }
 .vz-composer-box:focus-within {
-    border-color: rgba(249, 115, 22, 0.5);
+    border-color: rgba(99, 102, 241, 0.5);
 }
 
 /* ── Modals ── */
@@ -847,7 +847,7 @@ body {
     color: var(--text-dim);
 }
 .vz-modal-input:focus {
-    border-color: rgba(249, 115, 22, 0.55);
+    border-color: rgba(99, 102, 241, 0.55);
 }
 
 .vz-modal-btn-ghost,
@@ -894,7 +894,7 @@ body {
     width: 100%;
     max-width: 22rem;
     background: var(--bg-surface);
-    border: 1px solid rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.15);
     border-radius: 24px;
     padding: 1.5rem 1.5rem 1.25rem;
     text-align: center;
@@ -967,8 +967,8 @@ body {
     background: rgba(255, 255, 255, 0.02);
 }
 .vz-ctx-msg.user {
-    border-color: rgba(249, 115, 22, 0.18);
-    background: rgba(249, 115, 22, 0.045);
+    border-color: rgba(99, 102, 241, 0.18);
+    background: rgba(99, 102, 241, 0.045);
 }
 .vz-ctx-head {
     display: flex;
@@ -1129,7 +1129,7 @@ body {
     opacity: 0.75;
 }
 .vz-ctx-item:hover {
-    background: rgba(249, 115, 22, 0.08);
+    background: rgba(99, 102, 241, 0.08);
     color: var(--text-main);
 }
 .vz-ctx-item.danger {
@@ -1147,22 +1147,35 @@ body {
 
 /* ── Toast ── */
 .vz-toast {
-    position: fixed;
+    position: fixed !important;
     left: 50%;
     bottom: 1.5rem;
-    transform: translateX(-50%);
-    z-index: 230;
+    transform: translateX(-50%) translateY(1rem);
+    z-index: 9999;
     background: var(--bg-surface-hover);
-    border: 1px solid rgba(249, 115, 22, 0.35);
+    border: 1px solid rgba(99, 102, 241, 0.35);
     color: var(--text-main);
     font-size: 0.85rem;
     font-weight: 600;
     padding: 0.7rem 1.1rem;
     border-radius: 12px;
     max-width: 90vw;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    flex: none;
+    min-height: auto;
+    max-height: auto;
+    overflow: visible;
 }
 .vz-toast[hidden] {
-    display: none;
+    display: none !important;
+}
+.vz-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
 }
 
 /* ── Onboarding ── */
@@ -1217,13 +1230,13 @@ body {
 }
 .vz-badge-orange {
     color: var(--primary);
-    background: rgba(249, 115, 22, 0.10);
+    background: rgba(99, 102, 241, 0.10);
 }
 .vz-link-orange {
     color: var(--primary);
 }
 .vz-link-orange:hover {
-    color: #fb923c;
+    color: #818cf8;
 }
 
 .vz-btn-primary {
@@ -1237,8 +1250,8 @@ body {
 }
 
 .vz-card-orange {
-    background: rgba(249, 115, 22, 0.06);
-    border: 1px solid rgba(249, 115, 22, 0.20);
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.20);
 }
 
 /* ── Markdown rendering ── */

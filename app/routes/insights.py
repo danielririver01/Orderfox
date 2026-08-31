@@ -187,7 +187,7 @@ def api_get_conversation(cid):
         ctx_meta = context_manager.get_conv_metadata(conv)
         ctx_summary = ctx_meta.get('summary')
         ctx_compressed = ctx_meta.get('compressed', False)
-        context_json = json.dumps(data_service.build_context(conv.restaurant_id, days=90), ensure_ascii=False)
+        context_json = json.dumps(data_service.build_context(conv.restaurant_id, days=60), ensure_ascii=False)
         total, baseline = context_manager.estimate_full_prompt_tokens(
             context_json, messages, '', summary=ctx_summary if ctx_compressed else None
         )
@@ -442,6 +442,31 @@ def api_dismiss_event(eid):
     ev.dismissed_at = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify({'success': True})
+
+
+# ── API: ajustes de Copilot VZ ──────────────────────────────────────────────
+
+@csrf.exempt
+@insights_bp.route('/api/settings/benchmark', methods=['PATCH'])
+@require_auth
+def api_toggle_benchmark():
+    """Activa/desactiva la participación en benchmarking anónimo.
+    Al desactivar, se deja de guardar mensajes nuevos. El historial
+    existente se conserva y se recupera al reactivar.
+    """
+    user = _current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    restaurant = user.restaurant
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'no_restaurant'}), 400
+    data = request.get_json(silent=True) or {}
+    allowed = data.get('allow_benchmark')
+    if allowed is None or not isinstance(allowed, bool):
+        return jsonify({'success': False, 'error': 'allow_benchmark_required'}), 400
+    restaurant.allow_benchmark = allowed
+    db.session.commit()
+    return jsonify({'success': True, 'data': {'allow_benchmark': restaurant.allow_benchmark}})
 
 
 

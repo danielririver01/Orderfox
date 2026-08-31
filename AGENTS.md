@@ -223,8 +223,75 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 - Rate limiter es in-memory (se pierde al reiniciar)
 - Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
 - Gmail requiere app-specific password, TLS por defecto
-- APScheduler se inicia en `create_app()` — tareas: `scan_business_events` (hora), `delete_inactive_accounts` (3 AM), `expire_pending_orders` (hora)
+- APScheduler se inicia en `create_app()` — tareas: `scan_business_events` (hora), `manage_subscription_lifecycle` (3 AM, marca cuentas inactivas como `dormant` SIN borrar datos), `expire_pending_orders` (hora)
 - **`Server` header**: Werkzeug/Flask dev server añade `Server: Werkzeug/...` después de `after_request`. Para suprimirlo se debe parchear `WSGIRequestHandler.server_version` y `sys_version` en `run.py` (no desde `app/__init__.py`).
+
+### AI Package Hallucination Prevention
+> **⚠️ REGLA DE ORO: Siempre verificar paquetes sugeridos por IA antes de instalar.**
+
+Los LLMs alucinan nombres de paquetes que no existen. Atacantes publican paquetes maliciosos con esos nombres exactos. **Nunca instalar un paquete sin verificación humana.**
+
+```bash
+# REGLA: Antes de instalar cualquier paquete sugerido por IA:
+pip index versions <nombre-del-paquete>
+# Si NO aparece info del paquete → ES UNA ALUCINACIÓN, NO INSTALAR.
+```
+
+**Pasos obligatorios antes de `pip install`:**
+1. Ejecutar `pip index versions <paquete>` — verificar que existe en PyPI
+2. Verificar el publisher/repo — debe ser de una organización conocida (Pallets, Sentry, etc.)
+3. Revisar `pip show <paquete>` — debe apuntar a un repo legítimo en GitHub
+4. Solo entonces ejecutar `pip install <paquete>`
+
+**Señales de alucinación:**
+- Nombres de paquetes genéricos o "demasiado convenientes"
+- Dependencias que resuelven problemas muy específicos con nombres sospechosos
+- Paquetes sugeridos que no se encuentran en Google/pypi.org
+- La IA sugiere `pip install` sin verificar primero que el paquete existe
+
+**Protección adicional:**
+- Usar `requirements.txt` con versiones fijas (ya se hace)
+- Ejecutar `pip-audit` o `safety check` antes de cada deploy
+- Todo PR que agregue dependencias nueva requiere aprobación
+
+### AI Prompt Injection Protection
+> **⚠️ REGLA DE ORO: Nunca confíes en datos de usuario que llegan al modelo de IA.**
+
+Tu app usa DeepSeek en Copilot VZ. El mensaje del usuario viene directamente del frontend — un atacante puede enviar texto malicioso.
+
+**Vectores de ataque en tu app:**
+1. **Inyección directa**: Usuario envía "Ignore previous instructions" en el chat
+2. **Manipulación de contexto**: Texto que imita instrucciones del sistema
+3. **Fuga de información**: Intentar que la IA revele el system prompt o secrets
+
+**Protección implementada (3 capas):**
+
+| Capa | Archivo | Qué hace |
+|------|---------|----------|
+| **1. Sanitización** | `message_handler.py` | Detecta patrones de inyección y reemplaza por `[FILTRADO]` |
+| **2. Límite** | `message_handler.py` | Máximo 2000 chars por mensaje |
+| **3. Validación** | `llm_service.py` | Rechaza respuestas con contenido sospechoso |
+
+**Patrones detectados (sanitización):**
+- `ignore previous instructions`
+- `you are now DAN`
+- `bypass restrictions`
+- `reveal your system prompt`
+- `act as if`
+- etc.
+
+**Reglas para agents:**
+- **NUNCA** modificar `message_handler.py` para quitar la sanitización
+- **NUNCA** pasar credenciales o secrets en el prompt del sistema
+- **SIEMPRE** usar `validate_llm_response()` antes de mostrar respuesta al usuario
+- **SIEMPRE** registrar intentos de inyección en logs para auditoría
+- **LIMITAR** longitud de mensajes de usuario (max 2000 chars)
+
+**Flujo seguro:**
+```
+Usuario → sanitize_user_message() → Clasificador → Prompt Builder → DeepSeek → validate_llm_response() → Usuario
+            ↑ Filtra inyección                                    ↑ Rechaza si sospechoso
+```
 
 ## Security Fixes (2026-07-21)
 

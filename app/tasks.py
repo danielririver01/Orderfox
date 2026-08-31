@@ -2,6 +2,7 @@ from app import db, scheduler
 from app.models import Restaurant, Order, DiscountCoupon
 from datetime import datetime, timedelta, timezone
 from flask import has_app_context, current_app
+from app.services.order_service import log_event
 
 
 def scan_business_events():
@@ -25,49 +26,99 @@ def _perform_event_scan():
         )
     except Exception as e:
         current_app.logger.error(f"CRITICAL ERROR in event scan: {e}")
-
-def delete_inactive_accounts():
+def manage_subscription_lifecycle():
     """
-    Elimina cuentas (Restaurantes) que están inactivas y fueron creadas hace más de 24 horas.
-    Esta función está programada para ejecutarse todos los días a las 3:00 AM.
+    Gestiona el ciclo de vida de suscripciones SIN destruir datos.
+
+    Estrategia (SaaS):
+    - Las cuentas inactivas (is_active=False) NO se borran.
+    - Tras INACTIVE_GRACE_DAYS días de inactividad, se marcan como 'dormant'
+      (suspendidas, pero con todos sus datos preservados para reactivación).
+    - Solo tras un período MUY largo (ver PURGE_AFTER_DAYS) se considera
+      soft-delete, y nunca dentro de esta tarea por defecto.
+
+    Programado diariamente a las 3:00 AM.
     """
     if has_app_context():
-        return _perform_cleanup()
+        return _perform_lifecycle()
     else:
         with scheduler.app.app_context():
-            return _perform_cleanup()
+            return _perform_lifecycle()
 
-def _perform_cleanup():
+
+# Días de margen antes de marcar una cuenta inactiva como 'dormant'.
+INACTIVE_GRACE_DAYS = 30
+
+
+def _perform_lifecycle():
     try:
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
-        current_app.logger.info(f"[{datetime.now(timezone.utc)}] Checking cleanup... Cutoff: {cutoff_time}")
-        
+        cutoff_time = datetime.now(timezone.utc) - timedelta(days=INACTIVE_GRACE_DAYS)
+        current_app.logger.info(
+            f"[{datetime.now(timezone.utc)}] Checking subscription lifecycle... "
+            f"Dormant cutoff: {cutoff_time}"
+        )
+
+        # Cuentas inactivas (nunca pagaron o suspendidas manualmente) que llevan
+        # más de INACTIVE_GRACE_DAYS días sin activarse → se marcan 'dormant'.
+        # NUNCA se borra el restaurante ni sus datos.
         inactive_restaurants = Restaurant.query.filter(
             Restaurant.is_active == False,
+            Restaurant.subscription_state != 'dormant',
             Restaurant.created_at < cutoff_time
         ).all()
-        
-        if inactive_restaurants:
-            current_app.logger.info(f"[{datetime.now(timezone.utc)}] Found {len(inactive_restaurants)} inactive restaurants. Deleting...")
+
+        # Restaurantes con suscripción vencida más allá del grace period:
+        # se suspenden (dormant) pero CON todos sus datos preservados.
+        from app.utils.subscription import GRACE_PERIOD_DAYS
+        grace_cutoff = datetime.now(timezone.utc) - timedelta(days=GRACE_PERIOD_DAYS)
+        expired_restaurants = Restaurant.query.filter(
+            Restaurant.is_active == True,
+            Restaurant.subscription_state != 'dormant',
+            Restaurant.subscription_state != 'cancellation_pending',
+            Restaurant.subscription_expires_at.isnot(None),
+            Restaurant.subscription_expires_at < grace_cutoff
+        ).all()
+
+        # Cancelaciones pendientes cuya fecha de expiración ya pasó:
+        # pasan directamente a dormant (el usuario ya no tiene acceso).
+        cancelled_expired = Restaurant.query.filter(
+            Restaurant.subscription_state == 'cancellation_pending',
+            Restaurant.subscription_expires_at.isnot(None),
+            Restaurant.subscription_expires_at < datetime.now(timezone.utc)
+        ).all()
+
+        total = list(set(inactive_restaurants + expired_restaurants + cancelled_expired))
+
+        if total:
+            current_app.logger.info(
+                f"[{datetime.now(timezone.utc)}] Found {len(total)} "
+                f"accounts to mark dormant (data preserved)..."
+            )
             count = 0
-            for restaurant in inactive_restaurants:
+            now = datetime.now(timezone.utc)
+            for restaurant in total:
                 try:
-                    db.session.delete(restaurant)
+                    restaurant.is_active = False
+                    restaurant.subscription_state = 'dormant'
+                    restaurant.dormant_at = now
                     count += 1
                 except Exception as e:
-                    current_app.logger.error(f"Error deleting restaurant {restaurant.id}: {e}")
-            
+                    current_app.logger.error(f"Error marking restaurant {restaurant.id} dormant: {e}")
+
             try:
                 db.session.commit()
-                current_app.logger.info(f"[{datetime.now(timezone.utc)}] Cleanup complete. Deleted {count} records.")
+                current_app.logger.info(
+                    f"[{datetime.now(timezone.utc)}] Lifecycle complete. "
+                    f"Marked {count} restaurants as dormant (data preserved)."
+                )
             except Exception as e:
                 db.session.rollback()
                 current_app.logger.error(f"[{datetime.now(timezone.utc)}] Commit failed: {e}")
         else:
-            current_app.logger.info(f"[{datetime.now(timezone.utc)}] No inactive accounts found.")
+            current_app.logger.info(f"[{datetime.now(timezone.utc)}] No accounts to mark dormant.")
 
     except Exception as e:
-        current_app.logger.error(f"CRITICAL ERROR in cleanup task: {e}")
+        current_app.logger.error(f"CRITICAL ERROR in lifecycle task: {e}")
 
 
 def expire_pending_orders():
@@ -99,6 +150,7 @@ def _perform_expiry():
             for order in expired_orders:
                 try:
                     order.status = 'expired'
+                    log_event(order.id, 'order_expired', actor_role='system')
                     count += 1
                 except Exception as e:
                     current_app.logger.error(f"Error expiring order {order.id}: {e}")
@@ -159,12 +211,37 @@ def _perform_reminders():
         current_app.logger.error(f"CRITICAL ERROR in subscription reminders task: {e}")
 
 
+def compute_platform_benchmarks():
+    """
+    Recalcula los benchmarks anónimos de la plataforma (medianas por cohorte,
+    k-anonymity >= 5) que Copilot VZ usa para comparar el negocio del usuario.
+    Diario a las 4:15 AM (después del lifecycle de las 3:00).
+    """
+    if has_app_context():
+        return _perform_benchmarks()
+    else:
+        with scheduler.app.app_context():
+            return _perform_benchmarks()
+
+
+def _perform_benchmarks():
+    try:
+        from app.services.insights.benchmark_service import compute_benchmarks
+        result = compute_benchmarks()
+        current_app.logger.info(
+            f"[{datetime.now(timezone.utc)}] Benchmarks computed: {result}"
+        )
+        return result
+    except Exception as e:
+        current_app.logger.error(f"CRITICAL ERROR in benchmarks task: {e}", exc_info=True)
+
+
 def init_tasks(scheduler):
-    # Programar la tarea para las 3:00 AM todos los días
-    if not scheduler.get_job('delete_inactive_accounts'):
+    # Gestionar ciclo de vida de suscripciones (sin borrado destructivo)
+    if not scheduler.get_job('manage_subscription_lifecycle'):
         scheduler.add_job(
-            id='delete_inactive_accounts',
-            func=delete_inactive_accounts,
+            id='manage_subscription_lifecycle',
+            func=manage_subscription_lifecycle,
             trigger='cron',
             hour=3,
             minute=0
@@ -206,4 +283,14 @@ def init_tasks(scheduler):
             trigger='cron',
             hour=13,
             minute=0,
+        )
+
+    # Benchmarks anónimos para Copilot VZ (diario 4:15 AM).
+    if not scheduler.get_job('compute_platform_benchmarks'):
+        scheduler.add_job(
+            id='compute_platform_benchmarks',
+            func=compute_platform_benchmarks,
+            trigger='cron',
+            hour=4,
+            minute=15,
         )

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
-from app.models import db
+from app.models import db, OrderEvent
 from app.utils.auth import (
     require_auth, require_active, require_role, require_role_check,
 )
@@ -7,7 +7,13 @@ import json
 
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
-from app.services.order_service import OrderService, PaymentValidationError
+from app.services.order_service import (
+    OrderService,
+    PaymentValidationError,
+    log_event,
+    resolve_actor,
+    serialize_event,
+)
 from app.services.notification_service import notify_new_order
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
@@ -111,6 +117,9 @@ def create():
             flash(str(e), 'error')
             return redirect(url_for('orders.create'))
 
+        actor_id, actor_role = resolve_actor()
+        log_event(order.id, 'order_created', actor_id=actor_id, actor_role=actor_role)
+
         # Pago opcional (modal caja registradora)
         payment_method = data.get('payment_method') or None
         if payment_method:
@@ -120,6 +129,9 @@ def create():
             except (TypeError, ValueError):
                 amount = None
             try:
+                log_event(order.id, 'payment_registered', actor_id=actor_id,
+                          actor_role=actor_role,
+                          metadata={'method': payment_method, 'amount': amount})
                 OrderService.record_payment(order, payment_method, amount_received=amount)
             except PaymentValidationError as e:
                 db.session.rollback()
@@ -164,6 +176,35 @@ def edit(id):
         except (TypeError, ValueError):
             amount = None
 
+        # Traza items_edited ANTES de actualizar (update_order_items hace commit
+        # interno; si falla, hace rollback y el evento se descarta con él).
+        actor_id, actor_role = resolve_actor()
+        try:
+            before_items = {item.product_name: item.quantity for item in order.items}
+            id_to_name = {p.id: p.name for p in OrderService.get_active_products(restaurant.id)}
+            new_items = {}
+            for it in items_data:
+                qty = it.get('quantity', 1)
+                if not qty:
+                    continue
+                name = id_to_name.get(it.get('product_id'))
+                if name:
+                    new_items[name] = new_items.get(name, 0) + int(qty)
+            added = [
+                {'name': n, 'qty': q}
+                for n, q in new_items.items() if q > before_items.get(n, 0)
+            ]
+            removed = [
+                {'name': n, 'qty': q}
+                for n, q in before_items.items() if q > new_items.get(n, 0)
+            ]
+            if added or removed:
+                log_event(order.id, 'items_edited', actor_id=actor_id,
+                          actor_role=actor_role,
+                          metadata={'added': added, 'removed': removed})
+        except (TypeError, ValueError):
+            pass
+
         try:
             OrderService.update_order_items(
                 order, items_data, restaurant.id,
@@ -197,7 +238,10 @@ def detail(id):
     if not restaurant: abort(404)
     order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order: abort(404)
-    return render_template('dashboard/order_detail.html', order=order)
+    events = [serialize_event(e) for e in OrderEvent.query
+              .filter_by(order_id=order.id)
+              .order_by(OrderEvent.created_at.asc(), OrderEvent.id.asc()).all()]
+    return render_template('dashboard/order_detail.html', order=order, events=events)
 
 @orders_bp.route('/<int:id>/fragment')
 @require_auth
@@ -236,7 +280,18 @@ def change_status(id):
             'success': False, 
             'error': f'No se puede cambiar de {order.status} a {new_status}'
         }), 400
-    
+
+    actor_id, actor_role = resolve_actor()
+    if order.status == 'cancelled' and new_status == 'pending':
+        log_event(order.id, 'order_restored', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+    elif new_status == 'cancelled':
+        log_event(order.id, 'order_cancelled', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+    else:
+        log_event(order.id, 'status_changed', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': new_status})
+
     OrderService.change_order_status(order, new_status)
     return jsonify({'success': True, 'status': order.status})
 
@@ -268,6 +323,10 @@ def register_payment(id):
         amount = None
 
     try:
+        actor_id, actor_role = resolve_actor()
+        log_event(order.id, 'payment_registered', actor_id=actor_id,
+                  actor_role=actor_role,
+                  metadata={'method': method, 'amount': amount})
         order, change = OrderService.record_payment(order, method, amount_received=amount)
     except PaymentValidationError as e:
         return jsonify({'success': False, 'error': str(e)}), e.status_code
@@ -296,7 +355,12 @@ def cancel(id):
     if not restaurant: abort(404)
     order = OrderService.get_order_for_restaurant(restaurant.id, id)
     if not order: abort(404)
-    
+
+    actor_id, actor_role = resolve_actor()
+    if order.status != 'cancelled':
+        log_event(order.id, 'order_cancelled', actor_id=actor_id, actor_role=actor_role,
+                  metadata={'from': order.status, 'to': 'cancelled'})
+
     success, error = OrderService.cancel_order(order)
     if not success:
         flash(error, 'error')

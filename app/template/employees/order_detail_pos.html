@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} · {{ order.order_number }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-[#0a0a0a] min-h-screen antialiased">
+    {% set brand = restaurant.brand_color or '#FF7A29' %}
+    {% set back_url = url_for('employee_portal.cashier', slug=restaurant.slug) if user.role == 'cashier' else url_for('employee_portal.waiter', slug=restaurant.slug) %}
+
+    <!-- Barra superior -->
+    <header class="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/5">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <a href="{{ back_url }}"
+                    class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/25 transition-colors flex-shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                </a>
+                <div class="min-w-0">
+                    <p class="font-display text-sm font-black text-white truncate">{{ restaurant.name }}</p>
+                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">Detalle del pedido</p>
+                </div>
+            </div>
+            <a href="{{ url_for('employee_portal.logout') }}"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
+                <span class="material-symbols-outlined text-[15px]">logout</span>
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-5 space-y-4">
+
+        <!-- Cabecera del pedido -->
+        <div class="bg-[#141414] rounded-2xl border border-[#262626] p-5">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 class="font-display text-xl font-black text-white tracking-tight">{{ order.order_number }}</h1>
+                    <p class="text-xs text-gray-400 font-medium mt-1 flex items-center gap-1.5">
+                        {% if order.table %}
+                        <span class="material-symbols-outlined text-[14px] text-gray-600">table_restaurant</span>
+                        Mesa {{ order.table.name }}
+                        {% else %}
+                        <span class="material-symbols-outlined text-[14px] text-gray-600">person</span>
+                        {{ order.customer_name or 'Cliente' }}
+                        {% endif %}
+                    </p>
+                </div>
+                <span
+                    class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border flex-shrink-0
+                    {% if order.status == 'pending' %}bg-yellow-500/10 text-yellow-400 border-yellow-500/20
+                    {% else %}bg-blue-500/10 text-blue-400 border-blue-500/20{% endif %}">
+                    {{ 'Pendiente' if order.status == 'pending' else 'Confirmado' }}
+                </span>
+            </div>
+            <p class="text-[10px] text-gray-600 font-bold uppercase tracking-widest mt-3">{{ order.created_at | local_time }}</p>
+        </div>
+
+        <!-- Productos -->
+        <div class="bg-[#141414] rounded-2xl border border-[#262626] p-5">
+            <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Productos</h2>
+            <div class="space-y-3">
+                {% for item in order.items %}
+                {% set extras = [] %}
+                {% if item.modifiers_snapshot %}
+                {% set extras = item.modifiers_snapshot | selectattr('name') | map(attribute='name') | list %}
+                {% endif %}
+                <div>
+                    <p class="font-bold text-white text-sm tracking-tight">{{ item.quantity }}x {{ item.product_name }}</p>
+                    {% if extras %}
+                    <p class="text-[10px] text-gray-600 mt-1 italic flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">subdirectory_arrow_right</span>
+                        {{ extras | join(', ') }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% if not loop.last %}
+                <div class="h-px bg-[#262626]"></div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Notas (sanitizadas: sin IP del cliente) -->
+        {% if order.notes %}
+        <div class="bg-[#141414] rounded-2xl border border-[#262626] p-5">
+            <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[15px] text-gray-600">notes</span>
+                Nota
+            </h2>
+            <p class="text-xs font-medium text-gray-400 leading-relaxed">{{ order.notes.split(' | IP:')[0].split('IP:')[0] }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Total -->
+        <div class="bg-[#0a0a0a] rounded-2xl border border-[#262626] p-5 flex items-center justify-between">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Total</span>
+            <span class="font-display text-2xl font-black text-white">{{ order.total | currency }}</span>
+        </div>
+
+        <!-- Acciones de estado -->
+        {% if order.status == 'pending' %}
+        <button onclick="changeStatus({{ order.id }}, 'confirmed')"
+            class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20">
+            <span class="material-symbols-outlined text-[18px]">check</span>
+            Confirmar pedido
+        </button>
+        <form method="POST" id="cancel-form"
+            action="{{ url_for('employee_portal.cancel_order', slug=restaurant.slug, order_id=order.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="confirmCancel(this, 'cancel-form')"
+                class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+                Cancelar pedido
+            </button>
+        </form>
+        {% elif order.status == 'confirmed' and can_deliver %}
+        <button onclick="changeStatus({{ order.id }}, 'delivered')"
+            class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg"
+            style="background: {{ brand }}; box-shadow: 0 10px 28px -10px {{ brand }}66;">
+            <span class="material-symbols-outlined text-[18px]">task_alt</span>
+            Entregado
+        </button>
+        {% endif %}
+    </main>
+
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        async function changeStatus(orderId, status) {
+            const btn = event.target.closest('button');
+            if (btn) { btn.disabled = true; btn.style.opacity = 0.5; }
+            try {
+                const res = await fetch(`/orders/${orderId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify({ status: status })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'No se pudo actualizar el pedido');
+                    if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+                }
+            } catch (e) {
+                alert('Error de conexión. Inténtalo de nuevo.');
+                if (btn) { btn.disabled = false; btn.style.opacity = 1; }
+            }
+        }
+
+        // Confirmación de doble toque para cancelar (sin alerts nativos).
+        function confirmCancel(btn, formId) {
+            if (btn.dataset.armed === '1') {
+                document.getElementById(formId).submit();
+                return;
+            }
+            btn.dataset.armed = '1';
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[15px]">warning</span> ¿Seguro?';
+            btn.classList.remove('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+            btn.classList.add('bg-red-500', 'border-red-500', 'text-white');
+            setTimeout(function () {
+                btn.dataset.armed = '';
+                btn.innerHTML = original;
+                btn.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+                btn.classList.remove('bg-red-500', 'border-red-500', 'text-white');
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

@@ -93,6 +93,12 @@ def require_active(f):
             return return_error('Tu cuenta no está asociada a ningún restaurante.', redirect_to='auth.setup_account')
 
         if not restaurant.is_active:
+            if restaurant.subscription_state == 'dormant':
+                # Suspendido por no pago, pero datos preservados → pantalla de reactivación
+                if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'error': 'Tu suscripción está inactiva. Reactiva tu plan para continuar.', 'dormant': True}), 402
+                flash('¡Hola de nuevo! Tus datos están seguros. Reactiva tu plan para continuar operando.', 'info')
+                return redirect(url_for('dashboard.subscription'))
             return return_error('Tu cuenta ha sido suspendida. Contacta a soporte para más información.')
 
         has_tokens = False
@@ -103,6 +109,16 @@ def require_active(f):
             has_tokens = True
 
         if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
+            # Auto-transición: cancellation_pending + vencido → dormant
+            if restaurant.subscription_state == 'cancellation_pending':
+                restaurant.is_active = False
+                restaurant.subscription_state = 'dormant'
+                restaurant.dormant_at = datetime.now(timezone.utc)
+                db.session.commit()
+                if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'error': 'Tu suscripción ha vencido. Reactiva tu plan para continuar.', 'dormant': True}), 402
+                flash('Tu suscripción ha vencido. Reactiva tu plan para continuar operando.', 'warning')
+                return redirect(url_for('dashboard.subscription'))
             return return_error('Tu periodo de gracia ha terminado. Por favor renueva tu plan para recuperar el acceso.', redirect_to='dashboard.subscription')
 
         g.is_expired = not is_subscription_active(restaurant, include_grace_period=False)

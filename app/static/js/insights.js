@@ -139,7 +139,7 @@
             `<div class="vz-bubble relative w-full text-white text-sm rounded-2xl px-4 py-3">
                 <div class="flex items-center gap-1.5 mb-2">
                     <span class="material-symbols-outlined text-[16px] text-[var(--primary)]">bubble_chart</span>
-                    <span class="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Copilot VZ</span>
+                    <span class="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Estratega</span>
                     <span class="badge ml-1"></span>
                 </div>
                 <div class="text-sm leading-relaxed content"></div>
@@ -204,19 +204,10 @@
             const item = (s && typeof s === 'object') ? s : { label: String(s || '') };
             const label = item.label || '';
             const prompt = item.prompt || label;
-            const icon = item.icon || '';
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'vz-chip';
-            if (icon) {
-                const ico = document.createElement('span');
-                ico.className = 'material-symbols-outlined text-[14px] mr-1';
-                ico.textContent = icon;
-                b.appendChild(ico);
-            }
-            const txt = document.createElement('span');
-            txt.textContent = label;
-            b.appendChild(txt);
+            b.textContent = label;
             b.onclick = () => {
                 inputEl.value = prompt;
                 autoResize();
@@ -229,7 +220,7 @@
 
     // ── Render de gráficas (estilo profesional) ─────────────
     const CHART_FONT = "Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif";
-    const CHART_PALETTE = ['#f97316', '#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#EC4899', '#14B8A6'];
+    const CHART_PALETTE = ['#6366f1', '#3B82F6', '#10B981', '#A855F7', '#F59E0B', '#EC4899', '#14B8A6'];
 
     function hexToRgba(hex, a) {
         const h = (hex || '#FF7A1A').replace('#', '');
@@ -701,7 +692,7 @@
                     <span class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(249,115,22,0.10);">
                         <span class="material-symbols-outlined text-[22px]" style="color:var(--primary);">${icon}</span>
                     </span>
-                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
+                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Estratega</span>
                 </div>
                 <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">${text}</div>
                 ${chips ? `<div class="flex flex-wrap gap-2 mt-3">${chips}</div>` : ''}
@@ -741,7 +732,7 @@
                     <span class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.10);">
                         <span class="material-symbols-outlined text-[22px]" style="color:#34d399">check_circle</span>
                     </span>
-                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
+                    <span class="text-[11px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Estratega</span>
                 </div>
                 <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:var(--text-main);">¡Listo! Ya tienes lo básico para empezar. Pregúntame lo que quieras sobre tu negocio.</div>
             </div>`;
@@ -825,7 +816,7 @@
             `<div class="vz-bubble relative rounded-2xl px-3 py-2.5" style="background:var(--bg-card-alt);">
                 <div class="flex items-center gap-1.5 mb-0.5">
                     <span class="material-symbols-outlined text-[13px] text-[var(--primary)]">bubble_chart</span>
-                    <span class="text-[10px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Copilot VZ</span>
+                    <span class="text-[10px] font-bold" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Estratega</span>
                 </div>
                 <div class="vz-typing-dots">
                     <span class="vz-dot"></span>
@@ -868,7 +859,7 @@
             handleResponse(data, text);
         } catch (e) {
             removeTypingIndicator();
-            appendError('Could not connect to Copilot VZ. Please try again.');
+            appendError('Could not connect to Estratega. Please try again.');
         } finally {
             resetComposer();
         }
@@ -974,13 +965,18 @@
 
     async function doEdit(mid, content, btn) {
         if (!currentConvId) return;
-        setBusyBtn(btn, true);
+        if (btn) btn.style.visibility = '';
+        showTypingIndicator();
+        isBusy = true;
+        sendBtn.disabled = true;
+        inputEl.disabled = true;
         try {
             const data = await apiSend(`${API}/${currentConvId}/messages`, {
                 content: content,
                 message_id: mid,
                 replace_tail: true,
             });
+            removeTypingIndicator();
             if (!data || !data.success) {
                 appendError((data && data.message) || 'Could not edit the message.');
                 await selectConversation(currentConvId);
@@ -988,9 +984,11 @@
             }
             await selectConversation(currentConvId);
         } catch (e) {
+            removeTypingIndicator();
             appendError('Could not edit the message.');
         } finally {
-            setBusyBtn(btn, false);
+            isBusy = false;
+            resetComposer();
         }
     }
 
@@ -1227,9 +1225,9 @@
         document.body.removeChild(ta);
     }
     function buildTranscriptMd(messages, title) {
-        let md = `# ${title || 'Copilot VZ Analysis'}\n\n`;
+        let md = `# ${title || 'Estratega Analysis'}\n\n`;
         (messages || []).forEach((m) => {
-            const who = m.role === 'user' ? 'Tú' : 'Copilot VZ';
+            const who = m.role === 'user' ? 'Tú' : 'Estratega';
             md += `**${who}:**\n${m.content}\n\n`;
         });
         return md;
@@ -1255,7 +1253,7 @@
             const isUser = m.role === 'user';
             const block = document.createElement('div');
             block.className = 'vz-ctx-msg' + (isUser ? ' user' : '');
-            const role = isUser ? 'Tú' : 'Copilot VZ';
+            const role = isUser ? 'Tú' : 'Estratega';
             const actions = '<button class="vz-ctx-act" data-act="copy">Copiar</button>';
             block.innerHTML =
                 `<div class="vz-ctx-head">
@@ -1694,6 +1692,39 @@
                 showEmptyState();
             }
         }
+    })();
+
+    /* ── Benchmarking toggle (Ley 1581 de 2012) ── */
+    (function initBenchmarkToggle() {
+        var btn = document.getElementById('benchmark-toggle');
+        var hint = document.getElementById('benchmark-hint');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            var currentlyOn = btn.getAttribute('aria-checked') === 'true';
+            var newState = !currentlyOn;
+
+            fetch('/insights/api/settings/benchmark', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allow_benchmark: newState }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.success) {
+                    // Actualizar visual del toggle
+                    btn.setAttribute('aria-checked', String(newState));
+                    btn.style.backgroundColor = newState ? '#6366f1' : 'rgba(255,255,255,0.15)';
+                    btn.querySelector('span').style.transform = newState ? 'translateX(18px)' : 'translateX(0)';
+                    // Hint
+                    if (hint) hint.classList.toggle('hidden', newState);
+                    // Recargar lista: OFF→oculta, ON→reaparecen
+                    if (typeof loadConversations === 'function') {
+                        loadConversations();
+                    }
+                }
+            });
+        });
     })();
 
     /* ── Mobile keyboard: mantiene scroll visible al abrir/cerrar ── */

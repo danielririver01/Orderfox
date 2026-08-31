@@ -57,7 +57,7 @@
                     </div>
                     <div class="crc-header-title">
                         <h3 id="crc-title">Copilot de Caja</h3>
-                        <p id="crc-subtitle">Pregunta por tu dinero</p>
+                        <p id="crc-subtitle">Cobros, pagos y pendientes</p>
                     </div>
                     <button type="button" id="crc-history" class="crc-icon-btn" title="Historial de conversaciones" aria-label="Historial de conversaciones">
                         <span class="material-symbols-outlined">history</span>
@@ -245,7 +245,7 @@
         el('crc-history').setAttribute('aria-label', 'Historial de conversaciones');
         el('crc-history').querySelector('span').textContent = 'history';
         el('crc-title').textContent = 'Copilot de Caja';
-        el('crc-subtitle').textContent = 'Pregunta por tu dinero';
+        el('crc-subtitle').textContent = 'Cobros, pagos y pendientes';
         el('crc-new').title = 'Nueva conversación';
         el('crc-new').setAttribute('aria-label', 'Nueva conversación');
         el('crc-new').querySelector('span').textContent = 'add_comment';

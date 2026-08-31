@@ -291,6 +291,21 @@ def extract_custom_window(text):
     return max(1, min(MAX_WINDOW_DAYS, n))
 
 
+# Preguntas que buscan CONSEJO/Acción, no un dato puntual. Estas SIEMPRE van
+# a análisis (Nivel 2 con LLM), aunque contengan palabras de consulta rápida:
+# "mis ventas bajaron este mes, ¿qué hago?" merece una estrategia, no solo el
+# número del mes. Se evalúa ANTES de QUICK_PATTERNS.
+ADVICE_SEEKING_RE = re.compile(
+    r'('
+    r'qu[eé]\s+(hago|hacer|puedo\s+hacer|me\s+(recomienda|sugiere))'   # qué hago / qué me recomienda
+    r'|c[oó]mo\s+(puedo|hago|le\s+hago|mejoro|mejorar|aumento|subo|subir)'  # cómo puedo/hago/mejoro...
+    r'|consejos?'                                                       # consejos
+    r'|dame\s+(ideas|estrategias|tips)'                                 # dame ideas/estrategias/tips
+    r')',
+    re.IGNORECASE,
+)
+
+
 def classify(text):
     """
     Retorna dict:
@@ -305,9 +320,11 @@ def classify(text):
 
     norm = text.lower()
 
-    for intent, pattern in QUICK_PATTERNS:
-        if re.search(pattern, norm):
-            return {'level': 'quick', 'intent': intent, 'window': _window_for_intent(intent)}
+    # Consejo buscado → siempre Nivel 2 (el quick solo responde datos secos).
+    if not ADVICE_SEEKING_RE.search(norm):
+        for intent, pattern in QUICK_PATTERNS:
+            if re.search(pattern, norm):
+                return {'level': 'quick', 'intent': intent, 'window': _window_for_intent(intent)}
 
     return {
         'level': 'analysis',
@@ -334,9 +351,9 @@ def _analysis_intent(norm):
     """Clasifica la intención de análisis para enriquecer el contexto/metadata."""
     if re.search(r'(por que|baj|ca.?|cay|sub|crec|tendencia|razón|razon)', norm):
         return 'sales_analysis'
-    if re.search(r'(rentabil|gananci|margen|costo|utilidad|profit)', norm):
+    if re.search(r'(rentabil|gananci|margen|costo|food\s*cost|utilidad|profit)', norm):
         return 'profitability_analysis'
-    if re.search(r'(recomend|sugerenc|promocion|mejorar|optimiz|deberia|deber.a)', norm):
+    if re.search(r'(recomend|sugerenc|promocion|mejor|optimiz|deberia|deber.a)', norm):
         return 'recommendations'
     if re.search(r'(informe|reporte|resumen ejecutiv|ejecutiv)', norm):
         return 'executive_report'

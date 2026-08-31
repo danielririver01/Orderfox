@@ -134,6 +134,14 @@ function renderOrders(list, orders) {
         list.innerHTML = '<div class="text-center text-gray-600 text-sm py-8">Sin pedidos en este periodo</div>';
         return;
     }
+    const actorLine = (actor, prefix) => {
+        if (!actor) return '';
+        const who = actor.name
+            ? `${escapeHtml(actor.name)} (${escapeHtml(actor.role_label)})`
+            : `(${escapeHtml(actor.role_label)})`;
+        const when = actor.time ? ` · ${localTime(actor.time)}` : '';
+        return `<p class="text-[9px] text-gray-600 font-bold mt-0.5">${prefix}: ${who}${when}</p>`;
+    };
     list.innerHTML = orders.map((o) => `
         <a href="/orders/${o.id}" class="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#141414] border border-[#262626] hover:border-[#f2460d]/40 transition-all">
             <div class="flex-1 min-w-0">
@@ -142,6 +150,8 @@ function renderOrders(list, orders) {
                     <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${methodBadgeClasses(o.payment_method)}">${methodLabel(o.payment_method)}</span>
                 </div>
                 ${o.customer_name ? `<p class="text-[11px] text-gray-500 font-medium mt-0.5 truncate">${escapeHtml(o.customer_name)}</p>` : ''}
+                ${actorLine(o.created_by, 'Creado por')}
+                ${actorLine(o.paid_by, 'Cobrado por')}
                 <p class="text-[9px] text-gray-600 font-bold mt-0.5">${o.paid_at ? localTime(o.paid_at) : ''}</p>
             </div>
             <span class="text-sm font-black text-[#f2460d] tracking-tighter flex-shrink-0">${formatCOP(o.total)}</span>

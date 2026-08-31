@@ -30,9 +30,35 @@
 
     <div class="legal-subsection">
         <h3 class="legal-subsection-title">¿Qué datos ve Copilot VZ?</h3>
-        <p>El asistente tiene acceso de <strong>solo lectura</strong> a los datos operativos de tu restaurante: productos, categorías, pedidos, mesas y ventas de los últimos 90 días. No puede modificar ni eliminar ningún registro.</p>
-        <p><strong>No comparte tus datos con otros restaurantes</strong> ni los utiliza para entrenar modelos públicos. Cada conversación está aislada dentro de tu cuenta y no es accesible por ningún otro usuario de la plataforma.</p>
+        <p>El asistente tiene acceso de <strong>solo lectura</strong> a los datos operativos de tu restaurante: productos, categorías, pedidos, mesas y ventas de los últimos 60 días. No puede modificar ni eliminar ningún registro.</p>
+        <p>Cada conversación está aislada dentro de tu cuenta y no es accesible por ningún otro usuario de la plataforma.</p>
         <p>Los mensajes que envías se almacenan de forma segura en la base de datos de Velzia y se usan únicamente para mantener el hilo de la conversación. Puedes eliminar conversaciones completas en cualquier momento desde el panel lateral.</p>
+    </div>
+
+    <div class="legal-subsection">
+        <h3 class="legal-subsection-title">Benchmarking anónimo entre restaurantes</h3>
+        <p>Para ofrecerte contexto competitivo, Velzia utiliza <strong>datos agregados y anónimos</strong> de otros restaurantes de la plataforma (medianas de ticket promedio, volumen de ventas por categoría, tendencias del sector, etc.).</p>
+        <ul>
+            <li>Estos datos <strong>nunca identifican a un restaurante específico</strong>. Solo se presentan como cifras comparativas del sector.</li>
+            <li>Se requiere un mínimo de restaurantes con datos suficientes en una categoría para generar una comparativa. Si hay muy pocos, no se genera benchmark.</li>
+            <li>Tú también contribuyes a estos benchmarks con los datos agregados de tu restaurante, lo cual mejora la precisión de las recomendaciones para toda la comunidad.</li>
+            <li>Los restaurantes individuales <strong>nunca tienen acceso</strong> a los datos específicos de otro restaurante.</li>
+        </ul>
+        <p><strong>Esta funcionalidad está activa por defecto</strong> para todos los restaurantes. Si no deseas participar, puedes desactivarla en cualquier momento desde el interruptor <em>"Red Velzia (benchmarking)"</em> en la barra lateral de Copilot VZ. Al desactivarla, no se guardará tu historial de conversaciones ni se utilizarán tus datos para calcular benchmarks del sector.</p>
+    </div>
+
+    <div class="legal-subsection">
+        <h3 class="legal-subtitle-title">Uso de Inteligencia Artificial de Terceros</h3>
+        <p>Copilot VZ utiliza un <strong>proveedor externo de servicios de inteligencia artificial</strong> para generar análisis y recomendaciones. Cuando realizas una consulta que requiere análisis profundo, los siguientes datos se envían de forma cifrada (SSL/TLS) a dicho proveedor:</p>
+        <ul>
+            <li>El contenido de tu mensaje (pregunta en lenguaje natural).</li>
+            <li>Datos agregados de tu restaurante: totales de ventas, top productos, ventas por día de la semana y ticket promedio.</li>
+            <li>Benchmarks anónimos del sector (descritos en la sección "Benchmarking anónimo entre restaurantes").</li>
+            <li>Una guía de mejores prácticas del sector gastronómico (opcional, según la consulta).</li>
+        </ul>
+        <p><strong>No se envían:</strong> nombres de clientes, información de pago, credenciales, ni datos de otros restaurantes. Los datos se transmiten bajo las mismas protecciones de cifrado que el resto de la plataforma.</p>
+        <p>El proveedor de IA utiliza estos datos únicamente para generar la respuesta a tu consulta. Velzia selecciona proveedores con estándares de seguridad y privacidad equivalentes a los propios.</p>
+        <p>Al utilizar Copilot VZ, usted autoriza a Velzia a enviar estos datos al proveedor de IA para el fin exclusivo de generar las respuestas del asistente. Esta autorización es parte de las condiciones de uso del servicio.</p>
     </div>
 
     <div class="legal-subsection">
@@ -54,7 +80,7 @@
             <li><strong>Aislamiento de datos:</strong> cada conversación pertenece exclusivamente al restaurante que la creó.</li>
             <li><strong>Cifrado:</strong> todas las comunicaciones con la API de IA viajan cifradas (SSL/TLS).</li>
         </ul>
-        <p>Copilot VZ no almacena información de pago, credenciales bancarias ni datos personales sensibles. No realiza llamadas a APIs externas no autorizadas ni comparte datos con terceros.</p>
+        <p>Copilot VZ no almacena información de pago, credenciales bancarias ni datos personales sensibles. Las únicas comunicaciones externas son con el proveedor de IA para generar análisis, bajo las protecciones descritas en la sección "Uso de Inteligencia Artificial de Terceros".</p>
     </div>
 
     <div class="legal-subsection">

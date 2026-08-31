@@ -385,11 +385,11 @@ def create_app():
     # --- Comandos CLI ---
     @app.cli.command("cleanup-accounts")
     def cleanup_accounts_command():
-        """Ejecuta manualmente la limpieza de cuentas inactivas."""
-        from .tasks import delete_inactive_accounts
-        print("Iniciando limpieza manual...")
-        delete_inactive_accounts()
-        print("Comando de limpieza finalizado.")
+        """Ejecuta manualmente el ciclo de vida de suscripciones (marca como dormant, sin borrar)."""
+        from .tasks import manage_subscription_lifecycle
+        print("Iniciando gestión de ciclo de vida...")
+        manage_subscription_lifecycle()
+        print("Comando de ciclo de vida finalizado (datos preservados).")
 
     # Manejadores de errores personalizados
     @app.errorhandler(404)

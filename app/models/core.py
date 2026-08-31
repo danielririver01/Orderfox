@@ -52,8 +52,19 @@ class Restaurant(db.Model):
     plan_type = db.Column(db.String(20), default='emprendedor', nullable=False)
     subscription_expires_at = db.Column(AwareDateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=False, nullable=False)
+    # Ciclo de vida de suscripción SaaS:
+    # active | cancellation_pending | grace_period | dormant
+    # cancellation_pending = usuario pidió cancelar, acceso hasta vencimiento.
+    # dormant = suspendido, pero CON todos los datos preservados.
+    subscription_state = db.Column(db.String(20), default='active', server_default='active', nullable=False)
+    dormant_at = db.Column(AwareDateTime, nullable=True)
+    cancellation_requested_at = db.Column(AwareDateTime, nullable=True)
     is_open = db.Column(db.Boolean, default=True, nullable=False)
     has_used_trial = db.Column(db.Boolean, default=False, nullable=False)
+    # Benchmarking anónimo (Ley 1581 de 2012): participa por defecto.
+    # El usuario puede desactivarlo desde el toggle en Copilot VZ.
+    allow_benchmark = db.Column(db.Boolean, default=True, nullable=False,
+                                server_default='1')
     # Configuración de expiración de pedidos pendientes (en horas, default 24)
     pending_expiry_hours = db.Column(db.Integer, default=24, nullable=False)
     ntfy_topic = db.Column(db.String(64), unique=True, nullable=True)

@@ -18,7 +18,7 @@ from datetime import datetime, timezone, timedelta
 import pytest
 from werkzeug.security import generate_password_hash
 
-from app.models import AITokenWallet, Restaurant, User
+from app.models import AITokenWallet, Order, OrderItem, Restaurant, User
 from app.services.employee_service import (
     EmployeeService,
     EmployeeValidationError,
@@ -350,4 +350,153 @@ class TestInsightsRoleCheck:
             sess['user_id'] = owner_user.id
 
         resp = client.get('/insights/')
+        assert resp.status_code == 200
+
+
+# ── v2.1.4: Detalle de pedido para mesero/cajero (sin datos financieros) ───
+
+def _make_order(db, restaurant, status='pending', order_number='ORD-100',
+                restaurant_id=None):
+    """Crea un pedido con items (snapshot) para el restaurante indicado."""
+    o = Order(
+        restaurant_id=restaurant_id or restaurant.id,
+        order_number=order_number,
+        customer_name='Cliente Mesero',
+        customer_phone='+573001112233',
+        status=status,
+        total=39000,
+        notes='sin cebolla en la burger | IP: 127.0.0.1',
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    )
+    db.session.add(o)
+    db.session.flush()
+    db.session.add(OrderItem(
+        order_id=o.id,
+        restaurant_id=restaurant.id,
+        product_name='Hamburguesa Clásica',
+        product_price=15000,
+        quantity=2,
+        subtotal=30000,
+    ))
+    db.session.add(OrderItem(
+        order_id=o.id,
+        restaurant_id=restaurant.id,
+        product_name='Limonada de Coco',
+        product_price=9000,
+        quantity=1,
+        subtotal=9000,
+    ))
+    db.session.commit()
+    return o
+
+
+@pytest.fixture
+def detail_foreign_restaurant(db):
+    r = Restaurant(
+        name='Otra Cafetería',
+        slug='otra-cafeteria-detail',
+        whatsapp_phone='+573009999999',
+        plan_type='elite',
+        is_active=True,
+        is_open=True,
+        subscription_expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        has_used_trial=False,
+    )
+    db.session.add(r)
+    db.session.commit()
+    return r
+
+
+class TestWaiterOrderDetail:
+
+    def test_waiter_can_view_pending_order(self, client, db, team_restaurant, waiter_user):
+        """Mesero puede ver detalle de pedido pending → 200."""
+        order = _make_order(db, team_restaurant, status='pending')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
+        assert resp.status_code == 200
+        assert order.order_number.encode() in resp.data
+
+    def test_waiter_can_view_confirmed_order(self, client, db, team_restaurant, waiter_user):
+        """Mesero puede ver detalle de pedido confirmed → 200."""
+        order = _make_order(db, team_restaurant, status='confirmed')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
+        assert resp.status_code == 200
+
+    def test_detail_html_has_no_payment_data(self, client, db, team_restaurant, waiter_user):
+        """El detalle NO expone datos de pago, precios por ítem ni acciones del dueño."""
+        order = _make_order(db, team_restaurant, status='pending')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        html = client.get(f'/empleado/team-restaurant/pedidos/{order.id}').get_data(as_text=True)
+        for sensitive in ['payment_method', 'amount_received', 'change_due', 'paid_at',
+                          'product_price', 'subtotal',
+                          'Registrar pago', 'Imprimir', 'Editar venta', 'Eliminar']:
+            assert sensitive not in html, f'{sensitive} no debería aparecer en el detalle'
+
+    def test_waiter_sees_products_and_total(self, client, db, team_restaurant, waiter_user):
+        """El detalle muestra productos, cantidades y total (sin IP en notas)."""
+        order = _make_order(db, team_restaurant, status='pending')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        html = client.get(f'/empleado/team-restaurant/pedidos/{order.id}').get_data(as_text=True)
+        assert 'Hamburguesa Clásica' in html
+        assert '2x' in html
+        assert '$39,000' in html or '$39.000' in html
+        assert '127.0.0.1' not in html  # IP sanitizada de las notas
+
+    def test_foreign_order_returns_404(self, client, db, team_restaurant, waiter_user,
+                                       detail_foreign_restaurant):
+        """Pedido de otro restaurante → 404 (anti-IDOR)."""
+        order = _make_order(db, detail_foreign_restaurant, status='pending',
+                            order_number='ORD-FOREIGN',
+                            restaurant_id=detail_foreign_restaurant.id)
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
+        assert resp.status_code == 404
+
+    def test_delivered_order_redirects_to_list(self, client, db, team_restaurant, waiter_user):
+        """Pedido delivered no está en curso → redirect a la lista del mesero."""
+        order = _make_order(db, team_restaurant, status='delivered')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
+        assert resp.status_code == 302
+        assert '/pedidos' in resp.headers['Location']
+
+    def test_expired_order_redirects_to_list(self, client, db, team_restaurant, waiter_user):
+        """Pedido expired no está en curso → redirect a la lista del mesero."""
+        order = _make_order(db, team_restaurant, status='expired')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = waiter_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
+        assert resp.status_code == 302
+        assert '/pedidos' in resp.headers['Location']
+
+    def test_cashier_can_view_detail(self, client, db, team_restaurant, cashier_user):
+        """Cajero también puede ver el detalle → 200."""
+        order = _make_order(db, team_restaurant, status='pending')
+        with client.session_transaction() as sess:
+            sess['employee_id'] = cashier_user.id
+            sess['employee_login'] = True
+
+        resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
         assert resp.status_code == 200

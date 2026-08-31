@@ -6,6 +6,60 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/subscription.css') }}">
 {% set scanner_available = config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
 
+<!-- Banner de Reactivación (estado dormant) -->
+{% if sub_status.status == 'dormant' %}
+<section class="mb-8">
+    <div
+        class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/30 p-6 md:p-8 rounded-[2rem] shadow-sm">
+        <div class="flex items-start gap-4">
+            <div
+                class="w-12 h-12 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-[26px]">waving_hand</span>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-lg font-black text-gray-800 dark:text-white mb-1">¡Hola de nuevo!</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed mb-4">
+                    Tus menús, ventas y reportes están guardados de forma segura. Reactiva tu plan en 1
+                    clic para continuar operando tu restaurante.
+                </p>
+                <a href="{{ url_for('auth.renew') }}"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                    Reactivar mi plan
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Banner de Cancelación Pendiente -->
+{% if sub_status.status == 'cancellation_pending' %}
+<section class="mb-8">
+    <div
+        class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/30 p-6 md:p-8 rounded-[2rem] shadow-sm">
+        <div class="flex items-start gap-4">
+            <div
+                class="w-12 h-12 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-[26px]">schedule</span>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-lg font-black text-gray-800 dark:text-white mb-1">Cancelación programada</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed mb-4">
+                    Tu suscripción vencerá el <strong>{{ sub_status.formatted_expiration }}</strong>. Puedes seguir
+                    usando el sistema hasta entonces. Si cambias de opinión, puedes reactivar tu plan.
+                </p>
+                <button onclick="resumeSubscription()"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-black rounded-xl transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                    Mantener mi plan
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- Plan Actual Card -->
 <section class="mb-8">
     <div
@@ -116,6 +170,24 @@
             </div>
             <div class="flex items-center gap-4">
                 <div
+                    class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-800 dark:text-white">
+                        Equipo
+                    </p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 font-medium tracking-tight">
+                        {% if plan_info.max_employees is none %}
+                        Empleados ilimitados (cajeros y meseros)
+                        {% else %}
+                        Hasta {{ plan_info.max_employees }} empleado{{ 's' if plan_info.max_employees != 1 else '' }} (cajero{{ 's' if plan_info.max_employees != 1 else '' }} y mesero{{ 's' if plan_info.max_employees != 1 else '' }})
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div
                     class="font-bold text-blue-600 dark:text-purple-400 uppercase tracking-tight w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center flex-shrink-0">
                     <span class="material-symbols-outlined text-purple-500 text-[20px]">auto_awesome</span>
                 </div>
@@ -213,8 +285,9 @@
         'orange'})
         ] %}
         {% set is_current = restaurant.plan_type == plan_key %}
-        {% if not is_current %}
-        <a href="{{ url_for('auth.renew', plan=plan_key) }}"
+        {% set is_dormant = sub_status.status == 'dormant' %}
+        {% if not is_current or is_dormant %}
+        <a href="{{ url_for('auth.renew') if is_current else url_for('auth.renew', plan=plan_key) }}"
             class="block p-5 rounded-2xl bg-{{ plan.color }}-50/50 dark:bg-{{ plan.color }}-500/5 border border-{{ plan.color }}-100/50 dark:border-{{ plan.color }}-500/10 hover:scale-[1.02] transition-all active:scale-95 group">
             <div class="flex items-center justify-between">
                 <div>
@@ -263,63 +336,63 @@
         Renovar mi Plan
     </a>
 
-    <button onclick="openAccountDeleteModal()"
+    <button onclick="openAccountCancelModal()"
         class="w-full text-xs text-red-600 dark:text-red-400
                border border-red-500/30 hover:border-red-500/60
                bg-red-500/5 dark:bg-red-500/10 hover:bg-red-500/15
                font-medium py-2 rounded-lg
                flex items-center justify-center gap-1.5
                transition-colors active:scale-95">
-        <span class="material-symbols-outlined text-[14px]">delete_forever</span>
-        Eliminar mi cuenta
+        <span class="material-symbols-outlined text-[14px]">cancel</span>
+        Cancelar mi cuenta
     </button>
 </section>
 
 <!-- Modal de Confirmación -->
-<div id="accountDeleteModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountDeleteModal()">
+<div id="accountCancelModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm transition-opacity" onclick="closeAccountCancelModal()">
     </div>
     <div class="fixed inset-0 z-10 overflow-hidden flex items-center justify-center p-4">
         <div
             class="relative transform overflow-hidden rounded-[2.5rem] bg-white dark:bg-[#141414] text-left shadow-2xl transition-all w-full max-w-md border border-gray-100 dark:border-[#262626] flex flex-col">
             <div class="p-8">
                 <div
-                    class="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[32px]">warning</span>
+                    class="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[32px]">info</span>
                 </div>
-                <h3 class="text-xl font-black text-gray-900 dark:text-white text-center tracking-tight mb-4">¿Eliminar
-                    permanentemente?</h3>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white text-center tracking-tight mb-4">¿Cancelar
+                    tu suscripción?</h3>
 
                 <div
-                    class="bg-red-50/50 dark:bg-red-500/5 rounded-2xl p-5 mb-6 border border-red-100 dark:border-red-500/10">
-                    <p class="text-xs text-red-800 dark:text-red-400 font-bold mb-3 uppercase tracking-wider">Perderás
-                        definitivamente:</p>
-                    <ul class="text-[11px] text-red-700/70 dark:text-red-400/70 space-y-2 font-medium">
-                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Todos
-                            tus productos y categorías</li>
-                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span>
-                            Historial de pedidos y estadísticas</li>
-                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-red-400 rounded-full"></span> Tu
-                            menú digital y códigos QR</li>
+                    class="bg-amber-50/50 dark:bg-amber-500/5 rounded-2xl p-5 mb-6 border border-amber-100 dark:border-amber-500/10">
+                    <p class="text-xs text-amber-800 dark:text-amber-400 font-bold mb-3 uppercase tracking-wider">Tu acceso
+                        continuará hasta la fecha de vencimiento:</p>
+                    <ul class="text-[11px] text-amber-700/70 dark:text-amber-400/70 space-y-2 font-medium">
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-amber-400 rounded-full"></span> Seguirás
+                            usando el sistema normalmente hasta entonces</li>
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-amber-400 rounded-full"></span>
+                            No se realizarán nuevos cobros</li>
+                        <li class="flex items-center gap-2"><span class="w-1 h-1 bg-amber-400 rounded-full"></span> Puedes
+                            reactivar tu plan en cualquier momento</li>
                     </ul>
                 </div>
 
                 <label
                     class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] cursor-pointer group mb-8">
-                    <input type="checkbox" id="confirmAccountDelete" onchange="updateDeleteButton()"
+                    <input type="checkbox" id="confirmAccountCancel" onchange="updateCancelButton()"
                         class="w-5 h-5 rounded-lg border-gray-300 dark:border-gray-700 text-red-600 focus:ring-red-600 bg-white dark:bg-[#141414]">
-                    <span class="text-[11px] font-bold text-gray-700 dark:text-gray-400 leading-tight">Entiendo que esta
-                        acción es irreversible</span>
+                    <span class="text-[11px] font-bold text-gray-700 dark:text-gray-400 leading-tight">Entiendo que mi
+                        suscripción se cancelará al vencer y perderé el acceso</span>
                 </label>
 
                 <div class="flex flex-col gap-3">
-                    <button id="confirmAccountDeleteBtn" onclick="deleteAccount()" disabled
+                    <button id="confirmAccountCancelBtn" onclick="cancelAccount()" disabled
                         class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
-                        ELIMINAR DEFINITIVAMENTE
+                        CANCELAR SUSCRIPCIÓN
                     </button>
-                    <button onclick="closeAccountDeleteModal()"
+                    <button onclick="closeAccountCancelModal()"
                         class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
-                        CANCELAR
+                        VOLVER
                     </button>
                 </div>
             </div>

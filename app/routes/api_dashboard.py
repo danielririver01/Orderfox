@@ -197,25 +197,43 @@ def update_profile():
 
 
 
-@api_dashboard_bp.route('/delete-account', methods=['POST'])
+@api_dashboard_bp.route('/cancel-account', methods=['POST'])
 @require_auth
-def delete_account():
+def cancel_account():
     restaurant = get_current_restaurant_jwt()
     if not restaurant:
         return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
 
     data = request.get_json()
-    if not data or data.get('confirmation') != 'ELIMINAR':
-        return jsonify({'success': False, 'error': 'Confirmación requerida: escribe ELIMINAR'}), 400
+    if not data or data.get('confirmation') != 'CANCELAR':
+        return jsonify({'success': False, 'error': 'Confirmación requerida: escribe CANCELAR'}), 400
 
-    success, result = DashboardService.delete_restaurant(
-        restaurant,
-        clerk_id=user.clerk_id if (user := get_current_user_jwt()) else None,
-    )
-    if success:
-        return jsonify({'success': True, 'message': result['message']})
-    else:
-        return jsonify({'success': False, 'error': result['message']}), 500
+    try:
+        now = datetime.now(timezone.utc)
+        restaurant.subscription_state = 'cancellation_pending'
+        restaurant.cancellation_requested_at = now
+        db.session.commit()
+
+        expires_msg = ''
+        if restaurant.subscription_expires_at:
+            exp = restaurant.subscription_expires_at
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            meses_es = {
+                1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+                5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+                9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+            }
+            expires_msg = f' Tu acceso continuará hasta el {exp.day} de {meses_es[exp.month]} de {exp.year}.'
+
+        return jsonify({
+            'success': True,
+            'message': f'Tu suscripción ha sido cancelada.{expires_msg} Puedes seguir usando el sistema hasta entonces.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error cancelando cuenta (API): {e}")
+        return jsonify({'success': False, 'error': 'Error al cancelar la cuenta'}), 500
 
 
 @api_dashboard_bp.route('/ai-scan/token', methods=['POST'])

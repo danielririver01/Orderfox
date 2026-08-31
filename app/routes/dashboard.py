@@ -438,22 +438,63 @@ def subscription():
         created_date=created_date
     )
 
-@dashboard_bp.route('/delete-account', methods=['POST'])
+@dashboard_bp.route('/cancel-account', methods=['POST'])
 @require_auth
-def delete_account():
+def cancel_account():
     restaurant = get_current_restaurant()
-    if not restaurant: 
+    if not restaurant:
         return jsonify({'success': False, 'message': 'Restaurante no encontrado'}), 404
-    
-    success, result = DashboardService.delete_restaurant(
-        restaurant,
-        clerk_id=session.get('clerk_id'),
-    )
-    if success:
-        session.clear()
-        return jsonify({'success': True, **result})
-    else:
-        return jsonify({'success': False, 'message': result['message']}), 500
+
+    try:
+        now = datetime.now(timezone.utc)
+        restaurant.subscription_state = 'cancellation_pending'
+        restaurant.cancellation_requested_at = now
+        db.session.commit()
+
+        expires_msg = ''
+        if restaurant.subscription_expires_at:
+            exp = restaurant.subscription_expires_at
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            meses_es = {
+                1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+                5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+                9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+            }
+            expires_msg = f' Tu acceso continuará hasta el {exp.day} de {meses_es[exp.month]} de {exp.year}.'
+
+        return jsonify({
+            'success': True,
+            'message': f'Tu suscripción ha sido cancelada.{expires_msg} Puedes seguir usando el sistema hasta entonces.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error cancelando cuenta: {e}")
+        return jsonify({'success': False, 'message': 'Error al cancelar la cuenta'}), 500
+
+
+@dashboard_bp.route('/resume-subscription', methods=['POST'])
+@require_auth
+def resume_subscription():
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'success': False, 'message': 'Restaurante no encontrado'}), 404
+
+    if restaurant.subscription_state != 'cancellation_pending':
+        return jsonify({'success': False, 'message': 'No tienes una cancelación pendiente'}), 400
+
+    try:
+        restaurant.subscription_state = 'active'
+        restaurant.cancellation_requested_at = None
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': '¡Tu suscripción ha sido reactivada! Tu plan continúa activo.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error reactivando suscripción: {e}")
+        return jsonify({'success': False, 'message': 'Error al reactivar la suscripción'}), 500
 
 @dashboard_bp.route('/profile', methods=['GET', 'POST'])
 @require_auth

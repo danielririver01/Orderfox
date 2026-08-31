@@ -3,7 +3,7 @@ from app.models import db, Table
 from app import csrf
 from datetime import datetime
 from app.utils.rate_limiter import OrderRateLimiter
-from app.services.order_service import OrderService
+from app.services.order_service import OrderService, log_event
 from app.services.public_menu_service import PublicMenuService
 from app.services.notification_service import notify_new_order
 import time
@@ -133,6 +133,10 @@ def create_order():
             'success': False,
             'error': total_or_error.get('message', 'Error al crear el pedido.')
         }), 500
+
+    # Traza: pedido desde el menú web. El cliente no tiene actor identificado.
+    log_event(order.id, 'order_created', actor_role='customer')
+    db.session.commit()
 
     order_id = order.id
     notify_new_order(order_id)

@@ -14,7 +14,8 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from app.models import CashRegister, Order, db
+from app.models import CashRegister, Order, OrderEvent, db
+from app.services.order_service import actor_display
 from app.utils.timezone import to_colombia, today_start_utc
 
 PAYMENT_METHODS = ('cash', 'nequi', 'bancolombia', 'card')
@@ -190,6 +191,28 @@ class CashRegisterService:
             ))
 
         orders = query.order_by(Order.paid_at.desc()).all()
+
+        # Trazabilidad: creador/cobrador desde OrderEvent (batch, sin N+1).
+        events = []
+        if orders:
+            events = OrderEvent.query.filter(
+                OrderEvent.order_id.in_([o.id for o in orders]),
+                OrderEvent.event_type.in_(['order_created', 'payment_registered']),
+            ).order_by(OrderEvent.id.asc()).all()
+        by_order = {}
+        for ev in events:
+            by_order.setdefault(ev.order_id, {})[ev.event_type] = ev
+
+        def _actor_of(order_id, event_type):
+            ev = by_order.get(order_id, {}).get(event_type)
+            if not ev:
+                return None
+            display = actor_display(ev.actor_id, ev.actor_role)
+            if not display:
+                return None
+            display['time'] = ev.created_at.isoformat() if ev.created_at else None
+            return display
+
         return [
             {
                 'id': o.id,
@@ -202,6 +225,8 @@ class CashRegisterService:
                 'change_due': o.change_due,
                 'paid_at': o.paid_at.isoformat() if o.paid_at else None,
                 'created_at': o.created_at.isoformat() if o.created_at else None,
+                'created_by': _actor_of(o.id, 'order_created'),
+                'paid_by': _actor_of(o.id, 'payment_registered'),
             }
             for o in orders
         ]

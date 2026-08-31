@@ -23,6 +23,37 @@ class LLMServiceError(Exception):
     pass
 
 
+# ── Response Validation (Prompt Injection Detection) ────────────────────────
+RESPONSE_RED_FLAGS = [
+    'ignore',
+    'override',
+    'system:',
+    'instructions',
+    'reveal',
+    'secret',
+    'password',
+    'api_key',
+    'i will ignore',
+    'as you requested',
+    'i can provide that',
+    'i am now',
+    'i have no restrictions',
+    'do anything now',
+]
+
+
+def validate_llm_response(response: str) -> bool:
+    """Valida que la respuesta del LLM no contenga indicadores de inyección.
+
+    Retorna True si la respuesta es segura, False si se detecta contenido sospechoso.
+    """
+    if not response:
+        return True
+
+    lower = response.lower()
+    return not any(flag in lower for flag in RESPONSE_RED_FLAGS)
+
+
 def _estimate_tokens(text):
     """Estimación simple de tokens (~4 caracteres por token)."""
     if not text:
@@ -99,6 +130,17 @@ def chat(messages, temperature=0.35, max_tokens=2000, source=None,
         resp.raise_for_status()
         data = resp.json()
         content = data['choices'][0]['message']['content']
+
+        # ── Response Validation ──────────────────────────────────────────
+        if not validate_llm_response(content):
+            current_app.logger.warning(
+                f"[PROMPT INJECTION] Respuesta del LLM contiene contenido sospechoso. "
+                f"Source: {source}, Conversation: {conversation_id}"
+            )
+            raise LLMServiceError(
+                "La respuesta contiene contenido inesperado. Intenta de nuevo."
+            )
+
         _record_llm_call(
             source=source, conversation_id=conversation_id,
             restaurant_id=restaurant_id, model=model,

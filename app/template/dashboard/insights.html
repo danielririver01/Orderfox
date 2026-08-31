@@ -1,6 +1,6 @@
 {% extends 'common/base_fullscreen.html' %}
 
-{% block title %}Copilot VZ · Velzia{% endblock %}
+{% block title %}Copilot Estratégico · Velzia{% endblock %}
 
 {% block content %}
 <div class="vz-root w-full flex-1 flex flex-col p-0 m-0 overflow-hidden">
@@ -17,6 +17,8 @@
 
     {% include 'dashboard/insights_modals.html' %}
 </div>
+
+<div id="vz-toast" class="vz-toast" hidden></div>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/insights.css') }}">
 {% endblock %}

@@ -199,9 +199,10 @@
 <script src="{{ url_for('static', filename='js/cash-register-copilot.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/cash-register-copilot.css') }}">
 <!-- FAB Copilot de Caja — abre el chat IA (flotante, móvil y desktop) -->
-<button type="button" id="crc-fab" aria-label="Abrir Copilot de Caja" title="Copilot de Caja"
-    class="fixed bottom-6 right-5 md:bottom-32 md:right-8 z-[1050] w-14 h-14 md:w-15 md:h-15 rounded-2xl bg-[#f2460d] text-white shadow-[0_10px_28px_-6px_rgba(242,70,13,0.65)] flex items-center justify-center transition-all hover:bg-[#d63a0a] hover:scale-105 active:scale-95">
+<button type="button" id="crc-fab" aria-label="Abrir asistente de caja" title="Asistente de Caja"
+    class="fixed bottom-6 right-5 md:bottom-32 md:right-8 z-[1050] w-14 h-14 md:w-15 md:h-15 rounded-2xl bg-[#f2460d] text-white shadow-[0_10px_28px_-6px_rgba(242,70,13,0.65)] flex flex-col items-center justify-center transition-all hover:bg-[#d63a0a] hover:scale-105 active:scale-95">
     <span class="material-symbols-outlined text-[26px]">auto_awesome</span>
+    <span class="text-[10px] font-bold mt-0.5">Asistente</span>
 </button>
 
 {% include 'common/navigation.html' %}

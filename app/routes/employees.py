@@ -44,7 +44,11 @@ from app.services.employee_service import (
     EmployeeService,
     EmployeeValidationError,
 )
-from app.services.order_service import OrderService, PaymentValidationError
+from app.services.order_service import (
+    OrderService,
+    PaymentValidationError,
+    log_event,
+)
 from app.utils.auth import require_active, require_auth, require_role
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access, get_plan_limits
@@ -331,6 +335,8 @@ def order_create(slug):
             flash(str(e), 'error')
             return redirect(url_for('employee_portal.order_create', slug=slug))
 
+        log_event(order.id, 'order_created', actor_id=user.id, actor_role=user.role)
+
         db.session.commit()
         from app.services.notification_service import notify_new_order
         notify_new_order(order.id)
@@ -380,6 +386,9 @@ def cancel_order(slug, order_id):
     if not _employee_can_modify_order(order):
         flash('Este pedido ya no se puede cancelar', 'error')
         return redirect(url_for('employee_portal.waiter', slug=slug))
+
+    log_event(order.id, 'order_cancelled', actor_id=user.id, actor_role=user.role,
+              metadata={'from': order.status, 'to': 'cancelled'})
 
     ok, error = OrderService.cancel_order(order)
     if not ok:
@@ -463,6 +472,51 @@ def order_edit(slug, order_id):
         order=order,
         order_items_json=order_items_json,
         user=user,
+    )
+
+
+def _portal_home_redirect(user, slug):
+    """Redirige al empleado a su pantalla principal según su rol."""
+    if user and user.role == 'cashier':
+        return redirect(url_for('employee_portal.cashier', slug=slug))
+    return redirect(url_for('employee_portal.waiter', slug=slug))
+
+
+@employee_portal_bp.route('/<slug>/pedidos/<int:order_id>')
+@require_auth
+@require_active
+@require_role('waiter', 'cashier')
+def order_detail(slug, order_id):
+    """Detalle de pedido en curso para mesero/cajero. SIN datos de pago.
+
+    Alcance: solo pedidos pending/confirmed (mismo set que la lista del
+    portal). Cualquier otro estado → redirect a la lista del rol, sin error.
+    Pedido de otro restaurante → 404 (anti-IDOR).
+    """
+    restaurant = _get_restaurant_by_slug(slug)
+    if not restaurant:
+        abort(404)
+
+    user = _portal_user()
+    if not user or user.restaurant_id != restaurant.id:
+        flash('Sesión no válida para este restaurante.', 'error')
+        return redirect(url_for('employee_portal.login', slug=slug))
+
+    order = OrderService.get_order_for_restaurant(restaurant.id, order_id)
+    if not order:
+        abort(404)
+
+    if order.status not in ('pending', 'confirmed'):
+        return _portal_home_redirect(user, slug)
+
+    can_deliver = check_feature_access(restaurant, 'has_status_management')
+
+    return render_template(
+        'employees/order_detail_pos.html',
+        restaurant=restaurant,
+        order=order,
+        user=user,
+        can_deliver=can_deliver,
     )
 
 

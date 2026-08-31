@@ -1,7 +1,168 @@
 from datetime import datetime, date, timezone, timedelta
-from app.models import db, Order, OrderItem, Product, Table, Modifier, OrderCounter
+from app.models import db, Order, OrderItem, OrderEvent, Product, Table, Modifier, OrderCounter
 from app.utils.timezone import today_start_utc
 import json
+
+# ── Trazabilidad: etiquetas de visualización ──────────────────────────────
+
+ROLE_LABELS = {
+    'owner': 'Dueño',
+    'cashier': 'Cajero',
+    'waiter': 'Mesero',
+    'customer': 'Cliente',
+    'system': 'Sistema',
+}
+
+STATUS_LABELS = {
+    'pending': 'Pendiente',
+    'confirmed': 'Confirmado',
+    'delivered': 'Entregado',
+    'cancelled': 'Cancelado',
+    'expired': 'Expirado',
+}
+
+PAYMENT_METHOD_LABELS = {
+    'cash': 'Efectivo',
+    'nequi': 'Nequi',
+    'bancolombia': 'Bancolombia',
+    'card': 'Tarjeta',
+}
+
+ORDER_EVENT_TYPES = (
+    'order_created',
+    'status_changed',
+    'payment_registered',
+    'order_cancelled',
+    'order_restored',
+    'order_expired',
+    'order_deleted',
+    'items_edited',
+)
+
+
+def log_event(order_id, event_type, actor_id=None, actor_role=None, metadata=None):
+    """Registra un evento de trazabilidad sin hacer commit.
+
+    Se agrega a la sesión actual; el commit lo hace la transacción existente
+    en la que se invoca (así el evento se descarta si la operación falla).
+    """
+    event = OrderEvent(
+        order_id=order_id,
+        event_type=event_type,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        event_data=metadata,
+    )
+    db.session.add(event)
+    return event
+
+
+def resolve_actor():
+    """Resuelve (actor_id, actor_role) del request actual.
+
+    Prioridad:
+    1. JWT Bearer        → (id, role real del usuario)
+    2. session employee  → (id, role real del usuario)
+    3. session user_id   → (id, role real del usuario)
+    4. Sin actor         → (None, None)
+
+    Fuera de un request (APScheduler) usar directamente
+    log_event(..., actor_id=None, actor_role='system').
+    """
+    from flask import current_app, request, session
+
+    from app.models import User
+
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+        try:
+            verify_jwt_in_request()
+            user = User.query.get(get_jwt_identity())
+            if user:
+                return user.id, user.role
+        except Exception:
+            current_app.logger.debug('resolve_actor: JWT verification failed', exc_info=True)
+
+    user_id = session.get('employee_id') or session.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        if user:
+            return user.id, user.role
+
+    return None, None
+
+
+def actor_display(actor_id, actor_role):
+    """Serializa un actor para UI/JSON: {'name', 'role_label'} o None.
+
+    Si el usuario existe usa su rol real; si el usuario fue borrado (SET NULL)
+    pero quedó actor_role, se muestra solo la etiqueta de rol.
+    """
+    from app.models import User
+    if actor_id:
+        user = User.query.get(actor_id)
+        if user:
+            return {
+                'name': user.username,
+                'role_label': ROLE_LABELS.get(user.role, user.role),
+            }
+    if actor_role:
+        return {
+            'name': None,
+            'role_label': ROLE_LABELS.get(actor_role, actor_role),
+        }
+    return None
+
+
+def actor_label(actor_id, actor_role):
+    """Etiqueta legible 'Juan (Mesero)' para la línea de tiempo."""
+    display = actor_display(actor_id, actor_role)
+    if not display:
+        return None
+    if display.get('name'):
+        return f"{display['name']} ({display['role_label']})"
+    return f"({display['role_label']})"
+
+
+def event_label(event_type, metadata=None):
+    """Etiqueta legible de un evento, con detalle según su metadata."""
+    meta = metadata or {}
+    if event_type == 'status_changed':
+        to_status = meta.get('to')
+        if to_status in STATUS_LABELS:
+            return STATUS_LABELS[to_status]
+        return 'Estado cambiado'
+    if event_type == 'payment_registered':
+        method = meta.get('method')
+        amount = meta.get('amount')
+        label = PAYMENT_METHOD_LABELS.get(method, method)
+        if label and amount is not None:
+            return f'Cobrado — {label} ${amount:,}'.replace(',', '.')
+        if label:
+            return f'Cobrado — {label}'
+        return 'Cobrado'
+    labels = {
+        'order_created': 'Pedido creado',
+        'order_cancelled': 'Pedido cancelado',
+        'order_restored': 'Pedido restaurado',
+        'order_expired': 'Pedido expirado',
+        'order_deleted': 'Pedido eliminado',
+        'items_edited': 'Items modificados',
+    }
+    return labels.get(event_type, event_type)
+
+
+def serialize_event(event):
+    """Convierte un OrderEvent en dict listo para plantilla o JSON."""
+    return {
+        'id': event.id,
+        'event_type': event.event_type,
+        'label': event_label(event.event_type, event.event_data),
+        'created_at': event.created_at,
+        'actor': actor_display(event.actor_id, event.actor_role),
+        'metadata': dict(event.event_data or {}),
+    }
 
 
 class PaymentValidationError(ValueError):

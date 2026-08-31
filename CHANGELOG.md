@@ -4,6 +4,109 @@ Todas las fechas en UTC.
 
 ---
 
+## [1.6.0] - 2026-08-22 (sin release / working tree)
+
+> Conjunto de cambios aun **no commiteados** (arbol de trabajo vs `7994803`). Incluye
+> trazabilidad de pedidos, ciclo de vida de suscripcion sin borrado (`dormant`),
+> diferenciacion de los dos Copilots y hardening de seguridad de IA.
+
+### Anadido
+
+#### 1. Trazabilidad de pedidos (`OrderEvent`)
+- Modelo `OrderEvent` en `app/models/orders.py` para auditar cada accion de un pedido.
+- Helpers en `app/services/order_service.py`: `log_event()`, `resolve_actor()`,
+  `serialize_event()` + mapas de etiquetas (`ROLE_LABELS`, `STATUS_LABELS`,
+  `PAYMENT_METHOD_LABELS`, `ORDER_EVENT_TYPES`).
+- Instrumentacion en `app/routes/orders.py` y `app/routes/api_orders.py`
+  (creacion, pago, cambio de estado, cancelacion, restauracion) y
+  `app/routes/public.py` / `app/services/cash_register_service.py` (flujo de caja).
+- Timeline de eventos en `app/template/dashboard/order_detail.html` y
+  `app/template/dashboard/cash_register_print.html` (ticket: solo rol, sin nombres de empleados).
+- Test `tests/test_order_traceability.py` (nuevo).
+- Migracion `migrations/versions/7c5dc42affdd_add_order_events_table.py` (nueva, sin track).
+
+#### 2. Ciclo de vida de suscripcion sin borrado destructivo (`dormant`)
+- `app/models/core.py`: campos `subscription_state` (`active`/`dormant`, default `active`)
+  y `dormant_at`.
+- `app/tasks.py`: `delete_inactive_accounts` reemplazado por
+  `manage_subscription_lifecycle` (3 AM) -> marca cuentas inactivas >30d o expiradas
+  >grace como **`dormant`** (congela CRUD, **preserva todos los datos**; reactivables en 1 clic).
+- `app/utils/auth.py` (`require_active`): `dormant` redirige a `dashboard.subscription`
+  con banner de reactivacion en vez de "suspendida, contacta soporte" (402 en JSON).
+- `app/utils/subscription.py` (`get_subscription_status`): estado `dormant` con mensaje de bienvenida.
+- Banner "Hola de nuevo!" en `app/template/dashboard/subscription.html`; texto de datos
+  preservados en `app/templates/public/subscription_expired.html`.
+- Migracion `migrations/versions/c4c47adbb493_add_subscription_lifecycle_fields.py` (nueva, sin track).
+
+#### 3. Diferenciacion Copilot Estrategico vs Copilot de Caja
+- Renombrado "Copilot VZ" -> **"Copilot Estrategico"** con subtitulo "Ventas, rentabilidad y
+  tendencias" en `app/template/common/base.html`, `navigation.html`, `insights_sidebar.html`,
+  `insights.html` y `insights_chat.html`.
+- Burbujas del chat etiquetadas como **"Estratega"** en `app/static/js/insights.js`.
+- Color del Estrategico: naranja `#f97316` -> **indigo `#6366f1`**
+  (`app/static/CSS/insights.css` + `output.css` regenerado; paleta de graficos en `insights.js`).
+- **Copilot de Caja** (naranja) en `cash-register-copilot.js` con subtitulo
+  "Cobros, pagos y pendientes"; badge "Asistente" en `cash_register.html`.
+- Cross-sell en `app/services/insights/prompt_builder.py` (CASH_SYSTEM_PROMPT redirige
+  preguntas de estrategia al Copilot Estrategico).
+- Fix de edicion en `insights.js`: al editar un mensaje ahora aparece el indicador de
+  escritura y se bloquea el composer.
+
+#### 4. Hardening de seguridad de IA (prompt injection)
+- `app/services/insights/message_handler.py`: `sanitize_user_message()` (max 2000 chars +
+  filtrado de patrones de inyeccion -> `[FILTRADO]`).
+- `app/services/insights/llm_service.py`: `validate_llm_response()` (detector de red flags)
+  + log de intento de inyeccion y rechazo de la respuesta.
+- `app/services/insights/data_service.py`: ajustes menores de consulta.
+
+#### 5. Documentacion / memoria
+- `memories/repo/orderfox-codebase-guide.md` (v2.0) y `memories/repo/authentication-policy.md`
+  (v2.0) reescritos contra el estado real del repo.
+- `AGENTS.md`, `docs/DOFA.md`, `docs/01-ARCHITECTURE/ARCH-04_Flujo_de_Suscripcion.md` actualizados.
+
+### Cambiado
+- `app/services/order_service.py`: +163 lineas (trazabilidad + validacion de cantidad).
+- `app/routes/employees.py`, `app/template/employees/waiter.html`, `tests/test_employees.py`:
+  gestion de roles de empleados / portal de mesero (cambios previos en el arbol de trabajo).
+- Secciones legales en `app/template/dashboard/legal/sections/*.html`
+  (`datos`, `faq`, `privacidad`, `suscripciones`, `terminos`, `copilot`): actualizacion de
+  textos de retencion/reactivacion de datos.
+
+### Notas tecnicas
+- `GRACE_PERIOD_DAYS = 5` en `app/utils/subscription.py` (los textos legales dicen 14; pendiente homogeneizar).
+- `settings.APP_VERSION = '1.4.0'` desincronizado del ultimo tag git `v1.4.1`.
+- Migraciones nuevas aun sin commit: aplicar con `flask db upgrade` tras commitear.
+- Tailwind v4: `output.css` es generado (`npm run build:css`); no editar a mano.
+
+### Como probar / verificar
+```bash
+# 1. Aplicar migraciones (desde raiz, entorno activo)
+$env:FLASK_APP="run.py"
+.\.venv\Scripts\flask.exe db upgrade
+
+# 2. Suite de pruebas (resultado esperado: 462 passed)
+.\.venv\Scripts\pytest.exe tests -q
+
+# 3. Sintaxis de archivos Python tocados
+.\.venv\Scripts\python.exe -m py_compile app\tasks.py app\models\core.py `
+  app\utils\subscription.py app\utils\auth.py app\services\order_service.py
+
+# 4. Verificar columnas de lifecycle en la DB local (MariaDB XAMPP)
+#    SELECT subscription_state, dormant_at FROM restaurants LIMIT 1;
+```
+
+**Verificacion manual:**
+- **Trazabilidad:** crear/editar/cancelar un pedido -> el timeline en
+  `order_detail.html` lista los eventos con actor y rol correctos.
+- **Dormant:** poner `is_active=0, subscription_state='dormant'` a un restaurante ->
+  al entrar al dashboard redirige a `/dashboard/subscription` con el banner "Hola de nuevo!".
+- **Copilots:** el chat lateral es indigo ("Estratega"); en Caja el asistente es naranja
+  y deriva preguntas de estrategia al Estrategico.
+- **Inyeccion IA:** enviar "ignore previous instructions" -> el mensaje se registra como
+  `[FILTRADO]` y la respuesta sospechosa se rechaza (ver logs).
+
+---
+
 ## [1.5.0] — 2026-08-17
 
 ### Rediseño del Dashboard Home

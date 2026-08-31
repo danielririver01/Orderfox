@@ -152,7 +152,29 @@ def handle_quick(restaurant_id, intent):
 
 # ── Contexto enriquecido para el LLM (Nivel 2) ──────────────────────────────
 
-def build_context(restaurant_id, days=90):
+def _weekday_sales(restaurant_id, start):
+    """
+    Suma de ventas por día de la semana (0=lunes..6=domingo) desde `start`.
+    Función aparte para poder stubbearla en tests (dayofweek() no existe en
+    SQLite, que es la DB de la suite local).
+    """
+    wk = db.session.query(
+        func.dayofweek(Order.created_at).label('dow'),
+        func.coalesce(func.sum(Order.total), 0).label('total'),
+    ).filter(
+        Order.restaurant_id == restaurant_id,
+        Order.status != 'cancelled',
+        func.date(Order.created_at) >= start,
+    ).group_by(func.dayofweek(Order.created_at)).all()
+    # Mapear 1=dom..7=sab → 0=lun..6=dom
+    weekday = {i: 0 for i in range(7)}
+    for r in wk:
+        idx = (int(r.dow) - 2) % 7
+        weekday[idx] += int(r.total)
+    return weekday
+
+
+def build_context(restaurant_id, days=60):
     """
     Devuelve un dict de datos YA procesados para enviar como contexto al LLM.
     Nunca enviamos filas crudas: PostgreSQL agrega, Flask organiza.
@@ -189,19 +211,7 @@ def build_context(restaurant_id, days=90):
 
     # Ventas por día de la semana (0=lunes..6=domingo).
     # DAYOFWEEK(): 1=domingo..7=sábado (MySQL y MariaDB compatibles).
-    wk = db.session.query(
-        func.dayofweek(Order.created_at).label('dow'),
-        func.coalesce(func.sum(Order.total), 0).label('total'),
-    ).filter(
-        Order.restaurant_id == restaurant_id,
-        Order.status != 'cancelled',
-        func.date(Order.created_at) >= start,
-    ).group_by(func.dayofweek(Order.created_at)).all()
-    # Mapear 1=dom..7=sab → 0=lun..6=dom
-    weekday = {i: 0 for i in range(7)}
-    for r in wk:
-        idx = (int(r.dow) - 2) % 7
-        weekday[idx] += int(r.total)
+    weekday = _weekday_sales(restaurant_id, start)
 
     catalog = db.session.query(
         func.count(Product.id),
@@ -210,8 +220,13 @@ def build_context(restaurant_id, days=90):
     n_products = int(catalog[0] or 0)
     n_active = int(catalog[1] or 0)
 
-    return {
+    context = {
         'period_days': days,
+        # Fechas concretas del período analizado: permiten al LLM decir
+        # "del 27 de mayo al 25 de agosto" en lugar de "últimos 90 días",
+        # que suena a datos viejos aunque sean recientes.
+        'period_start': str(start),
+        'period_end': str(today),
         'currency': 'COP',
         'overall': overall,
         'active_days': len(daily),
@@ -221,6 +236,22 @@ def build_context(restaurant_id, days=90):
         'sales_by_weekday': weekday,  # 0=lunes..6=domingo
         'catalog': {'total': n_products, 'active': n_active},
     }
+
+    # Benchmarks anónimos de la plataforma (Fase 1). Opcional: si no hay
+    # snapshot publicado (k-anonymity insuficiente) o el usuario optó por no
+    # participar, simplemente no se envía.
+    try:
+        from app.models import Restaurant as _Restaurant
+        from app.services.insights.benchmark_service import benchmarks_for_context
+        restaurant = _Restaurant.query.get(restaurant_id)
+        if restaurant and restaurant.allow_benchmark:
+            bench = benchmarks_for_context(restaurant)
+            if bench:
+                context['benchmarks'] = bench
+    except Exception:  # pragma: no cover - el análisis nunca falla por benchmarks
+        pass
+
+    return context
 
 
 # ── Serie diaria para gráficas ───────────────────────────────────────────────
@@ -310,7 +341,7 @@ def window_label_from_days(days):
         7: 'esta semana',
         30: 'este mes',
         60: 'los últimos 2 meses',
-        90: 'los últimos 90 días',
+        60: 'los últimos 60 días',
     }.get(days, f'los últimos {days} días')
 
 
@@ -367,7 +398,7 @@ def has_sales(restaurant_id, days=None):
     return q.count() > 0
 
 
-def projection_uplift(restaurant_id, days=90, adoption=0.25):
+def projection_uplift(restaurant_id, days=60, adoption=0.25):
     """Proyección transparente del impacto de mejorar el ticket promedio.
 
     Estima el ingreso adicional si una fracción (`adoption`) de los pedidos

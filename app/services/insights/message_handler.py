@@ -43,6 +43,44 @@ from app.services.insights.helpers import (
 from app.services.token_service import TokenService, is_elite_user
 from app.utils.subscription import is_subscription_active
 
+# ── Prompt Injection Protection ──────────────────────────────────────────────
+MAX_MESSAGE_LENGTH = 2000
+
+INJECTION_PATTERNS = [
+    re.compile(r'ignore\s+(previous|all)\s+instructions', re.IGNORECASE),
+    re.compile(r'disregard\s+(your|all)\s+(safety|guidelines)', re.IGNORECASE),
+    re.compile(r'you\s+are\s+now\s+\w+', re.IGNORECASE),
+    re.compile(r'system\s*:\s*', re.IGNORECASE),
+    re.compile(r'override\s*:?\s*', re.IGNORECASE),
+    re.compile(r'forget\s+(everything|all)', re.IGNORECASE),
+    re.compile(r'new\s+instructions\s*:', re.IGNORECASE),
+    re.compile(r'act\s+as\s+if', re.IGNORECASE),
+    re.compile(r'pretend\s+you\s+are', re.IGNORECASE),
+    re.compile(r'you\s+are\s+DAN', re.IGNORECASE),
+    re.compile(r'do\s+anything\s+now', re.IGNORECASE),
+    re.compile(r'bypass\s+(all\s+)?restrictions', re.IGNORECASE),
+    re.compile(r'reveal\s+(your|all)\s+(system|instructions|prompt)', re.IGNORECASE),
+    re.compile(r'what\s+(is|are)\s+your\s+(system|instructions)', re.IGNORECASE),
+    re.compile(r'output\s+(your|all)\s+(instructions|prompt|system)', re.IGNORECASE),
+]
+
+
+def sanitize_user_message(text: str) -> str:
+    """Sanitiza el mensaje del usuario contra prompt injection.
+
+    - Detecta y filtra patrones de inyección conocidos
+    - Limita la longitud del mensaje
+    - Retorna el texto sanitizado
+    """
+    if not text:
+        return text
+
+    sanitized = text
+    for pattern in INJECTION_PATTERNS:
+        sanitized = pattern.sub('[FILTRADO]', sanitized)
+
+    return sanitized[:MAX_MESSAGE_LENGTH]
+
 
 def handle_post_message(cid, user, conv, data):
     """Procesa un mensaje de usuario y genera respuesta (rápida o análisis IA).
@@ -68,6 +106,9 @@ def handle_post_message(cid, user, conv, data):
 
     if not content:
         return jsonify({'success': False, 'error': 'empty_content'}), 400
+
+    # ── Prompt Injection Protection ──────────────────────────────────────
+    content = sanitize_user_message(content)
 
     t0 = time.time()
 
@@ -290,6 +331,10 @@ def handle_post_message(cid, user, conv, data):
         context = data_service.build_context(conv.restaurant_id, days=cls['window'])
         history = cs.get_messages(cid)
         history_for_llm = [m for m in history if m.id != user_msg.id]
+        # Fase 2: best practices de industria (máx 1 documento, ~800 tokens).
+        # Nunca lanza: si la KB falla, el análisis sigue sin guía.
+        from app.services.insights.knowledge_selector import select_knowledge
+        knowledge = select_knowledge(content, cls.get('intent'))
         messages = prompt_builder.build_analysis_messages(
             user_message=content,
             context=context,
@@ -297,6 +342,7 @@ def handle_post_message(cid, user, conv, data):
             restaurant_name=(user.restaurant.name if user.restaurant else None),
             context_summary=ctx_summary,
             compressed=ctx_compressed,
+            knowledge=knowledge,
         )
         raw = llm_service.chat(
             messages, source='insights', conversation_id=cid,

@@ -194,6 +194,17 @@ def get_subscription_status(restaurant):
         }
     
     if not restaurant.is_active:
+        if restaurant.subscription_state == 'dormant':
+            return {
+                'is_active': False,
+                'status': 'dormant',
+                'message': '¡Hola de nuevo! Tus menús, ventas y reportes están guardados de forma segura. '
+                           'Reactivá tu plan en 1 clic para continuar operando.',
+                'can_crud': False,
+                'badge_class': 'bg-blue-100 text-blue-700',
+                'badge_text': 'Reactivar',
+                'plan': restaurant.plan_type
+            }
         return {
             'is_active': False,
             'status': 'inactive',
@@ -203,7 +214,41 @@ def get_subscription_status(restaurant):
             'badge_text': 'Suspendida',
             'plan': restaurant.plan_type
         }
-    
+
+    if restaurant.subscription_state == 'cancellation_pending':
+        expires_at = restaurant.subscription_expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        meses_es = {
+            1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+            5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+            9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+        }
+        if expires_at and expires_at > now:
+            formatted_expiration = f"{expires_at.day} de {meses_es[expires_at.month]} de {expires_at.year}"
+            return {
+                'is_active': True,
+                'status': 'cancellation_pending',
+                'expires_at': expires_at,
+                'formatted_expiration': formatted_expiration,
+                'can_crud': True,
+                'message': f'Tu suscripción está cancelada y vencerá el {formatted_expiration}. '
+                           'Puedes seguir usando el sistema hasta entonces.',
+                'badge_class': 'bg-amber-100 text-amber-700',
+                'badge_text': 'Cancelación pendiente',
+                'plan': restaurant.plan_type
+            }
+        return {
+            'is_active': False,
+            'status': 'dormant',
+            'message': 'Tu suscripción ha vencido. Reactiva tu plan para continuar.',
+            'can_crud': False,
+            'badge_class': 'bg-blue-100 text-blue-700',
+            'badge_text': 'Reactivar',
+            'plan': restaurant.plan_type
+        }
+
     if not restaurant.subscription_expires_at:
         return {
             'is_active': False,
