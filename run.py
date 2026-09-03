@@ -8,8 +8,13 @@ from app import create_app
 app = create_app()
 
 with app.app_context():
-    from app.models import db
-    db.create_all()
+    try:
+        from app.models import db
+        db.create_all()
+    except Exception as e:
+        import sys
+        print(f"ERROR: db.create_all() failed: {e}", file=sys.stderr)
+        sys.stderr.flush()
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
