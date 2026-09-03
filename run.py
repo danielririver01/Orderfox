@@ -8,8 +8,8 @@ from app import create_app
 app = create_app()
 
 with app.app_context():
-    from flask_migrate import upgrade
-    upgrade()
+    from app.models import db
+    db.create_all()
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
