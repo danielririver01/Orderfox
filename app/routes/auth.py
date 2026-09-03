@@ -30,114 +30,108 @@ def sync_clerk():
 
         # 1. Verificación en el backend contra Clerk (delegada al servicio)
         verified_email, error = AuthService.verify_clerk_session(session_id, clerk_id, email)
-    if error:
-        return jsonify({
-            'success': False,
-            'message': error.get('message', 'Verification failed'),
-            'error_code': error.get('error_code', 'VERIFICATION_FAILED')
-        }), 401 if error.get('error_code') in ('INVALID_SESSION', 'INVALID_USER', 'EMAIL_MISMATCH', 'SESSION_USER_MISMATCH') else 500
-
-    email = verified_email
-
-    username = data.get('username') or email.split('@')[0]
-
-    # El plan elegido en /planes queda en session['selected_plan'] pero el
-    # servicio solo lo respeta si existe un PreRegistration. Sin esto, un
-    # correo que ya usó el trial y viene a COMPRAR un plan de pago era
-    # tratado como 'trial' por defecto → TRIAL_ALREADY_USED → loop
-    # planes→register→login→planes. Persistirlo aquí rompe ese ciclo.
-    selected_plan = session.get('selected_plan')
-    if selected_plan and selected_plan != 'trial':
-        try:
-            AuthService.save_plan_selection(email, selected_plan)
-        except Exception:
-            current_app.logger.warning(
-                f"sync_clerk: no se pudo persistir plan {selected_plan} para {email}",
-                exc_info=True,
-            )
-
-    # 2. Delegar sync / creación de usuario al servicio
-    user, is_new, plan_or_error = AuthService.sync_or_create_user(
-        clerk_id, email, username
-    )
-
-    if user is None:
-        # Bug 3: el correo ya usó el trial gratuito → redirigir a planes
-        # con mensaje claro en vez de regalar otro trial.
-        if plan_or_error.get('error_code') == 'TRIAL_ALREADY_USED':
-            # El usuario tiene sesión Clerk válida pero NO cuenta local
-            # (trial bloqueado). Guardar su identidad para que /planes
-            # muestre logout y deshabilite el botón del plan trial, en vez
-            # de tratarlo como visitante anónimo.
-            session['clerk_id'] = clerk_id
-            session['trial_blocked'] = True
-            flash(plan_or_error.get('message'), 'warning')
+        if error:
             return jsonify({
-                'success': True,
-                'redirect_url': url_for('auth.plans'),
-                'message': plan_or_error.get('message'),
-                'trial_blocked': True,
-            })
+                'success': False,
+                'message': error.get('message', 'Verification failed'),
+                'error_code': error.get('error_code', 'VERIFICATION_FAILED')
+            }), 401 if error.get('error_code') in ('INVALID_SESSION', 'INVALID_USER', 'EMAIL_MISMATCH', 'SESSION_USER_MISMATCH') else 500
 
-        return jsonify({
-            'success': False,
-            'message': plan_or_error.get('message', 'Error de registro'),
-            'error_code': plan_or_error.get('error_code', 'REGISTRATION_ERROR')
-        }), 500
+        email = verified_email
 
-    # v2.1.2: última acción de login gana. Si en este navegador había una
-    # sesión de empleado (employee_id), el dueño la toma al autenticarse.
-    session.pop('employee_id', None)
-    session.pop('employee_login', None)
-    session.pop('employee_slug', None)
-    session['user_id'] = user.id
-    session['username'] = user.username
-    session['clerk_id'] = clerk_id
+        username = data.get('username') or email.split('@')[0]
 
-    if is_new:
-        session['selected_plan'] = plan_or_error  # plan string
-        # Bug 3c: "primera vez" = usuario recién creado Y sin historial de
-        # trial previo. Sin esto, el frontend mostraba "trial activado" a
-        # cualquiera con is_new_user=True aunque ya hubiera tenido cuenta.
-        is_first_time = not TrialHistory.query.filter_by(email=email).first()
-        return jsonify({
-            'success': True,
-            'message': f'¡Bienvenido! Completa tu registro para activar tu plan {plan_or_error}.',
-            'is_new_user': True,
-            'is_first_time': is_first_time,
-            'trial_plan': plan_or_error == 'trial',
-            'redirect_url': url_for('auth.setup_account')
-        })
+        # El plan elegido en /planes queda en session['selected_plan'] pero el
+        # servicio solo lo respeta si existe un PreRegistration. Sin esto, un
+        # correo que ya usó el trial y viene a COMPRAR un plan de pago era
+        # tratado como 'trial' por defecto → TRIAL_ALREADY_USED → loop
+        # planes→register→login→planes. Persistirlo aquí rompe ese ciclo.
+        selected_plan = session.get('selected_plan')
+        if selected_plan and selected_plan != 'trial':
+            try:
+                AuthService.save_plan_selection(email, selected_plan)
+            except Exception:
+                current_app.logger.warning(
+                    f"sync_clerk: no se pudo persistir plan {selected_plan} para {email}",
+                    exc_info=True,
+                )
 
-    redirect_url = url_for('dashboard.index')
-    if not user.restaurant:
-        # Usuario existente sin restaurante.
-        if session.get('selected_plan'):
-            # Ya eligió un plan (trial o pago en /planes → /register) → completar
-            # el registro en setup-account con ese plan.
-            redirect_url = url_for('auth.setup_account')
-        else:
-            # Sin plan elegido en esta sesión:
-            #  - ya usó el trial → debe elegir un plan pago en /planes (antes caía
-            #    en setup-account con plan=None → el template mostraba elite $50.000).
-            #  - no usó el trial → setup con plan trial por defecto.
-            already_used_trial = TrialHistory.query.filter_by(email=email).first() is not None
-            if already_used_trial:
+        # 2. Delegar sync / creación de usuario al servicio
+        user, is_new, plan_or_error = AuthService.sync_or_create_user(
+            clerk_id, email, username
+        )
+
+        if user is None:
+            # Bug 3: el correo ya usó el trial gratuito → redirigir a planes
+            # con mensaje claro en vez de regalar otro trial.
+            if plan_or_error.get('error_code') == 'TRIAL_ALREADY_USED':
+                # El usuario tiene sesión Clerk válida pero NO cuenta local
+                # (trial bloqueado). Guardar su identidad para que /planes
+                # muestre logout y deshabilite el botón del plan trial, en vez
+                # de tratarlo como visitante anónimo.
                 session['clerk_id'] = clerk_id
                 session['trial_blocked'] = True
-                flash(
-                    'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.',
-                    'warning'
-                )
-                redirect_url = url_for('auth.plans')
-            else:
-                session['selected_plan'] = 'trial'
-                redirect_url = url_for('auth.setup_account')
+                flash(plan_or_error.get('message'), 'warning')
+                return jsonify({
+                    'success': True,
+                    'redirect_url': url_for('auth.plans'),
+                    'message': plan_or_error.get('message'),
+                    'trial_blocked': True,
+                })
 
-    return jsonify({
-        'success': True,
-        'redirect_url': redirect_url
-    })
+            return jsonify({
+                'success': False,
+                'message': plan_or_error.get('message', 'Error de registro'),
+                'error_code': plan_or_error.get('error_code', 'REGISTRATION_ERROR')
+            }), 500
+
+        # v2.1.2: última acción de login gana. Si en este navegador había una
+        # sesión de empleado (employee_id), el dueño la toma al autenticarse.
+        session.pop('employee_id', None)
+        session.pop('employee_login', None)
+        session.pop('employee_slug', None)
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['clerk_id'] = clerk_id
+
+        if is_new:
+            session['selected_plan'] = plan_or_error  # plan string
+            # Bug 3c: "primera vez" = usuario recién creado Y sin historial de
+            # trial previo. Sin esto, el frontend mostraba "trial activado" a
+            # cualquiera con is_new_user=True aunque ya hubiera tenido cuenta.
+            is_first_time = not TrialHistory.query.filter_by(email=email).first()
+            return jsonify({
+                'success': True,
+                'message': f'¡Bienvenido! Completa tu registro para activar tu plan {plan_or_error}.',
+                'is_new_user': True,
+                'is_first_time': is_first_time,
+                'trial_plan': plan_or_error == 'trial',
+                'redirect_url': url_for('auth.setup_account')
+            })
+
+        redirect_url = url_for('dashboard.index')
+        if not user.restaurant:
+            # Usuario existente sin restaurante.
+            if session.get('selected_plan'):
+                redirect_url = url_for('auth.setup_account')
+            else:
+                already_used_trial = TrialHistory.query.filter_by(email=email).first() is not None
+                if already_used_trial:
+                    session['clerk_id'] = clerk_id
+                    session['trial_blocked'] = True
+                    flash(
+                        'Ya usaste tu período de prueba gratuito. Elige un plan para continuar.',
+                        'warning'
+                    )
+                    redirect_url = url_for('auth.plans')
+                else:
+                    session['selected_plan'] = 'trial'
+                    redirect_url = url_for('auth.setup_account')
+
+        return jsonify({
+            'success': True,
+            'redirect_url': redirect_url
+        })
 
     except Exception as e:
         current_app.logger.error(f"sync_clerk: ERROR FATAL: {type(e).__name__}: {e}", exc_info=True)
