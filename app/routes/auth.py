@@ -14,28 +14,6 @@ auth_bp = Blueprint('auth', __name__)
 
 from app.csrf import csrf
 
-@auth_bp.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint for diagnostics."""
-    checks = {}
-    try:
-        db.engine.connect()
-        checks['database'] = 'ok'
-    except Exception as e:
-        checks['database'] = f'error: {type(e).__name__}: {e}'
-
-    try:
-        from app.models import User
-        count = User.query.count()
-        checks['users_table'] = f'ok ({count} users)'
-    except Exception as e:
-        checks['users_table'] = f'error: {type(e).__name__}: {e}'
-
-    return jsonify({
-        'status': 'ok' if all('error' not in v for v in checks.values()) else 'degraded',
-        'checks': checks
-    })
-
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 @csrf.exempt
 def sync_clerk():
