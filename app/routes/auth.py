@@ -142,6 +142,47 @@ def sync_clerk():
         }), 500
 
 
+@auth_bp.route('/api/debug-clerk')
+@csrf.exempt
+def debug_clerk():
+    import requests as req
+    import traceback
+    result = {'checks': {}}
+
+    clerk_secret = current_app.config.get('CLERK_SECRET_KEY')
+    clerk_pub = current_app.config.get('CLERK_PUBLISHABLE_KEY')
+    clerk_issuer = current_app.config.get('CLERK_JWT_ISSUER')
+
+    result['checks']['secret_key_set'] = bool(clerk_secret)
+    result['checks']['secret_key_prefix'] = clerk_secret[:12] if clerk_secret else None
+    result['checks']['publishable_key_set'] = bool(clerk_pub)
+    result['checks']['publishable_key_prefix'] = clerk_pub[:12] if clerk_pub else None
+    result['checks']['jwt_issuer'] = clerk_issuer
+
+    try:
+        resp = req.get(
+            f"{clerk_issuer}/.well-known/jwks.json",
+            timeout=5
+        )
+        result['checks']['jwks_status'] = resp.status_code
+    except Exception as e:
+        result['checks']['jwks_error'] = f"{type(e).__name__}: {e}"
+
+    try:
+        resp = req.get(
+            "https://api.clerk.com/v1/users",
+            headers={"Authorization": f"Bearer {clerk_secret}"},
+            timeout=5
+        )
+        result['checks']['clerk_api_status'] = resp.status_code
+        result['checks']['clerk_api_headers'] = dict(resp.headers)
+    except Exception as e:
+        result['checks']['clerk_api_error'] = f"{type(e).__name__}: {e}"
+        result['checks']['clerk_api_traceback'] = traceback.format_exc()
+
+    return jsonify(result)
+
+
 @auth_bp.route('/api/sync-clerk-redirect')
 def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
