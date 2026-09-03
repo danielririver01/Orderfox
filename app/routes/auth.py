@@ -14,6 +14,28 @@ auth_bp = Blueprint('auth', __name__)
 
 from app.csrf import csrf
 
+@auth_bp.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for diagnostics."""
+    checks = {}
+    try:
+        db.engine.connect()
+        checks['database'] = 'ok'
+    except Exception as e:
+        checks['database'] = f'error: {type(e).__name__}: {e}'
+
+    try:
+        from app.models import User
+        count = User.query.count()
+        checks['users_table'] = f'ok ({count} users)'
+    except Exception as e:
+        checks['users_table'] = f'error: {type(e).__name__}: {e}'
+
+    return jsonify({
+        'status': 'ok' if all('error' not in v for v in checks.values()) else 'degraded',
+        'checks': checks
+    })
+
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
 @csrf.exempt
 def sync_clerk():
@@ -21,13 +43,15 @@ def sync_clerk():
     Sincroniza el usuario de Clerk con la base de datos local.
     Realiza una verificación segura consultando la API de Clerk.
     """
-    data = request.get_json()
-    clerk_id = data.get('clerk_id')
-    email = data.get('email')
-    session_id = data.get('session_id')
+    try:
+        data = request.get_json()
+        clerk_id = data.get('clerk_id')
+        email = data.get('email')
+        session_id = data.get('session_id')
+        current_app.logger.info(f"sync_clerk: iniciar sync email={email} clerk_id={clerk_id[:12] if clerk_id else 'None'}...")
 
-    # 1. Verificación en el backend contra Clerk (delegada al servicio)
-    verified_email, error = AuthService.verify_clerk_session(session_id, clerk_id, email)
+        # 1. Verificación en el backend contra Clerk (delegada al servicio)
+        verified_email, error = AuthService.verify_clerk_session(session_id, clerk_id, email)
     if error:
         return jsonify({
             'success': False,
@@ -136,6 +160,14 @@ def sync_clerk():
         'success': True,
         'redirect_url': redirect_url
     })
+
+    except Exception as e:
+        current_app.logger.error(f"sync_clerk: ERROR FATAL: {type(e).__name__}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Error interno del servidor: {type(e).__name__}',
+            'error_code': 'INTERNAL_ERROR'
+        }), 500
 
 
 @auth_bp.route('/api/sync-clerk-redirect')
