@@ -6,6 +6,7 @@ export interface Props {
 }
 
 const { restaurantSlug, restaurantId, tableId } = Astro.props;
+const isTableOrder = tableId !== null && tableId !== undefined && tableId !== '';
 ---
 
 <div id="checkout-overlay" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm"></div>
@@ -27,6 +28,8 @@ const { restaurantSlug, restaurantId, tableId } = Astro.props;
   </div>
   <form id="checkout-form" class="space-y-4">
     <input type="hidden" name="restaurant_id" value={restaurantId} />
+    {!tableId ? (
+      <>
     <div>
       <label class="mb-1 block text-sm font-medium text-ink-muted">Tu nombre</label>
       <input type="text" name="customer_name" required
@@ -45,6 +48,10 @@ const { restaurantSlug, restaurantId, tableId } = Astro.props;
         class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
       />
     </div>
+      </>
+    ) : (
+      <p class="text-center text-sm text-ink-muted">Pedido de mesa — solo confirma para enviar</p>
+    )}
     <input type="text" name="user_secondary_email" class="absolute -left-[9999px]" tabindex="-1" autocomplete="off" />
     <button type="submit"
       class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg disabled:opacity-50"
@@ -96,6 +103,8 @@ const { restaurantSlug, restaurantId, tableId } = Astro.props;
       };
     }
 
+    // En pedidos desde mesa los campos de contacto son opcionales; usamos defaults.
+    const isTableOrder = tableId !== null && tableId !== undefined && tableId !== '';
     const body = {
       cart,
       total: parsed.items?.reduce((s: number, item: any) => {
@@ -104,9 +113,15 @@ const { restaurantSlug, restaurantId, tableId } = Astro.props;
       }, 0) || 0,
       restaurant_id: rId,
       table_id: tableId,
-      customer_name: data.get('customer_name') as string,
-      customer_phone: data.get('customer_phone') as string,
-      address: data.get('address') as string,
+      customer_name: isTableOrder
+        ? ((data.get('customer_name') as string) || 'Cliente Mesa')
+        : (data.get('customer_name') as string),
+      customer_phone: isTableOrder
+        ? ((data.get('customer_phone') as string) || '')
+        : (data.get('customer_phone') as string),
+      address: isTableOrder
+        ? ((data.get('address') as string) || '')
+        : (data.get('address') as string),
       user_secondary_email: data.get('user_secondary_email') as string,
     };
 

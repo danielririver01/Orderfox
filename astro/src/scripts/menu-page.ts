@@ -222,6 +222,7 @@ export function initMenuPage(data: PageData): void {
 
     saveCart(items);
     showToast('Producto agregado al pedido', 'success');
+    closeDetail();
     if (addBtn) {
       const originalText = addBtn.textContent;
       addBtn.classList.remove('btn-primary');

@@ -18,7 +18,7 @@
     border-radius: 1.5rem;
     padding: 1.5rem;
     transition: all 0.3s ease;
-    overflow: visible;
+    overflow: hidden;
     cursor: pointer;
 }
 
