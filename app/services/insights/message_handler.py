@@ -255,12 +255,12 @@ def handle_post_message(cid, user, conv, data):
     # El tope de seguimientos no aplica a Elite (conserva su comportamiento
     # actual de follow-ups gratis). Regenerar/editar (replace_tail) tampoco
     # incrementa el contador: no penaliza al usuario por corregir una pregunta.
-    if follow_up and not replace_tail and not is_elite_user(user):
+    if follow_up and not replace_tail and not is_elite_user(user) and not general_assist:
         follow_up = cs.reserve_follow_up(
             cid, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
         )
 
-    if not follow_up and not replace_tail:
+    if not follow_up and not replace_tail and not general_assist:
         ok, err = TokenService.consume_token(user, source='copilot_vz')
         if not ok:
             code = (err or {}).get('error_code')
