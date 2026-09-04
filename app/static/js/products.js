@@ -240,3 +240,52 @@ function updateProductCount(group, count) {
         countSpan.textContent = count;
     }
 }
+
+// 1-Click Swap for AutoPhoto
+async function swapProductPhoto(productId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const btn = document.getElementById(`swap-btn-${productId}`);
+    const img = document.getElementById(`product-img-${productId}`);
+    if (!btn) return;
+
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳';
+
+    try {
+        const response = await fetch(`/products/${productId}/swap-photo`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || data.message || 'Error al cambiar la foto');
+        }
+
+        if (img && data.image_url) {
+            img.src = data.image_url;
+        }
+
+        if (data.pool_remaining === 0) {
+            btn.remove();
+        } else {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+
+        if (window.showToast) {
+            window.showToast('Foto actualizada', 'success');
+        }
+    } catch (error) {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        if (window.showToast) {
+            window.showToast(error.message || 'No se pudo cambiar la foto', 'error');
+        }
+    }
+}

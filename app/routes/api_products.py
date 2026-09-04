@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from app.utils.auth import require_auth, require_active, require_feature
 from app.utils.jwt_auth import get_current_restaurant_jwt
 from app.services.product_service import ProductService
+from app.services.auto_photo_service import AutoPhotoService
 
 api_products_bp = Blueprint('api_products', __name__, url_prefix='/api/products')
 
@@ -134,6 +135,15 @@ def create_product():
     if error:
         return jsonify({'success': False, 'error': error}), 400
 
+    # Auto-asignar foto si no se subió una
+    if not product.image_url:
+        AutoPhotoService.enqueue(
+            current_app._get_current_object(),
+            product.id,
+            product.name,
+            product.restaurant_id,
+        )
+
     return jsonify({
         'success': True,
         'data': {
@@ -143,6 +153,7 @@ def create_product():
             'category_id': product.category_id,
             'is_active': product.is_active,
             'image_url': product.image_url,
+            'is_auto_image': product.is_auto_image,
         }
     }), 201
 
@@ -261,6 +272,21 @@ def toggle_product(id):
             'is_active': product.is_active,
         }
     })
+
+
+@api_products_bp.route('/<int:id>/swap-photo', methods=['PATCH', 'POST'])
+@require_auth
+@require_active
+def swap_photo(id):
+    restaurant = get_current_restaurant_jwt()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    result = AutoPhotoService.swap_suggested(id, restaurant.id)
+    if not result.get('success'):
+        return jsonify(result), 400
+
+    return jsonify(result)
 
 
 # ── Modifier Endpoints ────────────────────────────────────────────────────

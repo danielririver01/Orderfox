@@ -12,12 +12,12 @@ const { ordering } = Astro.props;
 >
   <div class="flex h-full flex-col">
     <!-- Imagen -->
-    <div class="relative aspect-[4/3] bg-card-hover" id="detail-image-container">
+    <div class="relative max-h-[35vh] min-h-[180px] bg-card-hover sm:max-h-[45vh]" id="detail-image-container">
       <div
         id="detail-image-placeholder"
         class="flex h-full w-full items-center justify-center bg-accent-bg text-6xl font-bold text-accent"
       ></div>
-      <img id="detail-image" class="hidden h-full w-full object-cover" alt="" />
+      <img id="detail-image" class="hidden h-full w-full object-cover object-center" alt="" />
       <button
         id="close-detail"
         class="absolute right-3 top-3 rounded-full bg-base/70 p-2 shadow-lg backdrop-blur transition hover:bg-base"

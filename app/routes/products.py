@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort, current_app
 from app.forms import ProductForm
 from app.models import Product
 from app.utils.auth import require_auth, require_active, require_role_check
@@ -7,6 +7,7 @@ from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access, get_plan_limits
 from app.services.product_service import ProductService
 from app.services.category_service import CategoryService
+from app.services.auto_photo_service import AutoPhotoService
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 
@@ -111,6 +112,15 @@ def create():
         if error:
             flash(error, 'error')
             return redirect(url_for('products.create'))
+
+        # Auto-asignar foto si no se subió una
+        if not product.image_url:
+            AutoPhotoService.enqueue(
+                current_app._get_current_object(),
+                product.id,
+                product.name,
+                product.restaurant_id,
+            )
 
         flash('Producto creado exitosamente', 'success')
         return redirect(url_for('products.by_category',
@@ -227,6 +237,22 @@ def update_status(id):
         'is_active': product.is_active,
         'message': 'Estado actualizado correctamente'
     })
+
+
+@products_bp.route('/<int:id>/swap-photo', methods=['PATCH', 'POST'])
+@require_auth
+@require_active
+def swap_photo(id):
+    """1-Click Swap para fotos sugeridas automáticamente"""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    result = AutoPhotoService.swap_suggested(id, restaurant.id)
+    if not result.get('success'):
+        return jsonify(result), 400
+
+    return jsonify(result)
 
 
 @products_bp.route('/<int:id>/toggle', methods=['PATCH', 'POST'])

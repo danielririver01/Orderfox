@@ -285,7 +285,7 @@ def create_app():
             "style-src 'self' 'unsafe-inline' "
             "fonts.googleapis.com cdn.jsdelivr.net; "
             "font-src 'self' fonts.gstatic.com data:; "
-            "img-src 'self' data: blob: res.cloudinary.com img.clerk.com; "
+            "img-src 'self' data: blob: res.cloudinary.com img.clerk.com images.unsplash.com; "
             "connect-src 'self' cdn.jsdelivr.net oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
             "challenges.cloudflare.com *.protect.clerk.com; "
             "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "

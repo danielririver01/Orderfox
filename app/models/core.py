@@ -164,6 +164,11 @@ class Product(db.Model):
     is_spicy = db.Column(db.Boolean, nullable=False, default=False)
     is_featured = db.Column(db.Boolean, nullable=False, default=False)  # "Más pedido"
     image_url = db.Column(db.String(255), nullable=True)
+    # AutoPhoto metadata
+    image_source = db.Column(db.String(30), nullable=True)  # 'user_upload' | 'unsplash' | 'pexels' | 'local_library'
+    is_auto_image = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
+    suggested_image_pool = db.Column(db.Text, nullable=True)  # JSON string con URLs alternativas
+    unsplash_source_url = db.Column(db.Text, nullable=True)  # URL original de Unsplash (sin params) para unicidad
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))

@@ -36,13 +36,23 @@
                 <div
                     class="product-item flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all {{ 'opacity-50' if is_blocked else '' }}">
                     <!-- Imagen -->
-                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 relative group/img">
                         {% if product.image_url %}
-                        <img src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
+                        <img id="product-img-{{ product.id }}" src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
                         {% else %}
-                        <div class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">
-                            {{
-                            product.name[0] }}</div>
+                        <div id="product-placeholder-{{ product.id }}" class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">
+                            {{ product.name[0] }}
+                        </div>
+                        {% endif %}
+
+                        {% if product.is_auto_image %}
+                        <span id="auto-badge-{{ product.id }}" class="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 rounded backdrop-blur-xs leading-tight">AI</span>
+                        {% if product.suggested_image_pool and product.suggested_image_pool != '[]' %}
+                        <button type="button" id="swap-btn-{{ product.id }}" onclick="swapProductPhoto({{ product.id }}, event)" title="Ver otra foto sugerida"
+                            class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-[#f2460d] text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
+                            🎲
+                        </button>
+                        {% endif %}
                         {% endif %}
                     </div>
 

@@ -82,6 +82,11 @@ class Config:
     # Aplica a TODOS los planes, incluido Elite.
     COPILOT_MAX_HISTORY_MESSAGES = int(os.environ.get('COPILOT_MAX_HISTORY_MESSAGES', '15'))
 
+    # AutoPhoto — Fotos automáticas para productos sin imagen
+    UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    AUTOPHOTO_ENABLED = os.environ.get('AUTOPHOTO_ENABLED', 'true').lower() in ('1', 'true', 'yes', 'on')
+
     # JWT Configuration (Mobile API)
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
