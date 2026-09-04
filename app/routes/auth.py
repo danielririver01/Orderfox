@@ -142,6 +142,215 @@ def sync_clerk():
         }), 500
 
 
+@auth_bp.route('/api/seed-full', methods=['POST'])
+@csrf.exempt
+def seed_full():
+    """Borra todo y recrea menú completo + ventas agosto 2026."""
+    import random
+    from datetime import datetime, timedelta, timezone
+    from app.models import db, Restaurant, Category, Product, Order, OrderItem, User
+
+    API_KEY = 'velzia-seed-2026'
+    if request.headers.get('X-Seed-Key') != API_KEY:
+        return jsonify({'error': 'unauthorized'}), 401
+
+    user = User.query.filter_by(email='velziaoficial@gmail.com').first()
+    if not user or not user.restaurant:
+        return jsonify({'error': 'user or restaurant not found'}), 404
+
+    restaurant = user.restaurant
+    rid = restaurant.id
+
+    OrderItem.query.filter_by(restaurant_id=rid).delete()
+    Order.query.filter_by(restaurant_id=rid).delete()
+    Product.query.filter_by(restaurant_id=rid).delete()
+    Category.query.filter_by(restaurant_id=rid).delete()
+    db.session.flush()
+
+    cats_data = [
+        ('Entradas y Para Picar', 'Aperitivos y bocaditos para compartir', 1),
+        ('Sopas Calientes', 'Sopas tradicionales colombianas', 2),
+        ('Platos Fuertes', 'Platos principales del día', 3),
+        ('Acompañamientos', 'Guarniciones y extras', 4),
+        ('Bebidas Frías', 'Refrescos, jugos y cervezas', 5),
+        ('Bebidas Calientes', 'Café, tinto y chocolate', 6),
+        ('Postres', 'Dulces tradicionales colombianos', 7),
+    ]
+    cats = {}
+    for name, desc, order in cats_data:
+        cat = Category(restaurant_id=rid, name=name, description=desc, sort_order=order)
+        db.session.add(cat)
+        db.session.flush()
+        cats[name] = cat
+
+    U = 'https://images.unsplash.com/photo-{}?q=80&w=800&auto=format&fit=crop'
+    products = [
+        # Entradas y Para Picar (8)
+        ('Empanadas Colombianas x3', 'Empanadas de carne con hogao, servidas con ají', 8500, 'Entradas y Para Picar', True, False, True, U.format('1601000938-db3abbd3e1d7')),
+        ('Patacones con Hogao', 'Plátano verde frito doble cocción con hogao de tomate y cebolla', 9500, 'Entradas y Para Picar', True, False, False, U.format('1562967916-eb82221dfb92')),
+        ('Chicharrón con Arepa', 'Chicharrón crujiente con arepa antioqueña y limón', 12000, 'Entradas y Para Picar', False, False, False, U.format('1558030006-f6bff2fc5d50')),
+        ('Marranitas', 'Bolitas de plátano verde rellenas de chicharrón, estilo Chocó', 10000, 'Entradas y Para Picar', False, False, False, U.format('1551754655-59e33e7c10e9')),
+        ('Aborrajados', 'Tajadas de plátano maduro rellenas de queso, rebozadas y fritas', 9000, 'Entradas y Para Picar', True, False, False, U.format('1565299585323-38d6b0865b47')),
+        ('Arepa con Queso', 'Arepa de maíz con queso derretido y mantequilla', 6000, 'Entradas y Para Picar', True, False, False, U.format('1599974579688-8dbdd335c77f')),
+        ('Buñuelos Colombianos', 'Buñuelos de maíz y queso, crujientes por fuera y esponjosos por dentro', 5000, 'Entradas y Para Picar', True, False, False, U.format('1495474472287-4d71bcdd2085')),
+        ('Empanadas de Pollo x3', 'Empanadas de pollo desmechado con especias', 8500, 'Entradas y Para Picar', True, False, False, U.format('1604908176997-125f25cc6f3d')),
+
+        # Sopas Calientes (5)
+        ('Sancocho de Gallina', 'Sancocho tradicional con gallina criolla, yuca, plátano, mazorca y cilantro', 18000, 'Sopas Calientes', False, False, True, U.format('1547592180-85f173990554')),
+        ('Ajiaco Santafereño', 'Ajiaco bogotano con tres tipos de papa, guascas, mazorca y pollo', 17000, 'Sopas Calientes', False, False, False, U.format('1672300389082-540b049e4786')),
+        ('Sancocho de Pescado', 'Sancocho de pescado fresco con leche de coco y plátano', 19000, 'Sopas Calientes', False, False, False, U.format('1603133872878-684f208fb84b')),
+        ('Caldo de Costilla', 'Caldo reconfortante de costilla de res con papa y cilantro', 12000, 'Sopas Calientes', False, False, False, U.format('1547592166-23ac45744acd')),
+        ('Sopa de Arroz con Pollo', 'Sopa espesa de arroz con pollo desmechado y verduras', 13000, 'Sopas Calientes', False, False, False, U.format('1562802378-074508538b76')),
+
+        # Platos Fuertes (11)
+        ('Bandeja Paisa', 'Frijoles, arroz, carne molida, chicharrón, huevo frito, plátano maduro, arepa y aguacate', 28000, 'Platos Fuertes', False, False, True, U.format('1565557244-65388e869022')),
+        ('Arroz con Pollo', 'Arroz amarillo con pollo, verduras y cerveza, servido con patacón', 22000, 'Platos Fuertes', False, False, False, U.format('1598515214211-89d3c73ae83b')),
+        ('Sudado de Res', 'Carne de res guisada en salsa de tomate con papa, plátano verde y arroz', 23000, 'Platos Fuertes', False, False, False, U.format('1544025162-d76694265947')),
+        ('Pollo Sudado', 'Pollo en salsa criolla con arroz, papa y plátano', 20000, 'Platos Fuertes', False, False, False, U.format('1598103442097-870d22c6e8f6')),
+        ('Lomo al Trapo', 'Lomo de res envuelto en sal cocido al carbón, con papa criolla y ají', 32000, 'Platos Fuertes', False, False, False, U.format('1558030137-a56c1b004fa3')),
+        ('Punta de Anca en Salsa', 'Punta de anca en salsa de champiñones con arroz y ensalada', 29000, 'Platos Fuertes', False, False, False, U.format('1558030006-f6bff2fc5d50')),
+        ('Mojarra Frita', 'Mojarra entera frita crispy con patacones, arroz con coco y ensalada', 25000, 'Platos Fuertes', False, False, False, U.format('1559847844-5315695dadae')),
+        ('Chuleta Valluna', 'Chuleta de cerdo empanizada al estilo valluna con arroz, ensalada y patacón', 24000, 'Platos Fuertes', False, False, False, U.format('1432139555190-58524dae6a55')),
+        ('Bandeja de Montañera', 'Carne asada, pollo a la plancha, arroz, frijoles, tajadas y ensalada', 30000, 'Platos Fuertes', False, False, False, U.format('1574484284002-952d92456975')),
+        ('Seco de Chivo', 'Chivo guisado estilo Caribe con arroz con coco y plátano maduro', 26000, 'Platos Fuertes', False, False, False, U.format('1504674900247-0877df9cc836')),
+        ('Trucha con Patacón', 'Trucha en salsa de limón con patacón y arroz', 27000, 'Platos Fuertes', False, False, False, U.format('1519708227418-c8fd9a32b7a2')),
+
+        # Acompañamientos (7)
+        ('Patacón Solo', 'Patacón crujiente doble cocción', 4000, 'Acompañamientos', True, False, False, U.format('1562967916-eb82221dfb92')),
+        ('Tajada de Plátano Maduro', 'Tajada frita de plátano maduro', 3500, 'Acompañamientos', True, False, False, U.format('1571771894821-ce9b6c11b08e')),
+        ('Arroz Blanco', 'Porción de arroz blanco suelto', 3000, 'Acompañamientos', True, False, False, U.format('1551754655-59e33e7c10e9')),
+        ('Frijoles Colorados', 'Frijoles guisados estilo paisa', 4500, 'Acompañamientos', True, False, False, U.format('1543339608-b70e5d1cee63')),
+        ('Ensalada Mixta', 'Lechuga, tomate, zanahoria y aguacate', 5000, 'Acompañamientos', True, False, False, U.format('1512621776951-a57141f2eefd')),
+        ('Aguacate', 'Media unidad de aguacate fresco', 4000, 'Acompañamientos', True, False, False, U.format('1523049673857-eb18f1d7b578')),
+        ('Yuca con Mojo', 'Yuca hervida con salsa de ajo y limón', 5500, 'Acompañamientos', True, False, False, U.format('1600335895229-6e75511892c8')),
+
+        # Bebidas Frías (13)
+        ('Limonada Natural', 'Limonada fresca con hielo y hierbabuena', 5000, 'Bebidas Frías', True, False, False, U.format('1621263764928-df1444c58b4c')),
+        ('Limonada de Coco', 'Limonada cremosa de coco, refrescante y tropical', 7000, 'Bebidas Frías', True, False, False, U.format('1513558161293-cdaf765ed2fd')),
+        ('Jugo de Mango', 'Jugo natural de mango colombiano', 5500, 'Bebidas Frías', True, False, False, U.format('1623065422902-30a2d299bbe4')),
+        ('Jugo de Guanábana', 'Jugo natural de guanábana', 5500, 'Bebidas Frías', True, False, False, U.format('1600271886742-f049cd451bba')),
+        ('Jugo de Maracuyá', 'Jugo natural de maracuyá', 5500, 'Bebidas Frías', True, False, False, U.format('1621506289937-a8e4df240d0b')),
+        ('Jugo de Corozo', 'Jugo natural de corozo, fruto del Chocó', 6000, 'Bebidas Frías', True, False, False, U.format('1595981267035-7b04ca84a82d')),
+        ('Gaseosa Personal', 'Coca-Cola, Sprite o Fanta (330ml)', 3500, 'Bebidas Frías', True, False, False, U.format('1523677011781-c91d1bbe2f9e')),
+        ('Agua Botella', 'Agua pura sin gas (600ml)', 3000, 'Bebidas Frías', True, False, False, U.format('1560022154-392c4af77048')),
+        ('Cerveza Águila', 'Cerveza rubia colombiana bien fría', 4500, 'Bebidas Frías', False, False, False, U.format('1618183479302-1e0aa382c36b')),
+        ('Cerveza Póker', 'Cerveza pilsner colombiana', 4500, 'Bebidas Frías', False, False, False, U.format('1566633806327-68e152aaf26d')),
+        ('Cerveza Club Colombia', 'Cerveza premium colombiana dorada', 7000, 'Bebidas Frías', False, False, False, U.format('1535958636474-b021ee887b13')),
+        ('Coronita', 'Cerveza importada mexicana', 6500, 'Bebidas Frías', False, False, False, U.format('1571613316887-6f8d5cbf7ef7')),
+        ('Michelada', 'Cerveza con limón, salsa picante y sal', 8000, 'Bebidas Frías', False, True, False, U.format('1589132971214-ed8169976abd')),
+
+        # Bebidas Calientes (5)
+        ('Tinto Colombiano', 'Café tinto tradicional, servido caliente', 2500, 'Bebidas Calientes', True, False, False, U.format('1514432324607-a7df424d9ca7')),
+        ('Tinto con Leche', 'Café tinto con leche caliente', 3500, 'Bebidas Calientes', True, False, False, U.format('1572442388796-11668a67e53d')),
+        ('Cappuccino', 'Espresso con espuma de leche y cacao', 6000, 'Bebidas Calientes', True, False, False, U.format('1572442388796-11668a67e53d')),
+        ('Chocolate Santafereño', 'Chocolate caliente espeso con queso y arepa', 7000, 'Bebidas Calientes', True, False, False, U.format('1647919234555-3d06e2c923f4')),
+        ('Aromática', 'Té de hierbabuena, manzanilla o tilo', 3500, 'Bebidas Calientes', True, False, False, U.format('1556679343-c7306c1976bc')),
+
+        # Postres (9)
+        ('Arroz con Leche', 'Arroz con leche tradicional colombiano con canela y coco rallado', 7000, 'Postres', True, False, False, U.format('1532556660262-1c45d5fae825')),
+        ('Torta de Choclo', 'Torta de choclo dulce horneada, estilo tradicional', 8000, 'Postres', True, False, False, U.format('1578985545062-69928b1d9587')),
+        ('Postre de Natas', 'Dulce cremoso de natas con arepa o galleta', 7000, 'Postres', True, False, False, U.format('1488477181946-6428a0291777')),
+        ('Manjar Blanco', 'Dulce tradicional de leche y azúcar, servido frío', 7500, 'Postres', True, False, False, U.format('1571115177098-24ec42ed204d')),
+        ('Gelatina de Pata', 'Gelatina tradicional de colación con coco rallado', 6000, 'Postres', True, False, False, U.format('1488477181946-6428a0291777')),
+        ('Cholado', 'Copa de frutas frescas con hielo raspado, leche condensada y salsas', 10000, 'Postres', True, False, False, U.format('1557006001-1d7c8b6d0cc3')),
+        ('Helado Artesanal x2 Bolas', 'Dos bolas de helado artesanal (vainilla, chocolate, fresa o mora)', 6500, 'Postres', True, False, False, U.format('1497034825429-c343d7c6a68f')),
+        ('Oblea con Arequipe', 'Oblea rellena con arequipe y queso cremoso', 5500, 'Postres', True, False, False, U.format('1624300626297-1d2b4e41d6a7')),
+        ('Hamburguesa Especial', 'Hamburguesa con doble carne, queso cheddar, lechuga y tomate', 15000, 'Platos Fuertes', False, False, True, U.format('1568901346375-23c9450c58cd')),
+    ]
+
+    count = 0
+    for name, desc, price, cat_name, veg, spicy, featured, img_url in products:
+        p = Product(
+            restaurant_id=rid,
+            category_id=cats[cat_name].id,
+            name=name,
+            description=desc,
+            price=price,
+            image_url=img_url,
+            is_active=True,
+            is_vegetarian=veg,
+            is_spicy=spicy,
+            is_featured=featured,
+        )
+        db.session.add(p)
+        count += 1
+
+    restaurant.cuisine_type = 'colombiano'
+    restaurant.estimated_time = 25
+    restaurant.brand_color = '#FF6B00'
+    db.session.flush()
+
+    # ── Ventas agosto 2026 ──
+    all_products = Product.query.filter_by(restaurant_id=rid, is_active=True).all()
+    pw = []
+    for p in all_products:
+        w = 10
+        if p.is_featured: w = 25
+        if p.price and p.price < 6000: w = 15
+        if p.price and p.price > 25000: w = 5
+        pw.append((p, w))
+
+    names = [
+        'Carlos M.', 'María L.', 'Andrés P.', 'Laura G.', 'Diego R.',
+        'Sofía H.', 'Juan D.', 'Valentina T.', 'Sebastián M.', 'Camila V.',
+        'Mateo S.', 'Isabella C.', 'Santiago A.', 'Luciana F.', 'Tomás B.',
+        'Gabriela E.', 'Nicolás K.', 'Daniela O.', 'Alejandro N.', 'Paula J.',
+        None, None, None, None, None,
+    ]
+    phones = [
+        '+57 300 123 4567', '+57 310 234 5678', '+57 315 345 6789',
+        '+57 320 456 7890', '+57 301 567 8901', None, None, None, None, None,
+    ]
+    pms = ['cash', 'nequi', 'bancolombia', 'card']
+    pmw = [35, 30, 20, 15]
+    COT = timezone(timedelta(hours=-5))
+    order_num = 1
+
+    for day in range(1, 32):
+        dt = datetime(2026, 8, day, tzinfo=COT)
+        n = random.randint(10, 14) if dt.weekday() >= 5 else random.randint(6, 10)
+        for _ in range(n):
+            h = random.choices([11,12,13,14,18,19,20,21,22], weights=[8,20,18,10,12,18,15,10,5])[0]
+            created = datetime(2026, 8, day, h, random.randint(0,59), random.randint(0,59), tzinfo=COT)
+            created_utc = created.astimezone(timezone.utc)
+            pm = random.choices(pms, weights=pmw)[0]
+            status = random.choices(['delivered','delivered','delivered','cancelled'], weights=[88,4,4,4])[0]
+            n_items = random.choices([1,2,3,4], weights=[20,40,30,10])[0]
+            chosen = random.choices(pw, weights=[w for _,w in pw], k=n_items)
+            total = 0
+            items_list = []
+            for prod, _ in chosen:
+                qty = random.choices([1,2,3], weights=[60,30,10])[0]
+                sub = prod.price * qty
+                total += sub
+                items_list.append({'name': prod.name, 'price': prod.price, 'qty': qty, 'subtotal': sub})
+            ar = None; cd = None
+            if pm == 'cash':
+                bills = [5000,10000,15000,20000,30000,50000]
+                ar = next((b for b in bills if b >= total), total+5000)
+                cd = ar - total
+            order = Order(
+                restaurant_id=rid, order_number=f'ORD-{order_num:03d}',
+                customer_name=random.choice(names), customer_phone=random.choice(phones),
+                status=status, total=total, payment_method=pm,
+                amount_received=ar, change_due=cd,
+                paid_at=created_utc if status=='delivered' else None,
+                created_at=created_utc, updated_at=created_utc+timedelta(minutes=random.randint(15,45)),
+            )
+            db.session.add(order)
+            db.session.flush()
+            for it in items_list:
+                db.session.add(OrderItem(
+                    order_id=order.id, restaurant_id=rid,
+                    product_name=it['name'], product_price=it['price'],
+                    quantity=it['qty'], subtotal=it['subtotal'],
+                ))
+            order_num += 1
+
+    db.session.commit()
+    return jsonify({'success': True, 'products': count, 'orders': order_num - 1})
+
+
 @auth_bp.route('/api/sync-clerk-redirect')
 def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
