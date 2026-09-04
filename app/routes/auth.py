@@ -167,7 +167,7 @@ def fix_images():
         'Pollo Sudado': '1587593810167-a84920ea0781',
         'Lomo al Trapo': '1529692236671-f1f6cf9683ba',
         'Punta de Anca en Salsa': '1558199141-391d935676f0',
-        'Frijoles Colorados': '1562802378-074508538b76',
+        'Frijoles Colorados': '1698917467449-08bcd1d9014b',
         'Michelada': '1767065702711-c3967c4fd415',
         'Helado Artesanal x2 Bolas': '1753304826356-0e850757edb3',
     }
