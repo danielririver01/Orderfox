@@ -395,12 +395,28 @@
             .finally(function() { analyzing = false; analyzeBtn.disabled = false; analyzeBtn.textContent = 'Analizar'; });
     }
     function dismissEvent() {
-        if (!currentEventId) return;
+        if (!currentEventId || analyzing) return;
         var eid = currentEventId;
-        currentEventId = null;
-        card.classList.add('hidden');
-        setBadge(false);
-        fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' }).catch(function() {});
+        analyzing = true;
+        dismissBtn.disabled = true;
+        dismissBtn.textContent = 'Descartando...';
+        fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    currentEventId = null;
+                    card.classList.add('hidden');
+                    setBadge(false);
+                } else {
+                    dismissBtn.textContent = 'Descartar';
+                    dismissBtn.disabled = false;
+                }
+            })
+            .catch(function() {
+                dismissBtn.textContent = 'Descartar';
+                dismissBtn.disabled = false;
+            })
+            .finally(function() { analyzing = false; });
     }
     if (analyzeBtn) analyzeBtn.addEventListener('click', consumeEvent);
     if (dismissBtn) dismissBtn.addEventListener('click', dismissEvent);

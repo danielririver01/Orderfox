@@ -264,6 +264,15 @@ async function swapProductPhoto(productId, event) {
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
+            // Si no hay pool, mostrar info en vez de error
+            if (data.error && data.error.includes('No hay mas opciones')) {
+                if (window.showToast) {
+                    window.showToast('Esta foto fue asignada automáticamente. No hay alternativas en el pool.', 'info');
+                }
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                return;
+            }
             throw new Error(data.error || data.message || 'Error al cambiar la foto');
         }
 

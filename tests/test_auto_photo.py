@@ -58,8 +58,9 @@ class TestAutoPhotoServiceSwap:
         db.session.commit()
 
         res = AutoPhotoService.swap_suggested(product.id, sample_restaurant.id)
-        assert res['success'] is False
-        assert 'No hay mas opciones' in res['error']
+        assert res['success'] is True
+        assert res['pool_remaining'] == 0
+        assert 'No hay mas fotos alternativas' in res.get('message', '')
 
     def test_swap_success(self, db, sample_restaurant, sample_category):
         pool = [

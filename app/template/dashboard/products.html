@@ -66,12 +66,10 @@
 
                         {% if product.is_auto_image %}
                         <span id="auto-badge-{{ product.id }}" class="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 rounded backdrop-blur-xs leading-tight">AI</span>
-                        {% if product.suggested_image_pool and product.suggested_image_pool != '[]' %}
                         <button type="button" id="swap-btn-{{ product.id }}" onclick="swapProductPhoto({{ product.id }}, event)" title="Ver otra foto sugerida"
                             class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-[#f2460d] text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
                             🎲
                         </button>
-                        {% endif %}
                         {% endif %}
                     </div>
 
@@ -290,7 +288,7 @@
 
         <!-- RIGHT COLUMN: Modifiers Panel (Desktop only) -->
         <div class="hidden w-full md:w-[380px] md:flex-shrink-0" id="desktop-modifiers-panel-wrapper" style="z-index: 40;">
-            <div class="sticky top-24 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl flex flex-col relative" style="max-height: calc(100vh - 8rem); overflow: hidden;">
+            <div class="sticky top-[28vh] bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl flex flex-col relative" style="max-height: calc(100vh - 8rem); overflow: hidden;">
 
                 <!-- Header -->
                 <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">

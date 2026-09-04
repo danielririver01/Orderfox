@@ -101,8 +101,23 @@ class AutoPhotoService:
         # Nivel 1: LATAM library (zero API calls, instantaneo)
         local_url = latam_photo_library.lookup(product_name)
         if local_url:
-            AutoPhotoService._assign(product, local_url, 'local_library', [])
-            logger.info(f"AutoPhoto: product {product_id} assigned from local_library")
+            # Buscar alternativas en Unsplash para llenar el pool del 🎲
+            keyword = AutoPhotoService._extract_keyword(product_name)
+            if not keyword:
+                keyword = product_name
+            used_urls = AutoPhotoService._get_used_urls(restaurant_id)
+            pool = AutoPhotoService._unsplash_search(keyword, count=5)
+            # Excluir la URL ya asignada desde la library
+            local_base = local_url.split("?")[0]
+            alternatives = [
+                url for url in pool
+                if url.split("?")[0] not in used_urls and url.split("?")[0] != local_base
+            ]
+            AutoPhotoService._assign(product, local_url, 'local_library', alternatives)
+            logger.info(
+                f"AutoPhoto: product {product_id} assigned from local_library "
+                f"(pool_size={len(alternatives)})"
+            )
             return
 
         # Nivel 2: Unsplash API con filtro de unicidad
@@ -380,6 +395,8 @@ class AutoPhotoService:
             fresh.image_url = url
             fresh.image_source = source
             fresh.is_auto_image = True
+            # Para imágenes de LATAM library sin pool, crear pool vacío para que el
+            # botón 🎲 aparezca (indica que la imagen fue auto-asignada)
             fresh.suggested_image_pool = json.dumps(pool) if pool else None
             if unsplash_source_url:
                 fresh.unsplash_source_url = unsplash_source_url
@@ -420,7 +437,31 @@ class AutoPhotoService:
                 pool = []
 
         if not pool:
-            return {'success': False, 'error': 'No hay mas opciones de foto disponibles'}
+            # Pool vacío: buscar alternativas en Unsplash ahora
+            keyword = AutoPhotoService._extract_keyword(product.name)
+            if not keyword:
+                keyword = product.name
+            used_urls = AutoPhotoService._get_used_urls(restaurant_id)
+            # Excluir la imagen actual del producto
+            current_base = (product.image_url or "").split("?")[0]
+            fresh_pool = AutoPhotoService._unsplash_search(keyword, count=5)
+            pool = [
+                url for url in fresh_pool
+                if url.split("?")[0] not in used_urls and url.split("?")[0] != current_base
+            ]
+            if not pool:
+                return {
+                    'success': True,
+                    'image_url': product.image_url,
+                    'pool_remaining': 0,
+                    'message': 'No hay mas fotos alternativas',
+                }
+            # Guardar el pool para futuros clicks
+            try:
+                product.suggested_image_pool = json.dumps(pool)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
         # Rotar: el primer URL del pool pasa a ser la imagen principal
         new_url = pool.pop(0)

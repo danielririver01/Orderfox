@@ -96,7 +96,10 @@ LATAM_LIBRARY: dict[str, str] = {
     "sushi":            _u("1559339352-7d3e8b8a5e1e"),
     "tacos":            _u("1565557244-65388e869022"),
     "ensalada":         _u("1512621776951-a57141f2eefd"),
-    "sandwich":         _u("1568901346375-23c9450c58cd"),
+    "sandwich":         _u("1571114865113-04578cf9c438"),
+    "sandwich de queso": _u("1571114865113-04578cf9c438"),
+    "sandwich cubano":  _u("1705537459006-f4acbd93c5a3"),
+    "sandwich misto":   _u("1603903631889-b5f3ba4d5b9b"),
     "burrito":          _u("1565557244-65388e869022"),
     "wrap":             _u("1568901346375-23c9450c58cd"),
 }
