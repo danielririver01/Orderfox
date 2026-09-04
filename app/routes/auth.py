@@ -161,28 +161,15 @@ def fix_images():
     U = 'https://images.unsplash.com/photo-{}?q=80&w=800&auto=format&fit=crop'
 
     fixes = {
-        'Empanadas Colombianas x3': '1773831061318-490f04ee6e07',
-        'Chicharrón con Arepa': '1628840042765-356cda07504e',
-        'Marranitas': '1558030137-a56c1b004fa3',
-        'Sopa de Arroz con Pollo': '1547592180-85f173990554',
-        'Bandeja Paisa': '1598515214211-89d3c73ae83b',
-        'Pollo Sudado': '1603133872878-684f208fb84b',
-        'Punta de Anca en Salsa': '1544025162-d76694265947',
-        'Arroz Blanco': '1516684732162-798a0062be99',
-        'Frijoles Colorados': '1547592166-23ac45744acd',
-        'Limonada Natural': '1589132971214-ed8169976abd',
-        'Agua Botella': '1558640476-437a2b9438a2',
-        'Tinto Colombiano': '1509042239860-f550ce710b93',
-        'Cholado': '1488900128323-21503983a07e',
-        'Oblea con Arequipe': '1558961363-fa8fdf82db35',
-        'Buñuelos Colombianos': '1551024601-bec78aea704b',
-        'Patacón Solo': '1604908176997-125f25cc6f3d',
-        'Tajada de Plátano Maduro': '1571771894821-ce9b6c11b08e',
-        'Tinto con Leche': '1572442388796-11668a67e53d',
-        'Cappuccino': '1534778101976-62847782c213',
-        'Postre de Natas': '1563805042-7684c019e1cb',
-        'Gelatina de Pata': '1497034825429-c343d7c6a68f',
-        'Empanadas de Pollo x3': '1527477396000-e27163b481c2',
+        # 8 products with duplicate images → each gets a unique URL
+        'Sopa de Arroz con Pollo': '1596797038530-2c107229654b',
+        'Arroz con Pollo': '1774806288349-3d910c6a9334',
+        'Pollo Sudado': '1587593810167-a84920ea0781',
+        'Lomo al Trapo': '1529692236671-f1f6cf9683ba',
+        'Punta de Anca en Salsa': '1558199141-391d935676f0',
+        'Frijoles Colorados': '1562802378-074508538b76',
+        'Michelada': '1767065702711-c3967c4fd415',
+        'Helado Artesanal x2 Bolas': '1753304826356-0e850757edb3',
     }
 
     updated = 0
