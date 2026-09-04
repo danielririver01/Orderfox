@@ -142,47 +142,6 @@ def sync_clerk():
         }), 500
 
 
-@auth_bp.route('/api/fix-images', methods=['POST'])
-@csrf.exempt
-def fix_images():
-    """Fix broken and duplicate product images."""
-    import json
-    from app.models import db, Restaurant, Product, User
-
-    API_KEY = 'velzia-seed-2026'
-    if request.headers.get('X-Seed-Key') != API_KEY:
-        return jsonify({'error': 'unauthorized'}), 401
-
-    user = User.query.filter_by(email='velziaoficial@gmail.com').first()
-    if not user or not user.restaurant:
-        return jsonify({'error': 'not found'}), 404
-
-    rid = user.restaurant.id
-    U = 'https://images.unsplash.com/photo-{}?q=80&w=800&auto=format&fit=crop'
-
-    fixes = {
-        # 8 products with duplicate images → each gets a unique URL
-        'Sopa de Arroz con Pollo': '1596797038530-2c107229654b',
-        'Arroz con Pollo': '1774806288349-3d910c6a9334',
-        'Pollo Sudado': '1587593810167-a84920ea0781',
-        'Lomo al Trapo': '1529692236671-f1f6cf9683ba',
-        'Punta de Anca en Salsa': '1558199141-391d935676f0',
-        'Frijoles Colorados': '1698917467449-08bcd1d9014b',
-        'Michelada': '1767065702711-c3967c4fd415',
-        'Helado Artesanal x2 Bolas': '1753304826356-0e850757edb3',
-    }
-
-    updated = 0
-    for name, photo_id in fixes.items():
-        p = Product.query.filter_by(restaurant_id=rid, name=name).first()
-        if p:
-            p.image_url = U.format(photo_id)
-            updated += 1
-
-    db.session.commit()
-    return jsonify({'success': True, 'updated': updated})
-
-
 @auth_bp.route('/api/sync-clerk-redirect')
 def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
