@@ -22,13 +22,13 @@
     </div>
 </header>
 
-<main class="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6 overflow-x-hidden">
+<main class="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6 overflow-hidden">
 
     <!-- Lista de empleados (primero) -->
     <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-[#262626]">
-            <div class="flex items-center justify-between gap-2">
-                <h2 class="text-sm font-black text-gray-900 dark:text-white">Empleados</h2>
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-[#262626] overflow-hidden">
+            <div class="flex items-center justify-between gap-2 min-w-0">
+                <h2 class="text-sm font-black text-gray-900 dark:text-white truncate">Empleados</h2>
                 <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap flex-shrink-0">{{ current_count }} total</span>
             </div>
         </div>
@@ -210,16 +210,16 @@
 
     <!-- URL de login del empleado -->
     <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] p-5 overflow-hidden">
-        <h2 class="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 class="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 min-w-0">
             <span class="material-symbols-outlined text-[18px] text-gray-500 flex-shrink-0">link</span>
-            <span class="min-w-0">Enlace de acceso del empleado</span>
+            <span class="truncate">Enlace de acceso del empleado</span>
         </h2>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
             Comparte este enlace con tu equipo. Entran con su PIN, sin crear cuenta.
         </p>
-        <div class="mt-3 flex gap-2">
+        <div class="mt-3 flex gap-2 min-w-0">
             <input type="text" readonly value="{{ login_url }}"
-                class="flex-1 min-w-0 px-3.5 py-3 bg-gray-100 dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#262626] rounded-xl text-xs text-gray-600 dark:text-gray-400 outline-none select-all overflow-hidden text-ellipsis">
+                class="flex-1 min-w-0 px-3.5 py-3 bg-gray-100 dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#262626] rounded-xl text-xs text-gray-600 dark:text-gray-400 outline-none select-all overflow-hidden text-ellipsis whitespace-nowrap">
             <button type="button" onclick="copyLoginUrl(this)"
                 class="px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#1a1a1a] border border-[#262626] text-gray-300 hover:border-orange-500/40 transition-colors whitespace-nowrap flex-shrink-0">
                 Copiar
