@@ -35,26 +35,28 @@
         <div class="divide-y divide-gray-100 dark:divide-[#1f1f1f]">
             {% for emp in employees %}
             <div class="px-5 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-black text-gray-600 dark:text-gray-300">{{ emp.username[0]|upper }}</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ emp.username }}</p>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md
-                                {% if emp.role == 'cashier' %}bg-pink-500/10 text-pink-500
-                                {% else %}bg-blue-500/10 text-blue-500{% endif %}">
-                                {{ 'Cajero' if emp.role == 'cashier' else 'Mesero' }}
-                            </span>
-                            <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md
-                                {% if emp.is_active %}bg-emerald-500/10 text-emerald-500
-                                {% else %}bg-gray-500/10 text-gray-500{% endif %}">
-                                {{ 'Activo' if emp.is_active else 'Inactivo' }}
-                            </span>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+                            <span class="text-xs font-black text-gray-600 dark:text-gray-300">{{ emp.username[0]|upper }}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ emp.username }}</p>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md
+                                    {% if emp.role == 'cashier' %}bg-pink-500/10 text-pink-500
+                                    {% else %}bg-blue-500/10 text-blue-500{% endif %}">
+                                    {{ 'Cajero' if emp.role == 'cashier' else 'Mesero' }}
+                                </span>
+                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md
+                                    {% if emp.is_active %}bg-emerald-500/10 text-emerald-500
+                                    {% else %}bg-gray-500/10 text-gray-500{% endif %}">
+                                    {{ 'Activo' if emp.is_active else 'Inactivo' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                    <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
                         <button type="button" onclick="togglePinForm({{ emp.id }})"
                             class="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#1a1a1a] border border-[#262626] text-gray-300 hover:border-orange-500/40 transition-colors whitespace-nowrap">
                             Cambiar PIN
