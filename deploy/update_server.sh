@@ -48,7 +48,14 @@ if [ "$BRANCH" != "main" ]; then
     git checkout main 2>&1 | tail -1 || fail "No se pudo hacer checkout a main (¿rama main existe?)"
 fi
 if ! git merge --ff-only origin/main 2>&1 | tail -2; then
-    fail "git pull falló (¿cambios locales sin commitear en el servidor?). Revisa: git -C $APP_DIR status"
+    log "      Merge falló — intentando stash + clean + retry..."
+    git stash --include-untracked 2>&1 | tail -1 || true
+    git clean -fd 2>&1 | tail -1 || true
+    if ! git merge --ff-only origin/main 2>&1 | tail -2; then
+        git stash pop 2>/dev/null || true
+        fail "git pull falló tras stash. Revisa: git -C $APP_DIR status"
+    fi
+    log "      Stash aplicado y merge exitoso"
 fi
 log "      Commit actual: $(git rev-parse --short HEAD)"
 
