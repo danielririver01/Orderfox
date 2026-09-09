@@ -15,10 +15,9 @@ depends_on = None
 
 
 def upgrade():
-    # Revertir a opt-out: default True, todos los restaurantes existentes activos
-    op.execute('UPDATE restaurants SET allow_benchmark = 1')
-    op.execute("ALTER TABLE restaurants MODIFY COLUMN allow_benchmark BOOLEAN DEFAULT 1 NOT NULL")
-    # Eliminar benchmark_card_seen (ya no se necesita)
+    op.execute('UPDATE restaurants SET allow_benchmark = true')
+    op.execute("ALTER TABLE restaurants ALTER COLUMN allow_benchmark SET DEFAULT true")
+    op.execute("ALTER TABLE restaurants ALTER COLUMN allow_benchmark SET NOT NULL")
     op.drop_column('restaurants', 'benchmark_card_seen')
 
 
@@ -26,6 +25,6 @@ def downgrade():
     op.add_column('restaurants',
         sa.Column('benchmark_card_seen', sa.Boolean(),
                   server_default='0', nullable=False))
-    op.execute('UPDATE restaurants SET allow_benchmark = 0')
+    op.execute('UPDATE restaurants SET allow_benchmark = false')
     op.alter_column('restaurants', 'allow_benchmark',
                      server_default='0', nullable=False)

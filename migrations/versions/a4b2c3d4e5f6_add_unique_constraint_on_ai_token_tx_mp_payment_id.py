@@ -16,18 +16,16 @@ depends_on = None
 
 
 def upgrade():
-    # Limpiar duplicados con JOIN (más seguro que subquery en MySQL).
-    # Solo afecta filas con mp_payment_id no nulo.
     op.execute("""
-        DELETE t1 FROM ai_token_transactions t1
-        INNER JOIN ai_token_transactions t2
-        ON t1.mp_payment_id = t2.mp_payment_id
-        WHERE t1.id > t2.id
-          AND t1.mp_payment_id IS NOT NULL
+        DELETE FROM ai_token_transactions
+        WHERE id IN (
+            SELECT t1.id FROM ai_token_transactions t1
+            INNER JOIN ai_token_transactions t2
+            ON t1.mp_payment_id = t2.mp_payment_id
+            WHERE t1.id > t2.id
+              AND t1.mp_payment_id IS NOT NULL
+        )
     """)
-    # Crear UNIQUE sobre mp_payment_id. MySQL permite múltiples NULLs
-    # en índices únicos, así que los consumos sin referencia MP no
-    # se bloquean entre sí.
     with op.batch_alter_table('ai_token_transactions', schema=None) as batch_op:
         batch_op.create_unique_constraint(
             'uq_ai_token_tx_mp_payment_id', ['mp_payment_id']

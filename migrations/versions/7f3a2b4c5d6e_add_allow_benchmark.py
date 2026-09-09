@@ -20,7 +20,7 @@ def upgrade():
                   server_default='0', nullable=False))
     # Consentimiento expreso: todos los restaurantes existentes quedan en False
     # hasta que el usuario active explícitamente el benchmarking.
-    op.execute('UPDATE restaurants SET allow_benchmark = 0')
+    op.execute('UPDATE restaurants SET allow_benchmark = false')
 
 
 def downgrade():
