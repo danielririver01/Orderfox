@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
-<div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
+<div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto overflow-hidden">
 
     <!-- HERO -->
     <header class="mb-6 md:mb-8">
-        <div class="flex justify-between items-start mb-4">
+        <div class="flex justify-between items-start gap-3 mb-4 flex-wrap">
             <div class="flex flex-col">
                 <h1 class="text-xl md:text-2xl lg:text-3xl font-black tracking-[-0.04em] text-white leading-tight">
                     {{ narrative.saludo }}{% if narrative.nombre %}, {{ narrative.nombre }}{% else %}, Bienvenido{% endif %}
@@ -184,9 +184,9 @@
 
     <!-- GRAFICAS: BARRAS + DONA (2 columnas desktop) -->
     <section class="mb-6 md:mb-8" aria-label="Gráficas">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
             <!-- Ventas semana -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Ventas semana</span>
                     <div id="chart-mode-toggle" class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
@@ -203,7 +203,7 @@
                 </div>
             </div>
             <!-- Distribución pedidos (dona) -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col items-center justify-center">
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col items-center justify-center overflow-hidden">
                 <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-2">Distribuci&#x00F3;n pedidos</span>
                 {% if pending_count == 0 and confirmed_count == 0 and delivered_count == 0 %}
                     <p class="text-sm font-bold text-gray-500">Sin datos a&#x00FAn</p>
@@ -218,9 +218,9 @@
 
     <!-- PRODUCTOS + PLACEHOLDER (2 columnas desktop) -->
     <section class="mb-6 md:mb-8" aria-label="Productos y más">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
             <!-- Productos más vendidos -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Productos m&#x00E1;s vendidos</span>
                     <div class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
@@ -237,7 +237,7 @@
                 </div>
             </div>
             <!-- Tendencia de ingresos -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm">
+            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Tendencia de ingresos</span>
                     <span class="text-[8px] font-bold text-gray-500">Últimos 30 días</span>
