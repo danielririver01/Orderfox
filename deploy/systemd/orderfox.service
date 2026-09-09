@@ -1,0 +1,27 @@
+[Unit]
+Description=Orderfox Flask App (Gunicorn)
+After=network.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/orderfox
+ExecStart=/var/www/orderfox/.venv/bin/gunicorn -c gunicorn_config.py "app:create_app()"
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+# Environment
+EnvironmentFile=/var/www/orderfox/.env
+
+# Security
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/orderfox /var/log/orderfox
+
+[Install]
+WantedBy=multi-user.target

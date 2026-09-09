@@ -1,0 +1,5 @@
+CREATE USER orderfox WITH PASSWORD 'orderfox2026';
+CREATE DATABASE orderfox OWNER orderfox;
+GRANT ALL PRIVILEGES ON DATABASE orderfox TO orderfox;
+ALTER USER orderfox CREATEDB;
+\q
