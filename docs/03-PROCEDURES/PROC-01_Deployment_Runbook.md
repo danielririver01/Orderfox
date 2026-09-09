@@ -4,6 +4,12 @@
 
 ---
 
+> **🚀 Auto-deploy (desde 2026-09):** `git push` a `main` despliega automáticamente
+> en Oracle Cloud (GitHub Actions → SSH). Ver [deploy/AUTO_DEPLOY.md](../../deploy/AUTO_DEPLOY.md).
+> Este runbook documenta el despliegue manual completo para casos especiales/rollback.
+
+---
+
 ## 1. Pre-requisitos
 
 ### Checklist de Pre-despliegue

@@ -25,7 +25,7 @@ from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 if not os.environ.get('DATABASE_URL'):
-    os.environ['DATABASE_URL'] = 'mysql+pymysql://root:root@localhost/orderfox'
+    os.environ['DATABASE_URL'] = 'postgresql+psycopg2://localhost/orderfox'
 
 from app import create_app, db
 from app.models import (

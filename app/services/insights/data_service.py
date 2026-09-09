@@ -155,21 +155,20 @@ def handle_quick(restaurant_id, intent):
 def _weekday_sales(restaurant_id, start):
     """
     Suma de ventas por día de la semana (0=lunes..6=domingo) desde `start`.
-    Función aparte para poder stubbearla en tests (dayofweek() no existe en
-    SQLite, que es la DB de la suite local).
+    PostgreSQL DOW: 0=dom..6=sab → mapeamos a 0=lun..6=dom con (dow+6)%7.
     """
     wk = db.session.query(
-        func.dayofweek(Order.created_at).label('dow'),
+        extract('dow', Order.created_at).label('dow'),
         func.coalesce(func.sum(Order.total), 0).label('total'),
     ).filter(
         Order.restaurant_id == restaurant_id,
         Order.status != 'cancelled',
         func.date(Order.created_at) >= start,
-    ).group_by(func.dayofweek(Order.created_at)).all()
-    # Mapear 1=dom..7=sab → 0=lun..6=dom
+    ).group_by(extract('dow', Order.created_at)).all()
+    # PostgreSQL DOW: 0=dom..6=sab → 0=lun..6=dom
     weekday = {i: 0 for i in range(7)}
     for r in wk:
-        idx = (int(r.dow) - 2) % 7
+        idx = (int(r.dow) + 6) % 7
         weekday[idx] += int(r.total)
     return weekday
 
@@ -821,36 +820,36 @@ def weekly_sales_by_day(restaurant_id, days=7):
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     start = today - timedelta(days=days - 1)
 
-    # Dinero por día de semana
+    # Dinero por día de semana (PostgreSQL DOW: 0=dom..6=sab)
     wk_money = db.session.query(
-        func.dayofweek(Order.created_at).label('dow'),
+        extract('dow', Order.created_at).label('dow'),
         func.coalesce(func.sum(Order.total), 0).label('total'),
     ).filter(
         Order.restaurant_id == restaurant_id,
         Order.status != 'cancelled',
         Order.created_at >= start,
-    ).group_by(func.dayofweek(Order.created_at)).all()
+    ).group_by(extract('dow', Order.created_at)).all()
 
     # Pedidos por día de semana
     wk_orders = db.session.query(
-        func.dayofweek(Order.created_at).label('dow'),
+        extract('dow', Order.created_at).label('dow'),
         func.count(Order.id).label('cnt'),
     ).filter(
         Order.restaurant_id == restaurant_id,
         Order.status != 'cancelled',
         Order.created_at >= start,
-    ).group_by(func.dayofweek(Order.created_at)).all()
+    ).group_by(extract('dow', Order.created_at)).all()
 
     labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     money = {i: 0 for i in range(7)}
     orders = {i: 0 for i in range(7)}
 
     for r in wk_money:
-        idx = (int(r.dow) - 2) % 7
+        idx = (int(r.dow) + 6) % 7
         money[idx] = int(r.total)
 
     for r in wk_orders:
-        idx = (int(r.dow) - 2) % 7
+        idx = (int(r.dow) + 6) % 7
         orders[idx] = int(r.cnt)
 
     return {

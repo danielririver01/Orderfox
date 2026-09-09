@@ -17,20 +17,20 @@ class AwareDateTime(db.TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         """
-        Al guardar en DB: Convierte aware a UTC naive (para MySQL)
+        Al guardar en DB: PostgreSQL maneja timezone internamente (TIMESTAMPTZ).
+        Si es naive, la tratamos como UTC para compatibilidad con SQLite/tests.
         """
         if value is not None:
             if value.tzinfo is None:
-                # Si es naive, asumimos que ya está en UTC
-                return value
+                return value.replace(tzinfo=timezone.utc)
             else:
-                # Si es aware, convertir a UTC y remover tzinfo
-                return value.astimezone(timezone.utc).replace(tzinfo=None)
+                return value
         return value
 
     def process_result_value(self, value, dialect):
         """
-        Al leer de DB: Convierte naive a UTC aware
+        Al leer de DB: PostgreSQL devuelve aware, SQLite naive.
+        Normalizamos a UTC-aware siempre.
         """
         if value is not None and value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)

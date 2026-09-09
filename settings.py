@@ -19,7 +19,7 @@ class Config:
         )
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost/orderfox'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql+psycopg2://localhost/orderfox'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Pool acotado: hosts free-tier (p.ej. max_user_connections=10) se saturan
     # con el default de SQLAlchemy (pool_size=5 + max_overflow=10 por proceso).

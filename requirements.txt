@@ -38,6 +38,7 @@ pyasn1==0.6.3
 pycparser==3.0
 PyJWT==2.13.0
 PyMySQL==1.1.2
+psycopg2-binary==2.9.10
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 pytz==2026.1.post1

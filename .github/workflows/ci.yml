@@ -81,7 +81,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
+          command_timeout: 10m
           script: |
             cd /var/www/orderfox
             bash -s < deploy/update_server.sh

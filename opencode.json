@@ -29,6 +29,11 @@
       "environment": {
         "CLERK_SECRET_KEY": "{env:CLERK_SECRET_KEY}"
       }
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=ryjeybgvbfszifzjvwxv&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching",
+      "enabled": true
     }
   }
 }

@@ -1,7 +1,7 @@
 FROM python:3.12-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential default-libmysqlclient-dev pkg-config \
+    build-essential libpq-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -18,7 +18,7 @@ RUN npm run build:css || echo "CSS build skipped"
 FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
