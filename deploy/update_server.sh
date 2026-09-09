@@ -47,15 +47,12 @@ if [ "$BRANCH" != "main" ]; then
     log "      Repo estaba en '$BRANCH' → checkout a main"
     git checkout main 2>&1 | tail -1 || fail "No se pudo hacer checkout a main (¿rama main existe?)"
 fi
+# Descartar SOLO el artifact de build generado (se regenera en el paso 3).
+# Jamás usar stash/clean aquí: borran archivos sin trackear del servidor
+# (config de gunicorn, backups de BD, scripts) — así se tiró el sitio el 2026-09-09.
+git checkout -- app/static/CSS/output.css 2>/dev/null || true
 if ! git merge --ff-only origin/main 2>&1 | tail -2; then
-    log "      Merge falló — intentando stash + clean + retry..."
-    git stash --include-untracked 2>&1 | tail -1 || true
-    git clean -fd 2>&1 | tail -1 || true
-    if ! git merge --ff-only origin/main 2>&1 | tail -2; then
-        git stash pop 2>/dev/null || true
-        fail "git pull falló tras stash. Revisa: git -C $APP_DIR status"
-    fi
-    log "      Stash aplicado y merge exitoso"
+    fail "git pull falló (repo sucio). Revisa: git -C $APP_DIR status"
 fi
 log "      Commit actual: $(git rev-parse --short HEAD)"
 
