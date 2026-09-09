@@ -191,6 +191,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
   });
 
   document.getElementById('checkout-btn')?.addEventListener('click', () => {
+    detailWasOpen = false; // al comprar, no restaurar el detalle del producto
     closeCart();
     document.dispatchEvent(new CustomEvent('open-checkout'));
   });

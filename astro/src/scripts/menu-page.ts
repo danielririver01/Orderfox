@@ -152,6 +152,10 @@ export function initMenuPage(data: PageData): void {
   // Apertura del detalle desde cards (delegación) y botones +
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+    // Los controles del panel de detalle tienen sus propios listeners.
+    // Sin este guard, #add-to-cart (que lleva data-product-id) reabría
+    // el panel justo después de que su handler lo cierre.
+    if (target.closest('#product-detail')) return;
     const addEl = target.closest('[data-add-id]') as HTMLElement | null;
     if (addEl) {
       if (!data.ordering) return;
