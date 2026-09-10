@@ -33,6 +33,11 @@ export const FLASK_URL = withTrailingSlash(resolveFlaskUrl());
 /** Login de Flask (auth.login vive en /login desde v1.5). */
 export const LOGIN_URL = `${FLASK_URL}login`;
 
+/** Registro con plan preseleccionado (Flask /register?plan=...). */
+export function registerUrl(plan: string): string {
+  return `${FLASK_URL}register?plan=${encodeURIComponent(plan)}`;
+}
+
 /** Pricing de Flask (mismo flujo de compra que /planes). */
 export const PLANS_URL = `${FLASK_URL}planes`;
 

@@ -12,6 +12,17 @@ import mercadopago
 
 auth_bp = Blueprint('auth', __name__)
 
+
+@auth_bp.route('/')
+def index():
+    """Raíz → landing pública (Astro en velzia.shop).
+
+    301 permanente: los motores de búsqueda transfieren el ranking de la
+    raíz al dominio principal de la landing.
+    """
+    landing = current_app.config.get('LANDING_URL') or 'https://velzia.shop/'
+    return redirect(landing, code=301)
+
 from app.csrf import csrf
 
 @auth_bp.route('/api/sync-clerk', methods=['POST'])
@@ -147,7 +158,7 @@ def sync_clerk_redirect():
     return render_template('auth/sync_clerk.html')
 
 
-@auth_bp.route('/', methods=['GET', 'POST'])
+@auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])

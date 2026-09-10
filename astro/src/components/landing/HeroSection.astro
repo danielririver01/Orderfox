@@ -1,5 +1,5 @@
 ---
-import { LOGIN_URL } from '../../lib/urls';
+import { LOGIN_URL, registerUrl } from '../../lib/urls';
 
 export interface Props {
   loginUrl?: string;
@@ -44,7 +44,7 @@ const products = [
 
       <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
         <a
-          href={loginUrl}
+          href={registerUrl('trial')}
           class="inline-flex w-full items-center justify-center rounded-full bg-accent px-8 py-3.5 text-base font-semibold text-cta-ink transition hover:scale-[1.03] hover:bg-accent-hover sm:w-auto"
         >
           Empieza gratis
