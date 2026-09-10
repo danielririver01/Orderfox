@@ -149,15 +149,21 @@ def create_app():
 
         @app.before_request
         def set_sentry_context():
-            user = get_current_user_jwt()
-            if user:
-                sentry_sdk.set_user({
-                    'id': user.id,
-                    'email': user.email,
-                })
-            restaurant = get_current_restaurant()
-            if restaurant:
-                sentry_sdk.set_tag('restaurant_id', restaurant.id)
+            try:
+                user = get_current_user_jwt()
+                if user:
+                    sentry_sdk.set_user({
+                        'id': user.id,
+                        'email': user.email,
+                    })
+            except (RuntimeError, Exception):
+                pass
+            try:
+                restaurant = get_current_restaurant()
+                if restaurant:
+                    sentry_sdk.set_tag('restaurant_id', restaurant.id)
+            except (RuntimeError, Exception):
+                pass
             sentry_sdk.set_tag('app_version',
                                app.config.get('APP_VERSION', 'unknown'))
             module = request.path.split('/')[1] if request.path != '/' else 'root'
