@@ -170,6 +170,8 @@ def create_app():
                 "http://localhost:3000",
                 "http://localhost:4321",
                 "http://localhost:5173",
+                "https://menu.velzia.shop",
+                "https://velzia.shop",
                 app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),
             ],
             "supports_credentials": True
@@ -178,6 +180,8 @@ def create_app():
             "origins": [
                 "http://localhost:4321",
                 "http://localhost:3000",
+                "https://menu.velzia.shop",
+                "https://velzia.shop",
                 app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),
             ],
             "supports_credentials": True
