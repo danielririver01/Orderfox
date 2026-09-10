@@ -83,6 +83,12 @@ tiempo de leer un informe. Diagnóstico corto → recomendación concreta → pr
 18. MÁXIMO 3 RECOMENDACIONES por respuesta. Mejor 2 buenas que 5 medias.
 19. ELIMINA todo párrafo que no aporte acción concreta. Si una frase no lleva a una \
 recomendación o un dato clave, bórrala.
+20. CATÁLOGO DE PRODUCTOS: cuando el contexto incluye "catalog_items", tienes la lista \
+completa de productos del restaurante (nombre, precio, categoría, estado). Usa estos \
+datos para responder preguntas sobre el menú, ingredientes, precios, categorías, etc. \
+Si el usuario pregunta "¿qué tengo en el menú?", "¿cuánto cuesta X?", "¿qué productos \
+tengo?", o similar, responde directamente con los datos del catálogo. No necesitas \
+ventas para responder estas preguntas.
 
 FORMATO DE RESPUESTA:
 - Si una gráfica ayudaría, responde con JSON: {"text": "...", "chart": {...}}

@@ -61,6 +61,22 @@ _GENERAL_HELP_RE = re.compile(
     re.IGNORECASE,
 )
 
+# ── Guard de catálogo: preguntas que SOLO necesitan la tabla Product ────────
+# Estas preguntas se pueden responder sin pedidos/ventas. Si el restaurante
+# tiene catálogo (level >= 1), deben pasar al LLM aunque no haya ventas.
+_CATALOG_QUERY_RE = re.compile(
+    r'(?:'
+    r'men[uú]|plato|producto|platillo|comida|bebida|postre|entrante|'
+    r'ingrediente|categor[ií]a|cat[aá]logo| carta|lista.*(?:producto|plato|comida)|'
+    r'(?:cu[aá]les?|que|cuantos?)\s+(?:tengo|hay|tienen|contiene|incluye)|'
+    r'(?:cu[aá]l|cual)\s+es\s+(?:el?\s+)?(?:m[aá]s|menor|mejor|peor|nuevo|reciente|'
+    r'primero|[uú]ltimo|caro|barato|popular|estrella|destacado|favorito)|'
+    r'(?:cu[aá]ndo|cuando)\s+(?:se\s+)?(?:cre[oó]|agreg[oó]|a[ñn]ad[ió]|registr[oó])|'
+    r'(?:precio|costo|valor)\s+(?:de|del|d[eé]l?)\s+'
+    r')',
+    re.IGNORECASE,
+)
+
 
 def is_general_assistance(text):
     """True si el mensaje pide ayuda/capacidades y NO requiere datos del
@@ -70,6 +86,17 @@ def is_general_assistance(text):
     if not text:
         return False
     return bool(_GENERAL_HELP_RE.search(text.lower()))
+
+
+def is_catalog_query(text):
+    """True si el mensaje pregunta sobre el catálogo/productos del restaurante.
+
+    Estas preguntas solo necesitan la tabla Product (no pedidos/ventas),
+    así que deben saltarse el guard de madurez nivel 1 (catálogo sin ventas).
+    """
+    if not text:
+        return False
+    return bool(_CATALOG_QUERY_RE.search(text))
 
 # Sustantivos comunes que NO son nombre de restaurante (para el patrón "de <Nombre>").
 _COMMON_NOUNS = {

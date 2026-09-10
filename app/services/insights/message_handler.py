@@ -196,9 +196,12 @@ def handle_post_message(cid, user, conv, data):
     # Solo se bloquea cuando el mensaje REQUIERE datos del restaurante.
     # Preguntas generales ("¿qué puedes hacer por mí?", consejos, ayuda de
     # configuración) pasan al agente aunque no haya ventas todavía.
+    # Preguntas de catálogo (productos, menú, ingredientes) pasan si hay
+    # catálogo cargado (level >= 1), aunque no haya ventas.
     general_assist = classifier.is_general_assistance(content)
+    catalog_query = classifier.is_catalog_query(content)
     stage = data_service.get_data_stage(conv.restaurant_id)
-    if not general_assist:
+    if not general_assist and not catalog_query:
         if stage['level'] == 0:
             return _empty_state_response(conv, 'no_catalog')
         if stage['level'] == 1:
@@ -242,7 +245,7 @@ def handle_post_message(cid, user, conv, data):
         })
 
     # ── Nivel 2: análisis IA ──
-    if not general_assist and not data_service.has_sales(conv.restaurant_id, cls['window']):
+    if not general_assist and not catalog_query and not data_service.has_sales(conv.restaurant_id, cls['window']):
         label = data_service.window_label_from_days(cls['window'])
         kind = 'chart_empty' if re.search(
             r'gr.ffic|chart|visualiz', content.lower(),
@@ -255,12 +258,13 @@ def handle_post_message(cid, user, conv, data):
     # El tope de seguimientos no aplica a Elite (conserva su comportamiento
     # actual de follow-ups gratis). Regenerar/editar (replace_tail) tampoco
     # incrementa el contador: no penaliza al usuario por corregir una pregunta.
-    if follow_up and not replace_tail and not is_elite_user(user) and not general_assist:
+    # Las consultas de catálogo tampoco consumen crédito (solo consultan Product).
+    if follow_up and not replace_tail and not is_elite_user(user) and not general_assist and not catalog_query:
         follow_up = cs.reserve_follow_up(
             cid, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
         )
 
-    if not follow_up and not replace_tail and not general_assist:
+    if not follow_up and not replace_tail and not general_assist and not catalog_query:
         ok, err = TokenService.consume_token(user, source='copilot_vz')
         if not ok:
             code = (err or {}).get('error_code')
@@ -328,7 +332,10 @@ def handle_post_message(cid, user, conv, data):
 
     # ── Llamar al LLM ──
     try:
-        context = data_service.build_context(conv.restaurant_id, days=cls['window'])
+        context = data_service.build_context(
+            conv.restaurant_id, days=cls['window'],
+            include_catalog=catalog_query,
+        )
         history = cs.get_messages(cid)
         history_for_llm = [m for m in history if m.id != user_msg.id]
         # Fase 2: best practices de industria (máx 1 documento, ~800 tokens).

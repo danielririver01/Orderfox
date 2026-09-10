@@ -173,7 +173,7 @@ def _weekday_sales(restaurant_id, start):
     return weekday
 
 
-def build_context(restaurant_id, days=60):
+def build_context(restaurant_id, days=60, include_catalog=False):
     """
     Devuelve un dict de datos YA procesados para enviar como contexto al LLM.
     Nunca enviamos filas crudas: PostgreSQL agrega, Flask organiza.
@@ -208,6 +208,27 @@ def build_context(restaurant_id, days=60):
     ).group_by(OrderItem.product_name).order_by(func.sum(OrderItem.quantity).desc()).limit(8).all()
     top_qty = [{'name': r.product_name, 'qty': int(r.qty)} for r in top_qty_rows]
 
+    # Detalles completos del catálogo (solo cuando include_catalog=True).
+    # Esto permite al LLM responder preguntas sobre productos, precios,
+    # ingredientes, categorías, etc. sin necesidad de ventas.
+    catalog_details = []
+    if include_catalog:
+        products = db.session.query(Product).filter(
+            Product.restaurant_id == restaurant_id,
+        ).order_by(Product.name).all()
+        for p in products:
+            item = {
+                'id': p.id,
+                'name': p.name,
+                'price': float(p.price) if p.price else 0,
+                'category': p.category.name if p.category else None,
+                'is_active': bool(p.is_active),
+                'created_at': str(p.created_at.date()) if p.created_at else None,
+            }
+            if p.description:
+                item['description'] = p.description[:100]
+            catalog_details.append(item)
+
     # Ventas por día de la semana (0=lunes..6=domingo).
     # DAYOFWEEK(): 1=domingo..7=sábado (MySQL y MariaDB compatibles).
     weekday = _weekday_sales(restaurant_id, start)
@@ -235,6 +256,10 @@ def build_context(restaurant_id, days=60):
         'sales_by_weekday': weekday,  # 0=lunes..6=domingo
         'catalog': {'total': n_products, 'active': n_active},
     }
+
+    # Detalles del catálogo cuando se piden (preguntas de menú/productos).
+    if catalog_details:
+        context['catalog_items'] = catalog_details
 
     # Benchmarks anónimos de la plataforma (Fase 1). Opcional: si no hay
     # snapshot publicado (k-anonymity insuficiente) o el usuario optó por no
