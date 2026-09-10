@@ -12,16 +12,23 @@
  * Env:
  *  - PUBLIC_FLASK_URL: origen de Flask (default: http://localhost:5000)
  *      dev:  http://localhost:5000
- *      prod: https://api.velzia.shop (o el dominio donde corre Gunicorn)
+ *      prod: https://velzia.shop
  */
 
 function withTrailingSlash(url: string): string {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
-export const FLASK_URL = withTrailingSlash(
-  import.meta.env.PUBLIC_FLASK_URL || 'http://localhost:5000',
-);
+function resolveFlaskUrl(): string {
+  const envUrl = import.meta.env.PUBLIC_FLASK_URL;
+  if (envUrl) return envUrl;
+
+  if (import.meta.env.MODE === 'production') return 'https://velzia.shop';
+
+  return 'http://localhost:5000';
+}
+
+export const FLASK_URL = withTrailingSlash(resolveFlaskUrl());
 
 /** Login de Flask (auth.login vive en /login desde v1.5). */
 export const LOGIN_URL = `${FLASK_URL}login`;
