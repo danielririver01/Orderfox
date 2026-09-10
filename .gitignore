@@ -101,3 +101,4 @@ tests/security/reports/
 /_render_products.py
 /_*.html
 
+#Esquema de la base de datos

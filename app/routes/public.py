@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, request, jsonify, redirect, session, current_app
+from flask import Blueprint, abort, request, jsonify, redirect, url_for, session, current_app
 from app.models import db, Table
 from app import csrf
 from datetime import datetime

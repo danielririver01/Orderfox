@@ -17,6 +17,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   data-restaurant-id={restaurantId}
   data-restaurant-slug={restaurantSlug}
   data-table-id={tableId ?? ''}
+  data-api-base="https://velzia.shop"
 >
   <div class="mb-6 flex items-center justify-between">
     <h2 class="font-display text-lg font-semibold text-ink">Confirmar pedido</h2>
@@ -68,6 +69,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   const rId = parseInt(checkoutModal?.getAttribute('data-restaurant-id') || '0', 10);
   const tIdRaw = checkoutModal?.getAttribute('data-table-id');
   const tableId = tIdRaw ? (isNaN(parseInt(tIdRaw, 10)) ? tIdRaw : parseInt(tIdRaw, 10)) : null;
+  const apiBase = checkoutModal?.getAttribute('data-api-base') || 'https://velzia.shop';
 
   document.addEventListener('open-checkout', () => {
     document.getElementById('checkout-modal')?.classList.remove('hidden', 'translate-y-8');
@@ -126,7 +128,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
     };
 
     try {
-      const res = await fetch(`/menu/api/order`, {
+      const res = await fetch(`${apiBase}/menu/api/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

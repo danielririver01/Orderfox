@@ -1,6 +1,6 @@
 import type { MenuResponse, Category, Product } from './types';
 
-const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:5000/api/public';
+const API_BASE = 'https://velzia.shop/api/public';
 const API_KEY = import.meta.env.SERVICE_API_KEY || '';
 
 function headers(): Record<string, string> {

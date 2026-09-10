@@ -1,0 +1,46 @@
+server {
+    server_name velzia.shop www.velzia.shop;
+
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+
+    client_max_body_size 16M;
+
+    location /static/ {
+        alias /var/www/orderfox/app/static/;
+        expires 30d;
+    }
+
+    # Redirect /<slug>/ → menu.velzia.shop/<slug>/ (URLs compartidas / QR legacy)
+    location ~ ^/(?!dashboard|menu|api|insights|reclamar|empleado|orders|products|categories|cash-register|static|register|setup-account|privacy|terms|legal|planes|renew|payment|payment-callback|webhook|logout)([a-z0-9][a-z0-9\-]+)/?$ {
+        return 301 https://menu.velzia.shop/$1/;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/velzia.shop/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/velzia.shop/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+server {
+    if ($host = www.velzia.shop) {
+        return 301 https://$host$request_uri;
+    }
+
+    if ($host = velzia.shop) {
+        return 301 https://$host$request_uri;
+    }
+
+    listen 80;
+    server_name velzia.shop www.velzia.shop;
+    return 404;
+}
