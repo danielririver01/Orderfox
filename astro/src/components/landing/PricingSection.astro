@@ -1,0 +1,152 @@
+---
+import { LOGIN_URL } from '../../lib/urls';
+
+export interface Props {
+  loginUrl?: string;
+}
+
+const { loginUrl = LOGIN_URL } = Astro.props;
+
+// Datos espejo de app/template/auth/plans.html (Flask). Precios en COP.
+const plans = [
+  {
+    name: 'Emprendedor',
+    price: '$30.000',
+    period: '/mes',
+    desc: 'Ideal para empezar a vender por delivery hoy mismo.',
+    cta: 'Iniciar hoy',
+    featured: false,
+    accent: false,
+    features: [
+      { text: 'Menú Digital (Link compartible)', icon: 'check_circle' },
+      { text: 'Pedidos ilimitados a WhatsApp', icon: 'check_circle' },
+      { text: 'Menú Digital Inteligente', icon: 'qr_code_2' },
+      { text: '1 empleado (cajero o mesero)', icon: 'group' },
+      { text: '250 créditos IA incluidos', icon: 'auto_awesome', strong: true },
+    ],
+  },
+  {
+    name: 'Crecimiento',
+    price: '$40.000',
+    period: '/mes',
+    desc: 'Para locales físicos que quieren tráfico desde las mesas.',
+    cta: 'Elegir Crecimiento',
+    featured: true,
+    accent: true,
+    features: [
+      { text: 'Mesas digitales con QR inteligente', icon: 'qr_code_scanner', strong: true },
+      { text: 'Catálogo: 100 productos activos', icon: 'format_list_bulleted' },
+      { text: 'Hasta 5 empleados (cajeros y meseros)', icon: 'group' },
+      { text: '800 créditos IA incluidos', icon: 'auto_awesome', strong: true },
+    ],
+  },
+  {
+    name: 'Élite',
+    price: '$50.000',
+    period: '/mes',
+    desc: 'Menús complejos y alta personalización operativa.',
+    cta: 'Obtener Plan Élite',
+    featured: false,
+    accent: false,
+    features: [
+      { text: 'Personalización Avanzada de Menú', icon: 'add_task', strong: true },
+      { text: 'Catálogo e Inventario Ilimitado', icon: 'all_out' },
+      { text: 'Mesas digitales con QR inteligente', icon: 'qr_code_scanner', strong: true },
+      { text: 'Equipo ilimitado', icon: 'group', strong: true },
+      { text: '3000 créditos IA incluidos', icon: 'auto_awesome', strong: true },
+    ],
+  },
+];
+
+// Nota de contexto para el CTA del plan trial
+const trialNote = '¿Prefieres probar antes? 60 días gratis con todo incluido.';
+---
+
+<section id="pricing" class="scroll-mt-24 py-20 lg:py-28">
+  <div class="mx-auto w-full max-w-6xl px-4 lg:px-6">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Precios claros, <span class="text-accent">sin letras pequeñas</span>
+      </h2>
+      <p class="mt-4 text-base text-ink-muted">
+        Soluciones reales para cada tamaño de negocio. Escala a tu propio ritmo.
+      </p>
+    </div>
+
+    <div class="mt-14 grid items-stretch gap-5 md:grid-cols-3">
+      {plans.map((plan) => (
+        <div
+          class:list={[
+            'relative flex flex-col rounded-2xl border p-6 transition',
+            plan.featured
+              ? 'border-accent/60 bg-card shadow-[0_0_40px_rgba(255,122,41,0.12)] md:-my-3 md:py-9'
+              : 'border-border-subtle bg-card hover:bg-card-hover',
+          ]}
+        >
+          {plan.featured && (
+            <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3.5 py-1 text-xs font-bold text-cta-ink">
+              ⭐ Más Popular
+            </span>
+          )}
+
+          <h3 class="text-lg font-bold text-ink">{plan.name}</h3>
+          <p class:list={['mt-1 text-sm', plan.featured ? 'text-ink-muted' : 'text-ink-faint']}>{plan.desc}</p>
+
+          <p class="mt-5 flex items-baseline gap-1">
+            <span
+              class:list={[
+                'font-display text-4xl font-bold tracking-tight',
+                plan.featured ? 'bg-gradient-to-r from-accent to-amber-400 bg-clip-text text-transparent' : 'text-ink',
+              ]}
+            >
+              {plan.price}
+            </span>
+            <span class="text-sm font-medium text-ink-faint">{plan.period}</span>
+          </p>
+
+          <div class="my-5 border-t border-border-subtle"></div>
+
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">Lo que obtienes:</p>
+          <ul class="mt-3 flex flex-1 flex-col gap-2.5">
+            {plan.features.map((feature) => (
+              <li class="flex items-start gap-2 text-sm">
+                <span
+                  class:list={[
+                    'material-symbols-outlined mt-0.5 text-base',
+                    feature.strong ? 'text-accent' : 'text-veg',
+                  ]}
+                  aria-hidden="true"
+                >
+                  {feature.icon}
+                </span>
+                <span class:list={[feature.strong ? 'font-semibold text-ink' : 'text-ink-muted']}>{feature.text}</span>
+              </li>
+            ))}
+          </ul>
+
+          <a
+            href={loginUrl}
+            class:list={[
+              'mt-6 inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition',
+              plan.featured
+                ? 'bg-accent text-cta-ink hover:scale-[1.02] hover:bg-accent-hover'
+                : 'border border-border-subtle bg-card text-ink hover:bg-card-hover',
+            ]}
+          >
+            {plan.cta}
+          </a>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-10 text-center">
+      <p class="text-sm text-ink-muted">
+        {trialNote}
+        <a href={loginUrl} class="font-semibold text-accent transition hover:underline">Empieza tu prueba gratis →</a>
+      </p>
+      <p class="mt-2 text-xs italic text-ink-faint">
+        * Precios en Pesos Colombianos (COP). Activación inmediata tras confirmación.
+      </p>
+    </div>
+  </div>
+</section>

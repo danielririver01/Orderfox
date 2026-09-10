@@ -1,0 +1,65 @@
+---
+import { LOGIN_URL } from '../../lib/urls';
+
+export interface Props {
+  loginUrl?: string;
+}
+
+const { loginUrl = LOGIN_URL } = Astro.props;
+
+const steps = [
+  {
+    title: 'Crea tu menú',
+    desc: 'Sube tus productos en minutos. Fotos, precios y categorías desde un panel simple.',
+    icon: 'edit_note',
+  },
+  {
+    title: 'Comparte tu link',
+    desc: 'QR en las mesas, WhatsApp o redes sociales. Tu menú al alcance de cualquier cliente.',
+    icon: 'share',
+  },
+  {
+    title: 'Recibe pedidos',
+    desc: 'WhatsApp automático y organizado. Cada pedido llega completo, listo para despachar.',
+    icon: 'receipt_long',
+  },
+];
+---
+
+<section id="como-funciona" class="scroll-mt-24 py-20 lg:py-28">
+  <div class="mx-auto w-full max-w-6xl px-4 lg:px-6">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Funcionar toma <span class="text-accent">minutos</span>, no semanas
+      </h2>
+      <p class="mt-4 text-base text-ink-muted">Tres pasos y estás vendiendo. Sin instalación, sin hardware.</p>
+    </div>
+
+    <ol class="relative mt-14 grid gap-8 md:grid-cols-3 md:gap-6">
+      <!-- Línea conectora (solo desktop) -->
+      <span aria-hidden="true" class="absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-border-subtle md:block"></span>
+
+      {steps.map((step, i) => (
+        <li class="relative text-center md:px-4">
+          <span class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/30 bg-accent-bg text-accent">
+            <span class="material-symbols-outlined text-2xl" aria-hidden="true">{step.icon}</span>
+            <span class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-cta-ink">
+              {i + 1}
+            </span>
+          </span>
+          <h3 class="mt-5 text-lg font-semibold text-ink">{step.title}</h3>
+          <p class="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-muted">{step.desc}</p>
+        </li>
+      ))}
+    </ol>
+
+    <div class="mt-12 text-center">
+      <a
+        href={loginUrl}
+        class="inline-flex items-center justify-center rounded-full bg-accent px-8 py-3.5 text-base font-semibold text-cta-ink transition hover:scale-[1.03] hover:bg-accent-hover"
+      >
+        Crea tu menú gratis
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,11 +1,68 @@
 ---
-import PublicLayout from '../layouts/PublicLayout.astro';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHeader from '../components/landing/LandingHeader.astro';
+import LandingFooter from '../components/landing/LandingFooter.astro';
+import HeroSection from '../components/landing/HeroSection.astro';
+import ProblemSection from '../components/landing/ProblemSection.astro';
+import FeaturesGrid from '../components/landing/FeaturesGrid.astro';
+import HowItWorks from '../components/landing/HowItWorks.astro';
+import DashboardPreview from '../components/landing/DashboardPreview.astro';
+import PricingSection from '../components/landing/PricingSection.astro';
+import FAQSection from '../components/landing/FAQSection.astro';
+
+const TITLE = 'Velzia — Deja de perder pedidos por WhatsApp';
+const DESCRIPTION =
+  'Velzia digitaliza tu menú, organiza tus pedidos y te muestra exactamente dónde está tu plata. Menú digital con QR, pedidos a WhatsApp y analytics en tiempo real.';
+const SITE_URL = 'https://velzia.shop';
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Velzia',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: DESCRIPTION,
+  url: SITE_URL,
+  offers: [
+    { '@type': 'Offer', name: 'Emprendedor', price: '30000', priceCurrency: 'COP' },
+    { '@type': 'Offer', name: 'Crecimiento', price: '40000', priceCurrency: 'COP' },
+    { '@type': 'Offer', name: 'Élite', price: '50000', priceCurrency: 'COP' },
+  ],
+});
 ---
 
-<PublicLayout title="Velzia - Menú Digital">
-  <main class="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-    <h1 class="font-display text-4xl font-bold text-gray-900">Velzia</h1>
-    <p class="mt-2 text-gray-500">Menú digital para restaurantes</p>
-    <p class="mt-8 text-sm text-gray-400">Selecciona un restaurante para ver su menú</p>
+<LandingLayout title={TITLE} description={DESCRIPTION}>
+  <slot name="head">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Velzia" />
+    <meta property="og:title" content={TITLE} />
+    <meta property="og:description" content={DESCRIPTION} />
+    <meta property="og:url" content={SITE_URL} />
+    <meta property="og:locale" content="es_CO" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={TITLE} />
+    <meta name="twitter:description" content={DESCRIPTION} />
+
+    <link rel="canonical" href={SITE_URL} />
+
+    <!-- Datos estructurados -->
+    <script is:inline type="application/ld+json" set:html={jsonLd} />
+  </slot>
+
+  <LandingHeader />
+
+  <main>
+    <HeroSection />
+    <ProblemSection />
+    <FeaturesGrid />
+    <HowItWorks />
+    <DashboardPreview />
+    <PricingSection />
+    <FAQSection />
   </main>
-</PublicLayout>
+
+  <LandingFooter />
+</LandingLayout>

@@ -1,0 +1,61 @@
+---
+const features = [
+  {
+    icon: 'restaurant_menu',
+    title: 'Menú Digital',
+    desc: 'Link compartible con QR y 100% responsive. Tu menú siempre actualizado, en cualquier teléfono.',
+  },
+  {
+    icon: 'bubble_chart',
+    title: 'Copilot IA',
+    desc: 'Analiza tus ventas y te da consejos concretos. Pregúntale qué vender más y cuándo.',
+  },
+  {
+    icon: 'language',
+    title: 'Pedidos a WhatsApp',
+    desc: 'Se auto-genera el mensaje con el pedido completo. Tú solo lo confirmas y despachas.',
+  },
+  {
+    icon: 'qr_code_2',
+    title: 'Mesas QR',
+    desc: 'Pedidos desde la mesa sin mesero. El cliente escanea, pide y paga sin esperas.',
+  },
+  {
+    icon: 'document_scanner',
+    title: 'Scanner IA',
+    desc: 'Escanea facturas y extrae tus gastos automáticamente. Adiós al cuaderno de cuentas.',
+  },
+  {
+    icon: 'bar_chart',
+    title: 'Analytics',
+    desc: 'Dashboard con métricas en tiempo real: ventas, pedidos y ticket promedio de un vistazo.',
+  },
+];
+---
+
+<section id="features" class="scroll-mt-24 bg-card/40 py-20 lg:py-28">
+  <div class="mx-auto w-full max-w-6xl px-4 lg:px-6">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Todo lo que tu restaurante necesita
+      </h2>
+      <p class="mt-4 text-base text-ink-muted">
+        Seis herramientas que trabajan juntas para que vendas más y trabajes menos.
+      </p>
+    </div>
+
+    <div class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((feature) => (
+        <div
+          class="group rounded-2xl border border-border-subtle bg-card p-6 transition hover:border-accent/40 hover:bg-card-hover"
+        >
+          <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-bg transition group-hover:scale-105">
+            <span class="material-symbols-outlined text-2xl text-accent" aria-hidden="true">{feature.icon}</span>
+          </span>
+          <h3 class="mt-4 text-lg font-semibold text-ink">{feature.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-muted">{feature.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,85 @@
+---
+import { LOGIN_URL } from '../../lib/urls';
+
+export interface Props {
+  loginUrl?: string;
+}
+
+const { loginUrl = LOGIN_URL } = Astro.props;
+
+const rows = [
+  {
+    pain: 'Menú en papel',
+    painIcon: 'description',
+    solution: 'Menú digital con QR',
+    solutionIcon: 'qr_code_2',
+  },
+  {
+    pain: 'WhatsApp caótico',
+    painIcon: 'chat_bubble',
+    solution: 'Pedidos organizados automáticamente',
+    solutionIcon: 'task_alt',
+  },
+  {
+    pain: 'Sin datos de ventas',
+    painIcon: 'trending_down',
+    solution: 'Analytics en tiempo real',
+    solutionIcon: 'monitoring',
+  },
+];
+---
+
+<section id="problema" class="scroll-mt-24 py-20 lg:py-28">
+  <div class="mx-auto w-full max-w-6xl px-4 lg:px-6">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Tu restaurante funciona. <span class="text-accent">Tus ventas no acompañan.</span>
+      </h2>
+      <p class="mt-4 text-base text-ink-muted">
+        El problema no es tu comida. Es cómo la pides. Velzia cambia la herramienta por ti.
+      </p>
+    </div>
+
+    <div class="mt-14 space-y-4">
+      {rows.map((row) => (
+        <div
+          class="grid items-stretch gap-3 rounded-2xl border border-border-subtle bg-card p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-5"
+        >
+          <!-- Antes -->
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10">
+              <span class="material-symbols-outlined text-xl text-red-400" aria-hidden="true">{row.painIcon}</span>
+            </span>
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">Antes</p>
+              <p class="text-sm font-semibold text-ink-muted line-through decoration-red-400/60">{row.pain}</p>
+            </div>
+          </div>
+
+          <!-- Flecha -->
+          <span class="material-symbols-outlined mx-auto text-2xl text-accent sm:rotate-0" aria-hidden="true">
+            arrow_downward
+          </span>
+
+          <!-- Después -->
+          <div class="flex items-center gap-3 rounded-xl bg-accent-bg/60 p-3 sm:p-0 sm:pr-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15">
+              <span class="material-symbols-outlined text-xl text-accent" aria-hidden="true">{row.solutionIcon}</span>
+            </span>
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-accent">Con Velzia</p>
+              <p class="text-sm font-semibold text-ink">{row.solution}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <p class="mt-10 text-center">
+      <a href={loginUrl} class="inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:gap-2.5">
+        Empieza gratis hoy
+        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+      </a>
+    </p>
+  </div>
+</section>

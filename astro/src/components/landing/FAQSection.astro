@@ -1,0 +1,76 @@
+---
+import { LOGIN_URL } from '../../lib/urls';
+
+export interface Props {
+  loginUrl?: string;
+}
+
+const { loginUrl = LOGIN_URL } = Astro.props;
+
+// Contenido basado en /legal (secciones Suscripciones, Copilot y pedidos)
+const faqs = [
+  {
+    q: '¿Necesito tarjeta de crédito para empezar?',
+    a: 'No. La prueba dura 60 días con acceso completo y sin pedir tarjeta. Incluye mesas digitales con QR, control operativo total y 50 créditos IA para Copilot VZ. Al finalizar, eliges el plan que mejor se ajuste a tu negocio.',
+  },
+  {
+    q: '¿Cómo recibo los pedidos de mis clientes?',
+    a: 'Directo a tu WhatsApp. Velzia auto-genera el mensaje con el pedido completo (productos, cantidades, notas y datos del cliente) para que solo confirmes y despaches. Nada de transcribir pedidos a mano.',
+  },
+  {
+    q: '¿Me sirve si mi restaurante es solo delivery?',
+    a: 'Sí. El plan Emprendedor está pensado exactamente para eso: menú digital con link compartible (QR, WhatsApp, redes sociales) y pedidos ilimitados a WhatsApp. Si además tienes mesas físicas, Crecimiento y Élite agregan mesas digitales con QR inteligente.',
+  },
+  {
+    q: '¿Qué son los créditos IA y para qué sirven?',
+    a: 'Son los créditos que usa Copilot VZ, tu asistente de negocio: analiza tus ventas y responde preguntas como qué producto vender más o en qué horario. Las consultas rápidas sobre tus datos no consumen créditos; solo los análisis profundos.',
+  },
+  {
+    q: '¿Puedo cancelar mi suscripción cuando quiera?',
+    a: 'Sí, desde la sección Suscripción dentro de tu panel de Ajustes. La cancelación es efectiva al final del período de facturación actual y tus datos se conservan 60 días por si decides reactivar el servicio.',
+  },
+  {
+    q: '¿Qué pasa si mi suscripción vence por falta de pago?',
+    a: 'Tu menú pasa por un período de gracia durante el cual sigue visible para tus clientes y puedes reactivar el plan sin perder información. Pasado ese período, el menú queda inactivo y los datos se preservan 60 días adicionales.',
+  },
+];
+---
+
+<section id="faq" class="scroll-mt-24 py-20 lg:py-28">
+  <div class="mx-auto w-full max-w-3xl px-4 lg:px-6">
+    <div class="text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Preguntas <span class="text-accent">frecuentes</span>
+      </h2>
+      <p class="mt-4 text-base text-ink-muted">
+        Lo que todo dueño de restaurante pregunta antes de empezar.
+      </p>
+    </div>
+
+    <div class="mt-12 space-y-3">
+      {faqs.map((faq, i) => (
+        <details
+          class:list={['group rounded-2xl border border-border-subtle bg-card transition open:border-accent/40', i === 0 && 'open']}
+        >
+          <summary
+            class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-left text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden"
+          >
+            {faq.q}
+            <span
+              class="material-symbols-outlined shrink-0 text-xl text-ink-faint transition-transform duration-200 group-open:rotate-180 group-open:text-accent"
+              aria-hidden="true"
+            >
+              expand_more
+            </span>
+          </summary>
+          <p class="px-5 pb-5 text-sm leading-relaxed text-ink-muted">{faq.a}</p>
+        </details>
+      ))}
+    </div>
+
+    <p class="mt-10 text-center text-sm text-ink-muted">
+      ¿Otra pregunta?{' '}
+      <a href={loginUrl} class="font-semibold text-accent transition hover:underline">Escríbenos desde la app</a>
+    </p>
+  </div>
+</section>

@@ -1,0 +1,120 @@
+---
+import { LOGIN_URL } from '../../lib/urls';
+
+export interface Props {
+  loginUrl?: string;
+}
+
+const { loginUrl = LOGIN_URL } = Astro.props;
+
+const navLinks = [
+  { href: '#problema', label: 'Solución' },
+  { href: '#features', label: 'Features' },
+  { href: '#como-funciona', label: 'Cómo funciona' },
+  { href: '#pricing', label: 'Planes' },
+  { href: '#faq', label: 'FAQ' },
+];
+---
+
+<header
+  id="landing-header"
+  class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300"
+>
+  <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 lg:px-6">
+    <a href="/" class="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-ink">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-sans text-lg text-cta-ink">V</span>
+      Velzia
+    </a>
+
+    <nav aria-label="Principal" class="hidden items-center gap-6 md:flex">
+      {navLinks.map((link) => (
+        <a
+          href={link.href}
+          class="text-sm font-medium text-ink-muted transition hover:text-ink"
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+
+    <a
+      href={loginUrl}
+      class="hidden shrink-0 rounded-full bg-accent px-5 py-2 text-sm font-semibold text-cta-ink transition hover:scale-[1.03] hover:bg-accent-hover md:inline-flex"
+    >
+      Empieza gratis
+    </a>
+
+    <button
+      type="button"
+      id="landing-menu-btn"
+      class="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-card text-ink md:hidden"
+      aria-label="Abrir menú"
+      aria-expanded="false"
+      aria-controls="landing-mobile-nav"
+    >
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+  </div>
+
+  <nav
+    id="landing-mobile-nav"
+    aria-label="Menú móvil"
+    class="hidden border-t border-border-subtle bg-base/95 px-4 pb-4 pt-2 backdrop-blur md:hidden"
+  >
+    {navLinks.map((link) => (
+      <a
+        href={link.href}
+        class="block rounded-lg px-3 py-2.5 text-sm font-medium text-ink-muted transition hover:bg-card hover:text-ink"
+      >
+        {link.label}
+      </a>
+    ))}
+    <a
+      href={loginUrl}
+      class="mt-2 block rounded-full bg-accent px-5 py-2.5 text-center text-sm font-semibold text-cta-ink transition hover:bg-accent-hover"
+    >
+      Empieza gratis
+    </a>
+  </nav>
+</header>
+
+<style>
+  /* Header transparente → glassmorphism al hacer scroll (JS inline al final del body) */
+  #landing-header.is-scrolled {
+    background-color: color-mix(in srgb, var(--color-base) 85%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: var(--color-border-subtle);
+  }
+</style>
+
+<script>
+  const header = document.getElementById('landing-header');
+  const menuBtn = document.getElementById('landing-menu-btn');
+  const mobileNav = document.getElementById('landing-mobile-nav');
+
+  if (header) {
+    const onScroll = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  if (menuBtn && mobileNav) {
+    menuBtn.addEventListener('click', () => {
+      const isOpen = !mobileNav.classList.toggle('hidden');
+      menuBtn.setAttribute('aria-expanded', String(isOpen));
+      menuBtn.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+    });
+    // Cerrar el menú al navegar a una sección
+    mobileNav.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) {
+        mobileNav.classList.add('hidden');
+        menuBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+</script>
