@@ -196,6 +196,15 @@
             });
             document.addEventListener('focusout', function (e) {
                 if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                    // Si el teclado se cerró, iOS puede NO disparar visualViewport.resize:
+                    // sincroniza en cuanto el viewport visible sea MÁS ALTO que el último
+                    // aplicado (evita el hueco negro bajo el composer).
+                    var vv = window.visualViewport;
+                    if (vv && vv.height > targetHeight) {
+                        currentHeight = vv.height;
+                        targetHeight = vv.height;
+                        setAppHeight(vv.height, vv.width);
+                    }
                     setTimeout(onViewport, 300);
                 }
             });

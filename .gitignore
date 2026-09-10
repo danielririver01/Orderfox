@@ -102,3 +102,4 @@ tests/security/reports/
 /_*.html
 
 #Esquema de la base de datos
+.vercel
