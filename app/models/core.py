@@ -208,6 +208,10 @@ class Table(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.String(50), nullable=False)
+    # Capacidad en personas (v1.5, reservas). NULL = sin definir → el servicio
+    # de reservas la trata como 4 por defecto. Las mesas QR preexistentes no
+    # requieren backfill obligatorio.
+    capacity = db.Column(db.Integer, nullable=True)
     qr_code = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))

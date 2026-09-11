@@ -236,6 +236,32 @@ def _perform_benchmarks():
         current_app.logger.error(f"CRITICAL ERROR in benchmarks task: {e}", exc_info=True)
 
 
+def send_reservation_reminders():
+    """Recordatorios de reservas confirmadas próximas (v1.5, feature/reservas).
+
+    Cada 30 minutos: busca reservas confirmadas dentro de la ventana de
+    recordatorio (config por restaurante, default 2h) y envía ntfy una
+    sola vez (flag reminder_sent)."""
+    if has_app_context():
+        return _perform_reservation_reminders()
+    else:
+        with scheduler.app.app_context():
+            return _perform_reservation_reminders()
+
+
+def _perform_reservation_reminders():
+    try:
+        from app.services.reservation_service import send_reservation_reminders as _send
+        sent = _send()
+        if sent:
+            current_app.logger.info(
+                f"[{datetime.now(timezone.utc)}] Reservation reminders sent: {sent}"
+            )
+        return sent
+    except Exception as e:
+        current_app.logger.error(f"CRITICAL ERROR in reservation reminders: {e}", exc_info=True)
+
+
 def init_tasks(scheduler):
     # Gestionar ciclo de vida de suscripciones (sin borrado destructivo)
     if not scheduler.get_job('manage_subscription_lifecycle'):
@@ -293,4 +319,13 @@ def init_tasks(scheduler):
             trigger='cron',
             hour=4,
             minute=15,
+        )
+
+    # Recordatorios de reservas (v1.5): cada 30 minutos.
+    if not scheduler.get_job('send_reservation_reminders'):
+        scheduler.add_job(
+            id='send_reservation_reminders',
+            func=send_reservation_reminders,
+            trigger='interval',
+            minutes=30,
         )

@@ -20,3 +20,4 @@ from .rewards import (  # noqa: F401, E402
     PreRegistration, TrialHistory, Expense,
     RewardClaim, UserAchievement, Streak, DiscountCoupon,
 )
+from .reservations import Reservation, ReservationSettings  # noqa: F401, E402

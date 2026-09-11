@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
-from app.models import db, Order
+
+from app.models import Order, Reservation
+
 
 class OrderRateLimiter:
     """
@@ -42,7 +44,8 @@ class OrderRateLimiter:
             tuple: (should_block: bool, message: str, wait_seconds: int or None)
         """
         # 1. Verificar si ya alcanzó el límite de ráfaga (3/min)
-        orders_last_minute = OrderRateLimiter.get_recent_orders_count(restaurant_id, client_ip, minutes=1)
+        orders_last_minute = OrderRateLimiter.get_recent_orders_count(
+            restaurant_id, client_ip, minutes=1)
         
         if orders_last_minute >= OrderRateLimiter.MAX_ORDERS_PER_MINUTE:
             return True, "Parece que has realizado muchos pedidos seguidos. Por seguridad, por favor espera unos minutos.", 600
@@ -54,3 +57,48 @@ class OrderRateLimiter:
         return False, None, None
     
 
+
+class ReservationRateLimiter:
+    """
+    Rate limiting para solicitudes de reserva públicas (v1.5, anti-spam).
+    Mismo patrón que OrderRateLimiter: máx 3 solicitudes por minuto por
+    IP/restaurante; ban de 10 minutos si se detecta ráfaga.
+    """
+
+    MAX_RESERVATIONS_PER_MINUTE = 3
+    BAN_DURATION_MINUTES = 10
+
+    @staticmethod
+    def get_recent_reservations_count(restaurant_id, client_ip, minutes=1):
+        """Cuenta solicitudes de esta IP a este restaurante en el rango de tiempo."""
+        since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        return Reservation.query.filter(
+            Reservation.restaurant_id == restaurant_id,
+            Reservation.ip_address == client_ip,
+            Reservation.created_at >= since,
+        ).count()
+
+    @staticmethod
+    def is_ip_banned(restaurant_id, client_ip):
+        """True si la IP envió demasiadas solicitudes recientemente."""
+        recent_count = ReservationRateLimiter.get_recent_reservations_count(
+            restaurant_id, client_ip, minutes=ReservationRateLimiter.BAN_DURATION_MINUTES
+        )
+        return recent_count >= ReservationRateLimiter.MAX_RESERVATIONS_PER_MINUTE
+
+    @staticmethod
+    def should_block_request(restaurant_id, client_ip):
+        """
+        Returns:
+            tuple: (should_block: bool, message: str or None, wait_seconds: int or None)
+        """
+        last_minute = ReservationRateLimiter.get_recent_reservations_count(
+            restaurant_id, client_ip, minutes=1)
+
+        if last_minute >= ReservationRateLimiter.MAX_RESERVATIONS_PER_MINUTE:
+            return True, "Has enviado muchas solicitudes de reserva seguidas. Por favor espera unos minutos.", 600
+
+        if ReservationRateLimiter.is_ip_banned(restaurant_id, client_ip):
+            return True, "Sistema de seguridad activado: espera unos minutos antes de intentar de nuevo.", 600
+
+        return False, None, None

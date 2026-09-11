@@ -226,6 +226,7 @@ def create_app():
     from .routes.api_orders import api_orders_bp
     from .routes.api_public import api_public_bp
     from .routes.api_tables import api_tables_bp
+    from .routes.api_reservations import api_reservations_bp
     from .routes.api_email import api_email_bp
     from .routes.api_webhooks import api_webhooks_bp
     from .routes.rewards import rewards_bp
@@ -248,6 +249,7 @@ def create_app():
     app.register_blueprint(api_orders_bp)
     app.register_blueprint(api_public_bp)
     app.register_blueprint(api_tables_bp)
+    app.register_blueprint(api_reservations_bp)
     app.register_blueprint(api_email_bp)
     app.register_blueprint(api_webhooks_bp)
     app.register_blueprint(rewards_bp)
