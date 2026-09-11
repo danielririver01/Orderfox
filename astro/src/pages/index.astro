@@ -9,10 +9,11 @@ import HowItWorks from '../components/landing/HowItWorks.astro';
 import DashboardPreview from '../components/landing/DashboardPreview.astro';
 import PricingSection from '../components/landing/PricingSection.astro';
 import FAQSection from '../components/landing/FAQSection.astro';
+import FloatingWhatsApp from '../components/landing/FloatingWhatsApp.astro';
 
-const TITLE = 'Velzia — Deja de perder pedidos por WhatsApp';
+const TITLE = 'Velzia Colombia — Menú digital e inteligencia para restaurantes';
 const DESCRIPTION =
-  'Velzia digitaliza tu menú, organiza tus pedidos y te muestra exactamente dónde está tu plata. Menú digital con QR, pedidos a WhatsApp y analytics en tiempo real.';
+  'Velzia es el software gastronómico colombiano para restaurantes. Menú digital QR, pedidos por WhatsApp, analytics e IA. Prueba gratis 60 días, sin tarjeta de crédito.';
 const SITE_URL = 'https://velzia.shop';
 
 const jsonLd = JSON.stringify({
@@ -23,6 +24,8 @@ const jsonLd = JSON.stringify({
   operatingSystem: 'Web',
   description: DESCRIPTION,
   url: SITE_URL,
+  areaServed: 'Colombia',
+  brand: 'Velzia Colombia',
   offers: [
     { '@type': 'Offer', name: 'Emprendedor', price: '30000', priceCurrency: 'COP' },
     { '@type': 'Offer', name: 'Crecimiento', price: '40000', priceCurrency: 'COP' },
@@ -65,4 +68,6 @@ const jsonLd = JSON.stringify({
   </main>
 
   <LandingFooter />
+
+  <FloatingWhatsApp />
 </LandingLayout>
