@@ -1,10 +1,28 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, abort
-from app.utils.auth import require_auth, require_active, require_feature, require_role_check
+import re
+import unicodedata
+
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
+
+from app.services.qr_service import QRService
+from app.services.table_service import TableService
+from app.utils.auth import (
+    require_active,
+    require_auth,
+    require_feature,
+    require_role_check,
+)
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import check_feature_access
-from app.services.table_service import TableService
-from app.services.qr_service import QRService
-import unicodedata, re
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/dashboard/tables')
 
@@ -25,8 +43,7 @@ def _astro_table_url(slug, table_id):
 @require_active
 def index():
     restaurant = get_current_restaurant()
-    tables = TableService.get_tables(restaurant.id)
-    # No @feature_required here — allows showing Blur (Upselling UX)
+    tables = TableService.get_tables(restaurant.id)    # No @feature_required here — allows showing Blur (Upselling UX)
     has_table_qr_access = check_feature_access(restaurant, 'has_table_qr')
     return render_template('dashboard/tables.html',
                          tables=tables,

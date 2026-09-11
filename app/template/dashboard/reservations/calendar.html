@@ -1,0 +1,102 @@
+{% extends 'common/base.html' %} {% block title %}Calendario de Reservas - Velzia{% endblock %}
+{% block content %}
+
+<header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10 transition-colors">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Calendario de Reservas</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <form method="GET" action="{{ url_for('reservations.calendar') }}" class="flex items-center gap-2">
+        <input type="date" name="fecha" value="{{ fecha }}"
+               class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-2 px-3 text-sm text-gray-800 dark:text-white focus:border-[#f2460d] focus:outline-none">
+        <button type="submit"
+                class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-2 px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
+          Ver
+        </button>
+      </form>
+      <a href="{{ url_for('reservations.index') }}" class="text-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#262626] rounded-lg">
+        <span class="material-symbols-outlined text-2xl">close</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-8">
+  <div class="premium-lock-container min-h-[400px] relative">
+    <div class="{% if not has_reservations_access %}blur-sm grayscale opacity-40 pointer-events-none{% endif %} transition-all duration-500">
+
+      {% if calendar %}
+      <div class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-[#262626] flex items-center justify-between">
+          <p class="text-sm font-black text-gray-900 dark:text-white">
+            Ocupación del {{ calendar.date }}
+          </p>
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            Bloqueo: {{ calendar.settings.service_duration_min }} min + {{ calendar.settings.cleanup_buffer_min }} min limpieza
+          </p>
+        </div>
+        <div class="divide-y divide-gray-50 dark:divide-[#1f1f1f]">
+          {% for row in calendar.rows %}
+          <div class="px-6 py-4 flex items-center gap-4">
+            <div class="shrink-0 w-32">
+              <p class="text-sm font-black text-gray-900 dark:text-white">{{ row.table_name }}</p>
+              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Hasta {{ row.capacity }} personas</p>
+            </div>
+            <div class="flex-1 flex flex-wrap gap-2">
+              {% if row.reservations %}
+                {% for res in row.reservations %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black
+                  {% if res.status == 'confirmed' %}bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400
+                  {% else %}bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400{% endif %}">
+                  <span class="w-1.5 h-1.5 rounded-full {% if res.status == 'confirmed' %}bg-emerald-500{% else %}bg-amber-500{% endif %}"></span>
+                  {{ res.start }}–{{ res.end }} · {{ res.customer_name }} ({{ res.party_size }})
+                  {% if res.status == 'pending' %}· pendiente{% endif %}
+                </span>
+                {% endfor %}
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-gray-50 dark:bg-[#1f1f1f] text-gray-400 dark:text-gray-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Libre todo el día
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="text-center py-24 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
+        <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[64px] mb-6">calendar_month</span>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Sin mesas configuradas</h3>
+        <p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">Crea mesas en la gestión de Mesas para ver la ocupación del calendario.</p>
+        <a href="{{ url_for('tables.index') }}" class="inline-block bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all">
+          IR A MESAS
+        </a>
+      </div>
+      {% endif %}
+
+      <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+        🟡 Pendiente de confirmar · 🟢 Confirmada · Cada reserva bloquea la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min + buffer de limpieza
+      </p>
+    </div>
+
+    {% if not has_reservations_access %}
+    <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
+      <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
+        <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <span class="material-symbols-outlined text-[#f2460d] text-[32px]">calendar_month</span>
+        </div>
+        <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Calendario de ocupación</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+          Visualiza qué mesas están libres y cuáles están reservadas, en tiempo real.
+        </p>
+        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
+          MEJORAR MI PLAN
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

@@ -1,4 +1,7 @@
-from app.models import db, Table, Order
+from app.models import Order, Table, db
+
+# Rango válido de capacidad por mesa (reservas v1.5)
+CAPACITY_RANGE = (1, 50)
 
 
 class TableService:
@@ -18,20 +21,51 @@ class TableService:
         return Table.query.filter_by(id=table_id, restaurant_id=restaurant_id).first()
 
     @staticmethod
-    def create_table(restaurant_id, name, qr_code=None):
+    def parse_capacity(value):
+        """Valida capacidad opcional. Returns (capacity:int|None, error:str|None)."""
+        if value in (None, ''):
+            return None, None
+        try:
+            capacity = int(value)
+        except (TypeError, ValueError):
+            return None, 'La capacidad debe ser un número'
+        low, high = CAPACITY_RANGE
+        if not low <= capacity <= high:
+            return None, f'La capacidad debe estar entre {low} y {high}'
+        return capacity, None
+
+    @staticmethod
+    def create_table(restaurant_id, name, qr_code=None, capacity=None):
         """
         Create a new table. Returns (Table, None) or (None, error_message).
-        Name is required.
+        Name is required. Capacity is optional (personas, reservas v1.5).
         """
         if not name or not name.strip():
             return None, 'El nombre de la mesa es requerido'
+        capacity, cap_error = TableService.parse_capacity(capacity)
+        if cap_error:
+            return None, cap_error
         table = Table(
             restaurant_id=restaurant_id,
             name=name.strip(),
             qr_code=qr_code,
+            capacity=capacity,
             is_active=True
         )
         db.session.add(table)
+        db.session.commit()
+        return table, None
+
+    @staticmethod
+    def update_capacity(restaurant_id, table_id, capacity):
+        """Actualiza la capacidad de una mesa. Returns (Table, None) o (None, error)."""
+        table = TableService.get_table(restaurant_id, table_id)
+        if not table:
+            return None, 'Mesa no encontrada'
+        capacity, cap_error = TableService.parse_capacity(capacity)
+        if cap_error:
+            return None, cap_error
+        table.capacity = capacity
         db.session.commit()
         return table, None
 
