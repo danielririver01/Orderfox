@@ -84,15 +84,17 @@
 
 <script>
 (function() {
+    // Login real (auth.login). La raíz '/' ahora redirige 301 a la landing.
+    var LOGIN_URL = "{{ url_for('auth.login') }}";
     var baseDelay = 30000;
     var maxDelay = 120000;
     var attempt = 0;
 
     function tryRedirect() {
-        fetch('/', { method: 'HEAD', cache: 'no-store' })
+        fetch(LOGIN_URL, { method: 'HEAD', cache: 'no-store' })
             .then(function(r) {
                 if (r.status !== 429) {
-                    window.location.href = '/';
+                    window.location.href = LOGIN_URL;
                 } else {
                     scheduleRetry();
                 }

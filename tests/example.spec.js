@@ -11,8 +11,9 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('Página de Login', () => {
   test('muestra el formulario de login correctamente', async ({ page }) => {
-    // Login está en la raíz: auth_bp.route('/')
-    await page.goto('/');
+    // Login está en /login: auth_bp.route('/login'). La raíz '/' redirige 301
+    // a la landing pública (Astro/Vercel).
+    await page.goto('/login');
 
     // Verificar que cargó la página
     await expect(page).toHaveTitle(/Velzia|Login|Iniciar/i);
@@ -24,7 +25,7 @@ test.describe('Página de Login', () => {
   });
 
   test('muestra error con credenciales inválidas', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/login');
 
     await page.fill('input[type="email"], input[name="email"]', 'invalido@test.com');
     await page.fill('input[type="password"], input[name="password"]', 'wrongpassword123');
@@ -33,9 +34,9 @@ test.describe('Página de Login', () => {
     // Esperar respuesta del servidor
     await page.waitForTimeout(1500);
 
-    // Debe permanecer en la raíz (login) o mostrar un mensaje de error
+    // Debe permanecer en /login (login) o mostrar un mensaje de error
     const currentUrl = page.url();
-    expect(currentUrl).toMatch(/localhost:5000\/?$/);
+    expect(currentUrl).toMatch(/login$/);
   });
 });
 
@@ -54,7 +55,15 @@ test.describe('Redirecciones de autenticación', () => {
     // dashboard_bp tiene url_prefix='/dashboard', ruta '/' → /dashboard/
     await page.goto('/dashboard/');
 
-    // El decorador @login_required redirige a la raíz (login)
-    await expect(page).toHaveURL(/localhost:5000\/?$/);
+    // El decorador @login_required redirige a /login
+    await expect(page).toHaveURL(/login$/);
+  });
+
+  test('la raíz / redirige a la landing pública con 301', async ({ page }) => {
+    // Necesita LANDING_URL apuntando a un servidor real; en dev la raíz
+    // responde 301 hacia config.LANDING_URL.
+    const response = await page.request.get('/');
+    expect(response.status()).toBe(301);
+    expect(response.headers()['location']).toBeTruthy();
   });
 });

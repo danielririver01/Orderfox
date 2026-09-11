@@ -401,29 +401,32 @@ class TestE2EAccountLifecycle:
         assert user3.restaurant.subscription_state == 'cancellation_pending'
 
 
-# ───────────── Bug 1b: redirect post-eliminación apunta a /login que NO existe ─────────────
+# ───────────── Bug 1b: redirect post-eliminación apunta a /login ─────────────
 #
 # Regresión detectada en producción: tras eliminar la cuenta, el frontend
-# (subscription.js) redirigía a '/login' hardcodeado, pero auth.login vive en
-# la raíz '/' (auth_bp no tiene url_prefix). El resultado era un 404.
+# (subscription.js) redirigía a '/login' hardcodeado cuando auth.login vivía
+# en la raíz '/' (auth_bp sin url_prefix). El resultado era un 404.
 # El fix: subscription.js usa window.VELZIA_LOGIN_URL = url_for('auth.login').
+#
+# v1.5: la raíz '/' ahora redirige 301 a la landing pública (velzia.shop) y
+# auth.login vive en '/login' — el backend IZQUIERDA de escribir '/login'
+# hardcodeado, ahora la URL canónica del login ES '/login'.
 
 class TestLoginUrlAfterAccountDeletion:
 
-    def test_auth_login_is_root_not_login(self, app):
-        """La ruta de login real es '/' (raíz). url_for('auth.login') no debe
-        generar '/login' porque esa ruta no existe en el blueprint auth."""
+    def test_auth_login_is_login_path(self, app):
+        """url_for('auth.login') genera '/login' (la ruta canónica del login)."""
         with app.test_request_context():
             from flask import url_for
             login_url = url_for('auth.login')
-        assert login_url == '/'
+        assert login_url == '/login'
 
-    def test_login_path_returns_404(self, app):
-        """GET /login no existe → 404. Documenta por qué el redirect hardcodeado
-        a '/login' rompía tras eliminar la cuenta."""
+    def test_root_redirects_301_to_landing(self, app):
+        """GET / → 301 permanente a la landing pública (LANDING_URL)."""
         client = app.test_client()
-        resp = client.get('/login')
-        assert resp.status_code == 404
+        resp = client.get('/', follow_redirects=False)
+        assert resp.status_code == 301
+        assert resp.headers['Location'].startswith('http')
 
     def test_subscription_js_does_not_hardcode_login(self, app):
         """subscription.js ya no contiene window.location.href = '/login'."""
@@ -657,7 +660,7 @@ class TestLoginNoRestaurantRouting:
             sess['user_id'] = user.id
             sess['username'] = 'norest2'
 
-        resp = client.get('/', follow_redirects=False)
+        resp = client.get('/login', follow_redirects=False)
         assert resp.status_code == 302
         assert resp.headers['Location'].endswith('/planes')
 
@@ -676,7 +679,7 @@ class TestLoginNoRestaurantRouting:
             sess['username'] = 'withplan2'
             sess['selected_plan'] = 'emprendedor'
 
-        resp = client.get('/', follow_redirects=False)
+        resp = client.get('/login', follow_redirects=False)
         assert resp.status_code == 302
         assert resp.headers['Location'].endswith('/setup-account')
 
@@ -687,7 +690,7 @@ class TestLoginNoRestaurantRouting:
             sess['user_id'] = sample_user.id
             sess['username'] = sample_user.username
 
-        resp = client.get('/', follow_redirects=False)
+        resp = client.get('/login', follow_redirects=False)
         assert resp.status_code == 302
         assert resp.headers['Location'].endswith('/dashboard/')
 

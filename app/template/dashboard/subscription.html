@@ -401,7 +401,7 @@
 </div>
 
 <script>
-        // URL real de login generada por Flask (auth.login está en la raíz "/")
+        // URL real de login generada por Flask (auth.login vive en "/login")
         window.VELZIA_LOGIN_URL = "{{ url_for('auth.login') }}";
     </script>
     <script src="{{ url_for('static', filename='js/subscription.js') }}"></script>

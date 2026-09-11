@@ -1,7 +1,7 @@
 // JavaScript para la vista de suscripción
 
 // URL de login (expuesta por subscription.html vía window.VELZIA_LOGIN_URL)
-const LOGIN_URL = window.VELZIA_LOGIN_URL || '/';
+const LOGIN_URL = window.VELZIA_LOGIN_URL || '/login';
 
 // Leer cookie por nombre
 function getCookie(name) {
@@ -74,7 +74,7 @@ async function cancelAccount() {
         });
 
         if (response.redirected || response.status === 401) {
-            window.location.href = '/';
+            window.location.href = LOGIN_URL;
             return;
         }
 
@@ -82,7 +82,7 @@ async function cancelAccount() {
         try {
             data = await response.json();
         } catch (e) {
-            window.location.href = '/';
+            window.location.href = LOGIN_URL;
             return;
         }
 
