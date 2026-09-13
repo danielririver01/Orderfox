@@ -20,7 +20,7 @@ depends_on = None
 
 def upgrade():
     # Opt-out: todos los restaurantes existentes pasan a opt-in de benchmarks.
-    op.execute('UPDATE restaurants SET allow_benchmark = 1')
+    op.execute("UPDATE restaurants SET allow_benchmark = true")
 
     with op.batch_alter_table('restaurants') as batch_op:
         batch_op.alter_column('allow_benchmark', existing_type=sa.Boolean(),
@@ -32,7 +32,7 @@ def downgrade():
     op.add_column('restaurants',
         sa.Column('benchmark_card_seen', sa.Boolean(),
                   server_default='0', nullable=False))
-    op.execute('UPDATE restaurants SET allow_benchmark = 0')
+    op.execute("UPDATE restaurants SET allow_benchmark = false")
 
     with op.batch_alter_table('restaurants') as batch_op:
         batch_op.alter_column('allow_benchmark', existing_type=sa.Boolean(),
