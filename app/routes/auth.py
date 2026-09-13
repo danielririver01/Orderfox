@@ -15,11 +15,13 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/')
 def index():
-    """Raíz → landing pública (Astro en velzia.shop).
+    """Raíz → dashboard si hay sesión activa, landing pública si no.
 
-    301 permanente: los motores de búsqueda transfieren el ranking de la
-    raíz al dominio principal de la landing.
+    Sin sesión: 301 permanente al dominio de la landing (SEO).
+    Con sesión: redirect al dashboard (evita el loop login→landing→login).
     """
+    if 'user_id' in session:
+        return redirect(url_for('dashboard.index'))
     landing = current_app.config.get('LANDING_URL') or 'https://velzia.shop/'
     return redirect(landing, code=301)
 

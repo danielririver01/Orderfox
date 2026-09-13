@@ -77,7 +77,7 @@
       {% endif %}
 
       <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-        🟡 Pendiente de confirmar · 🟢 Confirmada · Cada reserva bloquea la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min + buffer de limpieza
+        🟡 Pendiente de confirmar · 🟢 Confirmada ·       Cada reserva bloquea la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min + buffer de limpieza
       </p>
     </div>
 
@@ -99,4 +99,5 @@
     {% endif %}
   </div>
 </main>
+{% include 'common/navigation.html' %}
 {% endblock %}

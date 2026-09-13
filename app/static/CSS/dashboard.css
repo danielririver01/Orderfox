@@ -117,3 +117,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
         /* End of custom CSS */
+
+/* Hide scrollbar for horizontal scroll tabs */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}

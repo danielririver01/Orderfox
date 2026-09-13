@@ -101,13 +101,28 @@ async function showBrowserNotification(count) {
         };
 
 
-        // Intentar usar Service Worker si está disponible (mejor para segundo plano)
-        const registration = await navigator.serviceWorker.ready;
-        if (registration && registration.showNotification) {
-            registration.showNotification(title, options);
-        } else {
-            // Fallback a notificación normal
+        // Preferir el Service Worker si YA hay uno registrado: sus notificaciones
+        // aguantan en segundo plano. Se usa getRegistration() y nunca `ready`,
+        // porque `ready` es una promesa que NO se resuelve jamás cuando no hay
+        // ningún SW registrado (Velzia no registra ninguno): la notificación
+        // quedaba colgada y el fallback nunca llegaba a ejecutarse.
+        try {
+            if (navigator.serviceWorker) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration && registration.showNotification) {
+                    registration.showNotification(title, options);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('[Velzia] Service Worker no disponible para notificar:', err);
+        }
+
+        // Fallback: constructor directo (funciona sin Service Worker)
+        try {
             new Notification(title, options);
+        } catch (err) {
+            console.warn('[Velzia] No se pudo mostrar la notificación:', err);
         }
     } else if (Notification.permission !== "denied") {
         // Si no tenemos permiso, lo pedimos de nuevo (esto puede ser intrusivo, pero el usuario lo pidió)
@@ -192,7 +207,8 @@ function updateNavBadge(count) {
     const badges = [
         document.getElementById('orders-nav-badge'),
         document.getElementById('sidebar-orders-badge'),
-        document.getElementById('mobile-orders-badge')
+        document.getElementById('mobile-orders-badge'),
+        document.getElementById('mobile-bottom-orders-badge')
     ];
     badges.forEach(badge => {
         if (!badge) return;

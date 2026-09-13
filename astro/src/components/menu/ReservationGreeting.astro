@@ -1,0 +1,73 @@
+---
+/**
+ * ReservationGreeting.astro — Saludo de llegada por QR (v1.5, Semana 3).
+ *
+ * Cuando el menú se abre desde el QR de una mesa (?table=N), consulta al
+ * backend si hay reserva confirmada hoy para esa mesa. Si sí, muestra un
+ * banner de bienvenida ("Bienvenido Carlos, tu mesa está lista") y la
+ * reserva pasa a 'completed' server-side. Si no, no renderiza nada.
+ */
+export interface Props {
+  restaurantId: number;
+  tableId?: number | string | null;
+  apiBase?: string;
+}
+
+import { FLASK_URL } from '../../lib/urls';
+
+const { restaurantId, tableId } = Astro.props;
+/** Mismo origen que el checkout: env-driven (ver urls.ts). */
+const apiBase = FLASK_URL.replace(/\/$/, '');
+const hasTable = tableId !== null && tableId !== undefined && tableId !== '';
+---
+
+{hasTable && (
+  <div
+    id="reservation-greeting"
+    class="mx-auto hidden w-full max-w-6xl px-4 pt-4"
+    data-restaurant-id={restaurantId}
+    data-table-id={String(tableId)}
+    data-api-base={apiBase}
+  >
+    <div class="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </span>
+      <p class="text-sm font-semibold text-ink">
+        <span id="greeting-text">Bienvenido, tu mesa está lista. ¡Bienvenido!</span>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const greetingEl = document.getElementById('reservation-greeting');
+    if (greetingEl) {
+      const restaurantId = parseInt(greetingEl.getAttribute('data-restaurant-id') || '0', 10);
+      const tableId = parseInt(greetingEl.getAttribute('data-table-id') || '0', 10);
+      const apiBase = greetingEl.getAttribute('data-api-base') || '';
+
+      fetch(`${apiBase}/menu/api/reservations/arrival`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: restaurantId, table_id: tableId }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.success && data.data?.has_reservation) {
+            const res = data.data.reservation;
+            const text = document.getElementById('greeting-text');
+            if (text && res?.customer_name) {
+              text.textContent = `Bienvenido ${res.customer_name}, tu mesa (${res.table_name || 'nuestra casa'}) está lista. ¡Te esperábamos!`;
+            }
+            greetingEl.classList.remove('hidden');
+          }
+          // Sin reserva: el banner permanece oculto — menú normal.
+        })
+        .catch(() => {
+          /* silencioso: el saludo nunca rompe la carga del menú */
+        });
+    }
+  </script>
+)}

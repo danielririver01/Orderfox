@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
     <title>{% block title %}Velzia{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
     <script>
         window.tailwind = window.tailwind || {};
         tailwind.config = {

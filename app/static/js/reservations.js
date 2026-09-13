@@ -1,9 +1,10 @@
 /**
- * reservations.js — Acciones del panel de Reservas (v1.5).
+ * reservations.js — Acciones del panel de Reservas (v2.0).
  *
- * Delegación de eventos sobre #reservations-list: confirmar, rechazar
- * (con motivo opcional vía prompt), completar y marcar no_show.
+ * Delegación de eventos sobre #reservations-list: confirmar, rechazar,
+ * completar y marcar no_show.
  * Sin dependencias. CSRF via data-attr expuesto por la plantilla.
+ * Confirmaciones vía modal propio (sin window.confirm/prompt).
  */
 (function () {
   'use strict';
@@ -13,6 +14,98 @@
 
   var CSRF = list.dataset.csrf || '';
 
+  /* ------------------------------------------------------------------
+   * Modal de confirmación propio
+   * ----------------------------------------------------------------*/
+  var modal      = document.getElementById('reservation-confirm-modal');
+  var overlay    = modal ? modal.querySelector('[data-reservation-modal-overlay]') : null;
+  var iconWrap   = document.getElementById('res-modal-icon-wrap');
+  var icon       = document.getElementById('res-modal-icon');
+  var title      = document.getElementById('res-modal-title');
+  var message    = document.getElementById('res-modal-message');
+  var inputWrap  = document.getElementById('res-modal-input-wrap');
+  var input      = document.getElementById('res-modal-input');
+  var cancelBtn  = document.getElementById('res-modal-cancel');
+  var actionBtn  = document.getElementById('res-modal-action');
+
+  var _modalResolve = null;
+
+  function openModal(opts) {
+    if (!modal) return Promise.resolve(opts.confirmValue || true);
+    return new Promise(function (resolve) {
+      _modalResolve = resolve;
+
+      title.textContent = opts.title || '';
+      message.textContent = opts.message || '';
+
+      // Icono
+      var colors = opts.colors || { bg: 'bg-amber-500/10', text: 'text-amber-500' };
+      iconWrap.className = 'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ' + colors.bg;
+      icon.className = 'material-symbols-outlined text-[20px] ' + colors.text;
+      icon.textContent = opts.icon || 'info';
+
+      // Botón acción
+      actionBtn.className = 'flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95';
+      actionBtn.style.backgroundColor = opts.bgColor || '#f59e0b';
+      actionBtn.style.borderColor = 'transparent';
+      actionBtn.textContent = opts.actionLabel || 'Aceptar';
+
+      // Input opcional
+      if (opts.showInput) {
+        inputWrap.classList.remove('hidden');
+        input.value = '';
+        input.placeholder = opts.inputPlaceholder || '';
+        setTimeout(function () { input.focus(); }, 80);
+      } else {
+        inputWrap.classList.add('hidden');
+        input.value = '';
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+  }
+
+  function closeModal(result) {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    if (_modalResolve) {
+      _modalResolve(result);
+      _modalResolve = null;
+    }
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () { closeModal(null); });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', function () { closeModal(null); });
+  }
+  if (actionBtn) {
+    actionBtn.addEventListener('click', function () {
+      if (!inputWrap.classList.contains('hidden')) {
+        closeModal(input.value);
+      } else {
+        closeModal(true);
+      }
+    });
+    actionBtn.addEventListener('mouseenter', function () {
+      actionBtn.style.filter = 'brightness(1.15)';
+    });
+    actionBtn.addEventListener('mouseleave', function () {
+      actionBtn.style.filter = '';
+    });
+  }
+  if (modal) {
+    modal.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeModal(null);
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * Helpers
+   * ----------------------------------------------------------------*/
   function jsonFetch(url, options) {
     options = options || {};
     options.headers = Object.assign(
@@ -68,6 +161,9 @@
     if (actions) actions.innerHTML = '';
   }
 
+  /* ------------------------------------------------------------------
+   * Config de acciones
+   * ----------------------------------------------------------------*/
   var ACTIONS = {
     confirm: {
       method: 'PATCH',
@@ -91,6 +187,38 @@
     }
   };
 
+  var MODAL_CONFIG = {
+    'no-show': {
+      title: 'Marcar como "No llegó"',
+      message: '¿Confirmas que el cliente no se presentó a su reserva?',
+      icon: 'person_off',
+      colors: { bg: 'bg-amber-500/10', text: 'text-amber-500' },
+      actionLabel: 'Marcar no llegó',
+      bgColor: '#f59e0b'
+    },
+    complete: {
+      title: 'Marcar como completada',
+      message: '¿Confirmas que la reserva se completó con éxito?',
+      icon: 'done_all',
+      colors: { bg: 'bg-sky-500/10', text: 'text-sky-500' },
+      actionLabel: 'Completar',
+      bgColor: '#0ea5e9'
+    },
+    reject: {
+      title: 'Rechazar reserva',
+      message: '¿Seguro que deseas rechazar esta reserva?',
+      icon: 'close',
+      colors: { bg: 'bg-red-500/10', text: 'text-red-500' },
+      actionLabel: 'Rechazar',
+      bgColor: '#ef4444',
+      showInput: true,
+      inputPlaceholder: 'Motivo del rechazo (opcional)'
+    }
+  };
+
+  /* ------------------------------------------------------------------
+   * Ejecutar acción
+   * ----------------------------------------------------------------*/
   function performAction(btn, action, id, body) {
     setLoading(btn, true);
     jsonFetch('/api/reservations/' + id + '/' + action, {
@@ -109,6 +237,9 @@
       });
   }
 
+  /* ------------------------------------------------------------------
+   * Delegación de eventos
+   * ----------------------------------------------------------------*/
   list.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-action]');
     if (!btn || btn.disabled) return;
@@ -116,22 +247,22 @@
     var id = btn.dataset.id;
     if (!ACTIONS[action]) return;
 
-    if (action === 'reject') {
-      var motivo = window.prompt(
-        'Motivo del rechazo (opcional — se guarda en el registro):', ''
-      );
-      if (motivo === null) return; // cancelado
-      performAction(btn, action, id, motivo ? { motivo: motivo } : {});
-      return;
-    }
     if (action === 'confirm') {
-      // Optimista pero reversible: el botón entra en loading hasta respuesta.
       performAction(btn, action, id, {});
       return;
     }
-    if (action === 'complete' || action === 'no-show') {
-      if (!window.confirm('¿Marcar esta reserva como "' + ACTIONS[action].label + '"?')) return;
-      performAction(btn, action, id, {});
-    }
+
+    var cfg = MODAL_CONFIG[action];
+    if (!cfg) return;
+
+    openModal(cfg).then(function (result) {
+      if (result === null) return;
+      if (action === 'reject') {
+        var motivo = typeof result === 'string' ? result.trim() : '';
+        performAction(btn, action, id, motivo ? { motivo: motivo } : {});
+      } else {
+        performAction(btn, action, id, {});
+      }
+    });
   });
 })();

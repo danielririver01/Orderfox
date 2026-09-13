@@ -1,5 +1,5 @@
 ﻿{# ═══════════════════════════════════════════════════════════
-   Velzia — Mobile Navigation (Hamburger Menu)
+   Velzia — Mobile Navigation (Hamburger + iOS Bottom Nav)
    ═══════════════════════════════════════════════════════════ #}
 
 {# Overlay #}
@@ -27,97 +27,140 @@
     </div>
 
     {# Scrollable nav area #}
-    <nav class="flex-1 overflow-y-auto py-3 px-2">
-        {# Primary actions #}
-        <div class="space-y-0.5">
-            <a href="{{ url_for('dashboard.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">home</span>
-                Inicio
-            </a>
-            <a href="{{ url_for('products.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                Stock
-            </a>
-            {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
-            <a href="{{ url_for('dashboard.ai_scan_redirect') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
-                <span class="material-symbols-outlined text-[20px]">document_scanner</span>
-                Escanear tus compras
-            </a>
-            {% endif %}
-            <a href="{{ url_for('insights.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">insights</span>
-                <span class="flex flex-col">
-                    Copilot Estratégico
-                    <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
-                </span>
-                <span id="mobile-insights-badge"
-                    class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
-            </a>
-            <a href="{{ url_for('orders.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-                Pedidos
-                <span id="mobile-orders-badge"
-                    class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
-            </a>
-            <a href="{{ url_for('cash_register.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                Centro de Caja
-            </a>
-        </div>
+    <nav class="flex-1 overflow-y-auto py-3 px-2" id="mobile-nav">
 
-        <div class="h-px bg-white/[0.04] mx-2 my-3"></div>
-
-        {# Management #}
-        <div class="space-y-0.5">
-            <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em] px-3 mb-1.5">Gestión</p>
-            <a href="{{ url_for('categories.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">category</span>
-                Categorías
-            </a>
-            <a href="{{ url_for('tables.index') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
-                Gestión de Mesas
-            </a>
-            <a href="{{ url_for('employees.team') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">group</span>
-                Equipo
-            </a>
-            <button onclick="closeMobileNav(); openTokenModal()" id="mobile-token-link"
-                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
-                <span class="material-symbols-outlined text-[20px] text-orange-500">bolt</span>
-                <span class="flex-1 text-left">Tokens IA</span>
-                <span id="mobile-token-count" class="text-[11px] font-black text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-md">--</span>
+        {# ── OPERACIÓN DIARIA ── #}
+        <div class="nav-group" data-group="operacion">
+            <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('operacion')">
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Operación Diaria</p>
+                <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
+            <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                <a href="{{ url_for('dashboard.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">home</span>
+                    Inicio
+                </a>
+                <a href="{{ url_for('orders.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                    Pedidos
+                    <span id="mobile-orders-badge"
+                        class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
+                </a>
+                <a href="{{ url_for('cash_register.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+                    Centro de Caja
+                </a>
+                <a href="{{ url_for('reservations.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">event_available</span>
+                    Reservas
+                </a>
+                {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
+                <a href="{{ url_for('dashboard.ai_scan_redirect') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
+                    <span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                    Escanear tus compras
+                </a>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="h-px bg-white/[0.04] mx-2 my-3"></div>
+        <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
 
-        {# Settings #}
-        <div class="space-y-0.5">
-            <a href="{{ url_for('dashboard.settings') }}" onclick="closeMobileNav()"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
-                {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
-                <span class="material-symbols-outlined text-[20px]">settings</span>
-                Ajustes
-            </a>
+        {# ── MENÚ E INVENTARIO ── #}
+        <div class="nav-group" data-group="menu">
+            <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('menu')">
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú e Inventario</p>
+                <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+            </button>
+            <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                <a href="{{ url_for('dashboard.settings') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">grid_view</span>
+                    Menú/Ajustes
+                </a>
+                <a href="{{ url_for('categories.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">category</span>
+                    Categorías
+                </a>
+                <a href="{{ url_for('products.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    Stock
+                </a>
+                <a href="{{ url_for('tables.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
+                    Gestión de Mesas
+                </a>
+            </div>
         </div>
+
+        <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+
+        {# ── INTELIGENCIA ── #}
+        <div class="nav-group" data-group="inteligencia">
+            <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('inteligencia')">
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Inteligencia</p>
+                <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+            </button>
+            <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                <a href="{{ url_for('insights.index') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors relative
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">insights</span>
+                    <span class="flex flex-col">
+                        Copilot Estratégico
+                        <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
+                    </span>
+                    <span id="mobile-insights-badge"
+                        class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
+                </a>
+                <a href="{{ url_for('dashboard.achievements') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">emoji_events</span>
+                    Logros
+                </a>
+                <button onclick="closeMobileNav(); openTokenModal()" id="mobile-token-link"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors text-gray-400 hover:text-white hover:bg-white/[0.04]">
+                    <span class="material-symbols-outlined text-[20px] text-orange-500">bolt</span>
+                    <span class="flex-1 text-left">Tokens IA</span>
+                    <span id="mobile-token-count" class="text-[11px] font-black text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-md">--</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+
+        {# ── CONFIGURACIÓN ── #}
+        <div class="nav-group" data-group="configuracion">
+            <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('configuracion')">
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Configuración</p>
+                <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+            </button>
+            <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                <a href="{{ url_for('employees.team') }}" onclick="closeMobileNav()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
+                    {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                    Equipo
+                </a>
+            </div>
+        </div>
+
     </nav>
 
     {# Footer: Restaurant + Logout #}
@@ -139,17 +182,44 @@
     </div>
 </aside>
 
+{# ═══ Bottom Navigation — iOS floating pill ═══ #}
+<nav id="mobile-bottom-nav" class="md:hidden fixed bottom-4 left-4 right-4 z-[997] bg-[#1a1a1a]/80 backdrop-blur-2xl rounded-3xl border border-white/[0.08] shadow-2xl shadow-black/50 pb-[env(safe-area-inset-bottom)]">
+    <div class="flex items-center justify-around h-14 px-2">
+        <a href="{{ url_for('dashboard.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'dashboard.index' else '' }}">
+            <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'dashboard.index' else 'text-gray-500' }}">home</span>
+        </a>
+        <a href="{{ url_for('orders.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'orders.index' else '' }}">
+            <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'orders.index' else 'text-gray-500' }}">receipt_long</span>
+            <span id="mobile-bottom-orders-badge" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)] z-20"></span>
+        </a>
+        <a href="{{ url_for('cash_register.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'cash_register.index' else '' }}">
+            <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'cash_register.index' else 'text-gray-500' }}">account_balance_wallet</span>
+        </a>
+        <button onclick="openMobileNav()" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90" aria-label="Abrir menú">
+            <span class="material-symbols-outlined text-[22px] text-gray-500">menu</span>
+        </button>
+    </div>
+</nav>
+
 {# Hamburger button — visible only when menu is CLOSED #}
 <button id="mobile-nav-toggle" onclick="openMobileNav()" aria-label="Abrir menú"
     class="md:hidden fixed top-4 right-4 z-[1000] w-10 h-10 bg-[#0a0a0a]/90 border border-white/[0.08] rounded-xl flex items-center justify-center transition-all hover:bg-[#141414] active:scale-90">
     <span class="material-symbols-outlined text-gray-300 text-[22px]">menu</span>
 </button>
 
-<script>
+    {# Mobile padding + accordion + nav logic #}
+    <style>
+        @media (max-width: 767px) {
+            body { padding-bottom: 5rem; }
+        }
+    </style>
+
+    <script>
     (function() {
         var panel = document.getElementById('mobile-nav-panel');
         var overlay = document.getElementById('mobile-nav-overlay');
         var toggle = document.getElementById('mobile-nav-toggle');
+        var bottomNav = document.getElementById('mobile-bottom-nav');
 
         window.openMobileNav = function() {
             if (!panel) return;
@@ -157,6 +227,8 @@
             overlay.classList.remove('hidden');
             requestAnimationFrame(function() { overlay.style.opacity = '1'; });
             toggle.style.display = 'none';
+            if (bottomNav) bottomNav.style.display = 'none';
+            document.querySelectorAll('.crc-fab, #crc-fab, [id*="fab"]').forEach(function(el) { el.style.display = 'none'; });
             document.body.style.overflow = 'hidden';
         };
 
@@ -166,11 +238,54 @@
             overlay.style.opacity = '0';
             setTimeout(function() { overlay.classList.add('hidden'); }, 300);
             toggle.style.display = '';
+            if (bottomNav) bottomNav.style.display = '';
+            document.querySelectorAll('.crc-fab, #crc-fab, [id*="fab"]').forEach(function(el) { el.style.display = ''; });
             document.body.style.overflow = '';
         };
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeMobileNav();
         });
+
+        {# Accordion init for mobile panel #}
+        var state;
+        try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
+
+        var groups = document.querySelectorAll('#mobile-nav .nav-group');
+        groups.forEach(function(group) {
+            var name = group.getAttribute('data-group');
+            var items = group.querySelector('.nav-group-items');
+            var chevron = group.querySelector('.nav-chevron');
+            var hasActive = items.querySelector('.bg-orange-500\\/10') !== null;
+            var shouldOpen;
+            if (state.hasOwnProperty(name)) { shouldOpen = state[name]; }
+            else if (name === 'operacion') { shouldOpen = true; }
+            else { shouldOpen = hasActive; }
+            if (shouldOpen) {
+                items.style.maxHeight = items.scrollHeight + 'px';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            } else {
+                items.style.maxHeight = '0px';
+            }
+        });
     })();
-</script>
+
+    function toggleMobileNavGroup(name) {
+        var group = document.querySelector('#mobile-nav .nav-group[data-group="' + name + '"]');
+        if (!group) return;
+        var items = group.querySelector('.nav-group-items');
+        var chevron = group.querySelector('.nav-chevron');
+        var isOpen = items.style.maxHeight && items.style.maxHeight !== '0px';
+        if (isOpen) {
+            items.style.maxHeight = '0px';
+            if (chevron) chevron.style.transform = '';
+        } else {
+            items.style.maxHeight = items.scrollHeight + 'px';
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        }
+        var state;
+        try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
+        state[name] = !isOpen;
+        localStorage.setItem('velzia_nav_groups', JSON.stringify(state));
+    }
+    </script>

@@ -357,7 +357,9 @@ def create_app():
         from app.utils.restaurant import get_current_restaurant
         from app.utils.subscription import get_subscription_status, PLAN_LIMITS
         
+        from settings import APP_VERSION
         data = {
+            'APP_VERSION': APP_VERSION,
             'SUPPORT_PHONE': app.config.get('SUPPORT_PHONE'),
             'SUPPORT_EMAIL': app.config.get('SUPPORT_EMAIL'),
             'SCANNER_IA_URL': app.config.get('SCANNER_IA_URL', 'http://localhost:3000'),

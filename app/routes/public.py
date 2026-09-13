@@ -1,12 +1,15 @@
-from flask import Blueprint, abort, request, jsonify, redirect, url_for, session, current_app
-from app.models import db, Table
-from app import csrf
+import time
 from datetime import datetime
-from app.utils.rate_limiter import OrderRateLimiter
+
+from flask import Blueprint, abort, current_app, jsonify, redirect, request, session
+
+from app.models import Table, db
+from app.services import reservation_service as rs
+from app.services.notification_service import notify_new_order
 from app.services.order_service import OrderService, log_event
 from app.services.public_menu_service import PublicMenuService
-from app.services.notification_service import notify_new_order
-import time
+from app.services.reservation_service import ReservationServiceError
+from app.utils.rate_limiter import OrderRateLimiter, ReservationRateLimiter
 
 public_bp = Blueprint('public', __name__)
 
@@ -39,6 +42,140 @@ def menu(slug=None):
     if request.query_string:
         target += '?' + request.query_string.decode('utf-8')
     return redirect(target)
+
+# ── Reservas públicas (v1.5, Semana 3) ────────────────────────────────
+# Namespace /menu/api/*: mismo origen que el checkout del menú Astro
+# (proxy dev + CORS prod), CSRF-exento, rate-limit por IP.
+
+@public_bp.route('/menu/api/reservations/config', methods=['GET'])
+def reservations_config():
+    """Config pública de reservas del restaurante (para el formulario).
+    Acepta ?slug= o ?restaurant_id=. Solo expone lo que el cliente
+    necesita: habilitado, anticipación, tamaño máximo de grupo."""
+    slug = request.args.get('slug', '')
+    if slug:
+        restaurant, _err = PublicMenuService.get_restaurant_by_slug(slug)
+    else:
+        restaurant = PublicMenuService.get_restaurant_by_id(request.args.get('restaurant_id', 0))
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    settings = rs.get_or_create_settings(restaurant.id)
+    has_tables = Table.query.filter_by(restaurant_id=restaurant.id, is_active=True).count() > 0
+    return jsonify({'success': True, 'data': {
+        'enabled': bool(
+            settings.reservations_enabled
+            and has_tables
+            and PublicMenuService.is_ordering_enabled(restaurant)
+        ),
+        'min_notice_hours': settings.min_notice_hours,
+        'max_advance_days': settings.max_advance_days,
+        'max_party_size': rs.MAX_PARTY_SIZE,
+    }})
+
+
+@public_bp.route('/menu/api/reservations/check', methods=['POST'])
+def reservations_check():
+    """Check de disponibilidad sin crear la reserva (input asistido)."""
+    data = request.get_json(silent=True) or {}
+    restaurant = PublicMenuService.get_restaurant_by_id(data.get('restaurant_id', 0))
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    try:
+        fecha = rs.parse_date(data.get('fecha'))
+        hora = rs.parse_time(data.get('hora'))
+        party_size = int(data.get('personas', 0))
+        if not 1 <= party_size <= rs.MAX_PARTY_SIZE:
+            raise ValueError
+    except (ValueError, TypeError, ReservationServiceError):
+        return jsonify({'success': False, 'error': 'Fecha, hora y personas son requeridos'}), 400
+
+    blocked, _, _ = ReservationRateLimiter.should_block_request(restaurant.id, request.remote_addr or 'unknown')
+    if blocked:
+        return jsonify({'success': False, 'error': 'Demasiadas consultas. Espera unos minutos.'}), 429
+
+    table, _settings = rs.check_availability(restaurant.id, fecha, hora, party_size)
+    return jsonify({'success': True, 'data': {'available': table is not None}})
+
+
+@public_bp.route('/menu/api/reservations', methods=['POST'])
+def reservations_create():
+    """Crea una solicitud de reserva ('pending') desde el menú digital.
+    Mismo anti-spam que pedidos: honeypot + rate limit por IP."""
+    data = request.get_json(silent=True) or {}
+
+    # Honeypot (patrón checkout): bots rellenan campos ocultos
+    if data.get('user_secondary_email'):
+        return jsonify({'success': False, 'error': 'Actividad sospechosa detectada.'}), 403
+
+    restaurant = PublicMenuService.get_restaurant_by_id(data.get('restaurant_id', 0))
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    blocked, message, _wait = ReservationRateLimiter.should_block_request(
+        restaurant.id, request.remote_addr or 'unknown')
+    if blocked:
+        return jsonify({'success': False, 'error': message}), 429
+
+    try:
+        reservation = rs.create_reservation(
+            restaurant.id,
+            fecha=data.get('fecha'),
+            hora=data.get('hora'),
+            party_size=data.get('personas'),
+            customer_name=data.get('nombre'),
+            customer_whatsapp=data.get('whatsapp'),
+            customer_note=data.get('nota'),
+            ip_address=request.remote_addr or 'unknown',
+        )
+    except ReservationServiceError as exc:
+        return jsonify({'success': False,
+                        'error_code': exc.code,
+                        'error': exc.message}), exc.http_status
+
+    from app.services.notification_service import notify_new_reservation
+    notify_new_reservation(reservation)
+    return jsonify({
+        'success': True,
+        'message': 'Solicitud enviada. Te confirmaremos por WhatsApp a la brevedad.',
+        'data': {'reservation_id': reservation.id, 'status': reservation.status},
+    }), 201
+
+
+@public_bp.route('/menu/api/reservations/arrival', methods=['POST'])
+def reservations_arrival():
+    """Conexión QR → reserva (Semana 3): al escanear el QR de la mesa,
+    ¿hay reserva confirmada hoy para esa mesa? Si sí, la marca 'completed'
+    y devuelve el saludo. Silencioso si no hay reserva (menú normal)."""
+    data = request.get_json(silent=True) or {}
+    restaurant = PublicMenuService.get_restaurant_by_id(data.get('restaurant_id', 0))
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'Restaurante no encontrado'}), 404
+
+    table_id = data.get('table_id')
+    if not table_id:
+        return jsonify({'success': False, 'error': 'table_id requerido'}), 400
+
+    # Validar que la mesa pertenece al restaurante (no filtrar por ID)
+    table = Table.query.filter_by(id=table_id, restaurant_id=restaurant.id).first()
+    if not table:
+        return jsonify({'success': False, 'error': 'Mesa no encontrada'}), 404
+
+    reservation = rs.link_qr_to_reservation(restaurant.id, table.id)
+    if reservation is None:
+        return jsonify({'success': True, 'data': {'has_reservation': False}})
+
+    return jsonify({'success': True, 'data': {
+        'has_reservation': True,
+        'reservation': {
+            'customer_name': reservation.customer_name,
+            'party_size': reservation.party_size,
+            'time': reservation.reservation_time.strftime('%I:%M %p').lstrip('0').lower(),
+            'table_name': table.name,
+        },
+    }})
+
 
 @public_bp.route('/menu/api/order', methods=['POST'])
 def create_order():

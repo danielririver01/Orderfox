@@ -1,6 +1,12 @@
 import type { MenuResponse, Category, Product } from './types';
 
-const API_BASE = 'https://velzia.shop/api/public';
+/**
+ * API pública del menú (Flask).
+ * - Prod (default): https://velzia.shop/api/public — igual que siempre.
+ * - Dev local: define PUBLIC_MENU_API_URL=http://localhost:5000/api/public
+ *   en astro/.env para que el menú cargue de TU Flask (slugs locales).
+ */
+const API_BASE = import.meta.env.PUBLIC_MENU_API_URL || 'https://velzia.shop/api/public';
 const API_KEY = import.meta.env.SERVICE_API_KEY || '';
 
 function headers(): Record<string, string> {

@@ -1,0 +1,255 @@
+---
+/**
+ * ReservationForm.astro — Formulario público de reservas (v1.5, Semana 3).
+ *
+ * Modal que se abre desde el botón "Reservar mesa" del menú. Flujo:
+ *  1. GET  {apiBase}/menu/api/reservations/config?slug=…  → ¿reservas activas?
+ *  2. POST {apiBase}/menu/api/reservations/check          → disponibilidad
+ *  3. POST {apiBase}/menu/api/reservations                → crea 'pending'
+ *
+ * El backend responde con mensajes listos para mostrar (español, incluido
+ * el auto-rechazo NO_AVAILABILITY). Honeypot anti-bots incluido.
+ */
+export interface Props {
+  restaurantSlug: string;
+  restaurantId: number;
+  /** Origen de Flask. En dev lo sirve el proxy /menu/api del config. */
+  apiBase?: string;
+}
+
+import { FLASK_URL } from '../../lib/urls';
+
+const { restaurantSlug, restaurantId } = Astro.props;
+/** Origen de Flask: env-driven (dev → localhost:5000 con CORS, prod → velzia.shop,
+ *  mismo patrón del checkout). Sin trailing slash para componer URLs. */
+const apiBase = FLASK_URL.replace(/\/$/, '');
+---
+
+<!-- Overlay + Modal (el botón trigger se renderiza fuera: sidebar desktop / flotante mobile) -->
+<div id="reservation-overlay" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm"></div>
+
+<div
+  id="reservation-modal"
+  class="fixed inset-0 z-50 mx-auto hidden h-fit max-h-[90vh] w-full max-w-md translate-y-8 transform overflow-y-auto rounded-2xl border border-border-subtle bg-card p-6 shadow-2xl transition-all duration-300"
+  data-restaurant-id={restaurantId}
+  data-restaurant-slug={restaurantSlug}
+  data-api-base={apiBase}
+>
+  <div class="mb-5 flex items-center justify-between">
+    <h2 class="font-display text-lg font-semibold text-ink">Reservar mesa</h2>
+    <button id="reservation-close" class="rounded-full p-2 text-ink-muted transition hover:bg-card-hover" aria-label="Cerrar" type="button">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Paso 1: formulario -->
+  <form id="reservation-form" class="space-y-4">
+    <input type="hidden" name="restaurant_id" value={restaurantId} />
+    {/* Honeypot anti-bots (invisible para humanos) */}
+    <input type="text" name="user_secondary_email" class="absolute -left-[9999px]" tabindex="-1" autocomplete="off" />
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-fecha">Fecha</label>
+        <input type="date" id="reservation-fecha" name="fecha" required
+          class="w-full rounded-xl border border-border-subtle bg-card-hover px-3 py-2.5 text-sm text-ink outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-hora">Hora</label>
+        <input type="time" id="reservation-hora" name="hora" required step="1800"
+          class="w-full rounded-xl border border-border-subtle bg-card-hover px-3 py-2.5 text-sm text-ink outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-personas">Personas</label>
+      <select id="reservation-personas" name="personas" required
+        class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15">
+        {[1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20].map((n) => (
+          <option value={n}>{n} {n === 1 ? 'persona' : 'personas'}</option>
+        ))}
+        <option value="30">Más de 20</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-nombre">Tu nombre</label>
+      <input type="text" id="reservation-nombre" name="nombre" required maxlength="100"
+        class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
+      />
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-whatsapp">WhatsApp</label>
+      <input type="tel" id="reservation-whatsapp" name="whatsapp" required maxlength="20" inputmode="tel"
+        placeholder="300 123 4567"
+        class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
+      />
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-ink-muted" for="reservation-nota">Nota (opcional)</label>
+      <textarea id="reservation-nota" name="nota" rows="2" maxlength="500"
+        placeholder="Cumpleaños, silla para bebé…"
+        class="w-full resize-none rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
+      ></textarea>
+    </div>
+
+    <button type="submit" id="reservation-submit"
+      class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg disabled:opacity-50"
+    >
+      Verificar disponibilidad
+    </button>
+  </form>
+
+  <!-- Paso 2: disponibilidad confirmada → datos ya enviados -->
+  <div id="reservation-success" class="hidden text-center">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+      <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <h3 class="font-display text-lg font-semibold text-ink">Solicitud enviada</h3>
+    <p id="reservation-success-msg" class="mt-2 text-sm text-ink-muted">
+      Te confirmaremos por WhatsApp a la brevedad.
+    </p>
+    <button type="button" id="reservation-success-close"
+      class="btn-primary mt-6 w-full rounded-xl py-3 text-sm font-semibold">Listo</button>
+  </div>
+
+  <div id="reservation-error" class="mt-3 hidden text-center text-sm text-red-400"></div>
+</div>
+
+<script>
+  const modal = document.getElementById('reservation-modal');
+  const overlay = document.getElementById('reservation-overlay');
+  const triggers = document.querySelectorAll<HTMLElement>('[data-reservation-trigger]');
+  const form = document.getElementById('reservation-form') as HTMLFormElement | null;
+  const successBox = document.getElementById('reservation-success');
+  const errorMsg = document.getElementById('reservation-error');
+  const submitBtn = document.getElementById('reservation-submit') as HTMLButtonElement | null;
+
+  const restaurantId = parseInt(modal?.getAttribute('data-restaurant-id') || '0', 10);
+  const apiBase = modal?.getAttribute('data-api-base') || '';
+  let maxAdvanceDays = 30;
+
+  function api(path: string): string {
+    return `${apiBase}/menu/api${path}`;
+  }
+
+  // Config al cargar la página: muestra/oculta los botones trigger y prepara límites.
+  fetch(api(`/reservations/config?restaurant_id=${restaurantId}`))
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data?.success) return;
+      maxAdvanceDays = data.data.max_advance_days ?? 30;
+      if (data.data.enabled) {
+        triggers.forEach((t) => t.removeAttribute('hidden'));
+      }
+      // Deshabilitado: los botones permanecen ocultos (cero ruido en el menú).
+    })
+    .catch(() => {
+      /* sin config no se muestran; el backend igual valida */
+    });
+
+  function openModal(): void {
+    modal?.classList.remove('hidden', 'translate-y-8');
+    overlay?.classList.remove('hidden');
+    const input = document.getElementById('reservation-fecha') as HTMLInputElement | null;
+    if (input && !input.min) {
+      const today = new Date();
+      const max = new Date(today.getTime() + maxAdvanceDays * 86400000);
+      input.min = today.toISOString().slice(0, 10);
+      input.max = max.toISOString().slice(0, 10);
+    }
+  }
+
+  function closeModal(): void {
+    modal?.classList.add('hidden', 'translate-y-8');
+    overlay?.classList.add('hidden');
+  }
+
+  function showError(message: string): void {
+    if (!errorMsg) return;
+    errorMsg.textContent = message;
+    errorMsg.classList.remove('hidden');
+  }
+
+  function clearError(): void {
+    errorMsg?.classList.add('hidden');
+  }
+
+  triggers.forEach((btn) => btn.addEventListener('click', openModal));
+  document.getElementById('reservation-close')?.addEventListener('click', closeModal);
+  document.getElementById('reservation-success-close')?.addEventListener('click', closeModal);
+  overlay?.addEventListener('click', closeModal);
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearError();
+    if (!submitBtn) return;
+
+    const formData = new FormData(form);
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verificando…';
+
+    const payload = {
+      restaurant_id: restaurantId,
+      fecha: String(formData.get('fecha') || ''),
+      hora: String(formData.get('hora') || ''),
+      personas: parseInt(String(formData.get('personas') || '0'), 10),
+      nombre: String(formData.get('nombre') || ''),
+      whatsapp: String(formData.get('whatsapp') || ''),
+      nota: String(formData.get('nota') || ''),
+      user_secondary_email: String(formData.get('user_secondary_email') || ''),
+    };
+
+    if (!payload.fecha || !payload.hora || !payload.personas) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Verificar disponibilidad';
+      showError('Completa fecha, hora y número de personas.');
+      return;
+    }
+
+    // 1) Check de disponibilidad (input asistido; el backend revalida al crear)
+    fetch(api('/reservations/check'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((check) => {
+        if (check?.success && check.data?.available === false) {
+          throw new Error(
+            'No hay mesas disponibles para ese horario. Prueba otra hora o el día siguiente.'
+          );
+        }
+        // 2) Crear la reserva
+        return fetch(api('/reservations'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json());
+      })
+      .then((created) => {
+        if (!created?.success) {
+          throw new Error(created?.error || 'No se pudo crear la reserva.');
+        }
+        form.classList.add('hidden');
+        successBox?.classList.remove('hidden');
+        const msg = document.getElementById('reservation-success-msg');
+        if (msg && created.message) msg.textContent = created.message;
+      })
+      .catch((err: Error) => {
+        showError(err.message || 'Error de conexión. Intenta de nuevo.');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verificar disponibilidad';
+      });
+  });
+</script>

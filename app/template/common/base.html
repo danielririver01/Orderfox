@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Velzia{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
     <script>
         window.tailwind = window.tailwind || {};
         tailwind.config = {
@@ -143,77 +143,167 @@
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 px-3 py-4 space-y-1">
-                <a href="{{ url_for('dashboard.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">home</span>
-                    Inicio
-                </a>
-                <a href="{{ url_for('products.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                    Stock
-                </a>
-                <a href="{{ url_for('categories.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">category</span>
-                    Categorías
-                </a>
-                <a href="{{ url_for('tables.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
-                    Gestión de Mesas
-                </a>
-                <a href="{{ url_for('reservations.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">event_available</span>
-                    Reservas
-                </a>
-                <a href="{{ url_for('employees.team') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">group</span>
-                    Equipo
-                </a>
-                {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
-                <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
-                    <span class="material-symbols-outlined text-[20px]">document_scanner</span>
-                    Escanear tus compras
-                </a>
-                {% endif %}
-                <a href="{{ url_for('insights.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">insights</span>
-                    <span class="flex flex-col">
-                        Copilot Estratégico
-                        <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
-                    </span>
-                    <span id="sidebar-insights-badge"
-                        class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
-                </a>
-                <a href="{{ url_for('dashboard.achievements') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">emoji_events</span>
-                    Logros
-                </a>
-                <a href="{{ url_for('orders.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-                    Pedidos
-                    <span id="sidebar-orders-badge"
-                        class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
-                </a>
-                <a href="{{ url_for('cash_register.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    Centro de Caja
-                </a>
-                <a href="{{ url_for('dashboard.settings') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                    <span class="material-symbols-outlined text-[20px]">grid_view</span>
-                    Menú
-                </a>
+            <nav class="flex-1 px-3 py-4 overflow-y-auto" id="desktop-nav">
+
+                {# ── OPERACIÓN DIARIA ── #}
+                <div class="nav-group" data-group="operacion">
+                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Operación Diaria</p>
+                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+                    </button>
+                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                        <a href="{{ url_for('dashboard.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">home</span>
+                            Inicio
+                        </a>
+                        <a href="{{ url_for('orders.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                            Pedidos
+                            <span id="sidebar-orders-badge"
+                                class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
+                        </a>
+                        <a href="{{ url_for('cash_register.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+                            Centro de Caja
+                        </a>
+                        <a href="{{ url_for('reservations.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">event_available</span>
+                            Reservas
+                        </a>
+                        {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
+                        <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
+                            <span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                            Escanear tus compras
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+
+                {# ── MENÚ E INVENTARIO ── #}
+                <div class="nav-group" data-group="menu">
+                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú e Inventario</p>
+                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+                    </button>
+                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                        <a href="{{ url_for('dashboard.settings') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">grid_view</span>
+                            Menú
+                        </a>
+                        <a href="{{ url_for('categories.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">category</span>
+                            Categorías
+                        </a>
+                        <a href="{{ url_for('products.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                            Stock
+                        </a>
+                        <a href="{{ url_for('tables.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
+                            Gestión de Mesas
+                        </a>
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+
+                {# ── INTELIGENCIA ── #}
+                <div class="nav-group" data-group="inteligencia">
+                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Inteligencia</p>
+                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+                    </button>
+                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                        <a href="{{ url_for('insights.index') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">insights</span>
+                            <span class="flex flex-col">
+                                Copilot Estratégico
+                                <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
+                            </span>
+                            <span id="sidebar-insights-badge"
+                                class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
+                        </a>
+                        <a href="{{ url_for('dashboard.achievements') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">emoji_events</span>
+                            Logros
+                        </a>
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+
+                {# ── CONFIGURACIÓN ── #}
+                <div class="nav-group" data-group="configuracion">
+                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Configuración</p>
+                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+                    </button>
+                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+                        <a href="{{ url_for('employees.team') }}"
+                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                            <span class="material-symbols-outlined text-[20px]">group</span>
+                            Equipo
+                        </a>
+                    </div>
+                </div>
+
             </nav>
+
+            <!-- Accordion JS for desktop sidebar -->
+            <script>
+            (function() {
+                var state;
+                try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
+                var groups = document.querySelectorAll('#desktop-nav .nav-group');
+                groups.forEach(function(group) {
+                    var name = group.getAttribute('data-group');
+                    var items = group.querySelector('.nav-group-items');
+                    var chevron = group.querySelector('.nav-chevron');
+                    var hasActive = items.querySelector('.bg-orange-500\\/10') !== null;
+                    var shouldOpen;
+                    if (state.hasOwnProperty(name)) { shouldOpen = state[name]; }
+                    else if (name === 'operacion') { shouldOpen = true; }
+                    else { shouldOpen = hasActive; }
+                    if (shouldOpen) {
+                        items.style.maxHeight = items.scrollHeight + 'px';
+                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                    } else {
+                        items.style.maxHeight = '0px';
+                    }
+                });
+            })();
+            function toggleNavGroup(name) {
+                var group = document.querySelector('#desktop-nav .nav-group[data-group="' + name + '"]');
+                if (!group) return;
+                var items = group.querySelector('.nav-group-items');
+                var chevron = group.querySelector('.nav-chevron');
+                var isOpen = items.style.maxHeight && items.style.maxHeight !== '0px';
+                if (isOpen) {
+                    items.style.maxHeight = '0px';
+                    if (chevron) chevron.style.transform = '';
+                } else {
+                    items.style.maxHeight = items.scrollHeight + 'px';
+                    if (chevron) chevron.style.transform = 'rotate(180deg)';
+                }
+                var state;
+                try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
+                state[name] = !isOpen;
+                localStorage.setItem('velzia_nav_groups', JSON.stringify(state));
+            }
+            </script>
 
             <!-- Restaurant Info (Bottom) -->
             <div class="px-4 py-4 border-t border-white/5">

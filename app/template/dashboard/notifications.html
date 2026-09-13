@@ -12,14 +12,14 @@
         </div>
         <div>
             <h2 class="text-white font-black tracking-tight">Notificaciones en Tiempo Real</h2>
-            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Recibe tus pedidos al instante</p>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Pedidos y reservas al instante</p>
         </div>
     </div>
 </div>
 
 <div class="bg-white dark:bg-[#141414] rounded-[2.5rem] border border-gray-100 dark:border-[#262626] p-6 md:p-8 shadow-sm transition-colors">
     <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-1">Notificaciones en Tiempo Real</h3>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Recibe notificaciones al instante cuando llegue un nuevo pedido, directo a tu celular. Sin instalar nada adicional: usa la app ntfy.</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Recibe notificaciones al instante cuando llegue un nuevo pedido o reserva, directo a tu celular. Sin instalar nada adicional: usa la app ntfy.</p>
     
     <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] mb-5">
         <div class="w-11 h-11 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0">
@@ -51,9 +51,33 @@
         </li>
         <li class="flex items-start gap-3">
             <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5">✓</span>
-            <span class="font-bold text-gray-800 dark:text-gray-200">¡Listo! Recibirás una notificación al instante cada vez que llegue un nuevo pedido.</span>
+            <span class="font-bold text-gray-800 dark:text-gray-200">¡Listo! Recibirás notificaciones al instante para cada nuevo pedido y reserva.</span>
         </li>
     </ol>
+
+    <div class="mt-6 p-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626]">
+        <p class="text-[10px] font-black text-gray-500 dark:text-gray-500 uppercase tracking-widest mb-3">Qué recibirás</p>
+        <div class="space-y-2">
+            <div class="flex items-center gap-2.5 text-xs text-gray-600 dark:text-gray-400">
+                <span class="w-5 h-5 bg-emerald-500/10 text-emerald-500 rounded-md flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[14px]">shopping_cart</span>
+                </span>
+                <span><span class="font-bold text-gray-800 dark:text-gray-200">Nuevo pedido</span> — con detalle de productos y total</span>
+            </div>
+            <div class="flex items-center gap-2.5 text-xs text-gray-600 dark:text-gray-400">
+                <span class="w-5 h-5 bg-blue-500/10 text-blue-500 rounded-md flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[14px]">event_available</span>
+                </span>
+                <span><span class="font-bold text-gray-800 dark:text-gray-200">Reserva nueva</span> — nombre, fecha y personas (requiere tu confirmación)</span>
+            </div>
+            <div class="flex items-center gap-2.5 text-xs text-gray-600 dark:text-gray-400">
+                <span class="w-5 h-5 bg-amber-500/10 text-amber-500 rounded-md flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[14px]">alarm</span>
+                </span>
+                <span><span class="font-bold text-gray-800 dark:text-gray-200">Recordatorio</span> — 1 hora antes de una reserva confirmada</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
