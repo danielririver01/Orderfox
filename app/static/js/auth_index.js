@@ -32,8 +32,8 @@ window.addEventListener('load', async function () {
         const signInDiv = document.getElementById('clerk-signin');
 
         window.Clerk.mountSignIn(signInDiv, {
-            afterSignInUrl: '/',
-            afterSignUpUrl: '/',
+            afterSignInUrl: '/api/sync-clerk-redirect',
+            afterSignUpUrl: '/api/sync-clerk-redirect',
             signIn: {
                 socialButtons: {
                     providers: ['google']
