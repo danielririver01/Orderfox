@@ -7,6 +7,7 @@
     <title>{% block title %}Velzia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/toast.css') }}">
     <script>
         window.tailwind = window.tailwind || {};
         tailwind.config = {
@@ -91,6 +92,7 @@
             right: 0;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
 
@@ -128,219 +130,233 @@
     <div class="flex min-h-dynamic">
 
         <!-- Sidebar Desktop (hidden on mobile) -->
-        <aside
-            class="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a0a0a] border-r border-white/5">
-            <!-- Logo -->
-            <div class="flex items-center gap-3 px-6 py-6 border-b border-white/5">
-                <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-3">
-                    <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Orderfox" class="w-10 h-10">
-                    <div>
-                        <h2 class="text-sm font-black text-white uppercase tracking-tight"
-                            style="font-family: 'Outfit', sans-serif;">Velzia</h2>
-                        <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
-                    </div>
-                </a>
+        <aside id="desktop-sidebar"
+            class="hidden lg:flex flex-col fixed inset-y-0 left-0 z-50 w-14 sidebar-expanded:w-56 bg-[#0a0a0a] border-r border-white/5 transition-all duration-300 ease-in-out">
+            <!-- Toggle + Logo -->
+            <div class="border-b border-white/5">
+                <button id="sidebar-toggle"
+                    class="w-full flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-white/5 transition-colors">
+                    <span class="material-symbols-outlined text-[20px] text-gray-400 flex-shrink-0">dock_to_left</span>
+                    <span class="hidden sidebar-expanded:inline sidebar-link-text text-sm font-black text-white uppercase tracking-tight truncate transition-all duration-300"
+                        style="font-family: 'Outfit', sans-serif;">Velzia</span>
+                </button>
+                <div class="hidden sidebar-expanded:block sidebar-link-text px-4 pb-4 transition-all duration-300">
+                    <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
+                </div>
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 px-3 py-4 overflow-y-auto" id="desktop-nav">
+            <nav class="flex-1 px-2 py-4 overflow-y-auto overflow-x-hidden" id="desktop-nav">
 
                 {# ── OPERACIÓN DIARIA ── #}
                 <div class="nav-group" data-group="operacion">
-                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
+                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
                         <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Operación Diaria</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <a href="{{ url_for('dashboard.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">home</span>
-                            Inicio
-                        </a>
-                        <a href="{{ url_for('orders.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-                            Pedidos
-                            <span id="sidebar-orders-badge"
-                                class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
-                        </a>
-                        <a href="{{ url_for('cash_register.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                            Centro de Caja
-                        </a>
-                        <a href="{{ url_for('reservations.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">event_available</span>
-                            Reservas
-                        </a>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('dashboard.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">home</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Inicio</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Inicio</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('orders.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">receipt_long</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Pedidos</span>
+                                <span id="sidebar-orders-badge"
+                                    class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Pedidos</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('cash_register.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">account_balance_wallet</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Centro de Caja</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Centro de Caja</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('reservations.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">event_available</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Reservas</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Reservas</span>
+                        </div>
                         {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
-                        <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
-                            <span class="material-symbols-outlined text-[20px]">document_scanner</span>
-                            Escanear tus compras
-                        </a>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">document_scanner</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Escanear tus compras</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Escanear tus compras</span>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
 
                 {# ── MENÚ E INVENTARIO ── #}
                 <div class="nav-group" data-group="menu">
-                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
+                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
                         <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú e Inventario</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <a href="{{ url_for('dashboard.settings') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.settings' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">grid_view</span>
-                            Menú
-                        </a>
-                        <a href="{{ url_for('categories.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">category</span>
-                            Categorías
-                        </a>
-                        <a href="{{ url_for('products.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                            Stock
-                        </a>
-                        <a href="{{ url_for('tables.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
-                            Gestión de Mesas
-                        </a>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('categories.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">category</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Categorías</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Categorías</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('products.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">inventory_2</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Stock</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Stock</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('tables.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">table_restaurant</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Gestión de Mesas</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Gestión de Mesas</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
 
                 {# ── INTELIGENCIA ── #}
                 <div class="nav-group" data-group="inteligencia">
-                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
+                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
                         <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Inteligencia</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <a href="{{ url_for('insights.index') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">insights</span>
-                            <span class="flex flex-col">
-                                Copilot Estratégico
-                                <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
-                            </span>
-                            <span id="sidebar-insights-badge"
-                                class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></span>
-                        </a>
-                        <a href="{{ url_for('dashboard.achievements') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">emoji_events</span>
-                            Logros
-                        </a>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('insights.index') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">insights</span>
+                                <span class="hidden sidebar-expanded:flex sidebar-link-text flex flex-col transition-all duration-300">
+                                    Copilot Estratégico
+                                    <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
+                                </span>
+                                <span id="sidebar-insights-badge"
+                                    class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Copilot Estratégico</span>
+                        </div>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('dashboard.achievements') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">emoji_events</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Logros</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Logros</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="h-px bg-white/[0.04] mx-2 my-2"></div>
+                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
 
                 {# ── CONFIGURACIÓN ── #}
                 <div class="nav-group" data-group="configuracion">
-                    <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
+                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
                         <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Configuración</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <a href="{{ url_for('employees.team') }}"
-                            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                            <span class="material-symbols-outlined text-[20px]">group</span>
-                            Equipo
-                        </a>
+                        <div class="group/tip relative">
+                            <a href="{{ url_for('employees.team') }}"
+                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">group</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Equipo</span>
+                            </a>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Equipo</span>
+                        </div>
                     </div>
                 </div>
 
             </nav>
 
-            <!-- Accordion JS for desktop sidebar -->
-            <script>
-            (function() {
-                var state;
-                try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
-                var groups = document.querySelectorAll('#desktop-nav .nav-group');
-                groups.forEach(function(group) {
-                    var name = group.getAttribute('data-group');
-                    var items = group.querySelector('.nav-group-items');
-                    var chevron = group.querySelector('.nav-chevron');
-                    var hasActive = items.querySelector('.bg-orange-500\\/10') !== null;
-                    var shouldOpen;
-                    if (state.hasOwnProperty(name)) { shouldOpen = state[name]; }
-                    else if (name === 'operacion') { shouldOpen = true; }
-                    else { shouldOpen = hasActive; }
-                    if (shouldOpen) {
-                        items.style.maxHeight = items.scrollHeight + 'px';
-                        if (chevron) chevron.style.transform = 'rotate(180deg)';
-                    } else {
-                        items.style.maxHeight = '0px';
-                    }
-                });
-            })();
-            function toggleNavGroup(name) {
-                var group = document.querySelector('#desktop-nav .nav-group[data-group="' + name + '"]');
-                if (!group) return;
-                var items = group.querySelector('.nav-group-items');
-                var chevron = group.querySelector('.nav-chevron');
-                var isOpen = items.style.maxHeight && items.style.maxHeight !== '0px';
-                if (isOpen) {
-                    items.style.maxHeight = '0px';
-                    if (chevron) chevron.style.transform = '';
-                } else {
-                    items.style.maxHeight = items.scrollHeight + 'px';
-                    if (chevron) chevron.style.transform = 'rotate(180deg)';
-                }
-                var state;
-                try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); } catch(e) { state = {}; }
-                state[name] = !isOpen;
-                localStorage.setItem('velzia_nav_groups', JSON.stringify(state));
-            }
-            </script>
-
             <!-- Restaurant Info (Bottom) -->
-            <div class="px-4 py-4 border-t border-white/5">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20">
-                        {{ session.get('restaurant_name', 'R')[0] | upper }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else
-                            session.get('restaurant_name', 'Restaurante') }}</p>
-                        <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{
-                            restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+            <div class="border-t border-white/5">
+                <!-- Avatar + Dropdown -->
+                <div class="relative px-2 py-3">
+                    <button id="sidebar-avatar-btn" class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
+                        <div class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20 flex-shrink-0">
+                            {{ session.get('restaurant_name', 'R')[0] | upper }}
+                        </div>
+                        <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">
+                            <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
+                            <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                        </div>
+                    </button>
+                    <div id="sidebar-dropdown" class="hidden absolute bottom-full left-full mb-2 ml-2 w-56 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[60] py-2">
+                        <div class="px-4 py-3 border-b border-white/10">
+                            <p class="text-sm font-bold text-white">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
+                            <p class="text-xs text-gray-400">{{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                        </div>
+                        <div class="py-1">
+                            <a href="{{ url_for('dashboard.settings') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">settings</span>
+                                Ajustes
+                            </a>
+                            <a href="{{ url_for('dashboard.subscription') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">credit_card</span>
+                                Mi suscripción
+                            </a>
+                            <a href="{{ url_for('dashboard.notifications') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">notifications</span>
+                                Notificaciones
+                            </a>
+                        </div>
+                        <div class="border-t border-white/10 py-1">
+                            <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">logout</span>
+                                Cerrar sesión
+                            </a>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Tokens IA -->
-                <button onclick="openTokenModal()" id="sidebar-token-section"
-                    class="w-full mt-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3">
-                    <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tokens IA</span>
-                            <span id="sidebar-token-count" class="text-xs font-black text-white">--</span>
+                <div class="px-2 pb-3 sidebar-expanded:px-4 transition-all duration-300">
+                    <button onclick="openTokenModal()" id="sidebar-token-section"
+                        class="w-full px-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3 sidebar-expanded:px-3">
+                        <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
                         </div>
-                        <div class="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                            <div id="sidebar-token-bar" class="h-full bg-orange-500 rounded-full transition-all duration-700" style="width: 0%"></div>
+                        <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 transition-all duration-300">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tokens IA</span>
+                                <span id="sidebar-token-count" class="text-xs font-black text-white">--</span>
+                            </div>
+                            <div class="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div id="sidebar-token-bar" class="h-full bg-orange-500 rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
                         </div>
-                    </div>
-                </button>
+                    </button>
+                </div>
             </div>
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 min-w-0 md:ml-[260px]">
+        <div id="main-content" class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-14">
             {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
             <div id="status-banner"
                 class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
@@ -432,6 +448,7 @@
         </div>
 
     </div>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
     {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     {% if session.get('user_id') %}

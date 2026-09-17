@@ -23,6 +23,14 @@ class LLMServiceError(Exception):
     pass
 
 
+# ── Analysis Depth Parameters ────────────────────────────────────────────────
+DEPTH_PARAMS = {
+    'fast':     {'temperature': 0.2,  'max_tokens': 800},
+    'normal':   {'temperature': 0.35, 'max_tokens': 2000},
+    'detailed': {'temperature': 0.45, 'max_tokens': 3000},
+}
+
+
 # ── Response Validation (Prompt Injection Detection) ────────────────────────
 RESPONSE_RED_FLAGS = [
     'ignore',
@@ -88,21 +96,30 @@ def _record_llm_call(source, conversation_id, restaurant_id, model, messages,
 
 
 def chat(messages, temperature=0.35, max_tokens=2000, source=None,
-         conversation_id=None, restaurant_id=None):
+         conversation_id=None, restaurant_id=None, analysis_depth='normal'):
     """
     Llama a DeepSeek chat completions.
 
     Args:
         messages: lista de {'role','content'}.
-        temperature, max_tokens: controles de salida.
+        temperature, max_tokens: controles de salida (override manual).
         source: origen del copilot ('insights' | 'cash_register') para telemetría.
         conversation_id, restaurant_id: contexto para registrar la llamada
             en ai_llm_calls (opcional; sin restaurant_id no se registra).
+        analysis_depth: modo de análisis ('fast' | 'normal' | 'detailed').
+            Sobreescribe temperature y max_tokens salvo que se pasen explícitamente.
     Returns:
         str — contenido devuelto por el asistente.
     Raises:
         LLMServiceError si falta la API key o la API falla.
     """
+    depth_cfg = DEPTH_PARAMS.get(analysis_depth, {})
+    # Usar valores del depth como defaults; argumentos explícitos ganan si se
+    # distinguen del default de la función (0.35 y 2000).
+    if temperature == 0.35 and analysis_depth != 'normal':
+        temperature = depth_cfg.get('temperature', temperature)
+    if max_tokens == 2000 and analysis_depth != 'normal':
+        max_tokens = depth_cfg.get('max_tokens', max_tokens)
     api_key = current_app.config.get('DEEPSEEK_API_KEY')
     if not api_key:
         raise LLMServiceError(

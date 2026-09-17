@@ -111,6 +111,11 @@ def handle_post_message(cid, user, conv, data):
     content = sanitize_user_message(content)
 
     t0 = time.time()
+    thinking_steps = []  # ── Thinking Panel: pasos del sistema ──
+
+    # ── Depth mode: se lee una vez y se usa en todo el flujo ──
+    _restaurant = user.restaurant
+    analysis_depth = getattr(_restaurant, 'copilot_analysis_depth', 'normal') if _restaurant else 'normal'
 
     # 1) Mensaje del usuario: reusar el ya guardado o crear uno nuevo.
     if message_id:
@@ -129,7 +134,14 @@ def handle_post_message(cid, user, conv, data):
         cs.set_title(cid, cs.make_title_from_message(content))
 
     # ── Clasificación híbrida (primero: define el nivel y la ventana de tiempo) ──
+    t_step = time.time()
     cls = classifier.classify(content)
+    thinking_steps.append({
+        'label': 'Clasificando consulta',
+        'icon': 'search',
+        'duration_ms': int((time.time() - t_step) * 1000),
+        'detail': f"Nivel: {cls['level']}, intención: {cls.get('intent', '—')}",
+    })
 
     # ── Gestión de contexto: estimar uso y comprimir si es necesario ──
     g.context_usage = 0
@@ -142,7 +154,8 @@ def handle_post_message(cid, user, conv, data):
         ctx_summary = ctx_meta.get('summary')
         ctx_compressed = ctx_meta.get('compressed', False)
         context_json = json.dumps(
-            data_service.build_context(conv.restaurant_id, days=cls['window']),
+            data_service.build_context(conv.restaurant_id, days=cls['window'],
+                                       depth=analysis_depth),
             ensure_ascii=False,
         )
         total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
@@ -185,8 +198,15 @@ def handle_post_message(cid, user, conv, data):
     except Exception as e:
         current_app.logger.warning(f"Context management error: {e}")
 
+    thinking_steps.append({
+        'label': 'Consultando datos del negocio',
+        'icon': 'database',
+        'duration_ms': int((time.time() - t0 - sum(s['duration_ms'] for s in thinking_steps)) * 1000),
+        'detail': f"Ventana: {cls['window']} días, modo: {analysis_depth}",
+    })
+
     # 2) Guard de alcance: si pide DATOS de un restaurante AJENO
-    restaurant = user.restaurant
+    restaurant = _restaurant
     restaurant_name = restaurant.name if restaurant else None
     restaurant_slug = restaurant.slug if restaurant else None
     if classifier.is_foreign_restaurant_query(content, restaurant_name, restaurant_slug):
@@ -209,7 +229,14 @@ def handle_post_message(cid, user, conv, data):
 
     # ── Nivel 1: consulta rápida ──
     if cls['level'] == 'quick':
+        t_step = time.time()
         result = data_service.handle_quick(conv.restaurant_id, cls['intent'])
+        thinking_steps.append({
+            'label': 'Ejecutando consulta SQL',
+            'icon': 'data_object',
+            'duration_ms': int((time.time() - t_step) * 1000),
+            'detail': f"Intención: {cls['intent']}",
+        })
         if data_service.is_empty_quick_result(result):
             label = data_service.window_label_from_days(cls['window'])
             return _empty_state_response(conv, 'no_data_window', window_label=label)
@@ -242,6 +269,7 @@ def handle_post_message(cid, user, conv, data):
             ),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
+            'thinking_steps': thinking_steps,
         })
 
     # ── Nivel 2: análisis IA ──
@@ -255,14 +283,14 @@ def handle_post_message(cid, user, conv, data):
     follow_up = conv.analysis_active
     turn_consumed = False
 
-    # El tope de seguimientos no aplica a Elite (conserva su comportamiento
-    # actual de follow-ups gratis). Regenerar/editar (replace_tail) tampoco
-    # incrementa el contador: no penaliza al usuario por corregir una pregunta.
-    # Las consultas de catálogo tampoco consumen crédito (solo consultan Product).
-    if follow_up and not replace_tail and not is_elite_user(user) and not general_assist and not catalog_query:
-        follow_up = cs.reserve_follow_up(
-            cid, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
+    # Elite tiene más follow-ups gratis (8) que el resto (4).
+    # Regenerar/editar (replace_tail) tampoco incrementa el contador.
+    # Las consultas de catálogo tampoco consumen crédito.
+    if follow_up and not replace_tail and not general_assist and not catalog_query:
+        max_fu = current_app.config.get(
+            'COPILOT_MAX_FOLLOW_UPS_ELITE' if is_elite_user(user) else 'COPILOT_MAX_FOLLOW_UPS', 4
         )
+        follow_up = cs.reserve_follow_up(cid, max_fu)
 
     if not follow_up and not replace_tail and not general_assist and not catalog_query:
         ok, err = TokenService.consume_token(user, source='copilot_vz')
@@ -293,7 +321,14 @@ def handle_post_message(cid, user, conv, data):
         r'gr.ffic|chart|visualiz', content.lower(),
     )
     if follow_up and wants_calc:
+        t_step = time.time()
         proj = data_service.projection_uplift(conv.restaurant_id)
+        thinking_steps.append({
+            'label': 'Calculando impacto',
+            'icon': 'calculate',
+            'duration_ms': int((time.time() - t_step) * 1000),
+            'detail': 'Proyección de mejora',
+        })
         chart = {
             'type': 'bar',
             'title': 'Proyección de impacto',
@@ -328,13 +363,15 @@ def handle_post_message(cid, user, conv, data):
             ),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
+            'thinking_steps': thinking_steps,
         })
 
     # ── Llamar al LLM ──
     try:
+        t_step = time.time()
         context = data_service.build_context(
             conv.restaurant_id, days=cls['window'],
-            include_catalog=catalog_query,
+            include_catalog=catalog_query, depth=analysis_depth,
         )
         history = cs.get_messages(cid)
         history_for_llm = [m for m in history if m.id != user_msg.id]
@@ -342,6 +379,35 @@ def handle_post_message(cid, user, conv, data):
         # Nunca lanza: si la KB falla, el análisis sigue sin guía.
         from app.services.insights.knowledge_selector import select_knowledge
         knowledge = select_knowledge(content, cls.get('intent'))
+        thinking_steps.append({
+            'label': 'Construyendo contexto',
+            'icon': 'build',
+            'duration_ms': int((time.time() - t_step) * 1000),
+            'detail': f"Historial: {len(history_for_llm)} mensajes, modo: {analysis_depth}",
+        })
+
+        # ── Web Search (siempre activo, el LLM decide si usarlo) ──
+        web_results = None
+        web_search_used = False
+        from app.services.insights import web_search
+        can_search = web_search.check_and_reset_monthly_counter(_restaurant)
+        if can_search:
+            t_step = time.time()
+            try:
+                web_results = web_search.search(content, max_results=3)
+                web_search_used = True
+                web_search.increment_monthly_counter(_restaurant)
+                thinking_steps.append({
+                    'label': 'Buscando en internet',
+                    'icon': 'travel_explore',
+                    'duration_ms': int((time.time() - t_step) * 1000),
+                    'detail': f'{len(web_results)} fuentes encontradas',
+                })
+            except web_search.WebSearchError as e:
+                current_app.logger.warning(f"Web search failed: {e}")
+                # No bloquea el flujo — Copilot responde sin web
+
+        t_step = time.time()
         messages = prompt_builder.build_analysis_messages(
             user_message=content,
             context=context,
@@ -350,11 +416,28 @@ def handle_post_message(cid, user, conv, data):
             context_summary=ctx_summary,
             compressed=ctx_compressed,
             knowledge=knowledge,
+            analysis_depth=analysis_depth,
+            web_results=web_results,
         )
+        thinking_steps.append({
+            'label': 'Seleccionando conocimiento',
+            'icon': 'menu_book',
+            'duration_ms': int((time.time() - t_step) * 1000),
+            'detail': 'Best practices de industria' if knowledge else 'Sin guía adicional',
+        })
+
+        t_step = time.time()
         raw = llm_service.chat(
             messages, source='insights', conversation_id=cid,
             restaurant_id=conv.restaurant_id,
+            analysis_depth=analysis_depth,
         )
+        thinking_steps.append({
+            'label': 'Analizando con IA',
+            'icon': 'psychology',
+            'duration_ms': int((time.time() - t_step) * 1000),
+            'detail': f"Modelo: {current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash'}",
+        })
     except llm_service.LLMServiceError as e:
         return jsonify({
             'success': False,
@@ -376,6 +459,18 @@ def handle_post_message(cid, user, conv, data):
     execution_ms = int((time.time() - t0) * 1000)
     credits_used = 1 if turn_consumed else 0
 
+    # ── Fuentes web (si se usaron) ────────────────────────────────────────
+    # Enviar sources como datos estructurados para que el frontend los pinte
+    # como tarjeta clickable, sin depender de que el LLM las cite correctamente.
+    sources = []
+    if web_results:
+        for r in web_results:
+            sources.append({
+                'title': r.get('title', ''),
+                'url': r.get('url', ''),
+                'snippet': r.get('content', '')[:200],
+            })
+
     meta = {
         'type': 'analysis',
         'intent': cls['intent'],
@@ -384,6 +479,8 @@ def handle_post_message(cid, user, conv, data):
         'model': current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash',
         'execution_ms': execution_ms,
         'chart': parsed['chart'] if parsed['chart'] else None,
+        'web_search_used': web_search_used,
+        'sources': sources,
         'suggestions': chart_service.followup_suggestions(
             cls, stage=stage, restaurant_id=conv.restaurant_id,
         ),
@@ -409,10 +506,12 @@ def handle_post_message(cid, user, conv, data):
         'type': 'analysis',
         'content': parsed['text'],
         'chart': parsed['chart'],
+        'sources': sources,
         'metadata': meta,
         'suggestions': chart_service.followup_suggestions(
             cls, stage=stage, restaurant_id=conv.restaurant_id,
         ),
         'message_id': user_msg.id,
         'assistant_message_id': assistant_msg.id,
+        'thinking_steps': thinking_steps,
     })

@@ -55,6 +55,20 @@
         return s;
     }
 
+    // ── Reemplaza marcadores [Fuente: N] con pills inline ──
+    function replaceInlineSources(html, sources) {
+        if (!sources || !sources.length) return html;
+        return html.replace(/\[Fuente:\s*(\d+)\]/g, function (match, num) {
+            var idx = parseInt(num, 10) - 1;
+            if (idx < 0 || idx >= sources.length) return match;
+            var previewHtml = renderSourcePreview(sources, idx);
+            return '<span class="vz-inline-source" data-source-idx="' + idx + '" data-sources-total="' + sources.length + '" role="button" tabindex="0">' +
+                '<span class="vz-inline-source-icon">' + (idx + 1) + '</span>' +
+                '<span class="vz-source-preview">' + previewHtml + '</span>' +
+                '</span>';
+        });
+    }
+
     let _bulkLoading = false;
     function scrollToBottom() {
         if (_bulkLoading) return;
@@ -152,9 +166,10 @@
         return wrap;
     }
 
-    function fillAssistant(wrap, content, meta, chart) {
+    function fillAssistant(wrap, content, meta, chart, sources) {
+        wrap._sources = sources || null;
         const contentEl = wrap.querySelector('.content');
-        contentEl.innerHTML = renderMarkdown(content);
+        contentEl.innerHTML = replaceInlineSources(renderMarkdown(content), sources);
         const badge = wrap.querySelector('.badge');
         if (meta && meta.type === 'quick') {
             badge.className = 'badge text-[10px] font-bold text-[var(--success)] bg-[var(--success)]/10 px-2 py-0.5 rounded-md';
@@ -168,6 +183,87 @@
             badge.textContent = 'Your restaurant only';
         }
         const extra = wrap.querySelector('.extra');
+
+        // ── Fuentes web (pills con preview hover/tap) ──
+        if (sources && sources.length) {
+            const pillsWrap = document.createElement('div');
+            pillsWrap.className = 'vz-sources-pills';
+
+            // Single pill: shows first source + count badge
+            var pill = document.createElement('div');
+            pill.className = 'vz-source-pill';
+            pill.setAttribute('role', 'button');
+            pill.setAttribute('tabindex', '0');
+
+            var siteName = '';
+            try { siteName = new URL(sources[0].url).hostname.replace('www.', ''); } catch (e) { siteName = sources[0].title.split(' ')[0]; }
+            var faviconLetter = (siteName || sources[0].title || '?')[0].toUpperCase();
+
+            pill.innerHTML =
+                '<span class="vz-source-pill-favicon">' + escapeHtml(faviconLetter) + '</span>' +
+                '<span class="vz-source-pill-name">' + escapeHtml(siteName || sources[0].title) + '</span>' +
+                (sources.length > 1 ? '<span class="vz-source-pill-more">+' + (sources.length - 1) + '</span>' : '');
+
+            // Preview card
+            var preview = document.createElement('div');
+            preview.className = 'vz-source-preview';
+            preview.innerHTML = renderSourcePreview(sources, 0);
+            pill.appendChild(preview);
+
+            // ── Mobile: tap-to-toggle bottom sheet ──
+            function isMobile() { return window.innerWidth <= 768; }
+            var backdrop = null;
+
+            function closePreview() {
+                pill.classList.remove('vz-preview-open');
+                if (backdrop) { backdrop.classList.remove('vz-visible'); }
+            }
+
+            function openPreview() {
+                pill.classList.add('vz-preview-open');
+                if (isMobile() && !backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.className = 'vz-source-backdrop';
+                    backdrop.addEventListener('click', closePreview);
+                    document.body.appendChild(backdrop);
+                }
+                if (backdrop) {
+                    requestAnimationFrame(function () { backdrop.classList.add('vz-visible'); });
+                }
+            }
+
+            pill.addEventListener('click', function (e) {
+                // Nav buttons inside preview
+                var btn = e.target.closest('.vz-source-preview-nav-btn');
+                if (btn) {
+                    e.stopPropagation();
+                    var dir = btn.dataset.dir;
+                    var cur = parseInt(preview.dataset.idx || '0', 10);
+                    var next = dir === 'next' ? Math.min(cur + 1, sources.length - 1) : Math.max(cur - 1, 0);
+                    preview.dataset.idx = next;
+                    preview.innerHTML = renderSourcePreview(sources, next);
+                    return;
+                }
+
+                if (isMobile()) {
+                    // Mobile: toggle bottom sheet
+                    if (pill.classList.contains('vz-preview-open')) {
+                        closePreview();
+                    } else {
+                        // Close any other open previews first
+                        document.querySelectorAll('.vz-source-pill.vz-preview-open').forEach(function (p) { p.classList.remove('vz-preview-open'); });
+                        openPreview();
+                    }
+                } else {
+                    // Desktop: click opens URL (hover shows preview)
+                    window.open(sources[0].url, '_blank', 'noopener,noreferrer');
+                }
+            });
+
+            pillsWrap.appendChild(pill);
+            extra.appendChild(pillsWrap);
+        }
+
         if (chart) {
             const card = document.createElement('div');
             card.className = 'vz-chart-card-chat';
@@ -191,6 +287,167 @@
             extra.appendChild(note);
         }
         scrollToBottom();
+    }
+
+    // ── Inline source pills: event delegation ──
+    (function () {
+        var activeInline = null;
+        var inlineBackdrop = null;
+        var _inlineSourcesCache = null;
+
+        function closeInlinePreview() {
+            if (activeInline) {
+                activeInline.classList.remove('vz-inline-open');
+                activeInline = null;
+            }
+            if (inlineBackdrop) {
+                inlineBackdrop.classList.remove('vz-visible');
+                inlineBackdrop = null;
+            }
+        }
+
+        function refreshInlinePreview(pill, idx) {
+            if (!_inlineSourcesCache) return;
+            var preview = pill.querySelector('.vz-source-preview');
+            if (preview) {
+                preview.innerHTML = renderSourcePreview(_inlineSourcesCache, idx);
+                preview.dataset.idx = idx;
+            }
+        }
+
+        messagesEl.addEventListener('click', function (e) {
+            // Nav button inside inline preview
+            var navBtn = e.target.closest('.vz-inline-source .vz-source-preview-nav-btn');
+            if (navBtn) {
+                e.stopPropagation();
+                var inlinePill = navBtn.closest('.vz-inline-source');
+                if (!inlinePill) return;
+                var dir = navBtn.dataset.dir;
+                var cur = parseInt(inlinePill.dataset.sourceIdx || '0', 10);
+                var total = parseInt(inlinePill.dataset.sourcesTotal || '1', 10);
+                var next = dir === 'next' ? Math.min(cur + 1, total - 1) : Math.max(cur - 1, 0);
+                inlinePill.dataset.sourceIdx = next;
+                refreshInlinePreview(inlinePill, next);
+                return;
+            }
+
+            // Click on inline pill itself
+            var pill = e.target.closest('.vz-inline-source');
+            if (!pill) {
+                closeInlinePreview();
+                return;
+            }
+            e.stopPropagation();
+
+            // Find the sources array from the parent message
+            var msgRow = pill.closest('.vz-msg-row');
+            if (msgRow && msgRow._sources) {
+                _inlineSourcesCache = msgRow._sources;
+            }
+
+            var isMob = window.innerWidth <= 768;
+            if (isMob) {
+                if (pill.classList.contains('vz-inline-open')) {
+                    closeInlinePreview();
+                } else {
+                    closeInlinePreview();
+                    pill.classList.add('vz-inline-open');
+                    activeInline = pill;
+                    if (!inlineBackdrop) {
+                        inlineBackdrop = document.createElement('div');
+                        inlineBackdrop.className = 'vz-source-backdrop';
+                        inlineBackdrop.addEventListener('click', closeInlinePreview);
+                        document.body.appendChild(inlineBackdrop);
+                    }
+                    requestAnimationFrame(function () { inlineBackdrop.classList.add('vz-visible'); });
+                }
+            }
+        });
+    })();
+
+    // ── Thinking Panel: pasos del sistema expandibles ─────────
+    function renderThinkingSteps(steps) {
+        if (!steps || !steps.length) return null;
+        var totalTime = steps.reduce(function (sum, s) { return sum + (s.duration_ms || 0); }, 0);
+        var wrap = document.createElement('div');
+        wrap.className = 'vz-thinking-wrap';
+        var saved = localStorage.getItem('copilot_thinking_collapsed');
+        wrap.dataset.collapsed = saved !== null ? saved : 'true';
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'vz-thinking-header';
+        header.innerHTML =
+            '<span class="material-symbols-outlined" style="font-size:14px;color:var(--primary);">psychology_alt</span>' +
+            '<span style="font-size:11px;font-weight:600;color:var(--text-muted);">Proceso del sistema</span>' +
+            '<span style="font-size:10px;color:var(--text-dim);margin-left:auto;">' + totalTime + 'ms</span>' +
+            '<span class="material-symbols-outlined vz-thinking-chevron" style="font-size:14px;margin-left:4px;transition:transform 0.2s;color:var(--text-dim);">expand_more</span>';
+        header.addEventListener('click', function () {
+            var collapsed = wrap.dataset.collapsed === 'true';
+            wrap.dataset.collapsed = collapsed ? 'false' : 'true';
+            localStorage.setItem('copilot_thinking_collapsed', wrap.dataset.collapsed);
+            var chevron = header.querySelector('.vz-thinking-chevron');
+            if (chevron) chevron.style.transform = collapsed ? 'rotate(180deg)' : '';
+        });
+
+        // Set initial chevron state
+        if (wrap.dataset.collapsed === 'false') {
+            var ch = header.querySelector('.vz-thinking-chevron');
+            if (ch) ch.style.transform = 'rotate(180deg)';
+        }
+
+        // Steps body
+        var body = document.createElement('div');
+        body.className = 'vz-thinking-body';
+        steps.forEach(function (step, i) {
+            var el = document.createElement('div');
+            el.className = 'vz-thinking-step';
+            el.innerHTML =
+                '<span class="material-symbols-outlined" style="font-size:13px;color:var(--primary);">' + (step.icon || 'check_circle') + '</span>' +
+                '<span style="font-size:11px;flex:1;color:var(--text-muted);">' + escapeHtml(step.label) + '</span>' +
+                '<span style="font-size:10px;color:var(--text-dim);">' + (step.duration_ms || 0) + 'ms</span>';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(4px)';
+            setTimeout(function () {
+                el.style.transition = 'opacity 0.2s, transform 0.2s';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, i * 80);
+            body.appendChild(el);
+        });
+
+        wrap.appendChild(header);
+        wrap.appendChild(body);
+        return wrap;
+    }
+
+    // ── Preview card para fuentes web (hover tooltip) ─────────
+    function renderSourcePreview(sources, activeIdx) {
+        var src = sources[activeIdx];
+        var siteName = '';
+        try { siteName = new URL(src.url).hostname.replace('www.', ''); } catch (e) { siteName = src.title.split(' ')[0]; }
+        var faviconLetter = (siteName || src.title || '?')[0].toUpperCase();
+        var hasNav = sources.length > 1;
+
+        var navHtml = '';
+        if (hasNav) {
+            navHtml =
+                '<div class="vz-source-preview-nav">' +
+                    '<button class="vz-source-preview-nav-btn" data-dir="prev" ' + (activeIdx === 0 ? 'disabled' : '') + '>&larr;</button>' +
+                    '<span class="vz-source-preview-counter">' + (activeIdx + 1) + '/' + sources.length + '</span>' +
+                    '<button class="vz-source-preview-nav-btn" data-dir="next" ' + (activeIdx === sources.length - 1 ? 'disabled' : '') + '>&rarr;</button>' +
+                '</div>';
+        }
+
+        return navHtml +
+            '<div class="vz-source-preview-header">' +
+                '<span class="vz-source-preview-favicon">' + escapeHtml(faviconLetter) + '</span>' +
+                '<span class="vz-source-preview-site">' + escapeHtml(siteName) + '</span>' +
+            '</div>' +
+            '<div class="vz-source-preview-title">' + escapeHtml(src.title || 'Fuente') + '</div>' +
+            (src.snippet ? '<div class="vz-source-preview-date" style="margin-bottom:4px;color:var(--text-dim);line-height:1.4;">' + escapeHtml(src.snippet.substring(0, 120)) + '...</div>' : '') +
+            '<div class="vz-source-preview-date">' + escapeHtml(src.url) + '</div>' +
+            '<div class="vz-source-preview-arrow"></div>';
     }
 
     // ── Chips de acción que cierran cada respuesta (conversación guiada) ──
@@ -599,7 +856,7 @@
                             renderEmptyState(meta);
                         } else {
                             const wrap = assistantShell(m.id, lastUserId);
-                            fillAssistant(wrap, m.content, meta, meta.chart);
+                            fillAssistant(wrap, m.content, meta, meta.chart, meta.sources);
                         }
                     }
                 });
@@ -885,6 +1142,19 @@
             appendError((data && data.message) || 'An unexpected error occurred.');
             return;
         }
+        // ── Thinking Panel: insertar pasos del sistema después del último user msg ──
+        if (data.thinking_steps && data.thinking_steps.length) {
+            var thinkingEl = renderThinkingSteps(data.thinking_steps);
+            if (thinkingEl) {
+                var lastUser = messagesEl.querySelector('[data-role="user"]:last-of-type');
+                if (lastUser && lastUser.nextSibling) {
+                    messagesEl.insertBefore(thinkingEl, lastUser.nextSibling);
+                } else {
+                    appendMsg(thinkingEl);
+                }
+                scrollToBottom();
+            }
+        }
         if (data.is_empty_state) {
             renderEmptyState(data.empty_state);
             updateContextFromResponse(data);
@@ -893,7 +1163,7 @@
         const meta = data.metadata || {};
         if (data.type === 'quick') {
             const wrap = assistantShell(data.assistant_message_id, data.message_id);
-            fillAssistant(wrap, data.content, meta, data.chart);
+            fillAssistant(wrap, data.content, meta, data.chart, data.sources);
             renderFollowup(wrap, data.suggestions);
         } else if (data.type === 'subscription_required') {
             removeTypingIndicator();
@@ -903,12 +1173,12 @@
             showNoCreditsCard(data.can_buy);
         } else if (data.type === 'analysis') {
             const wrap = assistantShell(data.assistant_message_id, data.message_id);
-            fillAssistant(wrap, data.content, meta, data.chart);
+            fillAssistant(wrap, data.content, meta, data.chart, data.sources);
             renderFollowup(wrap, data.suggestions);
             loadConversations();
         } else if (data.type === 'scope_guard') {
             const wrap = assistantShell(data.assistant_message_id, data.message_id);
-            fillAssistant(wrap, data.content, meta, null);
+            fillAssistant(wrap, data.content, meta, null, null);
             renderFollowup(wrap, data.suggestions);
         } else if (data.type === 'llm_error' || data.type === 'error') {
             removeTypingIndicator();
@@ -1059,6 +1329,50 @@
         else openConvDrawer();
     });
     $('#conv-backdrop').addEventListener('click', closeConvDrawer);
+
+    // ── Desktop sidebar: collapse / expand (localStorage) ──
+    (function initDesktopSidebar() {
+        var KEY = 'vz_copilot_sidebar';
+        var panel = $('#conv-panel');
+        var toggleBtn = $('#vz-sidebar-toggle');
+        if (!panel || !toggleBtn) return;
+
+        function isDesktop() {
+            return window.matchMedia('(min-width: 1024px)').matches;
+        }
+
+        function getState() {
+            try { return localStorage.getItem(KEY) || 'expanded'; }
+            catch (e) { return 'expanded'; }
+        }
+
+        function applyState() {
+            if (!isDesktop()) {
+                panel.classList.remove('vz-drawer--expanded');
+                toggleBtn.classList.add('hidden');
+                return;
+            }
+            toggleBtn.classList.remove('hidden');
+            toggleBtn.style.display = 'flex';
+            var icon = toggleBtn.querySelector('span');
+            if (getState() === 'expanded') {
+                panel.classList.add('vz-drawer--expanded');
+                if (icon) icon.textContent = 'dock_to_left';
+            } else {
+                panel.classList.remove('vz-drawer--expanded');
+                if (icon) icon.textContent = 'dock_to_right';
+            }
+        }
+
+        toggleBtn.addEventListener('click', function () {
+            var newState = getState() === 'expanded' ? 'collapsed' : 'expanded';
+            try { localStorage.setItem(KEY, newState); } catch (e) { /* ignore */ }
+            applyState();
+        });
+
+        applyState();
+        window.addEventListener('resize', applyState);
+    })();
     // ── Modal de renombrado (moderno, estilo ChatGPT) ──
     const renameModal = $('#rename-modal');
     const renameInput = $('#rename-input');
@@ -1407,19 +1721,7 @@
     }
     updateContextRing(0);
 
-    // ── Toast de aviso ──
-    const toastEl = $('#vz-toast');
-    let toastTimer = null;
-    function showToast(msg) {
-        toastEl.textContent = msg;
-        toastEl.hidden = false;
-        requestAnimationFrame(() => toastEl.classList.add('show'));
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-            toastEl.classList.remove('show');
-            setTimeout(() => { toastEl.hidden = true; }, 220);
-        }, 3200);
-    }
+    /* showToast — defined in toast.js */
     document.querySelectorAll('.sugg-chip').forEach((chip) => {
         chip.addEventListener('click', () => {
             inputEl.value = chip.textContent.trim();
@@ -1694,35 +1996,111 @@
         }
     })();
 
-    /* ── Benchmarking toggle (Ley 1581 de 2012) ── */
-    (function initBenchmarkToggle() {
-        var btn = document.getElementById('benchmark-toggle');
-        var hint = document.getElementById('benchmark-hint');
-        if (!btn) return;
+    /* ── Settings modal ── */
+    (function initSettingsModal() {
+        var modal = document.getElementById('settings-modal');
+        var btnOpen = document.getElementById('btn-settings');
+        var btnClose = document.getElementById('settings-close');
+        var tokensCount = document.getElementById('settings-tokens-count');
+        var benchmarkToggle = document.getElementById('settings-benchmark-toggle');
+        var notifToggle = document.getElementById('settings-notif-toggle');
+        var depthOptions = document.querySelectorAll('.settings-depth-option');
+        if (!modal || !btnOpen) return;
 
-        btn.addEventListener('click', function () {
-            var currentlyOn = btn.getAttribute('aria-checked') === 'true';
-            var newState = !currentlyOn;
+        function setSwitch(btn, on) {
+            if (!btn) return;
+            btn.setAttribute('aria-checked', String(on));
+            btn.style.backgroundColor = on ? '#6366f1' : 'rgba(255,255,255,0.15)';
+            var knob = btn.querySelector('span');
+            if (knob) knob.style.transform = on ? 'translateX(18px)' : 'translateX(0)';
+        }
 
-            fetch('/insights/api/settings/benchmark', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ allow_benchmark: newState }),
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                if (res.success) {
-                    // Actualizar visual del toggle
-                    btn.setAttribute('aria-checked', String(newState));
-                    btn.style.backgroundColor = newState ? '#6366f1' : 'rgba(255,255,255,0.15)';
-                    btn.querySelector('span').style.transform = newState ? 'translateX(18px)' : 'translateX(0)';
-                    // Hint
-                    if (hint) hint.classList.toggle('hidden', newState);
-                    // Recargar lista: OFF→oculta, ON→reaparecen
-                    if (typeof loadConversations === 'function') {
-                        loadConversations();
-                    }
+        function setActiveDepth(depth) {
+            depthOptions.forEach(function (opt) {
+                var isActive = opt.dataset.depth === depth;
+                if (isActive) {
+                    opt.style.borderColor = 'var(--primary)';
+                    opt.style.backgroundColor = 'color-mix(in srgb, var(--primary) 10%, transparent)';
+                    opt.style.color = 'var(--primary)';
+                } else {
+                    opt.style.borderColor = '';
+                    opt.style.backgroundColor = '';
+                    opt.style.color = '';
                 }
+                var icon = opt.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    icon.style.color = isActive ? 'var(--primary)' : '';
+                }
+                var label = opt.querySelector('span:last-child');
+                if (label && label !== icon) {
+                    label.style.color = isActive ? 'var(--primary)' : '';
+                }
+                var radio = opt.querySelector('input[type="radio"]');
+                if (radio) radio.checked = isActive;
+            });
+        }
+
+        function loadSettings() {
+            fetch('/insights/api/settings')
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (!res.success || !res.data) return;
+                    var d = res.data;
+                    setSwitch(benchmarkToggle, d.allow_benchmark);
+                    setSwitch(notifToggle, d.notifications);
+                    setActiveDepth(d.analysis_depth || 'normal');
+                    if (tokensCount) {
+                        if (d.tokens) {
+                            tokensCount.textContent = d.tokens.plan_tokens + d.tokens.extra_tokens;
+                        } else {
+                            tokensCount.textContent = '--';
+                        }
+                    }
+                });
+        }
+
+        function saveSetting(key, value) {
+            var body = {};
+            body[key] = value;
+            fetch('/insights/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        }
+
+        btnOpen.addEventListener('click', function () {
+            modal.hidden = false;
+            loadSettings();
+        });
+
+        if (btnClose) {
+            btnClose.addEventListener('click', function () { modal.hidden = true; });
+        }
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) modal.hidden = true;
+        });
+
+        if (benchmarkToggle) {
+            benchmarkToggle.addEventListener('click', function () {
+                var next = this.getAttribute('aria-checked') !== 'true';
+                setSwitch(this, next);
+                saveSetting('allow_benchmark', next);
+            });
+        }
+
+        if (notifToggle) {
+            notifToggle.addEventListener('click', function () {
+                var next = this.getAttribute('aria-checked') !== 'true';
+                setSwitch(this, next);
+                saveSetting('notifications', next);
+            });
+        }
+
+        depthOptions.forEach(function (opt) {
+            opt.addEventListener('click', function () {
+                setActiveDepth(this.dataset.depth);
+                saveSetting('analysis_depth', this.dataset.depth);
             });
         });
     })();

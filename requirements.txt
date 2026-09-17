@@ -60,3 +60,4 @@ wrapt==2.1.2
 WTForms==3.2.1
 apispec[marshmallow]==6.10.0
 marshmallow==4.3.0
+tavily-python==0.5.1

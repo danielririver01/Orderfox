@@ -65,6 +65,19 @@ class Restaurant(db.Model):
     # El usuario puede desactivarlo desde el toggle en Copilot VZ.
     allow_benchmark = db.Column(db.Boolean, default=True, nullable=False,
                                 server_default='1')
+    # Copilot VZ: profundidad del análisis ('fast', 'normal', 'detailed')
+    copilot_analysis_depth = db.Column(db.String(10), default='normal',
+                                       nullable=False, server_default='normal')
+    # Copilot VZ: notificaciones de eventos de negocio activadas
+    copilot_notifications = db.Column(db.Boolean, default=True, nullable=False,
+                                      server_default='1')
+    # Copilot VZ: búsqueda web en tiempo real (Tavily) — opt-in, desactivado por defecto
+    web_search_enabled = db.Column(db.Boolean, default=False, nullable=False,
+                                   server_default='0')
+    # Contador mensual de queries de búsqueda web (reset el 1ro de cada mes)
+    web_search_queries_this_month = db.Column(db.Integer, default=0,
+                                              nullable=False, server_default='0')
+    web_search_month_reset = db.Column(AwareDateTime, nullable=True)
     # Configuración de expiración de pedidos pendientes (en horas, default 24)
     pending_expiry_hours = db.Column(db.Integer, default=24, nullable=False)
     ntfy_topic = db.Column(db.String(64), unique=True, nullable=True)

@@ -80,9 +80,15 @@ class Config:
     # Nº de seguimientos gratis por bloque de análisis (1 token por bloque).
     # Al llegar al tope, el siguiente mensaje consume un token nuevo (bloque nuevo).
     COPILOT_MAX_FOLLOW_UPS = int(os.environ.get('COPILOT_MAX_FOLLOW_UPS', '4'))
+    # Seguimientos gratis para plan Elite (más generoso que el resto).
+    COPILOT_MAX_FOLLOW_UPS_ELITE = int(os.environ.get('COPILOT_MAX_FOLLOW_UPS_ELITE', '8'))
     # Máx. mensajes de historial enviados al LLM por llamada (control de tokens).
     # Aplica a TODOS los planes, incluido Elite.
     COPILOT_MAX_HISTORY_MESSAGES = int(os.environ.get('COPILOT_MAX_HISTORY_MESSAGES', '15'))
+
+    # Copilot VZ — Búsqueda web en tiempo real (Tavily)
+    TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY', '')
+    TAVILY_MONTHLY_LIMIT = int(os.environ.get('TAVILY_MONTHLY_LIMIT', '1000'))
 
     # AutoPhoto — Fotos automáticas para productos sin imagen
     UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')

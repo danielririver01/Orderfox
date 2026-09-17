@@ -1,0 +1,21 @@
+- generic [ref=e2]:
+  - img "Velzia Robot Chef" [ref=e5]
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - heading [level=1] [ref=e10]:
+          - text: Bienvenido a
+          - emphasis [ref=e11]: Velzia
+        - paragraph [ref=e12]: Tu asistente para gestionar el restaurante
+        - link "Ver planes y precios" [ref=e15] [cursor=pointer]:
+          - /url: /planes
+      - generic [ref=e17]:
+        - generic [ref=e18]: © 2026 Velzia
+        - generic [ref=e19]:
+          - generic [ref=e20]: lock
+          - text: Conexión segura
+    - generic [ref=e21]:
+      - link "Ayuda" [ref=e22] [cursor=pointer]:
+        - /url: /legal#faq
+      - link "Legal" [ref=e23] [cursor=pointer]:
+        - /url: /legal

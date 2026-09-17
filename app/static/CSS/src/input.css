@@ -6,6 +6,7 @@
 
 /* Forzar dark mode por clase .dark en lugar de prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant sidebar-expanded (&:where(.sidebar-expanded, .sidebar-expanded *));
 
 @theme {
   --color-primary: #f2460d;

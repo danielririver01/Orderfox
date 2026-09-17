@@ -4,15 +4,15 @@ function descargarQR() {
     // Para simplificar, usaremos RESTAURANT_SLUG definido globalmente
     const downloadUrl = `/dashboard/menu/${RESTAURANT_SLUG}/qr/download?format=png`;
     window.location.href = downloadUrl;
-    mostrarToast('Descargando código QR...');
+    showToast('Descargando código QR...', 'info');
 }
 
 function copiarURL() {
     const url = MENU_URL;
     navigator.clipboard.writeText(url).then(() => {
-        mostrarToast('URL copiada al portapapeles');
+        showToast('URL copiada al portapapeles', 'success');
     }).catch(() => {
-        mostrarToast('Error al copiar la URL');
+        showToast('Error al copiar la URL', 'error');
     });
 }
 
@@ -34,7 +34,7 @@ async function compartirQR() {
                     title: titulo,
                     text: texto
                 });
-                mostrarToast('Compartiendo menú...');
+                showToast('Compartiendo menú...', 'info');
                 return;
             }
         } catch (error) {
@@ -49,7 +49,7 @@ async function compartirQR() {
                 title: titulo,
                 text: texto
             });
-            mostrarToast('Abriendo opciones para compartir...');
+            showToast('Abriendo opciones para compartir...', 'info');
             return;
         } catch (error) {
             if (error.name !== 'AbortError') {
@@ -63,35 +63,14 @@ async function compartirQR() {
     // 3. Fallback final: WhatsApp Directo (Escritorio Legacy)
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(texto)}`;
     window.open(whatsappUrl, '_blank');
-    mostrarToast('Abriendo WhatsApp...');
+    showToast('Abriendo WhatsApp...', 'info');
 }
 
 function volverAtras() {
     window.location.href = "/dashboard/";
 }
 
-        function mostrarToast(mensaje, tipo = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            
-            // Cambiar color del borde según tipo
-            if (tipo === 'error') {
-                toast.classList.remove('border-success');
-                toast.classList.add('border-red-500');
-            } else {
-                toast.classList.remove('border-red-500');
-                toast.classList.add('border-success');
-            }
-            
-            toastMessage.textContent = mensaje;
-            toast.classList.remove('hidden');
-            
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        // Animación de entrada del QR
+// Animación de entrada del QR
         document.addEventListener('DOMContentLoaded', () => {
             const qrImage = document.getElementById('qrImage');
             qrImage.style.opacity = '0';

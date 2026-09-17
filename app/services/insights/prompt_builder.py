@@ -16,7 +16,23 @@ Cuando una gráfica aporte valor, responde con un objeto JSON que incluye
 
 import json
 
-PROMPT_VERSION = "v1.5"
+PROMPT_VERSION = "v1.6"
+
+# ── Analysis Depth: historial y variante de prompt por modo ───────────────────
+DEPTH_HISTORY_LIMIT = {'fast': 3, 'normal': 15, 'detailed': 25}
+
+DEPTH_INSTRUCTIONS = {
+    'fast': (
+        "\n\nMODO RÁPIDO: Sé ultra-conciso. Máximo 2 oraciones de diagnóstico, "
+        "1 recomendación. Sin preámbulos ni explicaciones metodológicas."
+    ),
+    'normal': "",
+    'detailed': (
+        "\n\nMODO DETALLADO: Sé exhaustivo y analítico. Incluye comparativas "
+        "entre períodos, tendencias, datos específicos del contexto y hasta 5 "
+        "recomendaciones priorizadas. Fundamenta cada hallazgo con cifras reales."
+    ),
+}
 
 SYSTEM_PROMPT = """Eres Copilot VZ, el analista de negocios integrado de Velzia, \
 una plataforma para restaurantes. Tu único trabajo es ayudar al dueño de un \
@@ -39,31 +55,35 @@ conversación para dar contexto, pero mantente fiel a los datos.
 LÍMITES DE ALCANCE (privacidad y seguridad — innegociable):
 10. SOLO analizas el negocio del propio usuario (el restaurante cuyo contexto \
  recibes arriba). No tienes acceso a — ni debes inventar — datos de OTROS \
-restaurantes o negocios ajenos, ya sea por nombre propio ('McDonald's', \
-'Starbucks', 'KFC', 'Burger King'), por referencia ('el de Juan', 'la competencia \
-de al lado', 'mi rival', 'ese local') o de forma genérica ('analiza ese \
-restaurante'). Si el usuario te pide analizar un restaurante que NO es el suyo: \
-responde que solo puedes analizar los datos de su propio negocio.
+ restaurantes o negocios ajenos, ya sea por nombre propio ('McDonald's', \
+ 'Starbucks', 'KFC', 'Burger King'), por referencia ('el de Juan', 'la competencia \
+ de al lado', 'mi rival', 'ese local') o de forma genérica ('analiza ese \
+ restaurante'). Si el usuario te pide analizar un restaurante que NO es el suyo: \
+ responde que solo puedes analizar los datos de su propio negocio. \
+ IMPORTANTE: Cuando el usuario pide analizar SUS propios datos ('mis ventas', \
+ 'mi negocio', 'mi restaurante', 'analiza esto'), NO pongas disclaimers sobre \
+ privacidad — simplemente analiza. Solo menciona la limitación si te piden \
+ explícitamente datos de OTRA empresa o restaurante.
 11. Las CONSULTAS DE CONOCIMIENTO GENERAL sí están permitidas y debes \
-responderlas (definiciones, estrategias de marketing, conceptos de la industria, \
-'qué hace Starbucks como modelo de negocio', 'cómo aumentar las ventas'). Pero \
-NUNCA fabriques métricas privadas, cifras internas ni datos específicos de esas \
-marcas externas.
+ responderlas (definiciones, estrategias de marketing, conceptos de la industria, \
+ 'qué hace Starbucks como modelo de negocio', 'cómo aumentar las ventas'). Pero \
+ NUNCA fabriques métricas privadas, cifras internas ni datos específicos de esas \
+ marcas externas.
 12. IDENTIDAD vs NOMBRE DEL RESTAURANTE: Nunca confundas tu identidad con el \
-nombre del restaurante. Si el restaurante se llama "Copilot VZ" o "ChatGPT", \
-tú eres Copilot VZ (el analista de Velzia) y ese es el nombre del negocio.
+ nombre del restaurante. Si el restaurante se llama "Copilot VZ" o "ChatGPT", \
+ tú eres Copilot VZ (el analista de Velzia) y ese es el nombre del negocio.
 13. BENCHMARKS DE LA PLATAFORMA: el contexto puede incluir una sección \
-"benchmarks" con MEDIANAS anónimas de restaurantes similares en Velzia \
-(nunca datos individuales). Úsalas para comparar el negocio del usuario y \
-hacer las recomendaciones más concretas ("tu ticket promedio está por \
-debajo de la mediana de la plataforma"). Si NO aparecen benchmarks en el \
-contexto, NO inventes comparativos ni cifras de la industria: analiza solo \
-con los datos propios del usuario.
+ "benchmarks" con MEDIANAS anónimas de restaurantes similares en Velzia \
+ (nunca datos individuales). Úsalas para comparar el negocio del usuario y \
+ hacer las recomendaciones más concretas ("tu ticket promedio está por \
+ debajo de la mediana de la plataforma"). Si NO aparecen benchmarks en el \
+ contexto, NO inventes comparativos ni cifras de la industria: analiza solo \
+ con los datos propios del usuario.
 14. CONOCIMIENTO DE INDUSTRIA: cuando recibas una sección "CONOCIMIENTO DE \
-INDUSTRIA" (guías de best practices gastronómicas), úsala como marco de \
-referencia para tus recomendaciones, ADAPTÁNDOLA a los datos reales del \
-usuario. No la recites textualmente ni cites números de la guía como si \
-fueran mediciones del negocio: son rangos de referencia del sector.
+ INDUSTRIA" (guías de best practices gastronómicas), úsala como marco de \
+ referencia para tus recomendaciones, ADAPTÁNDOLA a los datos reales del \
+ usuario. No la recites textualmente ni cites números de la guía como si \
+ fueran mediciones del negocio: son rangos de referencia del sector.
 
 REGLAS DE ESTILO:
 6. Escribe en PROSA natural. NO vomites cifras sueltas.
@@ -89,6 +109,16 @@ datos para responder preguntas sobre el menú, ingredientes, precios, categoría
 Si el usuario pregunta "¿qué tengo en el menú?", "¿cuánto cuesta X?", "¿qué productos \
 tengo?", o similar, responde directamente con los datos del catálogo. No necesitas \
 ventas para responder estas preguntas.
+21. BÚSQUEDA WEB: si recibes una sección "INFORMACIÓN WEB EN TIEMPO REAL", \
+responde con los datos concretos que aparezcan ahí (precios, cifras, tendencias). \
+El usuario preguntó algo específico y esperaba un dato, no un consejo genérico. \
+Si la fuente dice "el pollo está a $7.800/kg", di "$7.800/kg" y cita la fuente. \
+Solo da consejos adicionales DESPUÉS de responder la pregunta directa. \
+Si la información web contradice tus datos internos, presenta ambos puntos de vista. \
+IMPORTANTE: cuando uses datos de una fuente web, añade el marcador [Fuente: N] al final \
+del párrafo o frase correspondiente, donde N es el número de la fuente (1, 2, 3...). \
+Ejemplo: "El pollo está a $7.800/kg según mercaderias.cl [Fuente: 1]". \
+Así el usuario sabe de dó viene cada dato. No abuses: solo marca donde uses datos concretos.
 
 FORMATO DE RESPUESTA:
 - Si una gráfica ayudaría, responde con JSON: {"text": "...", "chart": {...}}
@@ -134,7 +164,8 @@ responde ÚNICAMENTE con un objeto JSON válido (sin markdown) con esta forma:
 
 def build_analysis_messages(user_message, context, history=None, restaurant_name=None,
                              context_summary=None, compressed=False, system_prompt=None,
-                             max_history=None, knowledge=None):
+                             max_history=None, knowledge=None, analysis_depth='normal',
+                             web_results=None):
     """
     Construye la lista de mensajes para la API de chat.
 
@@ -154,21 +185,32 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
         knowledge: texto opcional de best practices de industria
             (knowledge_selector.select_knowledge) inyectado como guía de
             referencia. Solo aplica al Copilot VZ; ignorado con prompts custom.
+        analysis_depth: modo de análisis ('fast' | 'normal' | 'detailed').
+            Ajusta el tope de historial y agrega instrucciones al prompt.
+        web_results: lista opcional de resultados de búsqueda web
+            (Tavily). Cada elemento es {'title': str, 'url': str, 'content': str}.
+            Si se provee, se inyecta como contexto externo al LLM.
     Returns:
         list of {role, content} listo para la API.
     """
+    # El depth ajusta el historial: fast/detailed sobreescriben la config,
+    # normal respeta COPILOT_MAX_HISTORY_MESSAGES (backward-compatible).
     if max_history is None:
-        from flask import current_app, has_app_context
-        if has_app_context():
-            max_history = current_app.config.get('COPILOT_MAX_HISTORY_MESSAGES', 15)
+        if analysis_depth == 'normal':
+            from flask import current_app, has_app_context
+            if has_app_context():
+                max_history = current_app.config.get('COPILOT_MAX_HISTORY_MESSAGES', 15)
+            else:
+                max_history = 15
         else:
-            max_history = 15
+            max_history = DEPTH_HISTORY_LIMIT.get(analysis_depth, 15)
     max_history = max(1, int(max_history))
 
     ctx_block = json.dumps(context, ensure_ascii=False, indent=2)
     restaurant_line = f"Restaurante: {restaurant_name}\n" if restaurant_name else ""
+    depth_suffix = DEPTH_INSTRUCTIONS.get(analysis_depth, '') if not system_prompt else ''
     system_content = (
-        f"{(system_prompt or SYSTEM_PROMPT)}\n\n"
+        f"{(system_prompt or SYSTEM_PROMPT)}{depth_suffix}\n\n"
         f"{restaurant_line}"
         "CONTEXTO DEL RESTAURANTE (preparado por el sistema, no lo edites):\n"
         f"```json\n{ctx_block}\n```"
@@ -185,6 +227,26 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
                 'CONOCIMIENTO DE INDUSTRIA (guía de referencia de Velzia; '
                 'adáptala al negocio del usuario, no la recites textualmente):\n'
                 f'{knowledge}'
+            ),
+        })
+
+    # Información web en tiempo real (Tavily). Solo para el prompt principal
+    # del Copilot VZ; los copilots especializados (caja) no la reciben.
+    if web_results and not system_prompt:
+        web_block = '\n'.join([
+            f"FUENTE {i+1} — {r['title']}:\n{r['content'][:500]}"
+            for i, r in enumerate(web_results)
+        ])
+        messages.append({
+            'role': 'system',
+            'content': (
+                'INFORMACIÓN WEB EN TIEMPO REAL (fuentes externas verificadas):\n'
+                'Tienes datos reales de internet. Úsalos para responder DIRECTAMENTE '
+                'la pregunta del usuario con cifras concretas. No des consejos genéricos '
+                'si la información web ya contiene la respuesta. Ejemplo: si preguntan '
+                '"cuánto cuesta el pollo" y la fuente dice "$7.800/kg", responde eso '
+                'y cita la fuente por nombre.\n'
+                f'{web_block}'
             ),
         })
 

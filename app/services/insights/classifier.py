@@ -141,6 +141,27 @@ _COMMON_NOUNS = {
     "cosa", "cosas", "algo", "nada", "todo", "toda",
     "cada", "varios", "varias", "mucho", "mucha",
     "asi", "así", "bien", "mal", "mejor", "peor",
+    # Alimentos / commodities (evita falsos positivos con "de pollo", "de carne", etc.)
+    "pollo", "carne", "pescado", "cerdo", "res", "atún", "atun", "salmón", "salmon",
+    "arroz", "papa", "tomate", "cebolla", "aguacate", "plátano", "platano",
+    "leche", "huevo", "huevos", "queso", "mantequilla", "aceite", "sal",
+    "harina", "azúcar", "azucar", "café", "cafe", "té", "te", "cerveza",
+    "vino", "jugo", "gaseosa", "agua", "soda", "limón", "limon",
+    "chile", "ají", "aji", "ajo", "zanahoria", "brócoli", "brocoli",
+    "lechuga", "espinaca", "cebolla", "maíz", "maiz", "frijol", "lenteja",
+    "choclo", "yuca", "ñame", "name", "calabaza", "berenjena",
+    "langosta", "camarón", "camaron", "cangrejo", "mojarra", "trucha",
+    "título", "titulo", "kilo", "kilos", "libra", "libras", "gramos",
+    "kilogramo", "kilogramos", "onza", "onzas",
+    # Marketing / negocio general (falsos positivos comunes)
+    "marketing", "estrategia", "estrategias", "publicidad", "promocion",
+    "promoción", "promociones", "publico", "público", "mercado",
+    "competencia", "marca", "clientes", "descuento", "descuentos",
+    "oferta", "ofertas", "campana", "campaña", "campañas",
+    "redes", "digital", "online", "presencial", "fidelizacion",
+    "fidelización", "referido", "referidos", "口碑", "branding",
+    "posicionamiento", "segmentacion", "segmentación", "publico objetivo",
+    "target", "embudo", "conversión", "conver", "engagement",
 }
 
 # Patrón 1 (fuerte): marcadores explícitos de establecimiento + nombre.
@@ -327,7 +348,23 @@ ADVICE_SEEKING_RE = re.compile(
     r'qu[eé]\s+(hago|hacer|puedo\s+hacer|me\s+(recomienda|sugiere))'   # qué hago / qué me recomienda
     r'|c[oó]mo\s+(puedo|hago|le\s+hago|mejoro|mejorar|aumento|subo|subir)'  # cómo puedo/hago/mejoro...
     r'|consejos?'                                                       # consejos
-    r'|dame\s+(ideas|estrategias|tips)'                                 # dame ideas/estrategias/tips
+    r'|dame\s+(ideas?|estrategias?|tips|recomendaci[oó]nes?|sugerencias?)'  # dame idea/estrategia/tip(s)
+    r'|puedes\s+darme\s+(una?\s+)?(estrategias?|ideas?|tips|recomendaci[oó]nes?|consejos?|sugerencias?)'
+    r'|quiero\s+(una?\s+)?(estrategias?|ideas?|plan|planes?|recomendaci[oó]nes?)'
+    r'|necesito\s+(una?\s+)?(estrategias?|ideas?|plan|planes?|recomendaci[oó]nes?)'
+    r'|cu[aá]l\s+(es|ser[iá])\s+la\s+(mejor|óptima|ideal)\s+estrategia'
+    r'|cu[aá]les\s+(son|ser[iá]an)\s+las?\s+(mejores?|ideales?)\s+estrategias?'
+    r'|marketing'
+    r'|publicidad'
+    r'|branding'
+    r'|posicionamiento'
+    r'|fidelizaci[oó]n'
+    r'|promoci[oó]n(?:es)?'
+    r'|campa[nñ]a(?:s)?'
+    r'|embudo'
+    r'|conversi[oó]n'
+    r'|engagement'
+    r'|refer(?:ir|ido|idos)'
     r')',
     re.IGNORECASE,
 )

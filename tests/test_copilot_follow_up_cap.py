@@ -40,7 +40,7 @@ def _mock_data_context(monkeypatch):
     historial, no el contenido real del contexto de datos, así que se inyecta
     un dict mínimo válido para el prompt del LLM.
     """
-    def _fake_build_context(restaurant_id, days=60, include_catalog=False):
+    def _fake_build_context(restaurant_id, days=60, include_catalog=False, depth='normal'):
         return {
             'period_days': days,
             'currency': 'COP',
@@ -192,7 +192,7 @@ def elite_user(db, elite_restaurant):
 @pytest.fixture
 def elite_wallet(db, elite_user):
     w = AITokenWallet(
-        user_id=elite_user.id, plan_limit=3000, plan_tokens=5,
+        user_id=elite_user.id, plan_limit=1000, plan_tokens=5,
         extra_tokens=0, tokens_used_month=0,
     )
     db.session.add(w)
@@ -488,7 +488,7 @@ class TestLLMCallTelemetry(_Auth):
 # ── Elite: exento del tope, no del truncamiento ────────────────────────────
 
 class TestElite(_Auth):
-    """Elite conserva follow-ups gratis; el truncamiento aplica igual."""
+    """Elite tiene 8 follow-ups gratis (vs 4 del resto)."""
 
     def test_elite_follow_ups_never_charged(self, client, db, elite_user,
                                             elite_restaurant, elite_wallet,
@@ -502,15 +502,20 @@ class TestElite(_Auth):
         assert first.get_json()['metadata']['credits_used'] == 1
         assert AITokenWallet.query.filter_by(user_id=elite_user.id).first().plan_tokens == 4
 
-        # 10 follow-ups: todos gratis, el contador no se toca.
-        for i in range(10):
+        # 8 follow-ups: todos gratis (elite tiene 8 follow-ups gratis).
+        for i in range(8):
             resp = self._post_message(client, cid, f'¿Por qué cayeron mis ventas? {i}')
             assert resp.status_code == 200
             assert resp.get_json()['metadata']['credits_used'] == 0
 
+        # 9° follow-up: agota el tope de 8, abre bloque nuevo → consume 1 token.
+        resp9 = self._post_message(client, cid, '¿Y ahora qué?')
+        assert resp9.status_code == 200
+        assert resp9.get_json()['metadata']['credits_used'] == 1
+
         w = AITokenWallet.query.filter_by(user_id=elite_user.id).first()
-        assert w.plan_tokens == 4
-        assert w.tokens_used_month == 1
+        assert w.plan_tokens == 3
+        assert w.tokens_used_month == 2
 
         db.session.expire_all()
         conv = CopilotConversation.query.get(cid)
@@ -522,6 +527,7 @@ class TestElite(_Auth):
                                            monkeypatch):
         monkeypatch.setitem(app.config, 'COPILOT_MAX_HISTORY_MESSAGES', 3)
         monkeypatch.setitem(app.config, 'COPILOT_MAX_FOLLOW_UPS', 50)
+        monkeypatch.setitem(app.config, 'COPILOT_MAX_FOLLOW_UPS_ELITE', 50)
         sale_factory(elite_restaurant)
         self._login(client, elite_user)
         cid = self._conv_id(client)

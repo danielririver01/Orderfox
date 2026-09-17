@@ -7,6 +7,7 @@
     <title>{% block title %}Velzia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/toast.css') }}">
     <script>
         window.tailwind = window.tailwind || {};
         tailwind.config = {
@@ -72,6 +73,7 @@
             right: 0;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
     {% if config.CLERK_PUBLISHABLE_KEY %}
