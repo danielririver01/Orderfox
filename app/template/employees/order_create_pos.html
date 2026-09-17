@@ -140,6 +140,7 @@
         </div>
 
         <input type="hidden" name="items" id="items-json">
+        <input type="hidden" name="idempotency_key" id="idempotency-key" value="">
     </form>
 
     <script>
@@ -215,6 +216,13 @@
             itemsInput.value = JSON.stringify(items);
         }
 
+        // Anti doble-envío: el doble tap móvil puede disparar dos submits
+        // casi simultáneos y crear pedidos duplicados. Dos barreras:
+        //   1. Lock de 3s por timestamp (cubre clicks en el mismo tick).
+        //   2. data-submitting en el form + botón deshabilitado tras validar.
+        // La validación de carrito vacío corre SIEMPRE antes del lock, para
+        // no dejar el botón deshabilitado sin explicar el motivo.
+        var lastSubmitAt = 0;
         document.getElementById('pos-form').addEventListener('submit', function (e) {
             const items = JSON.parse(document.getElementById('items-json').value || '[]');
             if (items.length === 0) {
@@ -222,9 +230,20 @@
                 alert('Selecciona al menos un producto para crear el pedido.');
                 return;
             }
+            if (this.dataset.submitting === '1' || Date.now() - lastSubmitAt < 3000) {
+                e.preventDefault();
+                return;
+            }
+            lastSubmitAt = Date.now();
+            this.dataset.submitting = '1';
             const btn = this.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.style.opacity = 0.6;
+            if (btn) { btn.disabled = true; btn.style.opacity = 0.6; }
+            // Idempotencia: una clave por intento de envío. Si el servidor ya
+            // creó este pedido (respuesta perdida, re-POST), el backend
+            // devuelve el original y redirige sin duplicar.
+            var keyInput = document.getElementById('idempotency-key');
+            keyInput.value = keyInput.value ||
+                (crypto.randomUUID ? crypto.randomUUID() : 'pos-' + Date.now() + '-' + Math.random().toString(36).slice(2));
         });
 
         // Búsqueda en el menú

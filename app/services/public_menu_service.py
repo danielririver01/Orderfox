@@ -6,10 +6,12 @@ Pattern: @staticmethod methods returning (result, None) / (None, error_dict).
 """
 from datetime import datetime, timedelta, timezone
 from flask import current_app
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 import json
 
 from app.models import db, Category, Product, Order, OrderItem, Restaurant, Table, Modifier
+from app.services.order_service import OrderService
 from app.utils.cover_bank import resolve_cover
 from app.utils.subscription import is_subscription_active, check_feature_access
 
@@ -161,20 +163,42 @@ class PublicMenuService:
 
     @staticmethod
     def create_order_from_cart(restaurant, cart, customer_name, customer_phone,
-                                notes, table_id, ip_address, order_number):
+                                notes, table_id, ip_address, order_number,
+                                idempotency_key=None):
         """
         Create an order and its items from a public cart payload.
 
         ``cart`` format: {product_id: {quantity: int, extras: [{id: int, ...}]}}
 
+        Idempotencia (v1.5): ``idempotency_key`` es la clave de reintento del
+        cliente. Si ya existe un pedido con esa clave para el restaurante, se
+        devuelve ese pedido (created=False) sin volver a crear nada.
+
         Returns:
-            (order, validated_items, total) on success,
-            (None, None, error_dict) on failure.
+            (order, validated_items, total, created) on success,
+            (None, None, error_dict, False) on failure.
+            ``created=False`` con order válido = replay idempotente.
         """
         try:
             if not cart:
                 return None, None, {'error_code': 'EMPTY_CART',
-                                    'message': 'El carrito está vacío.'}
+                                    'message': 'El carrito está vacío.'}, False
+
+            # Replay: reintento de un pedido ya creado (doble tap, respuesta
+            # perdida en red). Devolver el original con sus items.
+            if idempotency_key:
+                existing = OrderService.find_by_idempotency_key(
+                    restaurant.id, idempotency_key)
+                if existing:
+                    validated = [
+                        {
+                            'name': it.product_name,
+                            'qty': it.quantity,
+                            'extras': [],
+                        }
+                        for it in existing.items
+                    ]
+                    return existing, validated, existing.total, False
 
             order = Order(
                 restaurant_id=restaurant.id,
@@ -186,6 +210,7 @@ class PublicMenuService:
                 notes=notes,
                 table_id=table_id,
                 ip_address=ip_address,
+                idempotency_key=idempotency_key or None,
             )
             db.session.add(order)
             db.session.flush()
@@ -274,18 +299,34 @@ class PublicMenuService:
             if not validated_items:
                 db.session.rollback()
                 return None, None, {'error_code': 'EMPTY_CART',
-                                    'message': 'Los productos seleccionados ya no están disponibles.'}
+                                    'message': 'Los productos seleccionados ya no están disponibles.'}, False
 
             order.total = order_total
             db.session.commit()
 
-            return order, validated_items, order_total
+            return order, validated_items, order_total, True
+
+        except IntegrityError:
+            # Carrera: dos requests concurrentes con la misma idempotency_key.
+            # El constraint único frenó al segundo → devolver el ganador.
+            db.session.rollback()
+            if idempotency_key:
+                existing = OrderService.find_by_idempotency_key(
+                    restaurant.id, idempotency_key)
+                if existing:
+                    validated = [
+                        {'name': it.product_name, 'qty': it.quantity, 'extras': []}
+                        for it in existing.items
+                    ]
+                    return existing, validated, existing.total, False
+            return None, None, {'error_code': 'ORDER_CREATION_ERROR',
+                                'message': 'Error al crear el pedido. Inténtalo de nuevo.'}, False
 
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error creating order from cart: {e}")
             return None, None, {'error_code': 'ORDER_CREATION_ERROR',
-                                'message': 'Error al crear el pedido. Inténtalo de nuevo.'}
+                                'message': 'Error al crear el pedido. Inténtalo de nuevo.'}, False
 
     # ── API Menu Data ───────────────────────────────────────
 

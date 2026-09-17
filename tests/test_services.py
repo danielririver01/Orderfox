@@ -384,7 +384,7 @@ class TestPublicMenuService:
         assert r is None
 
     def test_create_order_empty_cart_rejected(self, db, sample_restaurant):
-        order, items, error = PublicMenuService.create_order_from_cart(
+        order, items, error, created = PublicMenuService.create_order_from_cart(
             restaurant=sample_restaurant,
             cart={},
             customer_name='Cliente Test',
@@ -397,9 +397,10 @@ class TestPublicMenuService:
         assert order is None
         assert items is None
         assert error == {'error_code': 'EMPTY_CART', 'message': 'El carrito está vacío.'}
+        assert created is False
 
     def test_create_order_no_valid_items_rejected(self, db, sample_restaurant):
-        order, items, error = PublicMenuService.create_order_from_cart(
+        order, items, error, created = PublicMenuService.create_order_from_cart(
             restaurant=sample_restaurant,
             cart={999999: {'quantity': 1, 'extras': []}},
             customer_name='Cliente Test',
@@ -412,9 +413,10 @@ class TestPublicMenuService:
         assert order is None
         assert items is None
         assert error == {'error_code': 'EMPTY_CART', 'message': 'Los productos seleccionados ya no están disponibles.'}
+        assert created is False
 
     def test_create_order_valid_items_ok(self, db, sample_restaurant, sample_product):
-        order, items, total = PublicMenuService.create_order_from_cart(
+        order, items, total, created = PublicMenuService.create_order_from_cart(
             restaurant=sample_restaurant,
             cart={sample_product.id: {'quantity': 2, 'extras': []}},
             customer_name='Cliente Test',
@@ -429,6 +431,7 @@ class TestPublicMenuService:
         assert total == 10000
         assert len(items) == 1
         assert items[0]['name'] == sample_product.name
+        assert created is True
 
 
 class TestQRService:

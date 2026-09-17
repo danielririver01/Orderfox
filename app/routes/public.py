@@ -253,16 +253,22 @@ def create_order():
         notes=notes,
     )
 
-    # Crear el pedido con los items del carrito
-    order, validated_items, total_or_error = PublicMenuService.create_order_from_cart(
-        restaurant=restaurant,
-        cart=data['cart'],
-        customer_name=customer_name,
-        customer_phone=customer_phone,
-        notes=notes,
-        table_id=table_id,
-        ip_address=client_ip,
-        order_number=order_number,
+    # Crear el pedido con los items del carrito. Idempotencia v1.5: el
+    # frontend genera un UUID por intento; un reintento (respuesta perdida
+    # en red) devuelve el pedido original sin crear otro.
+    idempotency_key = (data.get('idempotency_key') or '').strip()[:64] or None
+    order, validated_items, total_or_error, created = (
+        PublicMenuService.create_order_from_cart(
+            restaurant=restaurant,
+            cart=data['cart'],
+            customer_name=customer_name,
+            customer_phone=customer_phone,
+            notes=notes,
+            table_id=table_id,
+            ip_address=client_ip,
+            order_number=order_number,
+            idempotency_key=idempotency_key,
+        )
     )
 
     if order is None:
@@ -271,16 +277,21 @@ def create_order():
             'error': total_or_error.get('message', 'Error al crear el pedido.')
         }), 500
 
-    # Traza: pedido desde el menú web. El cliente no tiene actor identificado.
-    log_event(order.id, 'order_created', actor_role='customer')
+    # Traza y notificación solo para pedidos nuevos. En replay el pedido
+    # original ya las tuvo: repetirlas duplicaría la cocina y el sonido.
+    if created:
+        log_event(order.id, 'order_created', actor_role='customer')
     db.session.commit()
 
     order_id = order.id
-    notify_new_order(order_id)
+    if created:
+        notify_new_order(order_id)
 
     return jsonify({
         'success': True,
-        'order_number': order_number,
+        # order.order_number (no la variable pre-generada): en replay el
+        # pedido devuelto es el original, cuyo número es anterior.
+        'order_number': order.order_number,
         'order_id': order_id,
         'total': total_or_error,
         'items': validated_items,

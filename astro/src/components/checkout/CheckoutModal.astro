@@ -74,6 +74,34 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   document.addEventListener('open-checkout', () => {
     document.getElementById('checkout-modal')?.classList.remove('hidden', 'translate-y-8');
     document.getElementById('checkout-overlay')?.classList.remove('hidden');
+    resetSubmitState();
+  });
+
+  // ── Idempotencia (v1.5) ─────────────────────────────────────
+  // Clave por carrito: se genera la primera vez que se abre el checkout y
+  // persiste mientras el carrito no cambie. Así, un reintento tras error de
+  // red reenvía la MISMA clave → el servidor devuelve el pedido original
+  // en vez de crear otro. Cambiar el carrito = pedido nuevo = clave nueva.
+  const IDEMPOTENCY_STORAGE_KEY = `velziaIdemKey_${rId}`;
+  const CART_STORAGE_KEY = `velziaCart_${rId}`;
+  function getCurrentIdempotencyKey(): string {
+    let key = sessionStorage.getItem(IDEMPOTENCY_STORAGE_KEY) || '';
+    if (!key) {
+      key = crypto.randomUUID();
+      try { sessionStorage.setItem(IDEMPOTENCY_STORAGE_KEY, key); } catch { /* ignore */ }
+    }
+    return key;
+  }
+  function invalidateIdempotencyKey(): void {
+    try { sessionStorage.removeItem(IDEMPOTENCY_STORAGE_KEY); } catch { /* ignore */ }
+  }
+  document.addEventListener('cart-updated', () => {
+    // El cliente modificó el carrito: lo que envíe ya no es el mismo pedido.
+    invalidateIdempotencyKey();
+  });
+  document.addEventListener('order-success', () => {
+    // Pedido confirmado: la clave se consumió.
+    invalidateIdempotencyKey();
   });
 
   document.getElementById('checkout-close')?.addEventListener('click', closeCheckout);
@@ -84,11 +112,42 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
     document.getElementById('checkout-overlay')?.classList.add('hidden');
   }
 
+  // ── Anti doble-envío ─────────────────────────────────────────────
+  // El handler es async: sin lock, un doble tap dispara dos fetch y crea
+  // pedidos duplicados. El flag se marca síncronamente antes del primer
+  // await, así el segundo submit siempre lo ve.
+  function setSubmitState(form: HTMLFormElement, busy: boolean): void {
+    const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+    if (busy) {
+      form.dataset.submitting = '1';
+      if (btn) {
+        if (!btn.dataset.label) btn.dataset.label = btn.textContent || '';
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+      }
+    } else {
+      delete form.dataset.submitting;
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.label || 'Confirmar y pedir';
+      }
+    }
+  }
+
+  function resetSubmitState(): void {
+    const form = document.getElementById('checkout-form') as HTMLFormElement | null;
+    if (form) setSubmitState(form, false);
+  }
+
   document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const data = new FormData(form);
     const errorEl = document.getElementById('checkout-error');
+
+    // Doble tap / re-envío mientras hay un fetch en vuelo → ignorar.
+    if (form.dataset.submitting === '1') return;
+
+    const data = new FormData(form);
 
     const cartRaw = localStorage.getItem(`velziaCart_${rId}`);
     if (!cartRaw) {
@@ -125,7 +184,14 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
         ? ((data.get('address') as string) || '')
         : (data.get('address') as string),
       user_secondary_email: data.get('user_secondary_email') as string,
+      // Idempotencia v1.5: en el body, no en header custom (evita preflight
+      // CORS entre menu.velzia.shop y la API en velzia.shop).
+      idempotency_key: getCurrentIdempotencyKey(),
     };
+
+    // Validación y armado del body completos: recién ahora bloqueamos.
+    // (Si falla antes —carrito vacío, JSON corrupto— el botón queda libre.)
+    setSubmitState(form, true);
 
     try {
       const res = await fetch(`${apiBase}/menu/api/order`, {
@@ -136,15 +202,18 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
 
       if (!res.ok) {
         const err = await res.json();
+        setSubmitState(form, false); // permitir reintento
         if (errorEl) { errorEl.textContent = err.error || 'Error al procesar el pedido'; errorEl.classList.remove('hidden'); }
         return;
       }
 
       const result = await res.json();
-      localStorage.removeItem(`velziaCart_${rId}`);
+      setSubmitState(form, false);
+      localStorage.removeItem(CART_STORAGE_KEY);
       closeCheckout();
       document.dispatchEvent(new CustomEvent('order-success', { detail: result }));
     } catch {
+      setSubmitState(form, false); // permitir reintento
       if (errorEl) { errorEl.textContent = 'Error de conexión. Intenta de nuevo.'; errorEl.classList.remove('hidden'); }
     }
   });

@@ -317,31 +317,33 @@ def order_create(slug):
             'customer_phone': data.get('customer_phone', '').strip(),
             'notes': data.get('notes', '').strip(),
             'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
+            # Idempotencia: el POS envía una UUID por intento; un doble submit
+            # o re-POST del navegador devuelve el pedido original, no otro.
+            'idempotency_key': data.get('idempotency_key', '').strip(),
         }
 
         try:
-            order = OrderService.create_order(restaurant.id, order_data)
+            order, created = OrderService.create_order_idempotent(restaurant.id, order_data)
         except ValueError as e:
             flash(str(e), 'error')
             return redirect(
                 url_for('employee_portal.order_create', slug=slug)
             )
-        try:
+
+        # En replay (created=False) el pedido ya tenía sus items del intento
+        # original: no re-agregar (duplicaría líneas) ni re-notificar.
+        if created:
             total, _ = OrderService.add_items_to_order(
                 order, items_data, restaurant.id
             )
-        except ValueError as e:
+            log_event(order.id, 'order_created', actor_id=user.id, actor_role=user.role)
+            db.session.commit()
+            from app.services.notification_service import notify_new_order
+            notify_new_order(order.id)
+            flash(f'Pedido {order.order_number} creado (${total:,}).', 'success')
+        else:
             db.session.rollback()
-            flash(str(e), 'error')
-            return redirect(url_for('employee_portal.order_create', slug=slug))
-
-        log_event(order.id, 'order_created', actor_id=user.id, actor_role=user.role)
-
-        db.session.commit()
-        from app.services.notification_service import notify_new_order
-        notify_new_order(order.id)
-
-        flash(f'Pedido {order.order_number} creado (${total:,}).', 'success')
+            flash(f'El pedido {order.order_number} ya estaba registrado.', 'info')
         return redirect(url_for('employee_portal.waiter', slug=slug))
 
     products = OrderService.get_active_products(restaurant.id)

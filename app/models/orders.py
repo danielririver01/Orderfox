@@ -25,6 +25,14 @@ class Order(db.Model):
     paid_at = db.Column(AwareDateTime, nullable=True)         # cuándo se registró el pago
     # IP del cliente para rate limiting (P4)
     ip_address = db.Column(db.String(45), nullable=True, index=True)
+    # Idempotencia: clave enviada por el cliente (UUID) para que un reintento
+    # del mismo pedido (doble tap, respuesta perdida en red) no cree duplicados.
+    # Única por restaurante; NULL = flujo viejo sin clave (backward compatible).
+    idempotency_key = db.Column(db.String(64), nullable=True)
+    __table_args__ = (
+        db.UniqueConstraint('restaurant_id', 'idempotency_key',
+                            name='uq_orders_restaurant_idempotency'),
+    )
     # Fecha de expiración para pedidos pendientes
     expires_at = db.Column(AwareDateTime, nullable=True)
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))

@@ -149,20 +149,28 @@ def create_order():
         'notes': data.get('notes', ''),
         'table_id': table_id,
         'pending_expiry_hours': restaurant.pending_expiry_hours or 24,
+        # Idempotencia v1.5: claves opcionales de clientes externos. Un
+        # reintento con la misma clave devuelve el pedido original (201).
+        'idempotency_key': (data.get('idempotency_key') or '').strip()[:64] or None,
     }
 
     try:
-        order = OrderService.create_order(restaurant.id, order_data)
+        order, created = OrderService.create_order_idempotent(restaurant.id, order_data)
     except ValueError as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
-    try:
-        total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
-    except ValueError as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 400
 
+    if created:
+        try:
+            total, _ = OrderService.add_items_to_order(order, items_data, restaurant.id)
+        except ValueError as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 400
+    else:
+        total = order.total
+
     actor_id, actor_role = resolve_actor()
-    log_event(order.id, 'order_created', actor_id=actor_id, actor_role=actor_role)
+    if created:
+        log_event(order.id, 'order_created', actor_id=actor_id, actor_role=actor_role)
 
     # Pago opcional (modal caja registradora)
     payment_method = data.get('payment_method')
@@ -173,10 +181,11 @@ def create_order():
         except (TypeError, ValueError):
             amount = None
         try:
-            log_event(order.id, 'payment_registered', actor_id=actor_id,
-                      actor_role=actor_role,
-                      metadata={'method': payment_method, 'amount': amount})
-            OrderService.record_payment(order, payment_method, amount_received=amount)
+            if created:
+                log_event(order.id, 'payment_registered', actor_id=actor_id,
+                          actor_role=actor_role,
+                          metadata={'method': payment_method, 'amount': amount})
+                OrderService.record_payment(order, payment_method, amount_received=amount)
         except PaymentValidationError as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), e.status_code
@@ -184,7 +193,8 @@ def create_order():
     db.session.commit()
 
     order_id = order.id
-    notify_new_order(order_id)
+    if created:
+        notify_new_order(order_id)
 
     return jsonify({
         'success': True,

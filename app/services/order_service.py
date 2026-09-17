@@ -1,4 +1,6 @@
 from datetime import datetime, date, timezone, timedelta
+from sqlalchemy.exc import IntegrityError
+
 from app.models import db, Order, OrderItem, OrderEvent, Product, Table, Modifier, OrderCounter
 from app.utils.timezone import today_start_utc
 import json
@@ -253,9 +255,17 @@ class OrderService:
         return active + completed
 
     @staticmethod
+    def find_by_idempotency_key(restaurant_id, key):
+        """Pedido previo con la misma clave, o None. Solo claves válidas."""
+        if not key or len(key) > 64:
+            return None
+        return Order.query.filter_by(
+            restaurant_id=restaurant_id, idempotency_key=key
+        ).first()
+
+    @staticmethod
     def create_order(restaurant_id, order_data, ip_address=None):
         """Core order creation logic shared by all entry points."""
-
         customer_name = (order_data.get('customer_name') or '').strip()
 
         order_number = OrderService.generate_order_number(restaurant_id)
@@ -272,11 +282,50 @@ class OrderService:
             status='pending',
             table_id=order_data.get('table_id'),
             ip_address=ip_address,
-            expires_at=expires_at
+            expires_at=expires_at,
+            # Solo llega via create_order_idempotent; callers viejos no la
+            # envían → NULL (backward compatible).
+            idempotency_key=(order_data.get('idempotency_key') or '').strip() or None
         )
         db.session.add(order)
         db.session.flush()
         return order
+
+    @staticmethod
+    def create_order_idempotent(restaurant_id, order_data, ip_address=None):
+        """Crea un pedido de forma idempotente (v1.5).
+
+        Si ``order_data['idempotency_key']`` ya existe para el restaurante
+        (reintento del cliente: doble tap, respuesta perdida en red, re-POST),
+        devuelve el pedido ORIGINAL sin crear otro. El constraint único
+        (restaurant_id, idempotency_key) cubre la carrera entre requests
+        concurrentes.
+
+        Returns:
+            (order, created): created=False → era un reintento (replay).
+        """
+        idem_key = (order_data.get('idempotency_key') or '').strip() or None
+
+        if idem_key:
+            existing = OrderService.find_by_idempotency_key(restaurant_id, idem_key)
+            if existing:
+                return existing, False
+
+        order_data = dict(order_data)
+        order_data['idempotency_key'] = idem_key
+
+        try:
+            order = OrderService.create_order(restaurant_id, order_data, ip_address=ip_address)
+        except IntegrityError:
+            # Carrera: dos requests concurrentes con la misma clave. El
+            # constraint único frenó al segundo; devolver el ganador.
+            db.session.rollback()
+            existing = OrderService.find_by_idempotency_key(restaurant_id, idem_key)
+            if existing:
+                return existing, False
+            raise
+
+        return order, True
 
     @staticmethod
     def add_items_to_order(order, items_data, restaurant_id):
