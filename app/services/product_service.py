@@ -105,6 +105,8 @@ class ProductService:
             image_url = save_image(image_file, 'products')
             if image_url:
                 product.image_url = image_url
+                product.image_source = 'user_upload'
+                product.is_auto_image = False
             else:
                 return None, ('No se pudo subir la imagen. '
                               'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
@@ -172,6 +174,8 @@ class ProductService:
                 if product.image_url:
                     delete_image(product.image_url)
                 product.image_url = image_url
+                product.image_source = 'user_upload'
+                product.is_auto_image = False
             else:
                 return None, ('No se pudo subir la imagen. '
                               'Usa una imagen JPG, PNG o WebP de menos de 10MB.')
@@ -179,6 +183,8 @@ class ProductService:
             if product.image_url:
                 delete_image(product.image_url)
             product.image_url = None
+            product.image_source = None
+            product.is_auto_image = False
 
         db.session.commit()
         return product, None

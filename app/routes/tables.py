@@ -134,7 +134,7 @@ def download_qr(id):
     if not table:
         abort(404)
     menu_url = _astro_table_url(restaurant.slug, table.id)
-    buffer = QRService.generate_table_qr(menu_url)
+    buffer = QRService.generate_table_qr(menu_url, label=table.name)
     safe_name = unicodedata.normalize('NFKD', table.name)
     safe_name = safe_name.encode('ascii', 'ignore').decode('ascii')
     safe_name = re.sub(r'[^\w\s-]', '', safe_name).strip()
