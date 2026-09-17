@@ -45,15 +45,22 @@ const { whatsappPhone } = Astro.props;
   const successModal = document.getElementById('success-modal');
   const wpPhone = successModal?.getAttribute('data-whatsapp') || '';
   let lastResult: any = null;
+  let isTableOrder = false;
 
   document.addEventListener('order-success', ((e: CustomEvent) => {
     lastResult = e.detail;
+    isTableOrder = !!(e.detail.table_id || e.detail.table_name);
     document.getElementById('success-order-number')!.textContent = e.detail.order_number;
     document.getElementById('success-total')!.textContent = '$' + e.detail.total.toLocaleString('es-CO');
     const tableEl = document.getElementById('success-table');
     if (tableEl && e.detail.table_name) {
       tableEl.textContent = `Mesa: ${e.detail.table_name}`;
       tableEl.classList.remove('hidden');
+    }
+    // Ocultar botón WhatsApp en pedidos de mesa (el mesero ya está ahí)
+    const whatsappBtn = document.getElementById('whatsapp-confirm');
+    if (whatsappBtn) {
+      whatsappBtn.hidden = isTableOrder;
     }
     document.getElementById('success-modal')?.classList.remove('hidden', 'translate-y-8');
     document.getElementById('success-overlay')?.classList.remove('hidden');

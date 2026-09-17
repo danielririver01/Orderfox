@@ -170,15 +170,23 @@
         </div>
     </section>
 
-    <!-- ALERTA: PEDIDOS EXPIRADOS (solo si hay) -->
+    <!-- ALERTA: PEDIDOS EXPIRADOS (solo si hay, dismissible por día) -->
     {% if expired_count > 0 %}
-    <div class="mb-6 md:mb-8 p-3 md:p-4 rounded-xl flex items-center gap-3"
+    <div id="expired-orders-alert" data-count="{{ expired_count }}"
+         class="mb-6 md:mb-8 p-3 md:p-4 rounded-xl flex items-center gap-3"
          style="background: #2D1A0A; border: 1px solid #FF7A29;">
         <span class="text-lg md:text-xl">⚠</span>
-        <span class="text-sm md:text-base font-bold" style="color: #FF7A29;">
-            {{ expired_count }} pedido{{ 's' if expired_count > 1 else '' }}
-            expiró{{ 'ron' if expired_count > 1 else '' }} hoy sin ser confirmado{{ 's' if expired_count > 1 else '' }}
+        <span class="text-sm md:text-base font-bold flex-1" style="color: #FF7A29;">
+            {% if expired_count == 1 %}
+                1 pedido expiró hoy sin ser confirmado
+            {% else %}
+                {{ expired_count }} pedidos expiraron hoy sin ser confirmados
+            {% endif %}
         </span>
+        <button id="expired-alert-dismiss" type="button" aria-label="Cerrar alerta"
+                class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[#FF7A29] hover:bg-[#FF7A29]/10 active:scale-90 transition-all">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
     </div>
     {% endif %}
 

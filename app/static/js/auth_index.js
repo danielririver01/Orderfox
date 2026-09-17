@@ -22,7 +22,10 @@ window.addEventListener('load', async function () {
             }
         });
 
-        // Si hay una sesión Clerk activa, sincronizar automáticamente.
+        // Esperar a que Clerk esté listo y la sesión restaurada
+        await waitForClerkReady();
+
+        // Si hay una sesión Clerk activa, sincronizar automáticamente SIN montar SignIn
         if (window.Clerk.user) {
             runSilentSync();
             return;
@@ -70,8 +73,28 @@ window.addEventListener('load', async function () {
                 }
             }
         });
+
+        // Listener para detectar si el usuario inicia sesión mientras está en la página
+        window.Clerk.addListener(({ user }) => {
+            if (user && !window.location.pathname.includes('/api/sync-clerk')) {
+                runSilentSync();
+            }
+        });
     }
 });
+
+async function waitForClerkReady(maxWait = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < maxWait) {
+        if (window.Clerk?.isLoaded?.()) {
+            // Pequeño delay extra para asegurar que la sesión se restauró
+            await new Promise(r => setTimeout(r, 100));
+            return;
+        }
+        await new Promise(r => setTimeout(r, 50));
+    }
+    console.warn('Clerk no estuvo listo a tiempo, continuando...');
+}
 
 async function runSilentSync() {
     const signInDiv = document.getElementById('clerk-signin');

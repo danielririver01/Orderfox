@@ -11,6 +11,7 @@ let currentChartMode = 'money';
 let currentProductsMode = '30d';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initExpiredAlertDismiss();
     initStoreToggle();
     initWeeklyChart();
     initRevenueChart();
@@ -22,6 +23,32 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchTopProducts(currentProductsMode);
     }, 30000);
 });
+
+/* ── Alerta de pedidos expirados (dismissible por día) ───────────────── */
+
+function initExpiredAlertDismiss() {
+    const alert = document.getElementById('expired-orders-alert');
+    const dismissBtn = document.getElementById('expired-alert-dismiss');
+    if (!alert || !dismissBtn) return;
+
+    // Si ya se descartó hoy, ocultar de inmediato (sin flash del contenido).
+    const today = new Date().toISOString().slice(0, 10);
+    const key = 'velzia_expired_alert_dismissed';
+    try {
+        const saved = JSON.parse(localStorage.getItem(key) || 'null');
+        if (saved && saved.date === today && saved.count === alert.dataset.count) {
+            alert.remove();
+            return;
+        }
+    } catch (e) { /* localStorage no disponible: la alerta queda visible */ }
+
+    dismissBtn.addEventListener('click', () => {
+        try {
+            localStorage.setItem(key, JSON.stringify({ date: today, count: alert.dataset.count }));
+        } catch (e) { /* ignore */ }
+        alert.remove();
+    });
+}
 
 /* ── Store Toggle ────────────────────────────────────────────────────── */
 

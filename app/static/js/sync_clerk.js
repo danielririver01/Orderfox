@@ -19,7 +19,11 @@ async function startSync() {
 
         console.log("Cargando Clerk...");
         await window.Clerk.load();
-        console.log("Clerk cargado exitosamente");
+        
+        // Esperar a que la sesión se restaure completamente
+        await waitForClerkSession();
+        
+        console.log("Clerk cargado y sesión restaurada");
 
         if (window.Clerk.user) {
             const user = window.Clerk.user;
@@ -132,4 +136,15 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', waitForClerkAndSync);
 } else {
     waitForClerkAndSync();
+}
+
+async function waitForClerkSession(maxWait = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < maxWait) {
+        if (window.Clerk?.isLoaded?.() && window.Clerk.user) {
+            return;
+        }
+        await new Promise(r => setTimeout(r, 50));
+    }
+    console.warn('Sesión de Clerk no restaurada a tiempo, continuando...');
 }

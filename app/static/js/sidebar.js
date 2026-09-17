@@ -2,6 +2,7 @@
     'use strict';
 
     var SIDEBAR_KEY = 'velzia_sidebar';
+    var NAV_GROUPS_KEY = 'velzia_desktop_nav_groups';
     var aside = document.getElementById('desktop-sidebar');
     var content = document.getElementById('main-content');
     var toggleBtn = document.getElementById('sidebar-toggle');
@@ -46,7 +47,7 @@
     /* ── Accordion ── */
     function initAccordion() {
         var state;
-        try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); }
+        try { state = JSON.parse(localStorage.getItem(NAV_GROUPS_KEY) || '{}'); }
         catch (e) { state = {}; }
         var groups = document.querySelectorAll('#desktop-nav .nav-group');
         groups.forEach(function (group) {
@@ -82,10 +83,10 @@
             if (chevron) chevron.style.transform = 'rotate(180deg)';
         }
         var state;
-        try { state = JSON.parse(localStorage.getItem('velzia_nav_groups') || '{}'); }
+        try { state = JSON.parse(localStorage.getItem(NAV_GROUPS_KEY) || '{}'); }
         catch (e) { state = {}; }
         state[name] = !isOpen;
-        localStorage.setItem('velzia_nav_groups', JSON.stringify(state));
+        localStorage.setItem(NAV_GROUPS_KEY, JSON.stringify(state));
     };
 
     /* ── Avatar Dropdown ── */
