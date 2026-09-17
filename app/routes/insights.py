@@ -446,14 +446,78 @@ def api_dismiss_event(eid):
 
 # ── API: ajustes de Copilot VZ ──────────────────────────────────────────────
 
+def _get_copilot_settings(user):
+    """Build copilot settings dict for the current user."""
+    restaurant = user.restaurant
+    token_wallet = user.token_wallet if hasattr(user, 'token_wallet') else None
+    return {
+        'allow_benchmark': restaurant.allow_benchmark if restaurant else True,
+        'analysis_depth': getattr(restaurant, 'copilot_analysis_depth', 'normal')
+                          if restaurant else 'normal',
+        'notifications': getattr(restaurant, 'copilot_notifications', True)
+                         if restaurant else True,
+        'tokens': {
+            'plan_tokens': token_wallet.plan_tokens if token_wallet else 0,
+            'extra_tokens': token_wallet.extra_tokens if token_wallet else 0,
+            'used_this_month': token_wallet.tokens_used_month if token_wallet else 0,
+            'plan_limit': token_wallet.plan_limit if token_wallet else None,
+            'is_elite': token_wallet.is_elite if token_wallet else False,
+        } if token_wallet else None,
+    }
+
+
+@csrf.exempt
+@insights_bp.route('/api/settings', methods=['GET'])
+@require_auth
+def api_get_settings():
+    """Retorna todos los ajustes del Copilot VZ + saldo de tokens."""
+    user = _current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    return jsonify({'success': True, 'data': _get_copilot_settings(user)})
+
+
+@csrf.exempt
+@insights_bp.route('/api/settings', methods=['PUT'])
+@require_auth
+def api_update_settings():
+    """Actualiza los ajustes del Copilot VZ."""
+    user = _current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    restaurant = user.restaurant
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'no_restaurant'}), 400
+
+    data = request.get_json(silent=True) or {}
+    allowed_fields = {'allow_benchmark', 'analysis_depth', 'notifications'}
+
+    for key in data:
+        if key not in allowed_fields:
+            continue
+        value = data[key]
+        if key == 'allow_benchmark':
+            if not isinstance(value, bool):
+                continue
+            restaurant.allow_benchmark = value
+        elif key == 'analysis_depth':
+            if value not in ('fast', 'normal', 'detailed'):
+                continue
+            restaurant.copilot_analysis_depth = value
+        elif key == 'notifications':
+            if not isinstance(value, bool):
+                continue
+            restaurant.copilot_notifications = value
+
+    db.session.commit()
+    return jsonify({'success': True, 'data': _get_copilot_settings(user)})
+
+
 @csrf.exempt
 @insights_bp.route('/api/settings/benchmark', methods=['PATCH'])
 @require_auth
 def api_toggle_benchmark():
-    """Activa/desactiva la participación en benchmarking anónimo.
-    Al desactivar, se deja de guardar mensajes nuevos. El historial
-    existente se conserva y se recupera al reactivar.
-    """
+    """Legacy endpoint — backward compat. Use PUT /api/settings instead."""
     user = _current_user()
     if not user:
         return jsonify({'success': False, 'error': 'unauthorized'}), 401

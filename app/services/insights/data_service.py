@@ -15,6 +15,10 @@ from app import db
 from app.models import Order, OrderItem, Product, Category
 
 
+# ── Analysis Depth: ventana de contexto por modo ─────────────────────────────
+DEPTH_DAYS = {'fast': 7, 'normal': 60, 'detailed': 90}
+
+
 def _today_utc():
     return datetime.now(timezone.utc).date()
 
@@ -173,11 +177,19 @@ def _weekday_sales(restaurant_id, start):
     return weekday
 
 
-def build_context(restaurant_id, days=60, include_catalog=False):
+def build_context(restaurant_id, days=60, include_catalog=False, depth='normal'):
     """
     Devuelve un dict de datos YA procesados para enviar como contexto al LLM.
     Nunca enviamos filas crudas: PostgreSQL agrega, Flask organiza.
+
+    Args:
+        restaurant_id: ID del restaurante.
+        days: ventana de días (default 60). Sobreescrita por depth si se provee.
+        include_catalog: si True, incluye detalle de productos.
+        depth: modo de análisis ('fast' | 'normal' | 'detailed').
+            Ajusta la ventana de contexto automáticamente.
     """
+    days = DEPTH_DAYS.get(depth, days)
     today = _today_utc()
     start = today - timedelta(days=days)
 

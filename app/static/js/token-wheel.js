@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             const available = data.total_available || 0;
             const limit = data.plan_limit || 10;
-            const percent = data.is_elite ? 100 : Math.max(0, Math.min(100, (available / limit) * 100));
+            const percent = Math.max(0, Math.min(100, (available / limit) * 100));
 
             // Sidebar: token count
             if (sidebarCount) sidebarCount.textContent = available;

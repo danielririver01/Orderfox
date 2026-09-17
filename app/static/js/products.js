@@ -73,16 +73,7 @@ function closeDeleteModal() {
     }
 }
 
-// Show Toast Notification
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        const messageEl = document.getElementById('toast-message');
-        if (messageEl) messageEl.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
-}
+/* showToast — defined in toast.js */
 
 // Live Search Functionality
 document.addEventListener('DOMContentLoaded', () => {

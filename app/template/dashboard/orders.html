@@ -78,58 +78,34 @@
   <span class="material-symbols-outlined text-[28px]">add</span>
 </a>
 
-<!-- Toast -->
-<div id="toast"
-  class="fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl hidden z-50 text-sm font-bold flex items-center gap-2">
-  <span id="toast-message"></span>
+<!-- Modal de confirmación (reemplaza confirm() nativo) -->
+<div id="order-confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+  <div data-order-modal-overlay class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+  <div class="relative bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-[#262626]">
+    <div class="p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div id="order-modal-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-red-500/10">
+          <span id="order-modal-icon" class="material-symbols-outlined text-[20px] text-red-500">warning</span>
+        </div>
+        <h3 id="order-modal-title" class="text-base font-black text-gray-900 dark:text-white tracking-tight"></h3>
+      </div>
+      <p id="order-modal-message" class="text-sm text-gray-500 dark:text-gray-400 mb-6"></p>
+      <div class="flex gap-3">
+        <button id="order-modal-cancel" type="button" class="flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333] transition-all active:scale-95">
+          Cancelar
+        </button>
+        <button id="order-modal-action" type="button" class="flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95" style="background-color: #ef4444;">
+          Rechazar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-  // Pasar el último ID de pedido al JS para detectar nuevos
-  const LAST_ORDER_ID = {{ last_order_id }};
+<!-- Data carrier (LAST_ORDER_ID via data-attr, CSP-safe) -->
+<div id="orders-data" class="hidden" data-last-order-id="{{ last_order_id }}"></div>
 
-  function toggleSort() {
-    const currentSort = localStorage.getItem('orders_sort_order') || 'asc';
-    const newSort = currentSort === 'asc' ? 'desc' : 'asc';
-    localStorage.setItem('orders_sort_order', newSort);
-
-    const url = new URL(window.location);
-    url.searchParams.set('sort', newSort);
-    window.location.href = url.href;
-  }
-
-  function updateSortIcon() {
-    const url = new URL(window.location);
-    const sort = url.searchParams.get('sort') || localStorage.getItem('orders_sort_order') || 'asc';
-    const icon = document.getElementById('sort-icon');
-    const btn = document.getElementById('sort-toggle-btn');
-
-    if (icon) {
-      icon.textContent = sort === 'asc' ? 'arrow_upward' : 'arrow_downward';
-    }
-
-    if (btn && sort === 'desc') {
-      btn.classList.add('bg-blue-100', 'dark:bg-blue-500/10', 'text-blue-500');
-    }
-  }
-
-  function showAllPending() {
-    document.querySelectorAll('.pending-order-item').forEach(el => el.classList.remove('hidden'));
-    document.getElementById('load-more-pending').classList.add('hidden');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    updateSortIcon();
-
-    // Si no hay parámetro de sort en la URL pero sí en localStorage, redirigir
-    const url = new URL(window.location);
-    const savedSort = localStorage.getItem('orders_sort_order');
-    if (!url.searchParams.has('sort') && savedSort) {
-      url.searchParams.set('sort', savedSort);
-      window.location.replace(url.href);
-    }
-  });
-</script>
+<script src="{{ url_for('static', filename='js/orders-page.js') }}"></script>
 <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
 <script src="{{ url_for('static', filename='js/order-detail-panel.js') }}"></script>
 

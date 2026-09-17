@@ -187,12 +187,12 @@ def handle_cash_message(restaurant, user, conv, period, content):
     follow_up = conv.analysis_active
     turn_consumed = False
 
-    # El tope de seguimientos no aplica a Elite (conserva su comportamiento
-    # actual de follow-ups gratis).
-    if follow_up and not is_elite_user(user):
-        follow_up = cs.reserve_follow_up(
-            conv.id, current_app.config.get('COPILOT_MAX_FOLLOW_UPS', 4)
+    # Elite tiene más follow-ups gratis (8) que el resto (4).
+    if follow_up:
+        max_fu = current_app.config.get(
+            'COPILOT_MAX_FOLLOW_UPS_ELITE' if is_elite_user(user) else 'COPILOT_MAX_FOLLOW_UPS', 4
         )
+        follow_up = cs.reserve_follow_up(conv.id, max_fu)
 
     if not follow_up:
         ok, err = TokenService.consume_token(user, source='cash_register')

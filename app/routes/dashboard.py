@@ -583,7 +583,18 @@ def notifications():
     restaurant = get_current_restaurant()
     if not restaurant:
         abort(404)
-    return render_template('dashboard/notifications.html', restaurant=restaurant)
+
+    import io, base64
+    qr = qrcode.QRCode(version=1, box_size=8, border=2)
+    qr.add_data(f'ntfy.sh/{restaurant.ntfy_topic}')
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='#f2460d', back_color='white')
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    qr_data_uri = 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
+
+    return render_template('dashboard/notifications.html',
+                           restaurant=restaurant, qr_data_uri=qr_data_uri)
 
 
 @dashboard_bp.route('/logros')

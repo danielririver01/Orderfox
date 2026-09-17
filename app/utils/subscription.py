@@ -66,9 +66,9 @@ PLAN_LIMITS = {
 # Límites de tokens asignados por plan mensualmente
 AI_TOKEN_LIMITS = {
     'trial':       50,
-    'emprendedor': 250,
-    'crecimiento': 800,
-    'elite':       3000,   # Créditos reales mensuales (plan limitado, como los demás)
+    'emprendedor': 150,
+    'crecimiento': 400,
+    'elite':       1000,
 }
 
 # Paquetes de recarga (Top-ups) — Copilot VZ / Scanner IA

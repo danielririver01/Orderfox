@@ -387,6 +387,9 @@ body {
 .vz-profile-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
 }
 .vz-profile-name {
     font-size: 0.85rem;
@@ -395,13 +398,16 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.2;
 }
 .vz-profile-plan {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.2em;
     color: var(--text-dim);
-    margin-top: 0.05rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Stitch Design: Nav Buttons ── */
@@ -494,7 +500,8 @@ body {
 }
 
 #messages>div.justify-end>div.vz-bubble {
-    background-color: var(--bg-surface-hover);
+    background-color: rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.25);
     border-radius: 16px;
     padding: 0.75rem 1rem;
     max-width: 85%;
@@ -1087,38 +1094,7 @@ body {
     margin: 0.2rem 0.3rem;
 }
 
-/* ── Toast ── */
-.vz-toast {
-    position: fixed !important;
-    left: 50%;
-    bottom: 1.5rem;
-    transform: translateX(-50%) translateY(1rem);
-    z-index: 9999;
-    background: var(--bg-surface-hover);
-    border: 1px solid rgba(99, 102, 241, 0.35);
-    color: var(--text-main);
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.7rem 1.1rem;
-    border-radius: 12px;
-    max-width: 90vw;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
-    flex: none;
-    min-height: auto;
-    max-height: auto;
-    overflow: visible;
-}
-.vz-toast[hidden] {
-    display: none !important;
-}
-.vz-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-}
+/* ── Toast removed — now uses global toast.js + toast.css ── */
 
 /* ── Onboarding ── */
 .vz-onb-action {
@@ -1231,6 +1207,143 @@ body {
     cursor: pointer;
 }
 
+/* ── Desktop sidebar: collapsed / expanded ── */
+@media (min-width: 1024px) {
+    .vz-drawer {
+        position: relative !important;
+        transform: none !important;
+        width: 3.5rem !important;
+        min-width: 3.5rem !important;
+        max-width: 3.5rem !important;
+        flex: 0 0 3.5rem !important;
+        transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease;
+        overflow: hidden;
+    }
+    .vz-drawer.open {
+        transform: none !important;
+    }
+    .vz-drawer.vz-drawer--expanded {
+        width: 18rem !important;
+        min-width: 18rem !important;
+        max-width: 18rem !important;
+        flex: 0 0 18rem !important;
+    }
+
+    /* Toggle button inside sidebar */
+    .vz-sidebar-toggle {
+        display: flex;
+    }
+
+    /* ── Collapsed: hide text, keep icons left-aligned ── */
+    .vz-drawer .vz-drawer-header-text,
+    .vz-drawer .vz-sidebar-label,
+    .vz-drawer .vz-section-label,
+    .vz-drawer .vz-search-wrap,
+    .vz-drawer .vz-profile-info,
+    .vz-drawer .vz-benchmark-text,
+    .vz-drawer .vz-kebab,
+    .vz-drawer .vz-pin-dot {
+        display: none;
+    }
+    .vz-drawer .vz-drawer-header {
+        justify-content: center;
+        padding: 0.75rem;
+        gap: 0;
+    }
+    .vz-drawer .vz-drawer-header > div:first-child {
+        display: none;
+    }
+    .vz-drawer .vz-drawer-header > div:last-child {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+    .vz-drawer .vz-drawer-header > div:last-child > a {
+        display: none;
+    }
+    .vz-drawer .conv-item {
+        justify-content: flex-start;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .vz-drawer .conv-item > span:last-of-type:not(.vz-pin-dot) {
+        display: none;
+    }
+
+    /* ── Expanded: show text, restore normal layout ── */
+    .vz-drawer.vz-drawer--expanded .vz-drawer-header {
+        justify-content: space-between;
+        padding: 0.625rem 0.75rem;
+    }
+    .vz-drawer.vz-drawer--expanded .vz-drawer-header > div:first-child {
+        display: flex;
+    }
+    .vz-drawer.vz-drawer--expanded .vz-drawer-header-text,
+    .vz-drawer.vz-drawer--expanded .vz-sidebar-label,
+    .vz-drawer.vz-drawer--expanded .vz-section-label,
+    .vz-drawer.vz-drawer--expanded .vz-search-wrap,
+    .vz-drawer.vz-drawer--expanded .vz-profile-info,
+    .vz-drawer.vz-drawer--expanded .vz-benchmark-text,
+    .vz-drawer.vz-drawer--expanded .vz-kebab,
+    .vz-drawer.vz-drawer--expanded .vz-pin-dot {
+        display: flex;
+    }
+    .vz-drawer.vz-drawer--expanded .conv-item {
+        justify-content: flex-start;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    .vz-drawer.vz-drawer--expanded .conv-item > span:last-of-type:not(.vz-pin-dot) {
+        display: block;
+    }
+    .vz-drawer.vz-drawer--expanded .vz-nav-btn {
+        justify-content: flex-start;
+        gap: 0.75rem;
+    }
+    .vz-drawer.vz-drawer--expanded #btn-new-conv span:last-child {
+        display: inline;
+    }
+
+    /* Nav button: centered icon when collapsed */
+    .vz-drawer .vz-nav-btn {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .vz-drawer #btn-new-conv span:last-child {
+        display: none;
+    }
+
+    /* Header: center icon when collapsed */
+    .vz-drawer .vz-drawer-header {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .vz-drawer.vz-drawer--expanded .vz-drawer-header {
+        justify-content: space-between;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Profile: center avatar when collapsed */
+    .vz-drawer .vz-profile-section {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .vz-drawer.vz-drawer--expanded .vz-profile-section {
+        justify-content: flex-start;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+/* ── Settings modal ── */
+.settings-depth-option.active {
+    border-color: var(--primary);
+    background: rgba(249, 115, 22, 0.1);
+}
+
 /* ── Mobile keyboard ── */
 html.kb-open #hero {
     justify-content: flex-start;
@@ -1274,5 +1387,358 @@ html.kb-open #hero {
 @supports (-webkit-touch-callout: none) {
     .vz-root {
         min-height: -webkit-fill-available;
+    }
+}
+
+/* ── Thinking Panel ── */
+.vz-thinking-wrap {
+    width: 100%;
+    max-width: 48rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+.vz-thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+.vz-thinking-header:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.vz-thinking-body {
+    padding: 4px 12px 6px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+}
+.vz-thinking-wrap[data-collapsed="true"] .vz-thinking-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.vz-thinking-wrap[data-collapsed="false"] .vz-thinking-body {
+    max-height: 300px;
+    opacity: 1;
+}
+.vz-thinking-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+}
+
+/* ── Inline Source Pills (dentro del texto) ── */
+.vz-inline-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    cursor: pointer;
+    vertical-align: baseline;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+}
+/* Puente invisible para que el hover no se cierre */
+.vz-inline-source::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    height: 10px;
+    z-index: 99;
+}
+.vz-inline-source:hover {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: var(--primary);
+}
+.vz-inline-source-icon {
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+/* Preview tooltip for inline pills (reuse .vz-source-preview) */
+.vz-inline-source .vz-source-preview {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: 260px;
+    background: #1a1a1e;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s 0.3s, visibility 0.15s 0.3s, transform 0.15s 0.3s;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.vz-inline-source:hover .vz-source-preview {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.15s 0s, visibility 0.15s 0s, transform 0.15s 0s;
+}
+/* Mobile: inline preview as bottom sheet */
+@media (max-width: 768px) {
+    .vz-inline-source:hover .vz-source-preview {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    .vz-inline-source.vz-inline-open .vz-source-preview {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        max-height: 50vh;
+        overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        transform: none;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        z-index: 200;
+        padding-bottom: env(safe-area-inset-bottom, 12px);
+    }
+    .vz-inline-source.vz-inline-open .vz-source-preview-arrow {
+        display: none;
+    }
+}
+
+/* ── Sources Pills ── */
+.vz-sources-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.vz-source-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+/* Puente invisible: extiende el hover zone del pill hacia el preview */
+.vz-source-pill::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    height: 10px;
+    z-index: 99;
+}
+.vz-source-pill:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--primary);
+}
+.vz-source-pill-favicon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+.vz-source-pill-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.vz-source-pill:hover .vz-source-pill-name {
+    color: var(--text-main);
+}
+.vz-source-pill-more {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-left: 2px;
+}
+
+/* ── Source Preview Card (hover tooltip — desktop) ── */
+.vz-source-preview {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    background: #1a1a1e;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 14px;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s 0.3s, visibility 0.15s 0.3s, transform 0.15s 0.3s;
+    transform: translateX(-50%) translateY(4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.vz-source-pill:hover .vz-source-preview {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.15s 0s, visibility 0.15s 0s, transform 0.15s 0s;
+}
+.vz-source-preview-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.vz-source-preview-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.vz-source-preview-nav-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.06);
+}
+.vz-source-preview-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+.vz-source-preview-counter {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+.vz-source-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.vz-source-preview-favicon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+.vz-source-preview-site {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.vz-source-preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.vz-source-preview-date {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+.vz-source-preview-arrow {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: #1a1a1e;
+    border-right: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Mobile: bottom sheet en vez de tooltip ── */
+@media (max-width: 768px) {
+    .vz-source-pill:hover .vz-source-preview {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateX(-50%) translateY(4px);
+    }
+    .vz-source-pill.vz-preview-open .vz-source-preview {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        max-height: 60vh;
+        overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        transform: none;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        z-index: 200;
+        padding-bottom: env(safe-area-inset-bottom, 14px);
+    }
+    .vz-source-pill.vz-preview-open .vz-source-preview-arrow {
+        display: none;
+    }
+    /* Backdrop */
+    .vz-source-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 199;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+    }
+    .vz-source-backdrop.vz-visible {
+        opacity: 1;
+        visibility: visible;
     }
 }

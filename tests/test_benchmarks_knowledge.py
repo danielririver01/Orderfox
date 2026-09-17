@@ -353,7 +353,7 @@ class TestPromptBuilderKnowledge:
         assert 'period_start' in prompt_builder.SYSTEM_PROMPT
 
     def test_prompt_version_bumped(self):
-        assert prompt_builder.PROMPT_VERSION == 'v1.5'
+        assert prompt_builder.PROMPT_VERSION == 'v1.6'
 
     def test_knowledge_injected_as_system_message(self):
         msgs = prompt_builder.build_analysis_messages(

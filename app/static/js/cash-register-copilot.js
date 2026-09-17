@@ -547,6 +547,32 @@
 
     /* ── Init ──────────────────────────────────────────────────────────── */
 
+    /* ── Mobile keyboard: mantiene scroll visible al abrir/cerrar ── */
+    (function attachKeyboardGuards() {
+        var input = document.getElementById('crc-input');
+        if (!input) return;
+
+        function scrollBottom() {
+            requestAnimationFrame(function () {
+                var msg = el('crc-messages');
+                if (msg) msg.scrollTop = msg.scrollHeight;
+            });
+        }
+
+        input.addEventListener('focus', function () {
+            setTimeout(scrollBottom, 100);
+        });
+        input.addEventListener('blur', function () {
+            setTimeout(scrollBottom, 100);
+        });
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function () {
+                scrollBottom();
+            }, { passive: true });
+        }
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
         buildWidget();
     });

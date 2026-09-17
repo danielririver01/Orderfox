@@ -37,7 +37,7 @@ class AITokenWallet(db.Model):
 
     @property
     def is_elite(self):
-        """Plan Elite = 3000 tokens (basado en plan_type del restaurant)."""
+        """Plan Elite = 1000 tokens/mes + 8 follow-ups gratis (basado en plan_type del restaurant)."""
         return self.user.restaurant.plan_type == 'elite' if self.user.restaurant else False
 
     @property
