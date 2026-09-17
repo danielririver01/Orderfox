@@ -2,6 +2,12 @@ tailwind.config = {
     darkMode: 'media'
 }
 
+// Puente de sincronización tras OAuth. DEBE ser absoluto: en el flujo con
+// Google el navegador sale del origen (Google → callback de Clerk) y una URL
+// relativa puede perderse; Clerk entonces cae en su "Home URL" (config del
+// dashboard) → landing sin sesión. Absoluta = siempre vuelve al sync.
+var SYNC_BRIDGE_URL = window.location.origin + '/api/sync-clerk-redirect';
+
 window.addEventListener('load', async function () {
     if (window.Clerk) {
         await window.Clerk.load({
@@ -35,8 +41,8 @@ window.addEventListener('load', async function () {
         const signInDiv = document.getElementById('clerk-signin');
 
         window.Clerk.mountSignIn(signInDiv, {
-            afterSignInUrl: '/api/sync-clerk-redirect',
-            afterSignUpUrl: '/api/sync-clerk-redirect',
+            afterSignInUrl: SYNC_BRIDGE_URL,
+            afterSignUpUrl: SYNC_BRIDGE_URL,
             signIn: {
                 socialButtons: {
                     providers: ['google']
@@ -166,6 +172,25 @@ async function runSilentSync() {
         }
     } catch (error) {
         console.error("Silent sync failed, falling back to manual sign in", error);
-        window.location.reload();
+        // Reintentar UNA vez. Si falla de nuevo, mostrar error en vez de
+        // recargar en bucle infinito.
+        if (!window.__velziaSyncRetried) {
+            window.__velziaSyncRetried = true;
+            window.location.reload();
+            return;
+        }
+        signInDiv.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 px-6">
+                <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/30">
+                    <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+                <p class="text-sm font-bold text-red-400 text-center mb-4">No se pudo sincronizar tu sesión. Verifica tu conexión.</p>
+                <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
+                    Intentar de nuevo
+                </button>
+            </div>
+        `;
     }
 }

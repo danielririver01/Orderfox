@@ -40,8 +40,11 @@ if (!window.__registerVerifyLoaded) {
 
             const signUpDiv = document.getElementById('clerk-signup');
 
+            // Absoluta: al completar un sign-up con Google, Clerk debe volver
+            // al puente de sync (crea el usuario local) y NO a '/' (que cae en
+            // la landing sin sesión).
             window.Clerk.mountSignUp(signUpDiv, {
-                afterSignUpUrl: '/',
+                afterSignUpUrl: window.location.origin + '/api/sync-clerk-redirect',
                 appearance: {
                     baseTheme: window.Clerk.themes ? window.Clerk.themes.dark : undefined,
                     variables: {
