@@ -25,6 +25,7 @@ Las acciones del mesero (cambiar estado) y del cajero (registrar pago) reusan
 los endpoints existentes de /orders/* protegidos por @require_role.
 """
 import json
+from datetime import datetime, timezone
 
 from flask import (
     Blueprint,
@@ -76,6 +77,12 @@ def team():
         User.pin_hash.isnot(None),
     ).order_by(User.is_active.desc(), User.id.asc()).all()
 
+    # IDs de empleados bloqueados por intentos fallidos (badge + botón
+    # Desbloquear en la vista).
+    locked_ids = {
+        e.id for e in employees if EmployeeService.is_employee_locked(e)
+    }
+
     plan_limits = get_plan_limits(restaurant.plan_type)
     max_employees = plan_limits.get('max_employees')
     current_count = len(employees)
@@ -84,6 +91,7 @@ def team():
         'dashboard/team.html',
         restaurant=restaurant,
         employees=employees,
+        locked_ids=locked_ids,
         current_count=current_count,
         max_employees=max_employees,
         plan_name=plan_limits.get('name', restaurant.plan_type),
@@ -186,6 +194,25 @@ def change_employee_pin(employee_id):
     return redirect(url_for('employees.team'))
 
 
+@employees_bp.route('/equipo/<int:employee_id>/desbloquear', methods=['POST'])
+@require_auth
+@require_active
+@require_role('owner')
+def unlock_employee(employee_id):
+    """Libera el bloqueo por intentos fallidos de PIN (acción del dueño)."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        abort(404)
+
+    success, error = EmployeeService.unlock_employee(employee_id, restaurant)
+    if success:
+        flash('Empleado desbloqueado. Ya puede entrar con su PIN.', 'success')
+    else:
+        flash(error, 'error')
+
+    return redirect(url_for('employees.team'))
+
+
 # ── Portal del empleado (PIN) ───────────────────────────────────────────────
 
 
@@ -224,8 +251,31 @@ def login(slug):
         pin = request.form.get('pin', '').strip()
         user = EmployeeService.authenticate_employee(slug, pin)
         if not user:
-            # Error genérico: no revela si el PIN, empleado o restaurante falla.
-            flash('PIN incorrecto. Inténtalo de nuevo.', 'error')
+            # Distinguir bloqueo activo (mensaje accionable con tiempo restante)
+            # de PIN incorrecto (genérico, sin revelar detalles).
+            candidates = User.query.filter(
+                User.restaurant_id == restaurant.id,
+                User.pin_hash.isnot(None),
+            ).all()
+            locked = [e for e in candidates if EmployeeService.is_employee_locked(e)]
+            if locked:
+                now = datetime.now(timezone.utc)
+                latest = max(
+                    (
+                        e.locked_until.replace(tzinfo=timezone.utc)
+                        if e.locked_until.tzinfo is None
+                        else e.locked_until
+                    )
+                    for e in locked
+                )
+                minutes = max(1, int((latest - now).total_seconds() // 60) + 1)
+                flash(
+                    f'Cuenta bloqueada por intentos fallidos. Espera {minutes} min '
+                    'o pide al dueño que la desbloquee desde Equipo.',
+                    'error',
+                )
+            else:
+                flash('PIN incorrecto. Inténtalo de nuevo.', 'error')
             return render_template(
                 'employees/login.html', restaurant=restaurant
             ), 401

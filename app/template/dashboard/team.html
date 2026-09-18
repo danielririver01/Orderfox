@@ -61,10 +61,27 @@
                                     {% else %}bg-gray-500/10 text-gray-500{% endif %}">
                                     {{ 'Activo' if emp.is_active else 'Inactivo' }}
                                 </span>
+                                {% if emp.id in locked_ids %}
+                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-red-500/10 text-red-500">
+                                    Bloqueado
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                        {% if emp.id in locked_ids %}
+                        <form method="POST" id="unlock-form-{{ emp.id }}"
+                            action="{{ url_for('employees.unlock_employee', employee_id=emp.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="button"
+                                data-employee-name="{{ emp.username }}"
+                                onclick="openConfirmModal('unlock-form-{{ emp.id }}', { title: 'Desbloquear empleado', name: this.dataset.employeeName, confirmText: 'Desbloquear', variant: 'success' })"
+                                class="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-500/10 border border-orange-500/20 text-orange-500 hover:bg-orange-500/20 transition-colors whitespace-nowrap">
+                                Desbloquear
+                            </button>
+                        </form>
+                        {% endif %}
                         <button type="button" onclick="togglePinForm({{ emp.id }})"
                             class="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-[#1a1a1a] border border-[#262626] text-gray-300 hover:border-orange-500/40 transition-colors whitespace-nowrap">
                             Cambiar PIN

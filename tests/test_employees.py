@@ -500,3 +500,104 @@ class TestWaiterOrderDetail:
 
         resp = client.get(f'/empleado/team-restaurant/pedidos/{order.id}')
         assert resp.status_code == 200
+
+
+# ── v2.1.4: Bloqueo individual — fixes de regresión ──────────────────────────
+
+class TestIndividualLockout:
+    """v2.1.3 bloqueaba TODO el restaurante si un empleado agotaba sus 5
+    intentos (return None inmediato en el loop). Estos tests cubren el fix:"""
+
+    def test_failed_attempts_lock_all_but_owner_can_unlock(
+            self, db, team_restaurant, waiter_user, cashier_user):
+        """5 intentos fallidos bloquean a todos (el atacante no sabe contra
+        qué PIN va), pero el dueño puede desbloquear individualmente.
+
+        Bug real del usuario: quedaban bloqueados SIN remedio y sin saber
+        por qué. Ahora hay badge + botón Desbloquear en Equipo.
+        """
+        # 5 intentos fallidos → TODOS los participantes bloqueados.
+        for _ in range(MAX_PIN_ATTEMPTS):
+            assert EmployeeService.authenticate_employee('team-restaurant', '9999') is None
+        db.session.refresh(waiter_user)
+        db.session.refresh(cashier_user)
+        assert waiter_user.locked_until is not None
+        assert cashier_user.locked_until is not None
+
+        # Ni el PIN correcto del cajero entra mientras siga bloqueado.
+        assert EmployeeService.authenticate_employee('team-restaurant', '5926') is None
+
+        # El dueño desbloquea al cajero → entra inmediatamente.
+        ok, _ = EmployeeService.unlock_employee(cashier_user.id, team_restaurant)
+        assert ok is True
+        assert EmployeeService.authenticate_employee('team-restaurant', '5926') == cashier_user
+
+        # El mesero sigue bloqueado (el dueño no lo desbloqueó).
+        db.session.refresh(waiter_user)
+        assert EmployeeService.is_employee_locked(waiter_user) is True
+
+    def test_wrong_pin_does_not_punish_via_successful_login(
+            self, db, team_restaurant, waiter_user, cashier_user):
+        """Logins EXITOSOS de X no suman intentos fallidos a los demás.
+
+        (Antes: cada login exitoso del cajero sumaba +1 al mesero → con el
+        uso normal del día el mesero amanecía bloqueado. Bug del usuario.)
+        """
+        for _ in range(MAX_PIN_ATTEMPTS + 2):
+            result = EmployeeService.authenticate_employee('team-restaurant', '5926')
+            assert result == cashier_user
+
+        db.session.refresh(waiter_user)
+        assert waiter_user.failed_pin_attempts == 0
+        assert waiter_user.locked_until is None
+        # El cajero que entró, con contadores en cero.
+        db.session.refresh(cashier_user)
+        assert cashier_user.failed_pin_attempts == 0
+
+    def test_inactive_employee_does_not_block_active_ones(
+            self, db, team_restaurant, waiter_user, cashier_user):
+        """Inactivo con PIN correcto no aborta el login del resto (return None)."""
+        EmployeeService.deactivate_employee(waiter_user.id, team_restaurant)
+
+        result = EmployeeService.authenticate_employee('team-restaurant', '5926')
+        assert result == cashier_user
+        # El PIN del inactivo sigue sin servir.
+        assert EmployeeService.authenticate_employee('team-restaurant', '3847') is None
+
+    def test_unlock_employee_restores_access(
+            self, db, team_restaurant, waiter_user):
+        """unlock_employee libera bloqueo y permite login inmediato."""
+        for _ in range(MAX_PIN_ATTEMPTS):
+            EmployeeService.authenticate_employee('team-restaurant', '9999')
+        db.session.refresh(waiter_user)
+        assert waiter_user.locked_until is not None
+
+        ok, error = EmployeeService.unlock_employee(waiter_user.id, team_restaurant)
+        assert ok is True and error is None
+
+        result = EmployeeService.authenticate_employee('team-restaurant', '3847')
+        assert result == waiter_user
+
+    def test_unlock_rejects_owner(self, db, team_restaurant, owner_user):
+        ok, error = EmployeeService.unlock_employee(owner_user.id, team_restaurant)
+        assert ok is False
+        assert 'dueño' in error
+
+    def test_unlock_rejects_unknown_employee(self, db, team_restaurant):
+        ok, error = EmployeeService.unlock_employee(99999, team_restaurant)
+        assert ok is False
+        assert error == 'Empleado no encontrado'
+
+    def test_route_rejects_correct_pin_of_locked_employee(
+            self, client, db, team_restaurant, waiter_user):
+        """Con TODOS bloqueados, la ruta responde mensaje de bloqueo (no 500)."""
+        for _ in range(MAX_PIN_ATTEMPTS):
+            EmployeeService.authenticate_employee('team-restaurant', '9999')
+
+        # CSRF: el check manual del before_request aplica a POST /empleado/*.
+        page = client.get('/empleado/team-restaurant').get_data(as_text=True)
+        m = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', page)
+        resp = client.post('/empleado/team-restaurant',
+                           data={'pin': '3847', 'csrf_token': m.group(1) if m else None})
+        assert resp.status_code == 401
+        assert 'bloqueada' in resp.get_data(as_text=True).lower()

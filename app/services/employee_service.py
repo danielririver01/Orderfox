@@ -7,8 +7,12 @@ Roles válidos: owner | cashier | waiter.
 
 Reglas:
 - El PIN nunca se guarda en texto plano (werkzeug generate_password_hash).
-- `authenticate_employee` devuelve un error genérico: no revela si el PIN,
-  el restaurante o el empleado existen (evita enumeración).
+- `authenticate_employee` devuelve el usuario o None; la ruta distingue
+  bloqueo activo para mostrar un mensaje claro (el error de PIN sigue
+  siendo genérico, sin revelar qué falló).
+- v2.1.4 fix: el bloqueo por fuerza bruta es INDIVIDUAL (antes, un empleado
+  bloqueado impedía entrar a todos los del restaurante).
+- `unlock_employee`: el dueño puede liberar el bloqueo desde Equipo.
 - `deactivate_employee` desactiva sin borrar (is_active=False).
 - El límite de empleados por plan se valida al CREAR (bajar de plan no borra
   empleados existentes, solo bloquea crear nuevos).
@@ -128,6 +132,18 @@ class EmployeeService:
     # ── Autenticación por PIN ───────────────────────────────
 
     @staticmethod
+    def is_employee_locked(user):
+        """True si el empleado está dentro de su ventana de bloqueo por intentos."""
+        if not user or not user.locked_until:
+            return False
+        locked_utc = (
+            user.locked_until.replace(tzinfo=timezone.utc)
+            if user.locked_until.tzinfo is None
+            else user.locked_until
+        )
+        return locked_utc > datetime.now(timezone.utc)
+
+    @staticmethod
     def authenticate_employee(slug, pin):
         """
         Valida PIN contra un empleado del restaurante.
@@ -137,10 +153,16 @@ class EmployeeService:
         empleado inactivo) → mensaje genérico en la ruta.
 
         v2.1.3: Soporte para bloqueo por fuerza bruta.
-        - Si locked_until es futuro → retorna None (empleado bloqueado).
-        - Si PIN incorrecto → incrementa failed_pin_attempts.
-        - Si failed_pin_attempts >= 5 → bloquea 30 minutos.
-        - Si PIN correcto → resetea contadores.
+        v2.1.4 (3 fixes de regresión):
+        - El bloqueo es INDIVIDUAL: un empleado bloqueado o inactivo se salta
+          y NO impide el login del resto (antes: return None abortaba todo).
+        - Un login EXITOSO no castiga a los demás: si el PIN coincide con
+          alguien, no se incrementa ningún contador (antes cada login exitoso
+          de X sumaba +1 de intento fallido a todos los demás empleados,
+          bloqueándolos con el uso normal del día).
+        - Solo un intento que falla para TODOS los participantes activos
+          cuenta como fallido (contra todos: el atacante no sabe a qué
+          empleado ataca). Al llegar a 5 → bloqueo 30 min.
         """
         restaurant = Restaurant.query.filter_by(slug=slug).first()
         if not restaurant:
@@ -151,33 +173,56 @@ class EmployeeService:
             User.pin_hash.isnot(None),
         ).all()
 
+        # Participantes válidos: activos y sin bloqueo vigente.
+        participants = [
+            c for c in candidates
+            if c.is_active and not EmployeeService.is_employee_locked(c)
+        ]
+
+        matched = None
+        for candidate in participants:
+            if check_password_hash(candidate.pin_hash, pin):
+                matched = candidate
+                break
+
+        if matched is not None:
+            # PIN correcto: resetear contadores del que entró. Nadie más
+            # recibe castigo (era un login legítimo, no un intento fallido).
+            matched.failed_pin_attempts = 0
+            matched.locked_until = None
+            db.session.commit()
+            return matched
+
+        # Nadie coincidió: intento fallido real. Se cuenta contra todos los
+        # participantes activos (no se sabe a qué empleado iba dirigido).
         now = datetime.now(timezone.utc)
-
-        for candidate in candidates:
-            # v2.1.3: Verificar bloqueo antes de validar PIN.
-            if candidate.locked_until:
-                locked_utc = candidate.locked_until.replace(tzinfo=timezone.utc) if candidate.locked_until.tzinfo is None else candidate.locked_until
-                if locked_utc > now:
-                    # Empleado bloqueado — no revelar si el PIN sería correcto.
-                    return None
-
-            if candidate.pin_hash and check_password_hash(candidate.pin_hash, pin):
-                if candidate.is_active:
-                    # PIN correcto: resetear contadores.
-                    candidate.failed_pin_attempts = 0
-                    candidate.locked_until = None
-                    db.session.commit()
-                    return candidate
-                return None
-
-            # PIN incorrecto para este candidato — incrementar contador.
-            if candidate.pin_hash and not check_password_hash(candidate.pin_hash, pin):
-                candidate.failed_pin_attempts = (candidate.failed_pin_attempts or 0) + 1
-                if candidate.failed_pin_attempts >= MAX_PIN_ATTEMPTS:
-                    candidate.locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
-                db.session.commit()
-
+        for candidate in participants:
+            candidate.failed_pin_attempts = (candidate.failed_pin_attempts or 0) + 1
+            if candidate.failed_pin_attempts >= MAX_PIN_ATTEMPTS:
+                candidate.locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
+        db.session.commit()
         return None
+
+    @staticmethod
+    def unlock_employee(employee_id, restaurant):
+        """
+        Libera el bloqueo por fuerza bruta de un empleado (dueño).
+        Devuelve (True, None) o (False, mensaje_error).
+        """
+        employee = User.query.filter_by(
+            id=employee_id, restaurant_id=restaurant.id
+        ).first()
+        if not employee:
+            return False, 'Empleado no encontrado'
+        if employee.role == 'owner':
+            return False, 'No puedes modificar al dueño'
+        if employee.pin_hash is None:
+            return False, 'Empleado no encontrado'
+
+        employee.failed_pin_attempts = 0
+        employee.locked_until = None
+        db.session.commit()
+        return True, None
 
     # ── Gestión ─────────────────────────────────────────────
 
