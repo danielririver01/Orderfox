@@ -89,13 +89,17 @@
     font-size: 1rem;
 }
 
-/* Mobile */
+/* Mobile: anclado abajo con insets (sin transform — el centrado por
+   right:50% + translateX(50%) peleaba con la animación translateX de los
+   toasts y en Safari iOS pintaba el toast fuera de pantalla). */
 @media (max-width: 768px) {
     #toast-container {
         top: auto;
-        bottom: 5rem;
-        right: 50%;
-        transform: translateX(50%);
-        max-width: calc(100vw - 2rem);
+        bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        max-width: none;
+        transform: none;
     }
 }
