@@ -1,0 +1,35 @@
+/* ── Material Symbols Outlined — alojada localmente ──
+   ¿Por qué local? Google Fonts falla o tarda demasiado en redes móviles
+   y mientras carga el navegador muestra el NOMBRE del icono como texto
+   ("point_of_sale", "check_circle"), rompiendo botones y toasts.
+   Servida desde /static nunca falla.
+   Instancia estática: opsz=24, wght=400, FILL=0, GRAD=0 (v373). */
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('../fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    /* Guardián: si la fuente no estuviera disponible, recortar el nombre
+       crudo en vez de desbordar el layout. Un icono real mide 1em. */
+    overflow: hidden;
+    max-width: 1.4em;
+    max-height: 1.4em;
+}
