@@ -601,3 +601,99 @@ class TestIndividualLockout:
                            data={'pin': '3847', 'csrf_token': m.group(1) if m else None})
         assert resp.status_code == 401
         assert 'bloqueada' in resp.get_data(as_text=True).lower()
+
+
+# ── Flashes según el estado REAL (regresión v2.1.5) ───────────────────────
+
+
+def _owner_client(app, owner_user):
+    """Cliente con sesión de dueño (patrón auth_client del proyecto)."""
+    c = app.test_client()
+    with c.session_transaction() as sess:
+        sess['user_id'] = owner_user.id
+        sess['username'] = owner_user.username
+    return c
+
+
+def _csrf_token(client, app):
+    """Patrón del proyecto (test_reservations_panel.py): token crudo en
+    sesión + token firmado con el serializer de Flask-WTF."""
+    from itsdangerous import URLSafeTimedSerializer
+    raw = 'test-csrf-raw-token'
+    with client.session_transaction() as sess:
+        sess['csrf_token'] = raw
+    ser = URLSafeTimedSerializer(app.secret_key, salt='wtf-csrf-token')
+    return ser.dumps(raw)
+
+
+def _locked_waiter(db, waiter_user):
+    """Fuerza 5 PINs incorrectos para bloquear al mesero de prueba."""
+    for _ in range(MAX_PIN_ATTEMPTS):
+        EmployeeService.authenticate_employee('team-restaurant', '9999')
+    db.session.refresh(waiter_user)
+    assert EmployeeService.is_employee_locked(waiter_user)
+
+
+class TestFlashMessagesReflectRealState:
+    """Los flashes de éxito de Equipo deben reflejar el estado real.
+
+    Regresión: 'Reactivado. Ya puede entrar con su PIN' y 'PIN actualizado
+    correctamente' eran falsos cuando el empleado seguía bloqueado por
+    intentos fallidos (reactivar/cambiar PIN NO limpian el bloqueo).
+    """
+
+    def test_reactivate_of_locked_employee_warns(self, app, db, team_restaurant,
+                                                 owner_user, waiter_user):
+        _locked_waiter(db, waiter_user)
+        EmployeeService.deactivate_employee(waiter_user.id, team_restaurant)
+
+        c = _owner_client(app, owner_user)
+        resp = c.post(
+            f'/dashboard/equipo/{waiter_user.id}/reactivar',
+            data={'csrf_token': _csrf_token(c, app)},
+        )
+        assert resp.status_code == 302
+        html = c.get(resp.location).get_data(as_text=True)
+        assert 'sigue bloqueado' in html
+        assert 'Desbloquear' in html
+        db.session.refresh(waiter_user)
+        assert waiter_user.is_active is True
+
+    def test_reactivate_of_unblocked_employee_says_ready(
+            self, app, db, team_restaurant, owner_user, waiter_user):
+        EmployeeService.deactivate_employee(waiter_user.id, team_restaurant)
+
+        c = _owner_client(app, owner_user)
+        resp = c.post(
+            f'/dashboard/equipo/{waiter_user.id}/reactivar',
+            data={'csrf_token': _csrf_token(c, app)},
+        )
+        assert resp.status_code == 302
+        assert 'Ya puede entrar' in c.get(resp.location).get_data(as_text=True)
+
+    def test_pin_change_of_locked_employee_warns(self, app, db, team_restaurant,
+                                                 owner_user, waiter_user):
+        _locked_waiter(db, waiter_user)
+
+        c = _owner_client(app, owner_user)
+        resp = c.post(
+            f'/dashboard/equipo/{waiter_user.id}/cambiar-pin',
+            data={'pin': '7391', 'csrf_token': _csrf_token(c, app)},
+        )
+        assert resp.status_code == 302
+        html = c.get(resp.location).get_data(as_text=True)
+        assert 'sigue bloqueado' in html
+        db.session.refresh(waiter_user)
+        from werkzeug.security import check_password_hash
+        assert check_password_hash(waiter_user.pin_hash, '7391')
+        assert EmployeeService.is_employee_locked(waiter_user)
+
+    def test_pin_change_of_unblocked_employee_says_ok(
+            self, app, db, team_restaurant, owner_user, waiter_user):
+        c = _owner_client(app, owner_user)
+        resp = c.post(
+            f'/dashboard/equipo/{waiter_user.id}/cambiar-pin',
+            data={'pin': '7391', 'csrf_token': _csrf_token(c, app)},
+        )
+        assert resp.status_code == 302
+        assert 'PIN actualizado correctamente' in c.get(resp.location).get_data(as_text=True)

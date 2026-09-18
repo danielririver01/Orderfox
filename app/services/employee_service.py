@@ -132,6 +132,13 @@ class EmployeeService:
     # ── Autenticación por PIN ───────────────────────────────
 
     @staticmethod
+    def get_employee(employee_id, restaurant):
+        """Devuelve el empleado del restaurante, o None si no existe."""
+        return User.query.filter_by(
+            id=employee_id, restaurant_id=restaurant.id
+        ).first()
+
+    @staticmethod
     def is_employee_locked(user):
         """True si el empleado está dentro de su ventana de bloqueo por intentos."""
         if not user or not user.locked_until:

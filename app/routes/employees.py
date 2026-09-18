@@ -161,7 +161,18 @@ def reactivate_employee(employee_id):
 
     success, error = EmployeeService.reactivate_employee(employee_id, restaurant)
     if success:
-        flash('Empleado reactivado. Ya puede entrar con su PIN.', 'success')
+        # Mensaje según el estado REAL: reactivate no limpia el bloqueo por
+        # intentos fallidos. Si sigue bloqueado, decirlo en vez de prometer
+        # un acceso que aún no funciona.
+        if EmployeeService.is_employee_locked(
+                EmployeeService.get_employee(employee_id, restaurant)):
+            flash(
+                'Empleado reactivado, pero sigue bloqueado por intentos '
+                'fallidos. Usa "Desbloquear" para que pueda entrar con su PIN.',
+                'warning',
+            )
+        else:
+            flash('Empleado reactivado. Ya puede entrar con su PIN.', 'success')
     else:
         flash(error, 'error')
 
@@ -187,7 +198,18 @@ def change_employee_pin(employee_id):
         success, error = False, str(e)
 
     if success:
-        flash('PIN actualizado correctamente.', 'success')
+        # Mensaje según el estado REAL: cambiar el PIN NO resetea el bloqueo
+        # por intentos fallidos. Sin este aviso, el dueño cambia el PIN, ve
+        # "PIN actualizado correctamente" y el empleado sigue sin poder entrar.
+        if EmployeeService.is_employee_locked(
+                EmployeeService.get_employee(employee_id, restaurant)):
+            flash(
+                'PIN actualizado, pero el empleado sigue bloqueado por '
+                'intentos fallidos. Usa "Desbloquear" para que pueda entrar.',
+                'warning',
+            )
+        else:
+            flash('PIN actualizado correctamente.', 'success')
     else:
         flash(error, 'error')
 
