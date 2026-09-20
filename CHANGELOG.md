@@ -4,9 +4,9 @@ Todas las fechas en UTC.
 
 ---
 
-## [1.6.0] - 2026-08-22 (sin release / working tree)
+## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)
 
-> Conjunto de cambios aun **no commiteados** (arbol de trabajo vs `7994803`). Incluye
+> Versión estable etiquetada. Incluye
 > trazabilidad de pedidos, ciclo de vida de suscripcion sin borrado (`dormant`),
 > diferenciacion de los dos Copilots y hardening de seguridad de IA.
 

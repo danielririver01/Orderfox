@@ -1,7 +1,7 @@
 # Orderfox / Velzia — AI Agent Guide
 
 **Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MariaDB (XAMPP, local) / MySQL 8 (CI, prod)
-**Version:** v1.4.0
+**Version:** v1.6.0
 
 ## Skills & MCP
 
@@ -197,7 +197,7 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 
 - Conexión local = **MariaDB XAMPP**: `mysql+pymysql://root:@localhost:3306/orderfox` (root sin password; encender **MySQL** en el XAMPP Control Panel). CI usa MySQL 8 en contenedor. Driver: `mysql+pymysql://user:pass@host/db`
 - CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
-- `settings.APP_VERSION = '1.3.0'` está desactualizado (no sincronizado con tags de git)
+- `settings.APP_VERSION` debe ir sincronizado con el último tag git (actualmente `v1.6.0`)
 - Rate limiter es in-memory (se pierde al reiniciar)
 - Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
 - Gmail requiere app-specific password, TLS por defecto
