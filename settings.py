@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # App Version
-APP_VERSION = '1.4.0'
-APP_RELEASE_DATE = '2026-07-15'
+APP_VERSION = '1.6.0'
+APP_RELEASE_DATE = '2026-09-20'
 
 class Config:
     # Flask
