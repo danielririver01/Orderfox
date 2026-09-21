@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Velzia · ¡Tu negocio está listo!</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="{{ url_for('static', filename='CSS/material-symbols.css') }}" rel="stylesheet" />
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
+</head>
+
+<body class="antialiased">
+
+    <div class="auth-ambient">
+        <div class="auth-orb auth-orb--1"></div>
+        <div class="auth-orb auth-orb--2"></div>
+        <div class="auth-orb auth-orb--3"></div>
+    </div>
+
+    <main class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-[440px] mx-auto">
+            <div class="auth-card" style="max-width: 100%;">
+
+                <div class="mb-6" style="text-align:center;">
+                    <div class="auth-card-icon mb-4"
+                        style="background:rgba(22,163,74,.12); border:1px solid rgba(22,163,74,.35);">
+                        <span class="material-symbols-outlined" style="color:#22c55e; font-size:1.6rem;">storefront</span>
+                    </div>
+                    <h1 class="auth-card-title" style="text-align:center;">
+                        ¡Tu negocio está <em>listo</em>!
+                    </h1>
+                    <p class="auth-card-sub" style="text-align:center; margin-top:0.35rem;">
+                        Último paso: configura el PIN con el que entrarás a vender.
+                    </p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                    <a href="{{ setup_url }}"
+                        style="display:flex; align-items:center; justify-content:center; gap:0.5rem; min-height:52px; border-radius:14px; background:#15803D; color:#fff; font-weight:700; text-decoration:none;">
+                        <span class="material-symbols-outlined">pin</span>
+                        Configurar el POS ahora
+                    </a>
+
+                    <div
+                        style="background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.15); border-radius:12px; padding:0.9rem 1rem; font-size:0.8rem; color:#9ca3af; word-break:break-all;">
+                        <strong style="color:#e5e7eb;">Guarda este enlace</strong> — sirve una sola
+                        vez. Si lo pierdes, podrás reenviarlo desde tu dashboard:<br>
+                        {{ setup_url }}
+                    </div>
+
+                    <a href="{{ url_for('dashboard.index') }}"
+                        style="text-align:center; color:#9ca3af; font-size:0.85rem; text-decoration:none;">
+                        Ir a mi dashboard por ahora
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -180,6 +180,12 @@ Model usa `AwareDateTime` (strips timezone al guardar, lo restaura al leer).
 ### Suscripción
 Única fuente de verdad: `get_subscription_status(restaurant)` en `app/utils/subscription.py`.
 Estados: `trial` → `active` → `grace_period` → `expired`. Frontend recibe objeto precalculado.
+- **Registro multi-vertical:** UN solo funnel en core (`/register/verduras`, luego
+  selector de vertical). El trial es del SaaS completo: `TrialHistory` (email/teléfono)
+  se comparte entre verticales — nadie lo cobra dos veces cambiando de vertical.
+  El alta del tenant vive SOLO en core (`business_registration.py`); los módulos
+  jamás crean tenants. El setup del POS viaja con token de un solo uso en
+  `businesses.pos_setup_token` (DB compartida); URL cross-app vía `VERDURAS_BASE_URL`.
 
 ### Tokens IA
 Cada usuario tiene `AITokenWallet`. Primer análisis profundo de cada conversación consume 1 token. Consultas rápidas (SQL) y seguimientos no consumen. DeepSeek corre por cuenta de Velzia.

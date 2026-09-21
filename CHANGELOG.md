@@ -218,6 +218,39 @@ Todas las fechas en UTC.
   anti-IDOR y mapa del POS. Módulo: 198/198 en verde. Ruff: all checks
   passed.
 
+#### Registro self-service multi-vertical (v0.8.0, core + módulo)
+- Core: `businesses` gana `owner_user_id` (FK users, SET NULL), `plan_type`,
+  `subscription_expires_at`, `has_used_trial` y `pos_setup_token` —
+  suscripción a nivel tenant para verticales sin fila en `restaurants`
+  (migración `b2e4c6a8d0f2`, batch_alter, encadenada al head f1a2b3c4d5e6;
+  backward-compatible: espejos quedan NULL/default y su suscripción se
+  sigue leyendo de `restaurants`).
+- Core: `Business.create_direct_vertical()` (dueño + plan + trial de 60
+  días con `has_used_trial`), `app/services/business_registration.py`
+  (slug con RESERVED_SLUGS, trial ÚNICO por email/teléfono reusando
+  TrialHistory — el trial es del SaaS completo, no de un vertical), rutas
+  `/register/verduras` (GET/POST, requiere sesión, CSRF del guard manual)
+  y `/register/verduras/ready/<slug>` (muestra el enlace de setup una vez,
+  token viaja por sesión), templates standalone con el sistema visual del
+  funnel, y anti-bucle en `register()` para dueños de verticales.
+- Cross-app: el setup del POS vive en la app del módulo (5100) — core
+  enlaza con `VERDURAS_BASE_URL` (patrón `ASTRO_BASE_URL`). El token viaja
+  por la DB compartida (`businesses.pos_setup_token`), canal del monorepo:
+  cero HTTP nuevo.
+- Módulo: `get_setup_target()`/`consume_setup_token()` en pos_auth
+  (comparación en tiempo constante, token de UN SOLO USO, WhatsApp en
+  `verduras_business_settings` vía update_settings — contrato respetado);
+  rutas `/pos/setup/<slug>/<token>` GET/POST (el POST pasa por el guard
+  CSRF de la factory) + template `pos_setup.html` con el design system
+  del vertical.
+- Tests: `tests/test_business_registration.py` (17: trial único por email
+  Y teléfono, plan pago inactivo, slugs reservados/duplicados, teléfono,
+  dueño con restaurante, flujo web completo con patrón CSRF del proyecto,
+  espejos sin owner, flujo restaurante intacto + anti-bucle) y
+  `verduras/tests/test_pos_setup_token.py` (14: token válido/inválido/usado,
+  PIN débil no consume, login posterior, rutas end-to-end). Suites: core
+  708 passed · módulo 212 passed.
+
 ---
 
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)

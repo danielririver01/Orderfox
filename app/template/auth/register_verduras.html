@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Velzia · Tu negocio de verduras</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="{{ url_for('static', filename='CSS/material-symbols.css') }}" rel="stylesheet" />
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/auth.css') }}">
+</head>
+
+<body class="antialiased">
+
+    <!-- Ambient orbs (mismo lenguaje visual que el resto del funnel) -->
+    <div class="auth-ambient">
+        <div class="auth-orb auth-orb--1"></div>
+        <div class="auth-orb auth-orb--2"></div>
+        <div class="auth-orb auth-orb--3"></div>
+    </div>
+
+    <main class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-[440px] mx-auto">
+            <div class="auth-card" style="max-width: 100%;">
+
+                {% if 'user_id' in session or 'clerk_id' in session %}
+                <div
+                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; font-size:0.75rem; font-weight:700;">
+                    <span style="color:#6b7280;">Configuración</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        style="color:#e07070; text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                        <span class="material-symbols-outlined" style="font-size:1rem;">logout</span>
+                        Cerrar sesión
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="mb-6">
+                    <h1 class="auth-card-title" style="text-align:left;">
+                        Tu negocio de <em>verduras</em>
+                    </h1>
+                    <p class="auth-card-sub" style="text-align:left; margin-top:0.35rem;">
+                        Dinos cómo se llama y a qué WhatsApp llegan los pedidos.
+                    </p>
+                </div>
+
+                {% if get_flashed_messages() %}
+                <div class="mb-4">
+                    {% for message in get_flashed_messages() %}
+                    <div
+                        class="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-2 text-sm">
+                        <span class="material-symbols-outlined text-[18px] flex-shrink-0">error</span>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form class="flex flex-col gap-4" method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div>
+                        {{ form.business_name.label(class="block text-sm font-semibold mb-1") }}
+                        {{ form.business_name(class="w-full rounded-xl border border-gray-600 bg-gray-800 px-4 py-3 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none", placeholder="Verduras La Plaza") }}
+                    </div>
+
+                    <div>
+                        {{ form.whatsapp_phone.label(class="block text-sm font-semibold mb-1") }}
+                        {{ form.whatsapp_phone(class="w-full rounded-xl border border-gray-600 bg-gray-800 px-4 py-3 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none", placeholder="+573001112233") }}
+                        <p class="text-xs text-gray-500 mt-1">Los pedidos a domicilio llegarán a este número.</p>
+                    </div>
+
+                    <div class="flex items-start gap-2">
+                        {{ form.accept_terms(class="mt-1") }}
+                        {{ form.accept_terms.label(class="text-xs text-gray-400") }}
+                    </div>
+
+                    {{ form.submit(class="w-full rounded-xl bg-orange-500 px-4 py-3 font-bold text-white hover:bg-orange-600 transition") }}
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

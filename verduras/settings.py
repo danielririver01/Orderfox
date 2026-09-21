@@ -32,7 +32,7 @@ class Config:
 
     # Módulo
     MODULE_NAME = 'verduras'
-    MODULE_VERSION = '0.7.0'
+    MODULE_VERSION = '0.8.0'
     # Origen de la API de core (para llamadas HTTP cuando la DB compartida
     # no aplique, p.ej. core desplegado por separado). Por defecto, local.
     CORE_API_BASE_URL = os.environ.get('CORE_API_BASE_URL') or 'http://localhost:5000'

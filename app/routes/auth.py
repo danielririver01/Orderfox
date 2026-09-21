@@ -1,11 +1,15 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, current_app
 from app import db
 from app.forms import LoginForm
-from app.forms.auth import RegisterSetupForm
-from app.models import Restaurant, TrialHistory
+from app.forms.auth import BusinessSetupForm, RegisterSetupForm
+from app.models import Business, Restaurant, TrialHistory
 from app.utils.subscription import initialize_or_reset_token_wallet
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.services.auth_service import AuthService
+from app.services.business_registration import (
+    BusinessRegistrationError,
+    register_verduras_business,
+)
 from app.services.subscription_service import SubscriptionService
 from app.utils.restaurant import get_current_restaurant
 import mercadopago
@@ -255,6 +259,11 @@ def register():
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])
         if user and not user.restaurant:
+            # Dueño de un vertical directo (verduras, ...): su alta ya se
+            # completó en /register/verduras — mandarlo a su dashboard en
+            # vez del setup de restaurante (evita bucle).
+            if Business.query.filter_by(owner_user_id=user.id).first():
+                return redirect(url_for('dashboard.index'))
             return redirect(url_for('auth.setup_account'))
 
     selected_plan = session.get('selected_plan', 'emprendedor')
@@ -372,6 +381,71 @@ def setup_account():
 
     return render_template('auth/register_setup.html', form=form,
                            plan=session.get('selected_plan'), user=user)
+
+
+# ── Registro self-service multi-vertical (verduras) ─────────
+
+
+@auth_bp.route('/register/verduras', methods=['GET', 'POST'])
+def register_verduras():
+    """Alta de un negocio de verduras: User existente + Business directo.
+
+    Mismo funnel que restaurantes (email → verify → planes) — el User ya
+    está en sesión; aquí SOLO se crea el tenant. El plan trial reusa la
+    MISMA regla de unicidad (TrialHistory por email/teléfono): el trial es
+    del SaaS completo, no de un vertical.
+    """
+    if 'user_id' not in session:
+        flash('Primero crea tu cuenta o inicia sesión.', 'warning')
+        return redirect(url_for('auth.register'))
+    user = AuthService.get_user(session['user_id'])
+    if not user:
+        return redirect(url_for('auth.register'))
+
+    selected_plan = session.get('selected_plan', 'trial')
+    form = BusinessSetupForm()
+
+    if form.validate_on_submit():
+        if not form.accept_terms.data:
+            flash('Debes aceptar los Términos y Condiciones para continuar.',
+                  'warning')
+            return render_template('auth/register_verduras.html', form=form,
+                                   plan=selected_plan)
+        try:
+            business, setup_token = register_verduras_business(
+                user=user,
+                business_name=form.business_name.data,
+                whatsapp_phone=form.whatsapp_phone.data,
+                selected_plan=selected_plan,
+            )
+        except BusinessRegistrationError as e:
+            flash(str(e), 'warning')
+            return render_template('auth/register_verduras.html', form=form,
+                                   plan=selected_plan)
+
+        session.pop('selected_plan', None)
+        session['pos_setup_token'] = setup_token
+        return redirect(url_for('auth.verduras_ready', slug=business.slug))
+
+    return render_template('auth/register_verduras.html', form=form,
+                           plan=selected_plan)
+
+
+@auth_bp.route('/register/verduras/ready/<slug>')
+def verduras_ready(slug):
+    """Pantalla de éxito con el enlace de setup del POS (misma sesión)."""
+    if 'user_id' not in session or 'pos_setup_token' not in session:
+        return redirect(url_for('auth.register'))
+    setup_token = session.pop('pos_setup_token', None)
+    if not setup_token:
+        return redirect(url_for('dashboard.index'))
+    # El setup vive en la APP del módulo (puerto 5100), no en core: la URL
+    # sale de config, igual que ASTRO_BASE_URL para el menú público.
+    verduras_base = (current_app.config.get('VERDURAS_BASE_URL')
+                     or 'http://localhost:5100')
+    return render_template('auth/verduras_ready.html', slug=slug,
+                           setup_token=setup_token,
+                           setup_url=f'{verduras_base}/pos/setup/{slug}/{setup_token}')
 
 
 @auth_bp.route('/renew', methods=['GET'])

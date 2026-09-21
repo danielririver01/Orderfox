@@ -14,7 +14,8 @@ Estrategia (rama feature/verduras, ver CHANGELOG):
 - Este módulo se importa desde app/models/__init__.py para que los
   listeners queden registrados siempre.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import secrets
 
 from sqlalchemy import event
 
@@ -54,6 +55,27 @@ class Business(db.Model):
                            onupdate=lambda: datetime.now(timezone.utc),
                            server_default='CURRENT_TIMESTAMP')
 
+    # ── Registro self-service multi-vertical (Semana 6 / v0.8.0) ──
+    # Dueño: cuenta User de core (billing, Copilot VZ). Los espejos de
+    # restaurantes quedan NULL (el dueño ahí es User.restaurant_id, igual
+    # que siempre — backward-compatible).
+    owner_user_id = db.Column(
+        db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'),
+        nullable=True, index=True)
+    # Suscripción a nivel tenant (los verticales directos NO tienen fila en
+    # `restaurants`; si no viviera aquí, quedarían fuera de todo el ciclo
+    # trial → activo → grace → dormant). Planes: mismos valores de core.
+    plan_type = db.Column(db.String(20), default='trial', nullable=False,
+                          server_default='trial')
+    subscription_expires_at = db.Column(AwareDateTime, nullable=True)
+    has_used_trial = db.Column(db.Boolean, default=False, nullable=False,
+                               server_default='0')
+    # Token de UN SOLO USO para el setup del POS del módulo (PIN + WhatsApp).
+    # Core lo emite al registrar; el módulo lo consume (comparación en tiempo
+    # constante) y lo limpia — vía la DB compartida, el canal de integración
+    # de la arquitectura. NULL = sin setup pendiente.
+    pos_setup_token = db.Column(db.String(64), nullable=True)
+
     # Perfil del vertical restaurante: fila de `restaurants` con el mismo ID.
     # Solo lectura — la escritura vive en los listeners (mismo ID, sin FK).
     restaurant_profile = db.relationship(
@@ -89,6 +111,31 @@ class Business(db.Model):
         biz = cls(id=next_id, vertical=vertical, name=name, slug=slug,
                   is_active=is_active)
         db.session.add(biz)
+        db.session.flush()
+        return biz
+
+    @classmethod
+    def create_direct_vertical(cls, vertical, name, slug, owner_user_id,
+                               plan_type='trial', trial_days=60):
+        """Registro self-service de un vertical directo (verduras, ...).
+
+        Añade sobre create_direct(): dueño (User de core), plan y trial.
+        - trial: is_active=True por 60 días + marca has_used_trial (mismo
+          comportamiento que el trial de restaurantes).
+        - plan pago: is_active=False hasta registrar el pago (mismo patrón
+          que create_restaurant_from_setup → /payment).
+        """
+        if plan_type == 'trial':
+            biz = cls.create_direct(
+                vertical=vertical, name=name, slug=slug, is_active=True)
+            biz.subscription_expires_at = (
+                datetime.now(timezone.utc) + timedelta(days=trial_days))
+            biz.has_used_trial = True
+        else:
+            biz = cls.create_direct(
+                vertical=vertical, name=name, slug=slug, is_active=False)
+        biz.owner_user_id = owner_user_id
+        biz.plan_type = plan_type
         db.session.flush()
         return biz
 

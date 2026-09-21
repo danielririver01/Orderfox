@@ -63,6 +63,7 @@ No se collecionan en la suite de core (`pytest.ini` limita `testpaths` a
 | GET | `/api/verduras/businesses/<bid>/inventory/alerts` | Alertas de rotación activas: severidad, días restantes, mensaje (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/inventory/products/<pid>/min-stock` | Configurar el umbral de alerta del producto (`null` = sin alerta) (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/pos-pin` | Configurar el PIN del POS (onboarding server-to-server, `x-api-key`) |
+| GET/POST | `/pos/setup/<slug>/<token>` | **Setup con token de un solo uso** (registro self-service): el dueño elige PIN + WhatsApp; el enlace muere al usarse |
 | GET | `/pos/<slug>/api/scale/weight` | Leer la báscula del POS por sesión (409 con `error_code` si falla; el manual sigue siendo la fuente de verdad) |
 | GET/POST | `/pos/login` | Login del tendero (slug + PIN, sesión firmada; CSRF activo) |
 | GET | `/pos/<slug>` | Dashboard POS (venta de mostrador; requiere sesión) |

@@ -48,6 +48,9 @@ class Config:
     SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE') or '+573000000000'
     BASE_URL = os.environ.get('BASE_URL') # URL base para QRs y links de Flask (ngrok o dominio)
     ASTRO_BASE_URL = os.environ.get('ASTRO_BASE_URL') # Origen del frontend Astro (menú público)
+    # Origen del módulo verduras (POS del tendero, puerto 5100) — para
+    # enlaces cross-app como el setup del POS tras el registro.
+    VERDURAS_BASE_URL = os.environ.get('VERDURAS_BASE_URL') or 'http://localhost:5100'
     # Landing pública (Astro en Vercel). La raíz '/' de Flask redirige aquí (301).
     LANDING_URL = os.environ.get('LANDING_URL') or 'https://menu.velzia.shop/'
 

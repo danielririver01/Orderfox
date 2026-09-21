@@ -19,6 +19,7 @@ from flask import (
 from ..auth import require_service_api_key
 from ..services import alerts as alerts_service
 from ..services import catalog
+from ..services import pos_auth as pos_auth_service
 from ..services import sales as sales_service
 from ..services import scale as scale_service
 from ..services.pos_auth import (
@@ -107,6 +108,45 @@ def api_setup_pos_pin(business_id: int):
     except _PAE as e:
         return jsonify(success=False, error=str(e)), 400
     return jsonify(success=True, message='PIN del POS configurado')
+
+
+# ── Setup del POS con token de un solo uso (registro self-service) ──
+
+
+@dashboard_bp.route('/pos/setup/<slug>/<token>', methods=['GET'])
+def pos_setup_form(slug: str, token: str):
+    """Pantalla de primer setup: el dueño llega desde el registro de core.
+
+    Pre-auth POR DISEÑO: el enlace firmado en DB es la credencial (un solo
+    uso). El POST igual pasa por el guard CSRF de la factory.
+    """
+    try:
+        business = pos_auth_service.get_setup_target(slug, token)
+    except PosAuthError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('dashboard.pos_login'))
+    return render_template('pos_setup.html', business=business, token=token)
+
+
+@dashboard_bp.route('/pos/setup/<slug>/<token>', methods=['POST'])
+def pos_setup_submit(slug: str, token: str):
+    """Consume el token: configura PIN + WhatsApp y deja el POS listo."""
+    pin = request.form.get('pin')
+    pin2 = request.form.get('pin2')
+    if pin != pin2:
+        flash('Los PIN no coinciden', 'error')
+        return redirect(url_for('dashboard.pos_setup_form', slug=slug,
+                                token=token))
+    try:
+        pos_auth_service.consume_setup_token(
+            slug, token, pin,
+            whatsapp_phone=request.form.get('whatsapp_phone'))
+    except PosAuthError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('dashboard.pos_setup_form', slug=slug,
+                                token=token))
+    flash('¡Listo! Tu POS quedó configurado. Entra con tu PIN.', 'ok')
+    return redirect(url_for('dashboard.pos_login'))
 
 
 # ── Pantallas ───────────────────────────────────────────────

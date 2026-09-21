@@ -14,6 +14,7 @@ es dueño del esquema de `businesses` y el módulo no le agrega columnas.
   trade-off del rate limiter de core: se pierde al reiniciar).
 - Mensaje de login genérico: no se revela si falló el slug o el PIN.
 """
+import secrets
 import time
 from datetime import datetime, timezone
 
@@ -72,6 +73,38 @@ def setup_pos_pin(business_id: int, pin) -> None:
     row.pos_pin_hash = generate_password_hash(pin)
     row.pos_pin_updated_at = datetime.now(timezone.utc)
     db.session.commit()
+
+
+def get_setup_target(slug, token):
+    """Business con token de setup VÁLIDO, o PosAuthError (enlace muerto)."""
+    business = get_business_by_slug(str(slug or '').strip())
+    stored = (business.pos_setup_token
+              if business is not None and business.vertical == 'verduras'
+              else None)
+    if (not stored
+            or not secrets.compare_digest(stored, str(token or '').strip())):
+        raise PosAuthError(
+            'Este enlace de configuración no es válido o ya fue usado')
+    return business
+
+
+def consume_setup_token(slug, token, pin, whatsapp_phone=None):
+    """Setup del POS con token de UN SOLO USO (emitido por core al registrar).
+
+    Flujo self-service: core crea el Business y deja el token en
+    `businesses.pos_setup_token` (DB compartida = canal del monorepo); el
+    dueño abre /pos/setup/<slug>/<token>, elige PIN y WhatsApp, y el token
+    se limpia en la misma operación — el enlace muere tras usarse.
+    """
+    business = get_setup_target(slug, token)
+    setup_pos_pin(business.id, pin)  # valida PIN y vertical (mismo patrón)
+    if whatsapp_phone:
+        from verduras.services.sales import update_settings
+        update_settings(business.id,
+                        {'whatsapp_phone': str(whatsapp_phone).strip()})
+    business.pos_setup_token = None  # un solo uso
+    db.session.commit()
+    return business
 
 
 def login_pos(slug, pin, ip=None):

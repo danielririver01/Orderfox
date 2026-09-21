@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configura tu POS · {{ business.name }} · Velzia Verduras</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+</head>
+<body>
+  <div class="login-wrap">
+    <p class="login-logo">Velzia <span>Verduras</span></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ 'flash-ok' if category == 'ok' else 'flash-error' }}" role="alert">
+            <span class="material-symbols-rounded" aria-hidden="true">{{ 'check_circle' if category == 'ok' else 'error' }}</span>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form class="login-card" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <h1>Configura el POS de {{ business.name }}</h1>
+      <p class="login-hint">
+        Último paso: elige un PIN de 4 a 6 dígitos para entrar a vender.
+        El WhatsApp es para los pedidos a domicilio.
+      </p>
+
+      <label>
+        PIN de acceso (4-6 dígitos)
+        <input type="password" name="pin" inputmode="numeric" pattern="[0-9]*"
+               minlength="4" maxlength="6" autocomplete="new-password"
+               required aria-label="PIN de acceso">
+      </label>
+
+      <label>
+        Repite el PIN
+        <input type="password" name="pin2" inputmode="numeric" pattern="[0-9]*"
+               minlength="4" maxlength="6" autocomplete="new-password"
+               required aria-label="Repite el PIN">
+      </label>
+
+      <label>
+        WhatsApp del negocio (opcional, ej: +573001112233)
+        <input type="tel" name="whatsapp_phone" placeholder="+573001112233"
+               autocomplete="tel" aria-label="WhatsApp del negocio">
+      </label>
+
+      <button type="submit" class="btn btn-primary btn-block">Guardar y empezar a vender</button>
+    </form>
+  </div>
+</body>
+</html>

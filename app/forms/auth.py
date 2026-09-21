@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length, ValidationError, Regexp
 
 
 def password_complexity_check(form, field):
@@ -40,3 +40,19 @@ class RegisterSetupForm(FlaskForm):
     ])
     accept_terms = BooleanField('Acepto los Términos y Condiciones y la Política de Datos')
     submit = SubmitField('Finalizar y Pagar')
+
+class BusinessSetupForm(FlaskForm):
+    """Setup de un vertical directo (verduras, ...): negocio + WhatsApp.
+
+    Sin admin_name/password: el dueño ya tiene su cuenta User (viene del
+    registro por email que comparte con restaurantes).
+    """
+    business_name = StringField('Nombre del negocio', validators=[
+        DataRequired(), Length(min=2, max=100)])
+    whatsapp_phone = StringField('WhatsApp del negocio', validators=[
+        DataRequired(), Length(min=7, max=20),
+        Regexp(r'^[+0-9 ()-]+$',
+               message='Usa solo números (y opcionalmente +, espacios o guiones).')
+    ])
+    accept_terms = BooleanField('Acepto los Términos y Condiciones y la Política de Datos')
+    submit = SubmitField('Crear mi negocio')
