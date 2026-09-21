@@ -1,9 +1,8 @@
 import logging
 from logging.config import fileConfig
 
-from flask import current_app
-
 from alembic import context
+from flask import current_app
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -72,6 +71,18 @@ def run_migrations_offline():
         context.run_migrations()
 
 
+def _exclude_module_tables(obj, name, type_, reflected, compare_to) -> bool:
+    """Excluye las tablas de los submódulos (verduras_*) del autogenerate de core.
+
+    Cada módulo tiene su propia cadena de migraciones (version_table propio,
+    ver verduras/migrations/env.py). Sin este filtro, un `flask db migrate`
+    de core intentaría "adoptar" las tablas verduras_* en una revisión suya.
+    """
+    if type_ == 'table':
+        return not (name or '').startswith('verduras_')
+    return True
+
+
 def run_migrations_online():
     """Run migrations in 'online' mode.
 
@@ -100,6 +111,7 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
+            include_object=_exclude_module_tables,
             **conf_args
         )
 
