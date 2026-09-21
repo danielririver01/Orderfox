@@ -103,6 +103,13 @@ verduras/            → app Flask propia del vertical verduras (monorepo,
 - Contrato: `db` es LA de core (`app.models.db` re-exportada); toda FK nueva
   del módulo apunta a `business_id`, nunca a `restaurants`. Acceso a `Business`
   solo vía `verduras/services/context.py` (punto único para extracción futura).
+- **Auth de módulo — REGLA anti-duplicación:** cada vertical tiene SU login
+  propio (UI y credencial son decisión de producto) pero la lógica NO se copia.
+  Modelo de referencia: `verduras/services/pos_auth.py` (PIN hasheado con
+  werkzeug, lockout, sesión+CSRF, mensajes genéricos). Al construir el módulo
+  #2 (supermercado) EXTRAER el patrón común a `modules_common/auth.py` y hacer
+  que ambos módulos lo consuman; el módulo #3+ nace sobre el kit. Auth
+  unificada (core como proveedor de identidad) es el horizonte final.
 - Detalles y guía de extracción: `verduras/README.md`.
 
 ### Entrypoints & Límites

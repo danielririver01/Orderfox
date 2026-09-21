@@ -100,6 +100,23 @@
         it.qty = it.unit === 'unidad' ? it.qty + 1 : roundGrams(it.qty + 0.05);
         sync();
       });
+
+      // Botón "Leer báscula" solo en productos por peso y si el negocio
+      // tiene báscula activada. El ingreso manual sigue intacto: la
+      // báscula es ayuda, nunca requisito.
+      if (PRICES.scale_enabled && it.unit !== 'unidad') {
+        const scaleBtn = document.createElement('button');
+        scaleBtn.type = 'button';
+        scaleBtn.className = 'scale-btn';
+        scaleBtn.title = 'Leer báscula';
+        scaleBtn.setAttribute('aria-label',
+          'Leer peso de la báscula para ' + it.name);
+        scaleBtn.innerHTML =
+          '<span class="material-symbols-rounded" aria-hidden="true">scale</span>';
+        scaleBtn.addEventListener('click', () => readScale(it, scaleBtn));
+        row.querySelector('.qty-stepper').appendChild(scaleBtn);
+      }
+
       list.appendChild(row);
     });
   }
@@ -183,6 +200,42 @@
     bar.classList.remove('cart-pulse');
     void bar.offsetWidth; // reinicia la animación
     bar.classList.add('cart-pulse');
+  }
+
+  // ── Báscula digital (Semana 4) ──────────────────────────────
+
+  const KG_PER_LB = 0.45359237;
+  let scaleBusy = false;
+
+  // La báscula reporta kg; la cantidad del carrito va en la unidad del
+  // producto (kg | lb). 'unidad' nunca usa báscula.
+  function weightToQty(weightKg, unit) {
+    if (unit === 'lb') return roundGrams(weightKg / KG_PER_LB);
+    return roundGrams(weightKg);
+  }
+
+  async function readScale(item, btn) {
+    if (scaleBusy) return;
+    scaleBusy = true;
+    btn.classList.add('reading');
+    btn.disabled = true;
+    try {
+      const res = await fetch(POS_URLS.scale);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'No se pudo leer la báscula — teclea el peso');
+        return;
+      }
+      item.qty = weightToQty(json.data.weight_kg, item.unit);
+      sync();
+      pulseCart();
+    } catch (err) {
+      showToast('Sin conexión — teclea el peso');
+    } finally {
+      scaleBusy = false;
+      btn.classList.remove('reading');
+      btn.disabled = false;
+    }
   }
 
   // ── Cobro ───────────────────────────────────────────────────

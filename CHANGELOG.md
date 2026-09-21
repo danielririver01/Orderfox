@@ -164,6 +164,33 @@ Todas las fechas en UTC.
   en memoria entre tests (aislamiento). Módulo: 139/139 en verde. Ruff:
   all checks passed.
 
+#### Módulo verduras — Semana 4: báscula digital (v0.6.0)
+- Servicio `verduras/services/scale.py`: lectura con degradación grácil —
+  la báscula es AYUDA, nunca requisito; ante cualquier problema el POS
+  pide ingreso manual y la venta continúa. Errores tipados (`ScaleDisabled`,
+  `ScaleUnavailable`, `ScaleRead`) que la ruta traduce a 409 con
+  `error_code` legible (nunca 500). Parseadores PURos por protocolo
+  (`generic` ASCII con locale es-CO, `toledo` frames de gramos/kg —
+  comunes en Colombia), registro `PARSERS` extensible sin tocar transporte
+  ni ruta. Todo normalizado a kg con precisión de gramo (contrato con el
+  servicio de ventas); cero, fuera de rango (>300 kg) o frame ilegible =
+  error, jamás un peso dudoso.
+- Transporte serial INYECTABLE (`ScaleTransport` protocol): pyserial se
+  importa perezosamente SOLO si la báscula está activada (dependencia
+  opcional verificada en PyPI v3.5); el servicio se prueba completo con
+  transporte falso, sin hardware. El servicio cierra el puerto que él abre
+  y no toca el que le inyectan.
+- Config opcional en settings del módulo: `VERDURAS_SCALE_ENABLED/_PORT/
+  _BAUDRATE/_PROTOCOL/_TIMEOUT_S` (apagada por defecto).
+- Endpoint `GET /pos/<slug>/api/scale/weight` por sesión del tendero (sin
+  x-api-key en el navegador). POS: botón "Leer báscula" SOLO en productos
+  por peso y con báscula activada; soporta lb (conversión kg→lb en el
+  cliente); el ingreso manual queda intacto.
+- Tests `verduras/tests/test_scale.py` (33 casos): parsers, unidades,
+  redondeo, rangos, errores de transporte, cierre de puertos, endpoint con
+  sesión y flag `scale_enabled` en pos-data. Módulo: 172/172 en verde.
+  Ruff: all checks passed.
+
 ---
 
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)

@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('total_cost', sa.Numeric(precision=12, scale=2), nullable=False),
     sa.Column('purchased_at', app.models.core.AwareDateTime(timezone=True), nullable=False),
     sa.Column('note', sa.String(length=255), nullable=True),
-    sa.Column('created_at', app.models.core.AwareDateTime(timezone=True), server_default='CURRENT_TIMESTAMP', nullable=True),
+    sa.Column('created_at', app.models.core.AwareDateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['verduras_products.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -44,7 +44,7 @@ def upgrade() -> None:
     sa.Column('cost_loss', sa.Numeric(12, 2), nullable=False),
     sa.Column('registered_at', app.models.core.AwareDateTime(timezone=True), nullable=False),
     sa.Column('note', sa.String(length=255), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default='CURRENT_TIMESTAMP', nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['verduras_products.id'], ),
     sa.PrimaryKeyConstraint('id')

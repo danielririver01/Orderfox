@@ -7,6 +7,7 @@ quedan para integraciones server-to-server y el checkout público.
 """
 from flask import (
     Blueprint,
+    current_app,
     flash,
     jsonify,
     redirect,
@@ -18,6 +19,7 @@ from flask import (
 from ..auth import require_service_api_key
 from ..services import catalog
 from ..services import sales as sales_service
+from ..services import scale as scale_service
 from ..services.pos_auth import (
     PosAuthError,
     current_pos_business,
@@ -116,6 +118,7 @@ def pos_view(slug: str):
         return redirect(url_for('dashboard.pos_login'))
     products = catalog.list_products(business.id)
     pos_data = {
+        'scale_enabled': bool(current_app.config.get('SCALE_ENABLED', False)),
         'products': [
             {
                 'id': p.id,
@@ -133,7 +136,10 @@ def pos_view(slug: str):
         categories=catalog.list_categories(business.id),
         pos_settings=sales_service.get_settings(business.id),
         pos_data=pos_data,
-        pos_urls={'sell': url_for('dashboard.pos_sell', slug=business.slug)},
+        pos_urls={
+            'sell': url_for('dashboard.pos_sell', slug=business.slug),
+            'scale': url_for('dashboard.pos_scale_weight', slug=business.slug),
+        },
     )
 
 
@@ -159,3 +165,37 @@ def pos_sell(slug: str):
     except sales_service.VerdurasNotFoundError as e:
         return jsonify(success=False, error=str(e)), 404
     return jsonify(success=True, data=_sale_for_ticket(sale))
+
+
+# ── Báscula digital (Semana 4) ──────────────────────────────
+
+
+@dashboard_bp.route('/pos/<slug>/api/scale/weight', methods=['GET'])
+def pos_scale_weight(slug: str):
+    """Lee la báscula del POS (sesión del tendero; sin x-api-key).
+
+    Nunca devuelve 500: cualquier problema de báscula es un 409 con código
+    legible para el frontend, que pide ingreso manual y la venta continúa.
+    La báscula es ayuda, no requisito.
+    """
+    business = current_pos_business()
+    if business is None or business.slug != slug:
+        return jsonify(success=False, error='sesion_expirada'), 401
+    try:
+        weight = scale_service.read_weight(
+            enabled=current_app.config.get('SCALE_ENABLED', False),
+            protocol=current_app.config.get('SCALE_PROTOCOL', 'generic'),
+            port=current_app.config.get('SCALE_PORT', 'COM3'),
+            baudrate=current_app.config.get('SCALE_BAUDRATE', 9600),
+            timeout_s=current_app.config.get('SCALE_TIMEOUT_S', 2.0),
+        )
+    except scale_service.ScaleDisabledError:
+        return jsonify(success=False, error_code='scale_disabled',
+                       error='La báscula no está activada en este negocio'), 409
+    except scale_service.ScaleUnavailableError as e:
+        return jsonify(success=False, error_code='scale_unavailable',
+                       error=str(e)), 409
+    except scale_service.ScaleReadError as e:
+        return jsonify(success=False, error_code='scale_read_error',
+                       error=str(e)), 409
+    return jsonify(success=True, data={'weight_kg': weight})

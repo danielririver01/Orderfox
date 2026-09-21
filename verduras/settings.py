@@ -32,7 +32,7 @@ class Config:
 
     # Módulo
     MODULE_NAME = 'verduras'
-    MODULE_VERSION = '0.5.0'
+    MODULE_VERSION = '0.6.0'
     # Origen de la API de core (para llamadas HTTP cuando la DB compartida
     # no aplique, p.ej. core desplegado por separado). Por defecto, local.
     CORE_API_BASE_URL = os.environ.get('CORE_API_BASE_URL') or 'http://localhost:5000'
@@ -40,6 +40,17 @@ class Config:
     # API key server-to-server (header x-api-key), mismo patrón que core.
     # Protege las mutaciones del catálogo (POST /api/verduras/*).
     SERVICE_API_KEY = os.environ.get('SERVICE_API_KEY')
+
+    # Báscula digital (Semana 4) — OPCIONAL: el POS funciona sin ella.
+    # VERDURAS_SCALE_ENABLED=1 activa el botón "Leer báscula" del POS.
+    # Requiere pyserial (pip install pyserial) solo si se activa.
+    SCALE_ENABLED = os.environ.get('VERDURAS_SCALE_ENABLED') == '1'
+    SCALE_PORT = os.environ.get('VERDURAS_SCALE_PORT') or 'COM3'
+    SCALE_BAUDRATE = int(os.environ.get('VERDURAS_SCALE_BAUDRATE') or '9600')
+    # Protocolo de la báscula: 'generic' (ASCII con número) | 'toledo'
+    # (frames tipo Toledo/Magenta, comunes en Colombia).
+    SCALE_PROTOCOL = os.environ.get('VERDURAS_SCALE_PROTOCOL') or 'generic'
+    SCALE_TIMEOUT_S = float(os.environ.get('VERDURAS_SCALE_TIMEOUT_S') or '2')
 
     # Ambiente (permite distinguir en logs/metrics)
     ENV = os.environ.get('FLASK_ENV', 'development')

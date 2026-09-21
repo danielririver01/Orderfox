@@ -671,6 +671,32 @@ button { font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ── Botón de báscula (Semana 4) ───────────────────────────── */
+
+.scale-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--brand-accent);
+  background: var(--brand-soft);
+  color: var(--brand);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.scale-btn:hover { background: #CBF3D8; }
+.scale-btn:disabled { opacity: 0.6; cursor: wait; }
+.scale-btn .material-symbols-rounded { font-size: 22px; }
+.scale-btn.reading .material-symbols-rounded {
+  animation: scale-spin 0.9s linear infinite;
+}
+@keyframes scale-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── Pulso del carrito al agregar ──────────────────────────── */
 
 @keyframes cart-pulse {

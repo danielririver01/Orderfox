@@ -61,6 +61,7 @@ No se collecionan en la suite de core (`pytest.ini` limita `testpaths` a
 | POST/GET | `/api/verduras/businesses/<bid>/inventory/merma` | Registrar pérdida (COP congelado) o listar con filtros (`x-api-key`) |
 | GET | `/api/verduras/businesses/<bid>/inventory/merma/report` | Reporte semanal/mensual: pérdida por producto, % y % sobre compras (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/pos-pin` | Configurar el PIN del POS (onboarding server-to-server, `x-api-key`) |
+| GET | `/pos/<slug>/api/scale/weight` | Leer la báscula del POS por sesión (409 con `error_code` si falla; el manual sigue siendo la fuente de verdad) |
 | GET/POST | `/pos/login` | Login del tendero (slug + PIN, sesión firmada; CSRF activo) |
 | GET | `/pos/<slug>` | Dashboard POS (venta de mostrador; requiere sesión) |
 | POST | `/pos/<slug>/sell` | Cobrar venta walk-in por sesión (sin x-api-key en el navegador) |
@@ -100,10 +101,9 @@ verduras/
 | Semana | Módulo | Estado |
 |--------|--------|--------|
 | 1 | **Catálogo + precios por peso** (categorías, productos kg/lb/unidad, historial de precios) | ✅ Implementado |
-| 1 | **Catálogo + precios por peso** (categorías, productos kg/lb/unidad, historial de precios) | ✅ Implementado |
 | 2 | Ventas: venta por peso, pedidos WhatsApp (mismo patrón core), tickets | ✅ Implementado (tickets en Semana 3) |
 | 3 | Inventario (compras por lote, costo/kg, stock) + **Merma** (la joya: kg dañados y pérdida en COP por producto) | ✅ Implementado (tickets comparten flujo con core) |
-| 4 | Báscula digital (USB serial / Bluetooth; fallback manual de peso) | ⬜ |
+| 4 | Báscula digital (USB serial, protocolos `generic`/`toledo`; fallback manual de peso) | ✅ Implementado (opcional, apagada por defecto) |
 | 5 | Alertas de rotación ("te quedan 3kg de banano") | ⬜ |
 | 6 | Piloto con cliente real | ⬜ |
 
@@ -128,6 +128,23 @@ módulo) y lo configura el onboarding vía `POST .../pos-pin` con
 `x-api-key` — la SERVICE_API_KEY **jamás llega al navegador**. La venta del
 POS va por sesión con CSRF (guard manual en la factory, exento para
 `/api/*`).
+
+### Báscula digital (opcional, Semana 4)
+
+Apagada por defecto; se activa por variables de entorno en el `.env` de la
+raíz. Requiere `pip install pyserial` SOLO si se activa:
+
+```bash
+VERDURAS_SCALE_ENABLED=1
+VERDURAS_SCALE_PORT=COM3          # o /dev/ttyUSB0 en Linux
+VERDURAS_SCALE_BAUDRATE=9600
+VERDURAS_SCALE_PROTOCOL=generic   # 'generic' (ASCII) | 'toledo' (frames en gramos)
+VERDURAS_SCALE_TIMEOUT_S=2
+```
+
+Con la báscula activada, el POS muestra un botón "Leer báscula" junto a la
+cantidad de los productos por peso (kg y lb). Si falla la lectura, el
+tendero teclea el peso: la venta nunca se bloquea por la báscula.
 
 ## Extracción futura a repo propio
 
