@@ -80,6 +80,19 @@ class Restaurant(db.Model):
     web_search_month_reset = db.Column(AwareDateTime, nullable=True)
     # Configuración de expiración de pedidos pendientes (en horas, default 24)
     pending_expiry_hours = db.Column(db.Integer, default=24, nullable=False)
+    # Control de caja (opcional, configurado por el admin):
+    # True = el efectivo exige turno abierto + conteo físico al cerrar.
+    # False (default) = comportamiento actual, sin fricción.
+    require_cash_shift = db.Column(db.Boolean, default=False, nullable=False,
+                                   server_default='0')
+    # Cajón físico vía QZ Tray (puente local en el PC del mostrador):
+    # drawer_enabled = el local tiene cajón+impresora con puerto DK y QZ
+    # instalado; drawer_auto_open = abrir solo al cobrar en efectivo.
+    # Ambos default False: sin hardware todo funciona igual que siempre.
+    drawer_enabled = db.Column(db.Boolean, default=False, nullable=False,
+                               server_default='0')
+    drawer_auto_open = db.Column(db.Boolean, default=False, nullable=False,
+                                 server_default='0')
     ntfy_topic = db.Column(db.String(64), unique=True, nullable=True)
     created_at = db.Column(AwareDateTime, default=db.func.now())
 

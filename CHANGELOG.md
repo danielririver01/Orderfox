@@ -251,6 +251,47 @@ Todas las fechas en UTC.
   PIN débil no consume, login posterior, rutas end-to-end). Suites: core
   708 passed · módulo 212 passed.
 
+#### Ciclo de suscripción para verticales (v0.9.0, core + módulo)
+- Core: `get_business_subscription_status(business)` en
+  `app/utils/subscription.py` — la MISMA máquina de estados que restaurantes
+  (activo → expiring_soon → grace_period → expired → dormant), leyendo de
+  `businesses`. Los businesses legacy (piloto/onboarding asistido, sin dueño
+  ni fecha) quedan activos SIEMPRE: jamás se bloquean ventas por un campo
+  que nunca se les asignó (backward-compatible).
+- Core: scheduler de lifecycle extendido (`_lifecycle_businesses` en
+  `app/tasks.py`): vencidos + grace y cancelaciones expiradas → dormant con
+  datos preservados. Los espejos de restaurantes (owner NULL) NO se tocan —
+  su ciclo ya corre sobre `restaurants`; correr ambos sería doble
+  contabilidad.
+- Core: pagos de businesses con MercadoPago en el MISMO funnel: preferencia
+  con `external_reference = biz:<business_id>:<plan>`
+  (`build_biz_mp_preference_data`), activación idempotente
+  (`activate_business_from_payment`: activa, sube plan, extiende fecha,
+  limpia dormant_at) reutilizada por callback y webhook (`process_mp_webhook_payment`
+  entiende el prefijo `biz:`). Idempotencia callback↔webhook con la MISMA
+  convención de restaurantes: transacción `topup_plan` con `mp_payment_id`
+  (constraint UNIQUE). Solo `approved` activa (pendiente/fallido no toca el
+  Business). Registro con plan pago deja `pending_business_id` y redirige a
+  `/payment`; `verduras_ready` recupera el token de setup desde la fila del
+  Business para el aterrizaje post-pago.
+- Módulo: el POS respeta el ciclo — `pos_view` consulta el status (vía
+  `context.get_subscription_status`, delegación 100% a core) y muestra
+  `pos_renewal.html` (mensaje en lenguaje de verdulero + enlace de
+  renovación a core vía nuevo `CORE_BASE_URL`) cuando `can_crud` es False;
+  `pos_sell` tiene el segundo candado (sesión viva + suscripción vencida →
+  409 `suscripcion_inactiva`, nunca 500).
+- Migraciones: `c3d5e7f9a1b2` (flags de cajón en restaurants, otra sesión)
+  y `d4e6f8a0b2c3` (`subscription_state` + `dormant_at` en businesses) —
+  esta última cierra el hueco real detectado en Postgres: sin la columna,
+  TODO insert en `businesses` (incluidos espejos de restaurantes) fallaba
+  con UndefinedColumn. Cadena lineal validada bidireccionalmente (probe
+  upgrade→downgrade→upgrade) con un solo head.
+- Tests: `tests/test_business_subscription.py` (18: estados, bandas,
+  legacy sin bloqueo, scheduler, activación idempotente, webhook `biz:`,
+  callback end-to-end) y `verduras/tests/test_pos_renewal.py` (8: gate del
+  POS, pantalla de renovación, venta bloqueada vencida, legacy sin bloqueo,
+  delegación a core). Suites: core 733 passed · módulo 220 passed.
+
 ---
 
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)

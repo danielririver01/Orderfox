@@ -19,6 +19,7 @@ from flask import (
 from ..auth import require_service_api_key
 from ..services import alerts as alerts_service
 from ..services import catalog
+from ..services import context as context_service
 from ..services import pos_auth as pos_auth_service
 from ..services import sales as sales_service
 from ..services import scale as scale_service
@@ -157,6 +158,18 @@ def pos_view(slug: str):
     business = current_pos_business()
     if business is None or business.slug != slug:
         return redirect(url_for('dashboard.pos_login'))
+    # Ciclo de suscripción: el tendero ve el estado (vence pronto / gracia) o
+    # una pantalla de renovación si ya no puede vender. Jamás un 500.
+    try:
+        sub = context_service.get_subscription_status(business)
+    except Exception:  # noqa: BLE001 — la suscripción jamás tumba el POS
+        sub = {'can_crud': True}
+    if not sub.get('can_crud'):
+        core_base = current_app.config.get('CORE_BASE_URL') or 'http://localhost:5000'
+        return render_template(
+            'pos_renewal.html', business=business, status=sub,
+            core_payment_url=f'{core_base}/renew',
+        )
     products = catalog.list_products(business.id)
     # Mapa product_id → severidad de alerta de rotación (Semana 5): el POS
     # pinta un badge por producto, informativo — nunca bloquea la venta.
@@ -202,6 +215,15 @@ def pos_sell(slug: str):
     business = current_pos_business()
     if business is None or business.slug != slug:
         return jsonify(success=False, error='sesion_expirada'), 401
+    # Segundo candado: la sesión puede seguir viva aunque la suscripción
+    # haya vencido — la venta exige can_crud (mismo criterio del gate de pos_view).
+    try:
+        sub = context_service.get_subscription_status(business)
+    except Exception:  # noqa: BLE001 — la suscripción jamás tumba el POS
+        sub = {'can_crud': True}
+    if not sub.get('can_crud'):
+        return (jsonify(success=False, error='suscripcion_inactiva',
+                        message=sub.get('message')), 409)
     data = request.get_json(silent=True) or {}
     try:
         sale, _created = sales_service.create_sale(

@@ -1,5 +1,6 @@
 from app import db, scheduler
 from app.models import Restaurant, Order, DiscountCoupon
+from app.models import Business
 from datetime import datetime, timedelta, timezone
 from flask import has_app_context, current_app
 from app.services.order_service import log_event
@@ -50,6 +51,62 @@ def manage_subscription_lifecycle():
 INACTIVE_GRACE_DAYS = 30
 
 
+def _lifecycle_businesses(grace_cutoff, now):
+    """Ciclo de vida de businesses de verticales directos (verduras, ...).
+
+    MISMA política que restaurantes (cuenta compartida, nunca borrar datos):
+    - Vencidos más allá del grace period → dormant (datos preservados).
+    - cancellation_pending con fecha pasada → dormant.
+    - Los espejos de restaurantes NO se tocan: su dueño es la fila de
+      `restaurants` (owner_user_id IS NULL) y su ciclo ya corre en
+      _perform_lifecycle() — correr ambos sería doble contabilidad.
+    """
+    try:
+        # Verticales con dueño (self-service). Los espejos (owner NULL) no
+        # aplican: su ciclo vive en la fila Restaurant correspondiente.
+        expired = Business.query.filter(
+            Business.owner_user_id.isnot(None),
+            Business.is_active == True,
+            Business.subscription_state != 'dormant',
+            Business.subscription_state != 'cancellation_pending',
+            Business.subscription_expires_at.isnot(None),
+            Business.subscription_expires_at < grace_cutoff
+        ).all()
+
+        cancelled_expired = Business.query.filter(
+            Business.owner_user_id.isnot(None),
+            Business.subscription_state == 'cancellation_pending',
+            Business.subscription_expires_at.isnot(None),
+            Business.subscription_expires_at < now
+        ).all()
+
+        total = list({b.id: b for b in expired + cancelled_expired}.values())
+        if not total:
+            current_app.logger.info(
+                f"[{now}] No direct-vertical businesses to mark dormant.")
+            return 0
+
+        count = 0
+        for biz in total:
+            try:
+                biz.is_active = False
+                biz.subscription_state = 'dormant'
+                biz.dormant_at = now
+                count += 1
+            except Exception as e:
+                current_app.logger.error(
+                    f"Error marking business {biz.id} dormant: {e}")
+        db.session.commit()
+        current_app.logger.info(
+            f"[{now}] Business lifecycle: marked {count} businesses dormant "
+            "(data preserved).")
+        return count
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Business lifecycle failed: {e}")
+        return 0
+
+
 def _perform_lifecycle():
     try:
         cutoff_time = datetime.now(timezone.utc) - timedelta(days=INACTIVE_GRACE_DAYS)
@@ -71,6 +128,12 @@ def _perform_lifecycle():
         # se suspenden (dormant) pero CON todos sus datos preservados.
         from app.utils.subscription import GRACE_PERIOD_DAYS
         grace_cutoff = datetime.now(timezone.utc) - timedelta(days=GRACE_PERIOD_DAYS)
+        now = datetime.now(timezone.utc)
+
+        # Verticales directos (verduras, ...): mismo ciclo sobre `businesses`.
+        _lifecycle_businesses(grace_cutoff, now)
+
+        # Restaurantes con suscripción vencida más allá del grace period:
         expired_restaurants = Restaurant.query.filter(
             Restaurant.is_active == True,
             Restaurant.subscription_state != 'dormant',

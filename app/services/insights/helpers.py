@@ -130,9 +130,13 @@ def foreign_restaurant_response(conv, user_msg_id):
     })
 
 
-def empty_state_response(conv, kind, window_label=None):
-    """Responde con un estado vacío inteligente (sin LLM, sin crédito)."""
-    payload = data_service.build_empty_state(kind, window_label=window_label)
+def empty_state_response(conv, kind, window_label=None, ds=None):
+    """Responde con un estado vacío inteligente (sin LLM, sin crédito).
+
+    ds: módulo adapter (data_service o data_service_verduras). Default:
+    restaurante (backward-compatible).
+    """
+    payload = (ds or data_service).build_empty_state(kind, window_label=window_label)
     meta = dict(payload)
     meta['type'] = 'empty_state'
     msg = cs.add_message(conv.id, 'assistant', payload['text'], meta)

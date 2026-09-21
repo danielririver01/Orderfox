@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Velzia · ¿Qué mundo eres?</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="connect" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='CSS/material-symbols.css') }}" rel="stylesheet" />
+    <script src="{{ url_for('static', filename='js/tailwind.login.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/plans.css') }}">
+</head>
+
+<body>
+
+    <!-- Ambient -->
+    <div class="plans-ambient">
+        <div class="plans-orb plans-orb--1"></div>
+        <div class="plans-orb plans-orb--2"></div>
+        <div class="plans-orb plans-orb--3"></div>
+    </div>
+
+    <main style="position:relative; z-index:1; max-width:72rem; margin:0 auto; padding:3rem 1.5rem 5rem;">
+
+        <!-- Header -->
+        <div style="text-align:center; margin-bottom:3rem;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; width:3.5rem; height:3.5rem; border-radius:1.2rem; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); margin-bottom:1.5rem;">
+                <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia"
+                    style="width:2.4rem; height:2.4rem; object-fit:contain; filter:drop-shadow(0 0 8px rgba(249,115,22,0.4));">
+            </div>
+
+            <h1 style="font-size:clamp(2rem,5vw,3.2rem); font-weight:800; letter-spacing:-0.03em; line-height:1.1; margin:0 0 1rem; color:#f5f0eb;">
+                ¿Qué mundo
+                <span style="background:linear-gradient(90deg,#f97316,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+                    eres?
+                </span>
+            </h1>
+            <p style="font-size:1rem; color:#7a6f67; max-width:32rem; margin:0 auto;">
+                Elige tu vertical para configurar tu negocio. Siempre podrás explorar más mundos después.
+            </p>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="max-width:34rem; margin:0 auto 2.5rem;">
+                {% for category, message in messages %}
+                <div
+                    style="display:flex; align-items:flex-start; gap:0.6rem; padding:0.85rem 1.1rem; border-radius:0.9rem; font-size:0.85rem; font-weight:600; line-height:1.5;
+                           {% if category == 'warning' %}background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.35); color:#fbbf24;
+                           {% elif category == 'error' or category == 'danger' %}background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.35); color:#f87171;
+                           {% else %}background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35); color:#93c5fd;{% endif %}">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem; margin-top:0.1rem;">
+                        {% if category == 'warning' %}warning{% elif category == 'error' or category == 'danger' %}error{% else %}info{% endif %}
+                    </span>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Mundos grid: se construye SOLO desde VERTICALS (app/utils/verticals.py) -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; align-items:stretch;">
+
+            {% for v in verticals %}
+            {% if v.enabled and v.setup_route %}
+            <a href="{{ url_for('auth.register_vertical_pick', slug=v.slug) }}"
+                class="plan-card"
+                style="text-decoration:none; display:flex; flex-direction:column;">
+                <div style="margin-bottom:1.25rem;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:1rem; background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.25);">
+                        <span class="material-symbols-outlined" style="font-size:1.6rem; color:#f97316;">{{ v.icono }}</span>
+                    </span>
+                </div>
+                <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">{{ v.nombre }}</h2>
+                <p style="font-size:0.82rem; color:#9a9088; margin:0 0 1.5rem; flex:1;">{{ v.descripcion }}</p>
+                <span class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                    Entrar a mi mundo
+                    <span class="material-symbols-outlined" style="font-size:1rem;">arrow_forward</span>
+                </span>
+            </a>
+            {% else %}
+            <div class="plan-card" aria-disabled="true"
+                style="opacity:0.55; display:flex; flex-direction:column;">
+                <div style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:1rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);">
+                        <span class="material-symbols-outlined" style="font-size:1.6rem; color:#6b6058;">{{ v.icono }}</span>
+                    </span>
+                    <span class="plan-tag plan-tag--free">Próximamente</span>
+                </div>
+                <h2 style="font-size:1.1rem; font-weight:700; color:#9a9088; margin:0 0 0.4rem;">{{ v.nombre }}</h2>
+                <p style="font-size:0.82rem; color:#6b6058; margin:0; flex:1;">{{ v.descripcion }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+        </div>
+
+        <!-- Footer note -->
+        <div style="margin-top:4rem; text-align:center;">
+            <p style="font-size:0.78rem; color:#4b4440; font-style:italic;">
+                Un plan, todos tus mundos: la suscripción es del SaaS completo.
+            </p>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

@@ -505,6 +505,25 @@ class OrderService:
             raise PaymentValidationError('No se puede registrar un pago en un pedido cancelado')
 
         if method in OrderService.CASH_METHODS:
+            # Control opcional de caja (admin `require_cash_shift`): el
+            # efectivo exige turno abierto. Digitales (nequi/card) nunca se
+            # bloquean. Try/except defensivo: si la tabla/columna aún no
+            # existe (migración pendiente), no se bloquea la operación.
+            try:
+                from app.models import CashShift, Restaurant
+                _rest = Restaurant.query.get(order.restaurant_id) if order.restaurant_id else None
+                if _rest is not None and getattr(_rest, 'require_cash_shift', False):
+                    _open = CashShift.query.filter_by(
+                        restaurant_id=order.restaurant_id, status='open').first()
+                    if _open is None:
+                        raise PaymentValidationError(
+                            'Debes abrir caja antes de cobrar en efectivo',
+                            status_code=409,
+                        )
+            except PaymentValidationError:
+                raise
+            except Exception:  # noqa: BLE001, S110 - best-effort: si la tabla/columna aún no existe (migración pendiente), no se bloquea el cobro
+                pass
             received = amount_received
             try:
                 received = int(received)

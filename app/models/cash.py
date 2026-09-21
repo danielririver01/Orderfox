@@ -16,6 +16,52 @@ from datetime import datetime, timezone
 from app.models import db, AwareDateTime
 
 
+class CashShift(db.Model):
+    """Turno de caja: apertura con fondo inicial y cierre con conteo físico.
+
+    - Un solo turno `open` por restaurante (validado en servicio; el unique
+      parcial no es portable a SQLite, así que la regla vive en
+      `CashShiftService.open_shift` + chequeo en `_apply_payment`).
+    - `expected_cash` = fondo inicial + ventas netas en efectivo desde
+      `opened_at` (totales menos vuelto `change_due`).
+    - `difference` = contado - esperado (negativo = faltante).
+    """
+
+    __tablename__ = 'cash_shifts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'),
+                              nullable=False, index=True)
+    status = db.Column(db.String(10), default='open', nullable=False, server_default='open')
+
+    opening_amount = db.Column(db.Integer, default=0, nullable=False)
+    opened_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    opened_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    closed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    closed_at = db.Column(AwareDateTime, nullable=True)
+
+    expected_cash = db.Column(db.Integer, nullable=True)
+    counted_cash = db.Column(db.Integer, nullable=True)
+    difference = db.Column(db.Integer, nullable=True)
+
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.Index('ix_cash_shifts_restaurant_status', 'restaurant_id', 'status'),
+    )
+
+    restaurant = db.relationship('Restaurant', backref=db.backref(
+        'cash_shifts', lazy=True, cascade='all, delete-orphan'))
+    opened_by_user = db.relationship('User', backref=db.backref(
+        'cash_shifts_opened', lazy=True), foreign_keys=[opened_by])
+    closed_by_user = db.relationship('User', backref=db.backref(
+        'cash_shifts_closed', lazy=True), foreign_keys=[closed_by])
+
+    def __repr__(self):
+        return f'<CashShift {self.id} restaurant={self.restaurant_id} {self.status}>'
+
+
 class CashRegister(db.Model):
     __tablename__ = 'cash_registers'
 
@@ -46,6 +92,15 @@ class CashRegister(db.Model):
     # Suma del vuelto entregado en efectivo (para cuadre físico de caja)
     cash_change_total = db.Column(db.Integer, default=0, nullable=False)
 
+    # Arqueo opcional (modo estricto `Restaurant.require_cash_shift`):
+    # fondo inicial del turno, esperado/contado/diferencia y turno origen.
+    opening_amount = db.Column(db.Integer, default=0, nullable=False)
+    expected_cash = db.Column(db.Integer, nullable=True)
+    counted_cash = db.Column(db.Integer, nullable=True)
+    difference = db.Column(db.Integer, nullable=True)
+    shift_id = db.Column(db.Integer, db.ForeignKey('cash_shifts.id', ondelete='SET NULL'),
+                         nullable=True)
+
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
@@ -56,6 +111,8 @@ class CashRegister(db.Model):
         'cash_registers', lazy=True, cascade='all, delete-orphan'))
     closed_by_user = db.relationship('User', backref=db.backref(
         'cash_registers_closed', lazy=True), foreign_keys=[closed_by])
+    shift = db.relationship('CashShift', backref=db.backref(
+        'cash_registers', lazy=True))
 
     def __repr__(self):
         return f'<CashRegister {self.id} restaurant={self.restaurant_id} {self.period_start}–{self.period_end}>'

@@ -2,25 +2,27 @@
 SubscriptionService — Planes, MercadoPago preferences, webhooks y cupones de descuento.
 """
 import threading
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
+import mercadopago
 from flask import current_app
+
 from app import db
-from app.models import Restaurant, User, DiscountCoupon
+from app.models import Business, DiscountCoupon, Restaurant, User
 from app.utils.subscription import (
-    get_plan_limits,
     AI_TOKEN_LIMITS,
     TOP_UP_PACKS,
-    sanitize_restaurant_limits,
+    get_plan_limits,
     initialize_or_reset_token_wallet,
+    sanitize_restaurant_limits,
 )
-import mercadopago
 
 
 def _deliver_sorpresa_velzia(restaurant_id: int, plan: str, app):
     """Genera la Sorpresa Velzia y envía el email en segundo plano (fire-and-forget)."""
     from app.models import RewardClaim
-    from app.services.reward_service import create_reward_claim
     from app.services.mail_service import send_email
+    from app.services.reward_service import create_reward_claim
 
     with app.app_context():
         try:
@@ -150,6 +152,110 @@ class SubscriptionService:
             "external_reference": f"{restaurant_id}:{plan_key}",
         }
         return preference_data, plan_info, applied_discount
+
+    # ── Pagos de businesses (verticales directos: verduras, ...) ──
+
+    @staticmethod
+    def build_biz_mp_preference_data(plan_key, business_id, base_url):
+        """
+        Preferencia MP para un Business de vertical directo (sin Restaurant).
+        Clon del preference_data de restaurantes (mismo flujo, mismo checkout)
+        con external_reference prefijada `biz:<id>:<plan>` para desambiguar
+        de `restaurant_id:plan` en callback/webhook.
+        """
+        plan_info = SubscriptionService.get_plan_info(plan_key)
+        unit_price = float(plan_info['price_raw'])
+        is_public_url = base_url.startswith("https://")
+
+        preference_data = {
+            "items": [
+                {
+                    "title": f"Suscripción Velzia - {plan_info['name']}",
+                    "quantity": 1,
+                    "unit_price": unit_price,
+                    "currency_id": "COP",
+                }
+            ],
+            "back_urls": {
+                "success": f"{base_url}/payment-callback",
+                "failure": f"{base_url}/payment",
+                "pending": f"{base_url}/payment-callback",
+            },
+            **({"auto_return": "approved"} if is_public_url else {}),
+            "external_reference": f"biz:{business_id}:{plan_key}",
+        }
+        return preference_data, plan_info
+
+    @staticmethod
+    def activate_business_from_payment(business_id, plan_type, payment_id=None,
+                                       preference_id=None):
+        """
+        Activación idempotente de un Business tras pago aprobado (callback o
+        webhook — el callback marca el pago con la tx de wallet, el webhook no
+        repite efectos). Activa el negocio, sube de plan y extiende la
+        suscripción por la duración del plan.
+        """
+        from app.models import AITokenTransaction, User
+
+        # Idempotencia callback ↔ webhook: si el callback ya dejó la
+        # transacción marcadora de este pago, no repetir efectos.
+        if payment_id and AITokenTransaction.query.filter_by(
+            mp_payment_id=payment_id,
+            type='topup_plan',
+        ).first():
+            return Business.query.get(business_id)
+
+        biz = Business.query.get(business_id)
+        if not biz:
+            return None
+
+        biz.is_active = True
+        if biz.subscription_state in ('dormant', 'cancellation_pending'):
+            biz.subscription_state = 'active'
+        biz.dormant_at = None
+        if plan_type in ('emprendedor', 'crecimiento', 'elite'):
+            biz.plan_type = plan_type
+
+        duration_days = get_plan_limits(biz.plan_type).get('duration_days', 30)
+        now_utc = datetime.now(timezone.utc)
+        expires_at = biz.subscription_expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at and expires_at > now_utc:
+            biz.subscription_expires_at = expires_at + timedelta(days=duration_days)
+        else:
+            biz.subscription_expires_at = now_utc + timedelta(days=duration_days)
+        db.session.commit()
+
+        # Marcador de pago idempotente: transacción de wallet del dueño con
+        # mp_payment_id (constraint UNIQUE). Es la MISMA convención con la que
+        # los restaurantes hacen idempotente _finalize_payment — así callback
+        # y webhook nunca duplican efectos. Los dueños de verticales no tienen
+        # Restaurant (el wallet exige user.restaurant): por eso la tx se crea
+        # directamente, no vía initialize_or_reset_token_wallet.
+        if payment_id:
+            try:
+                owner = User.query.get(biz.owner_user_id) if biz.owner_user_id else None
+                if owner and not AITokenTransaction.query.filter_by(
+                    mp_payment_id=payment_id,
+                    type='topup_plan',
+                ).first():
+                    db.session.add(AITokenTransaction(
+                        user_id=owner.id,
+                        type='topup_plan',
+                        amount=0,
+                        source='biz_plan_renewal',
+                        mp_payment_id=payment_id,
+                        description=(f'Renovación {biz.plan_type} — '
+                                     f'{biz.vertical} #{biz.id}'),
+                    ))
+                    db.session.commit()
+            except Exception:
+                current_app.logger.exception(
+                    "biz payment: error en marcador de pago")
+                db.session.rollback()
+
+        return biz
 
     @staticmethod
     def create_mp_preference(sdk, preference_data):
@@ -302,6 +408,24 @@ class SubscriptionService:
         if not external_ref:
             return None
 
+        # Verticales directos (verduras, ...): la referencia llega prefijada
+        # `biz:<business_id>:<plan>` — activación a nivel Business.
+        if external_ref.startswith('biz:'):
+            try:
+                _, biz_id_str, biz_plan = external_ref.split(':', 2)
+                biz_id = int(biz_id_str)
+            except (ValueError, TypeError):
+                return None
+            if biz_plan not in ('emprendedor', 'crecimiento', 'elite'):
+                return None
+            biz = SubscriptionService.activate_business_from_payment(
+                biz_id, biz_plan, payment_id,
+                preference_id=payment.get('preference_id'),
+            )
+            if not biz:
+                return None
+            return {'business_id': biz_id, 'plan_type': biz_plan}
+
         try:
             if ':' in external_ref:
                 restaurant_id_str, plan_type = external_ref.split(':', 1)
@@ -340,11 +464,9 @@ class SubscriptionService:
             if user:
                 initialize_or_reset_token_wallet(user, is_reset=True,
                                                   mp_payment_id=payment_id)
-        except Exception as e:
-            current_app.logger.error(
-                f"Webhook: error en sanitize_restaurant_limits o wallet: {e}",
-                exc_info=True,
-            )
+        except Exception:
+            current_app.logger.exception(
+                "Webhook: error en sanitize_restaurant_limits o wallet")
             db.session.rollback()
 
         return {'restaurant_id': restaurant_id, 'plan_type': plan_type}

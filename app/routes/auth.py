@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, session,
 from app import db
 from app.forms import LoginForm
 from app.forms.auth import BusinessSetupForm, RegisterSetupForm
-from app.models import Business, Restaurant, TrialHistory
+from app.models import Business, Restaurant, TrialHistory, User
 from app.utils.subscription import initialize_or_reset_token_wallet
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
 from app.services.auth_service import AuthService
@@ -12,6 +12,12 @@ from app.services.business_registration import (
 )
 from app.services.subscription_service import SubscriptionService
 from app.utils.restaurant import get_current_restaurant
+from app.utils.verticals import (
+    DEFAULT_VERTICAL,
+    VERTICALS,
+    get_enabled_vertical,
+    user_has_tenant,
+)
 import mercadopago
 
 auth_bp = Blueprint('auth', __name__)
@@ -258,16 +264,51 @@ def register():
     # plan ya guardado en sesión.
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])
-        if user and not user.restaurant:
-            # Dueño de un vertical directo (verduras, ...): su alta ya se
-            # completó en /register/verduras — mandarlo a su dashboard en
-            # vez del setup de restaurante (evita bucle).
-            if Business.query.filter_by(owner_user_id=user.id).first():
+        if user:
+            # Con tenant (cualquier vertical) → dashboard, nunca al selector.
+            if user_has_tenant(user):
                 return redirect(url_for('dashboard.index'))
-            return redirect(url_for('auth.setup_account'))
+            # Sin tenant → primero elige su mundo (fork multi-vertical).
+            return redirect(url_for('auth.register_vertical'))
 
     selected_plan = session.get('selected_plan', 'emprendedor')
     return render_template('auth/register_verify.html', step='email', plan=selected_plan)
+
+
+@auth_bp.route('/register/vertical', methods=['GET'])
+def register_vertical():
+    """Selector de mundos post-registro.
+
+    Acceso explícito: autenticado + email verificado (user en sesión) +
+    SIN tenant. Con tenant → dashboard. Las tarjetas se construyen desde
+    VERTICALS (app/utils/verticals.py): el 3er/4º mundo es solo una entrada.
+    """
+    if 'user_id' not in session:
+        return redirect(url_for('auth.register'))
+    user = AuthService.get_user(session['user_id'])
+    if user_has_tenant(user):
+        return redirect(url_for('dashboard.index'))
+    return render_template('auth/register_vertical.html', verticals=VERTICALS)
+
+
+@auth_bp.route('/register/vertical/elegir/<slug>', methods=['GET'])
+def register_vertical_pick(slug):
+    """Guarda el mundo elegido y manda a su setup.
+
+    `selected_vertical` se consume con pop en el setup destino: no
+    permanece en sesión (evita rebotes a un mundo elegido semanas atrás).
+    """
+    if 'user_id' not in session:
+        return redirect(url_for('auth.register'))
+    user = AuthService.get_user(session['user_id'])
+    if user_has_tenant(user):
+        return redirect(url_for('dashboard.index'))
+    vertical = get_enabled_vertical(slug)
+    if not vertical:
+        flash('Ese mundo aún no está disponible.', 'warning')
+        return redirect(url_for('auth.register_vertical'))
+    session['selected_vertical'] = vertical['slug']
+    return redirect(url_for(vertical['setup_route']))
 
 
 @auth_bp.route('/api/save-plan-selection', methods=['POST'])
@@ -311,6 +352,11 @@ def setup_account():
 
     if user.restaurant:
         return redirect(url_for('dashboard.index'))
+
+    # Fork multi-vertical: el mundo se eligió en /register/vertical y se
+    # consume aquí con pop (default restaurante para accesos directos).
+    if session.pop('selected_vertical', DEFAULT_VERTICAL) == 'verduras':
+        return redirect(url_for('auth.register_verduras'))
 
     # Defensivo: usuario sin restaurante que ya usó el trial y aún no eligió
     # plan. No debe quedar en setup-account con plan=None (el template lo
@@ -394,6 +440,9 @@ def register_verduras():
     está en sesión; aquí SOLO se crea el tenant. El plan trial reusa la
     MISMA regla de unicidad (TrialHistory por email/teléfono): el trial es
     del SaaS completo, no de un vertical.
+
+    Plan pago: NO activa aquí — deja pending_business_id y manda a /payment
+    (MercadoPago); la activación llega por callback/webhook de MP.
     """
     if 'user_id' not in session:
         flash('Primero crea tu cuenta o inicia sesión.', 'warning')
@@ -401,6 +450,10 @@ def register_verduras():
     user = AuthService.get_user(session['user_id'])
     if not user:
         return redirect(url_for('auth.register'))
+
+    # Consume el mundo elegido en el selector (acceso directo compatible:
+    # esta puerta nunca exigió selected_vertical).
+    session.pop('selected_vertical', None)
 
     selected_plan = session.get('selected_plan', 'trial')
     form = BusinessSetupForm()
@@ -423,9 +476,16 @@ def register_verduras():
             return render_template('auth/register_verduras.html', form=form,
                                    plan=selected_plan)
 
-        session.pop('selected_plan', None)
         session['pos_setup_token'] = setup_token
-        return redirect(url_for('auth.verduras_ready', slug=business.slug))
+        session['pending_business_id'] = business.id
+        if selected_plan == 'trial':
+            # Trial activado en el registro: directo al setup del POS.
+            session.pop('selected_plan', None)
+            return redirect(url_for('auth.verduras_ready', slug=business.slug))
+        # Plan pago: activar tras el pago de MercadoPago (mismo funnel que
+        # restaurantes: sesiones de core mantienen el enlace de setup vivo).
+        session['selected_plan'] = selected_plan
+        return redirect(url_for('auth.payment'))
 
     return render_template('auth/register_verduras.html', form=form,
                            plan=selected_plan)
@@ -433,12 +493,22 @@ def register_verduras():
 
 @auth_bp.route('/register/verduras/ready/<slug>')
 def verduras_ready(slug):
-    """Pantalla de éxito con el enlace de setup del POS (misma sesión)."""
-    if 'user_id' not in session or 'pos_setup_token' not in session:
-        return redirect(url_for('auth.register'))
+    """Pantalla de éxito con el enlace de setup del POS.
+
+    Dos caminos: (1) recién registrado — token en sesión; (2) después del
+    pago de MercadoPago — la sesión llegó limpia, el token se recupera de la
+    fila del Business (canal de la DB compartida).
+    """
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
     setup_token = session.pop('pos_setup_token', None)
     if not setup_token:
-        return redirect(url_for('dashboard.index'))
+        business = Business.query.filter_by(
+            slug=slug, vertical='verduras').first()
+        if business is not None and business.pos_setup_token:
+            setup_token = business.pos_setup_token
+        else:
+            return redirect(url_for('dashboard.index'))
     # El setup vive en la APP del módulo (puerto 5100), no en core: la URL
     # sale de config, igual que ASTRO_BASE_URL para el menú público.
     verduras_base = (current_app.config.get('VERDURAS_BASE_URL')
@@ -484,6 +554,35 @@ def renew():
 
 @auth_bp.route('/payment', methods=['GET', 'POST'])
 def payment():
+    """Checkout MercadoPago de restaurantes y de verticales directos.
+
+    Dos carriles en un solo funnel:
+    - Restaurante: pending_restaurant_id → preference `<id>:<plan>`
+      (comportamiento intacto, backward-compatible).
+    - Business de vertical directo (verduras, ...): pending_business_id →
+      preference `biz:<id>:<plan>`; la activación llega por
+      callback/webhook de MP.
+    """
+    business_id = session.get('pending_business_id')
+    if business_id:
+        selected_plan_key = session.get('selected_plan', 'crecimiento')
+        plan_info = SubscriptionService.get_plan_info(selected_plan_key)
+        if plan_info['price_raw'] <= 0:
+            flash('Plan inválido para pago. Por favor selecciona un plan de pago.')
+            return redirect(url_for('auth.plans'))
+
+        base_url = current_app.config.get('BASE_URL', request.url_root.rstrip('/'))
+        preference_data, _ = SubscriptionService.build_biz_mp_preference_data(
+            selected_plan_key, business_id, base_url
+        )
+        sdk = mercadopago.SDK(current_app.config.get('MP_ACCESS_TOKEN'))
+        checkout_url, _, error_msg = SubscriptionService.create_mp_preference(
+            sdk, preference_data)
+        if error_msg:
+            flash(error_msg)
+            return redirect(url_for('auth.plans'))
+        return redirect(checkout_url)
+
     restaurant_id = session.get('pending_restaurant_id')
 
     if not restaurant_id and 'user_id' in session:
@@ -526,10 +625,68 @@ def payment():
     return redirect(checkout_url)
 
 
+def _biz_payment_callback(ext_ref):
+    """Callback de pago de un Business (vertical directo): `biz:<id>:<plan>`.
+
+    Espeja el flujo de restaurantes (activación + reset de wallet + limpieza
+    de sesión) SIN restaurantes de por medio. La activación es idempotente
+    vía activate_business_from_payment (marcador tx wallet, constraint único
+    por mp_payment_id): callback y webhook no duplican efectos.
+    """
+    try:
+        _, business_id_str, plan_type = ext_ref.split(':', 2)
+        business_id = int(business_id_str)
+    except (ValueError, TypeError):
+        flash('No pudimos confirmar tu pago. Regresa e inténtalo de nuevo.')
+        return redirect(url_for('auth.payment'))
+
+    status = request.args.get('status')
+    business = None
+    if status == 'approved':
+        # Espeja el flujo de restaurantes: SOLO un pago aprobado activa.
+        # Pendiente/fallido no toca el Business (sigue inactivo, can_crud
+        # False por pending_payment) — el usuario reintenta desde /payment.
+        business = SubscriptionService.activate_business_from_payment(
+            business_id, plan_type,
+            payment_id=request.args.get('payment_id'),
+        )
+    if not business:
+        flash('No pudimos confirmar tu pago. Regresa e inténtalo de nuevo.')
+        return redirect(url_for('auth.payment'))
+
+    # Reset de tokens del dueño (igual que restaurantes), idempotente con el
+    # webhook por la tx marcadora del pago.
+    if status == 'approved' and business.owner_user_id:
+        owner = User.query.get(business.owner_user_id)
+        if owner:
+            initialize_or_reset_token_wallet(
+                owner, is_reset=True,
+                mp_payment_id=request.args.get('payment_id'))
+
+    for key in ('otp', 'register_email', 'otp_verified',
+                'pending_restaurant_id', 'pending_business_id',
+                'selected_plan', 'is_renewal', 'pending_plan_change'):
+        session.pop(key, None)
+
+    if status == 'approved':
+        flash('¡Pago confirmado! Tu suscripción está activa. Configura el POS '
+              'de tu negocio y empieza a vender.')
+        # verduras_ready mantiene el enlace de setup (la sesión de core lo
+        # conserva): el dueño aterriza directo en la pantalla del PIN.
+        return redirect(url_for('auth.verduras_ready', slug=business.slug))
+    flash('Tu pago está pendiente de aprobación. Inténtalo de nuevo cuando '
+          'MercadoPago lo confirme.')
+    return redirect(url_for('auth.payment'))
+
+
 @auth_bp.route('/payment-callback')
 def payment_callback():
     status = request.args.get('status')
     ext_ref = request.args.get('external_reference', '')
+
+    # Verticales directos (verduras, ...): `biz:<business_id>:<plan>`.
+    if ext_ref.startswith('biz:'):
+        return _biz_payment_callback(ext_ref)
 
     restaurant_id = None
     plan_type = None

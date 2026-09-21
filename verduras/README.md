@@ -157,6 +157,25 @@ tendero teclea el peso: la venta nunca se bloquea por la báscula.
 > ya acepta los parámetros por llamada, así que el cambio de fuente es
 > trivial.
 
+### Suscripción (ciclo del negocio, v0.9.0)
+
+El POS respeta el ciclo de suscripción que vive en **core** (el módulo
+gestión decisiones de facturación — solo pregunta):
+
+- Vigente o por vencer (≤ 7 días): se vende normal; el badge lo refleja.
+- Gracia / vencida / dormant: `pos_view` muestra `pos_renewal.html` con el
+  mensaje y un enlace de renovación hacia `{CORE_BASE_URL}/renew`, y
+  `pos_sell` rechaza con 409 `suscripcion_inactiva`. Datos SIEMPRE
+  preservados (misma política SaaS de core: nunca borrar).
+- Businesses legacy (piloto, sin dueño ni fecha de vencimiento): **nunca**
+  se bloquean — backward-compatible con el onboarding asistido.
+- La renovación/pago ocurre en core (MercadoPago, `external_reference`
+  `biz:<id>:<plan>`); al confirmarse, el POS vuelve a estar operativo
+  sin intervención en el módulo.
+
+Variables relevantes: `CORE_BASE_URL` (origen de core para el enlace de
+renovación; default `http://localhost:5000`).
+
 ## Extracción futura a repo propio
 
 Cuando el vertical madure, `git subtree split -P verduras` produce un repo

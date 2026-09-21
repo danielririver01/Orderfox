@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+
 from flask import current_app
-from app.models import db, Product, AITokenWallet, AITokenTransaction
+
+from app.models import AITokenTransaction, AITokenWallet, Product, db
 
 PLAN_LIMITS = {
     'emprendedor': {
@@ -94,6 +96,10 @@ TOP_UP_PACKS = {
 }
 
 GRACE_PERIOD_DAYS = 5
+
+# Estados de suscripción de un Business (vertical directo). Misma semántica
+# que Restaurant.subscription_state: 'active' | 'dormant' | 'cancellation_pending'.
+BUSINESS_SUBSCRIPTION_STATES = ('active', 'dormant', 'cancellation_pending')
 
 def is_subscription_active(restaurant, include_grace_period=False):
     """
@@ -371,6 +377,162 @@ def get_subscription_status(restaurant):
         'badge_text': 'Expirada',
         'plan': restaurant.plan_type
     }
+
+def get_business_subscription_status(business):
+    """Estado de suscripción de un Business (vertical directo) — misma
+    máquina de estados que `get_subscription_status(restaurant)`, leyendo
+    `businesses` (owner/plan/expires/state propio). Los espejos de
+    restaurantes siguen usando `get_subscription_status`.
+
+    Diferencia con el de restaurantes: NO consulta `restaurant.plan_type`
+    ni variables de restaurante; todo sale del Business. Mensajes en
+    lenguaje de verdulero ("tu puesto", "tu negocio").
+    """
+    if not business:
+        return {
+            'is_active': False, 'status': 'not_found',
+            'message': 'Negocio no encontrado', 'can_crud': False,
+            'badge_class': 'bg-gray-100 text-gray-600',
+            'badge_text': 'No encontrado', 'plan': None,
+        }
+
+    now = datetime.now(timezone.utc)
+
+    if not business.is_active:
+        if getattr(business, 'subscription_state', None) == 'dormant':
+            return {
+                'is_active': False, 'status': 'dormant',
+                'message': ('¡Hola de nuevo! Tus productos, ventas y reportes '
+                            'están guardados. Reactiva tu plan para seguir '
+                            'vendiendo.'),
+                'can_crud': False,
+                'badge_class': 'bg-blue-100 text-blue-700',
+                'badge_text': 'Reactivar', 'plan': business.plan_type,
+            }
+        # Plan pago aún sin pagar (alta con plan != trial): pendiente de
+        # pago, NO suspendida administrativamente.
+        return {
+            'is_active': False, 'status': 'pending_payment',
+            'message': ('Elige tu plan y realiza el pago para activar tu '
+                        'negocio.'),
+            'can_crud': False,
+            'badge_class': 'bg-yellow-100 text-yellow-600',
+            'badge_text': 'Pago pendiente', 'plan': business.plan_type,
+        }
+
+    if getattr(business, 'subscription_state', None) == 'cancellation_pending':
+        expires_at = business.subscription_expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at and expires_at > now:
+            meses_es = {1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+                        5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+                        9: 'septiembre', 10: 'octubre', 11: 'noviembre',
+                        12: 'diciembre'}
+            formatted = (f"{expires_at.day} de {meses_es[expires_at.month]} "
+                         f"de {expires_at.year}")
+            return {
+                'is_active': True, 'status': 'cancellation_pending',
+                'expires_at': expires_at,
+                'formatted_expiration': formatted,
+                'can_crud': True,
+                'message': (f'Tu suscripción está cancelada y vencerá el '
+                            f'{formatted}. Puedes seguir vendiendo hasta '
+                            'entonces.'),
+                'badge_class': 'bg-amber-100 text-amber-700',
+                'badge_text': 'Cancelación pendiente',
+                'plan': business.plan_type,
+            }
+        return {
+            'is_active': False, 'status': 'dormant',
+            'message': 'Tu suscripción ha vencido. Reactiva tu plan para '
+                       'seguir vendiendo.',
+            'can_crud': False,
+            'badge_class': 'bg-blue-100 text-blue-700',
+            'badge_text': 'Reactivar', 'plan': business.plan_type,
+        }
+
+    if not business.subscription_expires_at:
+        # Sin fecha de vencimiento = tenant legacy/onboarding asistido (piloto,
+        # businesses creados vía API sin dueño): siguen operando como siempre
+        # (backward-compatible — jamás bloquear ventas por un campo que nunca
+        # se les asignó). Los self-service SIEMPRE tienen expiry (trial) o
+        # quedan en pending_payment (plan pago sin pagar).
+        return {
+            'is_active': True, 'status': 'active',
+            'can_crud': True,
+            'message': 'Suscripción activa.',
+            'badge_class': 'bg-green-100 text-green-700',
+            'badge_text': 'Activa', 'plan': business.plan_type,
+        }
+
+    expires_at = business.subscription_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    delta = expires_at - now
+    total_seconds = delta.total_seconds()
+
+    days_remaining = int(total_seconds / 86400)
+    if total_seconds % 86400 > 0 and total_seconds > 0:
+        days_remaining += 1
+
+    if total_seconds > 0:
+        if 1 <= days_remaining <= 7:
+            return {
+                'is_active': True, 'status': 'expiring_soon',
+                'days_remaining': days_remaining,
+                'expires_at': expires_at,
+                'can_crud': True,
+                'message': (f'Tu plan vence en {days_remaining} día'
+                            f'{"s" if days_remaining != 1 else ""}. '
+                            'Renueva para no interrumpir tu POS.'),
+                'badge_class': 'bg-amber-100 text-amber-700',
+                'badge_text': 'Vence pronto', 'plan': business.plan_type,
+            }
+        return {
+            'is_active': True, 'status': 'active',
+            'days_remaining': days_remaining,
+            'expires_at': expires_at,
+            'can_crud': True,
+            'message': (f'Suscripción activa. {days_remaining} día'
+                        f'{"s" if days_remaining != 1 else ""} restante'
+                        f'{"s" if days_remaining != 1 else ""}.'),
+            'badge_class': 'bg-green-100 text-green-700',
+            'badge_text': 'Activa', 'plan': business.plan_type,
+        }
+
+    grace_end = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
+    if now <= grace_end:
+        grace_delta = grace_end - now
+        days_grace = int(grace_delta.total_seconds() / 86400)
+        if grace_delta.total_seconds() % 86400 > 0:
+            days_grace += 1
+        return {
+            'is_active': False, 'status': 'grace_period',
+            'days_grace_remaining': days_grace,
+            'expires_at': expires_at,
+            'can_crud': False,
+            'message': (f'Tu plan finalizó. Tus datos están seguros. Tienes '
+                        f'{days_grace} día{"s" if days_grace != 1 else ""} '
+                        'de gracia para renovar y seguir vendiendo.'),
+            'badge_class': 'bg-orange-100 text-orange-700',
+            'badge_text': 'Periodo de gracia', 'plan': business.plan_type,
+        }
+
+    days_since = abs(days_remaining)
+    return {
+        'is_active': False, 'status': 'expired',
+        'days_since_expiration': days_since,
+        'expires_at': expires_at,
+        'can_crud': False,
+        'message': (f'Suscripción expirada hace {days_since} día'
+                    f'{"s" if days_since != 1 else ""}. Renueva para '
+                    'seguir vendiendo.'),
+        'badge_class': 'bg-red-100 text-red-700',
+        'badge_text': 'Expirada', 'plan': business.plan_type,
+    }
+
 
 def can_perform_crud(restaurant):
     """

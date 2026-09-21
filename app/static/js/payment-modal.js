@@ -108,10 +108,40 @@ function resetMethodPanels() {
     });
 }
 
+let pmShiftCache = { at: 0, require: false, open: true };
+
+async function refreshPmShiftStatus() {
+    // Cache de 15s: evita un fetch por cada clic en método de pago.
+    const now = Date.now();
+    if (now - pmShiftCache.at < 15000) return pmShiftCache;
+    try {
+        const res = await fetch('/cash-register/api/shift');
+        if (!res.ok) return pmShiftCache;
+        const body = await res.json();
+        if (body.success) {
+            pmShiftCache = {
+                at: now,
+                require: !!body.data.require_cash_shift,
+                open: !!body.data.open,
+            };
+        }
+    } catch (e) {
+        /* sin red/permisos: no bloquear, el servidor valida de todos modos */
+    }
+    return pmShiftCache;
+}
+
 function selectPaymentMethod(method) {
     if (paymentModalState.requestInFlight) return;
     paymentModalState.method = method;
     hideError();
+    if (method === 'cash') {
+        refreshPmShiftStatus().then((st) => {
+            if (st.require && !st.open && paymentModalState.method === 'cash') {
+                showError('Debes abrir caja antes de cobrar en efectivo. Abre el turno en Centro de Caja.');
+            }
+        });
+    }
 
     resetMethodPanels();
     const btn = document.querySelector(`[data-pm-method="${method}"]`);
@@ -232,6 +262,9 @@ function confirmPaymentCreate() {
     setHidden(form, 'amount_received', amount);
     setHidden(form, 'change_due', paymentModalState.method === 'cash' ? (amount - paymentModalState.total) : null);
 
+    // Cajón físico: disparo fire-and-forget (no retrasa el submit).
+    if (typeof Drawer !== 'undefined') Drawer.autoKick(paymentModalState.method);
+
     document.body.style.overflow = '';
     form.submit();
 }
@@ -296,6 +329,8 @@ function confirmPaymentRegister() {
             return body;
         })
         .then((body) => {
+            // Cajón físico: el pago ya quedó registrado; abrir no bloquea nada.
+            if (typeof Drawer !== 'undefined') Drawer.autoKick(paymentModalState.method);
             closePaymentModal();
             if (typeof paymentModalState.onSuccess === 'function') {
                 paymentModalState.onSuccess(body.data);

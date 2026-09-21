@@ -18,9 +18,9 @@ from app.services.insights import (
     chart_service,
     classifier,
     context_manager,
-    data_service,
     llm_service,
     prompt_builder,
+    tenant_router,
 )
 from app.services.insights import (
     conversation_service as cs,
@@ -110,6 +110,11 @@ def handle_post_message(cid, user, conv, data):
     # ── Prompt Injection Protection ──────────────────────────────────────
     content = sanitize_user_message(content)
 
+    # ── Router multi-vertical (FASE 0): mismo cerebro, adapter por tenant ──
+    # ds expone la interfaz de data_service (quick/contexto/stage) para el
+    # vertical de la conversación; _tenant_id es business_id o restaurant_id.
+    ds, _tenant_id, _vertical, _business_name = tenant_router.resolve(conv)
+
     t0 = time.time()
     thinking_steps = []  # ── Thinking Panel: pasos del sistema ──
 
@@ -154,8 +159,8 @@ def handle_post_message(cid, user, conv, data):
         ctx_summary = ctx_meta.get('summary')
         ctx_compressed = ctx_meta.get('compressed', False)
         context_json = json.dumps(
-            data_service.build_context(conv.restaurant_id, days=cls['window'],
-                                       depth=analysis_depth),
+            ds.build_context(_tenant_id, days=cls['window'],
+                             depth=analysis_depth),
             ensure_ascii=False,
         )
         total_tokens, baseline = context_manager.estimate_full_prompt_tokens(
@@ -205,11 +210,15 @@ def handle_post_message(cid, user, conv, data):
         'detail': f"Ventana: {cls['window']} días, modo: {analysis_depth}",
     })
 
-    # 2) Guard de alcance: si pide DATOS de un restaurante AJENO
+    # 2) Guard de alcance: si pide DATOS de un negocio AJENO
     restaurant = _restaurant
     restaurant_name = restaurant.name if restaurant else None
     restaurant_slug = restaurant.slug if restaurant else None
-    if classifier.is_foreign_restaurant_query(content, restaurant_name, restaurant_slug):
+    # En verticales directos el nombre propio es el del Business (si no, el
+    # dueño caería en falso positivo al mencionar su verdulería).
+    _own_name = _business_name if _vertical == 'verduras' else restaurant_name
+    _own_slug = None if _vertical == 'verduras' else restaurant_slug
+    if classifier.is_foreign_restaurant_query(content, _own_name, _own_slug):
         return _foreign_restaurant_response(conv, user_msg.id)
 
     # ── Etapa de madurez de datos ──
@@ -220,27 +229,27 @@ def handle_post_message(cid, user, conv, data):
     # catálogo cargado (level >= 1), aunque no haya ventas.
     general_assist = classifier.is_general_assistance(content)
     catalog_query = classifier.is_catalog_query(content)
-    stage = data_service.get_data_stage(conv.restaurant_id)
+    stage = ds.get_data_stage(_tenant_id)
     if not general_assist and not catalog_query:
         if stage['level'] == 0:
-            return _empty_state_response(conv, 'no_catalog')
+            return _empty_state_response(conv, 'no_catalog', ds=ds)
         if stage['level'] == 1:
-            return _empty_state_response(conv, 'no_sales_yet')
+            return _empty_state_response(conv, 'no_sales_yet', ds=ds)
 
     # ── Nivel 1: consulta rápida ──
     if cls['level'] == 'quick':
         t_step = time.time()
-        result = data_service.handle_quick(conv.restaurant_id, cls['intent'])
+        result = ds.handle_quick(_tenant_id, cls['intent'])
         thinking_steps.append({
             'label': 'Ejecutando consulta SQL',
             'icon': 'data_object',
             'duration_ms': int((time.time() - t_step) * 1000),
             'detail': f"Intención: {cls['intent']}",
         })
-        if data_service.is_empty_quick_result(result):
-            label = data_service.window_label_from_days(cls['window'])
-            return _empty_state_response(conv, 'no_data_window', window_label=label)
-        chart = chart_service.chart_for_intent(conv.restaurant_id, cls['intent'], result)
+        if ds.is_empty_quick_result(result):
+            label = ds.window_label_from_days(cls['window'])
+            return _empty_state_response(conv, 'no_data_window', window_label=label, ds=ds)
+        chart = chart_service.chart_for_intent(_tenant_id, cls['intent'], result, ds=ds)
         execution_ms = int((time.time() - t0) * 1000)
         meta = {
             'type': 'quick',
@@ -250,7 +259,7 @@ def handle_post_message(cid, user, conv, data):
             'model': 'sql',
             'execution_ms': execution_ms,
             'suggestions': chart_service.followup_suggestions(
-                cls, stage=stage, restaurant_id=conv.restaurant_id,
+                cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
             ),
         }
         if chart:
@@ -265,7 +274,7 @@ def handle_post_message(cid, user, conv, data):
             'chart': chart,
             'metadata': meta,
             'suggestions': chart_service.followup_suggestions(
-                cls, stage=stage, restaurant_id=conv.restaurant_id,
+                cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
             ),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
@@ -273,12 +282,12 @@ def handle_post_message(cid, user, conv, data):
         })
 
     # ── Nivel 2: análisis IA ──
-    if not general_assist and not catalog_query and not data_service.has_sales(conv.restaurant_id, cls['window']):
-        label = data_service.window_label_from_days(cls['window'])
+    if not general_assist and not catalog_query and not ds.has_sales(_tenant_id, cls['window']):
+        label = ds.window_label_from_days(cls['window'])
         kind = 'chart_empty' if re.search(
             r'gr.ffic|chart|visualiz', content.lower(),
         ) else 'no_data_window'
-        return _empty_state_response(conv, kind, window_label=label)
+        return _empty_state_response(conv, kind, window_label=label, ds=ds)
 
     follow_up = conv.analysis_active
     turn_consumed = False
@@ -322,7 +331,7 @@ def handle_post_message(cid, user, conv, data):
     )
     if follow_up and wants_calc:
         t_step = time.time()
-        proj = data_service.projection_uplift(conv.restaurant_id)
+        proj = ds.projection_uplift(_tenant_id)
         thinking_steps.append({
             'label': 'Calculando impacto',
             'icon': 'calculate',
@@ -348,7 +357,7 @@ def handle_post_message(cid, user, conv, data):
             'execution_ms': execution_ms,
             'chart': chart,
             'suggestions': chart_service.followup_suggestions(
-                cls, stage=stage, restaurant_id=conv.restaurant_id,
+                cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
             ),
         }
         assistant_msg = cs.add_message(cid, 'assistant', proj['text'], meta)
@@ -359,7 +368,7 @@ def handle_post_message(cid, user, conv, data):
             'chart': chart,
             'metadata': meta,
             'suggestions': chart_service.followup_suggestions(
-                cls, stage=stage, restaurant_id=conv.restaurant_id,
+                cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
             ),
             'message_id': user_msg.id,
             'assistant_message_id': assistant_msg.id,
@@ -369,8 +378,8 @@ def handle_post_message(cid, user, conv, data):
     # ── Llamar al LLM ──
     try:
         t_step = time.time()
-        context = data_service.build_context(
-            conv.restaurant_id, days=cls['window'],
+        context = ds.build_context(
+            _tenant_id, days=cls['window'],
             include_catalog=catalog_query, depth=analysis_depth,
         )
         history = cs.get_messages(cid)
@@ -390,7 +399,12 @@ def handle_post_message(cid, user, conv, data):
         web_results = None
         web_search_used = False
         from app.services.insights import web_search
-        can_search = web_search.check_and_reset_monthly_counter(_restaurant)
+        # Sin restaurante (owner de vertical directo) no hay contador mensual:
+        # se omite web search en vez de fallar con AttributeError.
+        can_search = (
+            web_search.check_and_reset_monthly_counter(_restaurant)
+            if _restaurant is not None else False
+        )
         if can_search:
             t_step = time.time()
             try:
@@ -418,6 +432,8 @@ def handle_post_message(cid, user, conv, data):
             knowledge=knowledge,
             analysis_depth=analysis_depth,
             web_results=web_results,
+            vertical=_vertical,
+            business_name=_business_name,
         )
         thinking_steps.append({
             'label': 'Seleccionando conocimiento',
@@ -427,9 +443,11 @@ def handle_post_message(cid, user, conv, data):
         })
 
         t_step = time.time()
+        # Telemetría (ai_llm_calls) solo para restaurante: su FK no acepta
+        # business_id de verticales (el registro se omite, no falla).
         raw = llm_service.chat(
             messages, source='insights', conversation_id=cid,
-            restaurant_id=conv.restaurant_id,
+            restaurant_id=conv.restaurant_id if _vertical == 'restaurant' else None,
             analysis_depth=analysis_depth,
         )
         thinking_steps.append({
@@ -482,7 +500,7 @@ def handle_post_message(cid, user, conv, data):
         'web_search_used': web_search_used,
         'sources': sources,
         'suggestions': chart_service.followup_suggestions(
-            cls, stage=stage, restaurant_id=conv.restaurant_id,
+            cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
         ),
     }
     if stage['level'] == 2:
@@ -509,7 +527,7 @@ def handle_post_message(cid, user, conv, data):
         'sources': sources,
         'metadata': meta,
         'suggestions': chart_service.followup_suggestions(
-            cls, stage=stage, restaurant_id=conv.restaurant_id,
+            cls, stage=stage, restaurant_id=_tenant_id, ds=ds,
         ),
         'message_id': user_msg.id,
         'assistant_message_id': assistant_msg.id,

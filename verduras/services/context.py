@@ -53,6 +53,33 @@ def require_business(business_id: int) -> Business:
     return biz
 
 
+def get_subscription_status(business: Business) -> dict:
+    """Estado de suscripción del tenant — delegado 100% a core.
+
+    La máquina de estados (trial → activo → gracia → vencido) vive en
+    `app.utils.subscription.get_business_subscription_status`: el módulo no
+    decide cuándo expira un plan, solo pregunta. Al extraer a repo propio,
+    esto pasa a ser una llamada HTTP a core junto con el resto del contrato.
+    """
+    from app.utils.subscription import get_business_subscription_status
+    return get_business_subscription_status(business)
+
+
+class BusinessInactiveError(PermissionError):
+    """Tenant legítimo pero sin suscripción usable (gracia/vencido)."""
+
+    def __init__(self, status: dict):
+        self.status = status
+        super().__init__(status.get('message') or 'Suscripción inactiva')
+
+
+def ensure_business_active(business: Business) -> None:
+    """Valida que el tenant pueda operar HOY; levanta BusinessInactiveError."""
+    status = get_subscription_status(business)
+    if not status.get('can_crud'):
+        raise BusinessInactiveError(status)
+
+
 def list_verduras_businesses() -> list[Business]:
     """Businesses activos de este vertical (para directorio/dashboard)."""
     return (

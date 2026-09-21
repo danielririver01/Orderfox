@@ -1,5 +1,10 @@
 <!-- Modal de Pago / Caja Registradora (reutilizable) -->
 <!-- Configuración desde JS: openPaymentModal({ total, orderId, mode }) en js/payment-modal.js -->
+<!-- Cajón físico: QZ Tray (CDN pineado) + Drawer (nuestro puente). Si el CDN
+     falla (sin internet), el cobro sigue funcionando igual: drawer.js tolera
+     la ausencia de `qz` y nunca bloquea un pago. -->
+<script src="https://cdn.jsdelivr.net/npm/qz-tray@2.3.0/qz-tray.js" defer></script>
+<script src="{{ url_for('static', filename='js/drawer.js') }}" defer></script>
 <div id="payment-modal"
     class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
     <div class="bg-[#141414] rounded-3xl max-w-sm w-full shadow-2xl border border-[#262626] overflow-hidden flex flex-col"

@@ -14,7 +14,7 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from app.models import CashRegister, Order, OrderEvent, db
+from app.models import CashRegister, CashShift, Order, OrderEvent, Restaurant, db
 from app.services.order_service import actor_display
 from app.utils.timezone import to_colombia, today_start_utc
 
@@ -268,17 +268,34 @@ class CashRegisterService:
         ).order_by(CashRegister.period_start.asc()).first()
 
     @staticmethod
-    def close_register(restaurant_id, user_id, start, end):
+    def close_register(restaurant_id, user_id, start, end, counted_cash=None):
         """Persiste un cierre de caja para [start, end). Lanza ValueError/409.
 
         - Rechaza rangos que se solapan con cierres previos (evita contar
           ventas dos veces en el cuadre físico).
         - Rechaza periodos sin ventas (total $0): no tiene sentido cuadrar
           una caja sin movimientos.
+        - Modo estricto (`Restaurant.require_cash_shift=True`): exige
+          `counted_cash` (conteo físico obligatorio solo al cerrar) y guarda
+          el arqueo esperado/contado/diferencia en el cierre.
         - El unique (restaurant_id, period_start) actúa como red de seguridad
           contra doble clic simultáneo.
         Devuelve el CashRegister creado (tras commit).
         """
+        restaurant = Restaurant.query.get(restaurant_id)
+        strict = bool(restaurant and getattr(restaurant, 'require_cash_shift', False))
+        if strict and counted_cash is None:
+            raise ValueError(
+                'Debes ingresar el conteo físico del efectivo para cerrar caja. '
+                'Cuenta el dinero en caja y digita el total.'
+            )
+        if counted_cash is not None:
+            try:
+                counted_cash = int(counted_cash)
+            except (TypeError, ValueError):
+                raise ValueError('El conteo físico debe ser un número válido')
+            if counted_cash < 0:
+                raise ValueError('El conteo físico no puede ser negativo')
         overlap = CashRegisterService._find_overlapping(restaurant_id, start, end)
         if overlap:
             # Mostrar las fechas en hora de Colombia (los rangos se guardan en UTC)
@@ -304,6 +321,12 @@ class CashRegisterService:
             )
         b = summary['breakdown']
 
+        expected_cash = None
+        difference = None
+        if counted_cash is not None:
+            expected_cash = b['cash']['total'] - summary['cash_change_total']
+            difference = counted_cash - expected_cash
+
         closing = CashRegister(
             restaurant_id=restaurant_id,
             closed_by=user_id,
@@ -321,6 +344,10 @@ class CashRegisterService:
             card_total=b['card']['total'],
             card_orders=b['card']['orders'],
             cash_change_total=summary['cash_change_total'],
+            opening_amount=0,
+            expected_cash=expected_cash,
+            counted_cash=counted_cash,
+            difference=difference,
         )
         db.session.add(closing)
         try:
@@ -348,6 +375,10 @@ class CashRegisterService:
                 'avg_ticket': c.avg_ticket,
                 'cash_total': c.cash_total,
                 'cash_change_total': c.cash_change_total,
+                'opening_amount': c.opening_amount or 0,
+                'expected_cash': c.expected_cash,
+                'counted_cash': c.counted_cash,
+                'difference': c.difference,
                 'created_at': c.created_at.isoformat() if c.created_at else None,
                 'closed_by': c.closed_by_user.username if c.closed_by_user else None,
             }
@@ -359,3 +390,167 @@ class CashRegisterService:
         """Un cierre por ID, verificado por restaurante (anti-IDOR)."""
         return CashRegister.query.filter_by(
             id=close_id, restaurant_id=restaurant_id).first()
+
+
+class CashShiftService:
+    """Turnos de caja: apertura con fondo + cierre con conteo físico.
+
+    Reglas:
+    - Un solo turno `open` por restaurante.
+    - `expected_cash` = fondo inicial + ventas netas en efectivo
+      (`SUM(total) - SUM(change_due)`) con `paid_at >= opened_at`.
+      `change_due` existe en `Order` (verificado) así que el esperado
+      no queda inflado por el vuelto entregado.
+    - En modo estricto el conteo es obligatorio solo al cerrar; durante
+      el día la caja solo muestra lo esperado, sin fricción.
+    """
+
+    @staticmethod
+    def get_open_shift(restaurant_id):
+        """Turno abierto vigente o None."""
+        return CashShift.query.filter_by(
+            restaurant_id=restaurant_id, status='open').first()
+
+    @staticmethod
+    def open_shift(restaurant_id, user_id, opening_amount=0):
+        """Abre un turno con fondo inicial. Lanza ValueError si ya hay uno."""
+        try:
+            opening = int(opening_amount or 0)
+        except (TypeError, ValueError):
+            raise ValueError('El fondo inicial debe ser un número válido')
+        if opening < 0:
+            raise ValueError('El fondo inicial no puede ser negativo')
+
+        existing = CashShiftService.get_open_shift(restaurant_id)
+        if existing:
+            raise ValueError(
+                'Ya hay una caja abierta. Ciérrala antes de abrir otra.'
+            )
+
+        shift = CashShift(
+            restaurant_id=restaurant_id,
+            status='open',
+            opening_amount=opening,
+            opened_by=user_id,
+            opened_at=datetime.now(timezone.utc),
+        )
+        db.session.add(shift)
+        db.session.commit()
+        return shift
+
+    @staticmethod
+    def expected_cash_now(restaurant_id, shift=None):
+        """Efectivo que debería haber ahora: fondo + neto cash desde apertura."""
+        shift = shift or CashShiftService.get_open_shift(restaurant_id)
+        if not shift:
+            return 0
+        opening = shift.opening_amount or 0
+        q = Order.query.filter(
+            Order.restaurant_id == restaurant_id,
+            Order.status != 'cancelled',
+            Order.payment_method == 'cash',
+            Order.paid_at.isnot(None),
+            Order.paid_at >= shift.opened_at,
+        )
+        sales = db.session.query(func.coalesce(func.sum(Order.total), 0)).filter(
+            Order.id.in_(q.with_entities(Order.id))).scalar() or 0
+        change = db.session.query(func.coalesce(func.sum(Order.change_due), 0)).filter(
+            Order.id.in_(q.with_entities(Order.id))).scalar() or 0
+        return int(opening + sales - change)
+
+    @staticmethod
+    def serialize_shift(shift, expected_cash=None):
+        """Turno como dict para la API."""
+        if not shift:
+            return None
+        return {
+            'id': shift.id,
+            'status': shift.status,
+            'opening_amount': shift.opening_amount or 0,
+            'opened_at': shift.opened_at.isoformat() if shift.opened_at else None,
+            'closed_at': shift.closed_at.isoformat() if shift.closed_at else None,
+            'expected_cash': expected_cash if expected_cash is not None else shift.expected_cash,
+            'counted_cash': shift.counted_cash,
+            'difference': shift.difference,
+            'opened_by': shift.opened_by_user.username if shift.opened_by_user else None,
+            'closed_by': shift.closed_by_user.username if shift.closed_by_user else None,
+        }
+
+    @staticmethod
+    def close_shift(restaurant_id, user_id, counted_cash=None):
+        """Cierra el turno abierto con conteo físico + snapshot en CashRegister.
+
+        - En modo estricto `counted_cash` es obligatorio; en modo normal es
+          opcional (si viene, igual se guarda el arqueo).
+        - Permite cerrar aunque no haya ventas (fondo intacto).
+        - Crea el `CashRegister` del periodo [opened_at, now) con el arqueo
+          para que el ticket muestre esperado/contado/diferencia.
+        Devuelve (shift, closing).
+        """
+        restaurant = Restaurant.query.get(restaurant_id)
+        strict = bool(restaurant and getattr(restaurant, 'require_cash_shift', False))
+        if strict and counted_cash is None:
+            raise ValueError(
+                'Debes ingresar el conteo físico del efectivo para cerrar caja. '
+                'Cuenta el dinero en caja y digita el total.'
+            )
+        if counted_cash is not None:
+            try:
+                counted_cash = int(counted_cash)
+            except (TypeError, ValueError):
+                raise ValueError('El conteo físico debe ser un número válido')
+            if counted_cash < 0:
+                raise ValueError('El conteo físico no puede ser negativo')
+
+        shift = CashShiftService.get_open_shift(restaurant_id)
+        if not shift:
+            raise ValueError('No hay ninguna caja abierta para cerrar.')
+
+        now = datetime.now(timezone.utc)
+        expected = CashShiftService.expected_cash_now(restaurant_id, shift)
+        difference = (counted_cash - expected) if counted_cash is not None else None
+
+        shift.status = 'closed'
+        shift.closed_by = user_id
+        shift.closed_at = now
+        shift.expected_cash = expected
+        shift.counted_cash = counted_cash
+        shift.difference = difference
+
+        # Snapshot del turno para el historial/ticket (no usa close_register
+        # porque un turno puede no tener ventas y aun así debe cuadrar).
+        summary = CashRegisterService.get_summary(
+            restaurant_id, shift.opened_at, now)
+        b = summary['breakdown']
+        closing = CashRegister(
+            restaurant_id=restaurant_id,
+            closed_by=user_id,
+            period_start=shift.opened_at,
+            period_end=now,
+            total_sales=summary['total_sales'],
+            total_orders=summary['total_orders'],
+            avg_ticket=summary['avg_ticket'],
+            cash_total=b['cash']['total'],
+            cash_orders=b['cash']['orders'],
+            nequi_total=b['nequi']['total'],
+            nequi_orders=b['nequi']['orders'],
+            bancolombia_total=b['bancolombia']['total'],
+            bancolombia_orders=b['bancolombia']['orders'],
+            card_total=b['card']['total'],
+            card_orders=b['card']['orders'],
+            cash_change_total=summary['cash_change_total'],
+            opening_amount=shift.opening_amount or 0,
+            expected_cash=expected,
+            counted_cash=counted_cash,
+            difference=difference,
+            shift_id=shift.id,
+        )
+        db.session.add(closing)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError(
+                'Este turno ya fue cerrado. Revisa el historial de cierres.'
+            )
+        return shift, closing

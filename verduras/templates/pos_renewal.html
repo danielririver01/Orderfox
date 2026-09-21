@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suscripción · {{ business.name }} · Velzia Verduras</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+</head>
+<body>
+  <div class="login-wrap">
+    <p class="login-logo">Velzia <span>Verduras</span></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ 'flash-ok' if category == 'ok' else 'flash-error' }}" role="alert">
+            <span class="material-symbols-rounded" aria-hidden="true">{{ 'check_circle' if category == 'ok' else 'error' }}</span>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="login-card">
+      <span class="material-symbols-rounded sub-icon {{ 'warn-icon' if status.status == 'grace_period' else 'danger-icon' }}" aria-hidden="true">storefront</span>
+      <h1>{% if status.status == 'grace_period' %}Tu plan finalizó{% else %}Tu plan no está activo{% endif %}</h1>
+      <p class="login-hint">{{ status.message }}</p>
+
+      {% if status.days_grace_remaining is defined and status.days_grace_remaining %}
+        <p class="sub-days"><strong>{{ status.days_grace_remaining }}</strong> día{{ 's' if status.days_grace_remaining != 1 }} de gracia restante{{ 's' if status.days_grace_remaining != 1 }}</p>
+      {% endif %}
+
+      {% if status.expires_at is defined and status.expires_at %}
+        <p class="sub-days">Venció el {{ status.expires_at.strftime('%d/%m/%Y') }}</p>
+      {% endif %}
+
+      <p class="login-hint">
+        Los datos de tu puesto están a salvo: productos, ventas e inventario
+        se conservan. Renueva para volver a vender hoy mismo.
+      </p>
+
+      <a class="btn btn-primary btn-block"
+         href="{{ core_payment_url }}"
+         aria-label="Renovar suscripción en Velzia">Renovar suscripción</a>
+    </div>
+  </div>
+</body>
+</html>

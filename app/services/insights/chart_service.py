@@ -14,8 +14,13 @@ from app.services.insights import data_service
 VALID_CHART_TYPES = {'line', 'bar', 'doughnut', 'pie'}
 
 
-def chart_for_intent(restaurant_id, intent, result):
-    """Genera chart para consultas rápidas cuando los datos lo ameritan."""
+def chart_for_intent(restaurant_id, intent, result, ds=None):
+    """Genera chart para consultas rápidas cuando los datos lo ameritan.
+
+    ds: módulo adapter (data_service o data_service_verduras). Default:
+    restaurante (backward-compatible).
+    """
+    ds = ds or data_service
     today = datetime.now(timezone.utc).date()
     days_labels = {0: 'Dom', 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb'}
     def dl(d):
@@ -25,7 +30,7 @@ def chart_for_intent(restaurant_id, intent, result):
 
     if intent in ('sales_today', 'sales_yesterday'):
         start = today - timedelta(days=6)
-        series = dict(data_service.daily_series_since(restaurant_id, start))
+        series = dict(ds.daily_series_since(restaurant_id, start))
         labels, data = [], []
         for i in range(6, -1, -1):
             d = today - timedelta(days=i)
@@ -52,7 +57,7 @@ def chart_for_intent(restaurant_id, intent, result):
 
     if intent == 'week_sales':
         start = today - timedelta(days=6)
-        series = dict(data_service.daily_series_since(restaurant_id, start))
+        series = dict(ds.daily_series_since(restaurant_id, start))
         labels, data = [], []
         for i in range(6, -1, -1):
             d = today - timedelta(days=i)
@@ -64,7 +69,7 @@ def chart_for_intent(restaurant_id, intent, result):
     if intent == 'month_sales':
         start = today - timedelta(days=29)
         # Agrupar por semana para no saturar
-        series = dict(data_service.daily_series_since(restaurant_id, start))
+        series = dict(ds.daily_series_since(restaurant_id, start))
         weeks = []
         week_start = start
         while week_start <= today:
@@ -137,8 +142,18 @@ def clean_chart(chart):
     }
 
 
-def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None, restaurant_id=None):
-    """Chips contextuales según el último intent y el historial de la conversación."""
+def followup_suggestions(cls=None, last_intent=None, stage=None, seen_intents=None, restaurant_id=None, ds=None):
+    """Chips contextuales según el último intent y el historial de la conversación.
+
+    ds: módulo adapter. Con data_service_verduras, restaurant_id se interpreta
+    como business_id del vertical.
+    """
+    ds = ds or data_service
+    if ds is not data_service:
+        return ds.followup_suggestions(
+            cls=cls, last_intent=last_intent, business_id=restaurant_id,
+            stage=stage, seen_intents=seen_intents,
+        )
     return data_service.followup_suggestions(
         cls=cls, last_intent=last_intent, stage=stage, seen_intents=seen_intents,
         restaurant_id=restaurant_id,

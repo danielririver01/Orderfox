@@ -308,6 +308,11 @@ QUICK_PATTERNS = [
     ('compare_months',    r'(compar|contrast|vs|frente a|mes pasado|mes anterior|este mes.{0,6}anterior)'),
     ('week_sales',        r'(venta|vend|ingreso).{0,12}(semana|esta semana|7 dias|7 d.ias)'),
     ('month_sales',       r'(venta|vend|ingreso).{0,12}(mes|este mes|30 dias|30 d.ias|mensual)'),
+    # Verdulería FASE 1: stock y merma directos (patrones explícitos para
+    # cero falsos positivos; "¿qué me queda?" genérico sigue a análisis).
+    ('stock_status',      r'(stock|existencias?|inventario)'),
+    ('stock_status',      r'(se .{0,12}(acab|agot)|por agotarse|queda poco)'),
+    ('merma_month',       r'(merma|desperdicio|dañad|danad|podrid|se bota|botado)'),
 ]
 
 
@@ -408,13 +413,20 @@ def _window_for_intent(intent):
         'compare_months': 60,
         'week_sales': 7,
         'month_sales': 30,
+        'stock_status': 7,
+        'merma_month': 30,
     }.get(intent, 30)
 
 
 def _analysis_intent(norm):
     """Clasifica la intención de análisis para enriquecer el contexto/metadata."""
+    # Verdulería FASE 1: reposición y merma antes que los genéricos.
+    if re.search(r'(repon|reabaste|abastec|qué compro|que compro|qué pido|que pido|debo comprar|debo pedir)', norm):
+        return 'restock'
     if re.search(r'(por que|baj|ca.?|cay|sub|crec|tendencia|razón|razon)', norm):
         return 'sales_analysis'
+    if re.search(r'(merma|desperdicio)', norm):
+        return 'waste_analysis'
     if re.search(r'(rentabil|gananci|margen|costo|food\s*cost|utilidad|profit)', norm):
         return 'profitability_analysis'
     if re.search(r'(recomend|sugerenc|promocion|mejor|optimiz|deberia|deber.a)', norm):

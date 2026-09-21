@@ -227,6 +227,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.3.0/qz-tray.js" defer></script>
+    <script src="{{ url_for('static', filename='js/drawer.js') }}" defer></script>
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -352,6 +354,8 @@
             try {
                 const data = await registerPayment(orderId, 'cash', amount);
                 if (data.success) {
+                    // Cajón físico: fire-and-forget, nunca bloquea el cobro.
+                    if (typeof Drawer !== 'undefined') Drawer.autoKick('cash');
                     const change = data.data?.change_due || 0;
                     if (change > 0) {
                         showChangeModal(change);  // muestra el vuelto antes de recargar

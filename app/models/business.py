@@ -15,7 +15,6 @@ Estrategia (rama feature/verduras, ver CHANGELOG):
   listeners queden registrados siempre.
 """
 from datetime import datetime, timedelta, timezone
-import secrets
 
 from sqlalchemy import event
 
@@ -68,6 +67,14 @@ class Business(db.Model):
     plan_type = db.Column(db.String(20), default='trial', nullable=False,
                           server_default='trial')
     subscription_expires_at = db.Column(AwareDateTime, nullable=True)
+    # Ciclo de vida SaaS del Business (vertical directo): 'active' | 'dormant'
+    # | 'cancellation_pending' — misma semántica que en Restaurant.
+    subscription_state = db.Column(
+        db.String(20), default='active', server_default='active',
+        nullable=False)
+    # Momento del dormido (scheduler de lifecycle) — misma auditoría que
+    # Restaurant.dormant_at: preservar datos, nunca borrarlos.
+    dormant_at = db.Column(AwareDateTime, nullable=True)
     has_used_trial = db.Column(db.Boolean, default=False, nullable=False,
                                server_default='0')
     # Token de UN SOLO USO para el setup del POS del módulo (PIN + WhatsApp).

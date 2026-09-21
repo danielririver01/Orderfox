@@ -32,10 +32,14 @@ class Config:
 
     # Módulo
     MODULE_NAME = 'verduras'
-    MODULE_VERSION = '0.8.0'
+    MODULE_VERSION = '0.9.0'
     # Origen de la API de core (para llamadas HTTP cuando la DB compartida
     # no aplique, p.ej. core desplegado por separado). Por defecto, local.
     CORE_API_BASE_URL = os.environ.get('CORE_API_BASE_URL') or 'http://localhost:5000'
+    # Origen del dashboard de core (enlaces del módulo hacia core, p.ej. la
+    # pantalla de renovación de suscripción). Mismo patrón que VERDURAS_BASE_URL
+    # en core, en sentido inverso.
+    CORE_BASE_URL = os.environ.get('CORE_BASE_URL') or 'http://localhost:5000'
 
     # API key server-to-server (header x-api-key), mismo patrón que core.
     # Protege las mutaciones del catálogo (POST /api/verduras/*).

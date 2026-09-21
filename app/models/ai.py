@@ -15,7 +15,11 @@ class CopilotConversation(db.Model):
     __tablename__ = 'copilot_conversations'
 
     id = db.Column(db.Integer, primary_key=True)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
+    # FASE 0 multi-vertical: restaurante usa restaurant_id; verticales directos
+    # (verdulería, sin espejo en restaurants) usan business_id. Uno de los dos
+    # siempre va setiado; el otro queda NULL.
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id', ondelete='CASCADE'), nullable=True, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     # Origen de la conversación: 'insights' (Copilot VZ) o 'cash_register' (Centro de Caja).
     source = db.Column(db.String(30), default='insights', nullable=False, index=True)

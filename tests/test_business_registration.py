@@ -216,13 +216,17 @@ class TestRegisterVerdurasFlow:
 
 class TestRestaurantFlowUnchanged:
     def test_register_redirects_setup_for_new_user(self, client, db):
-        """Usuario SIN restaurante ni business → setup de restaurante
-        (comportamiento original intacto)."""
+        """Usuario SIN restaurante ni business → selector de mundos, y
+        elegir restaurante lleva al setup original (flujo intacto)."""
         user = _mk_user(db, 'rest@test.com')
         _login(client, user)
         res = client.get('/register', follow_redirects=False)
         assert res.status_code == 302
-        assert 'setup-account' in res.headers['Location']
+        assert 'vertical' in res.headers['Location']
+        pick = client.get('/register/vertical/elegir/restaurant',
+                          follow_redirects=False)
+        assert pick.status_code == 302
+        assert 'setup-account' in pick.headers['Location']
 
     def test_register_redirects_dashboard_for_verduras_owner(self, client,
                                                              db):

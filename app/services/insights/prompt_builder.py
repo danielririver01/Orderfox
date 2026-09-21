@@ -16,7 +16,7 @@ Cuando una gráfica aporte valor, responde con un objeto JSON que incluye
 
 import json
 
-PROMPT_VERSION = "v1.6"
+PROMPT_VERSION = "v1.8"
 
 # ── Analysis Depth: historial y variante de prompt por modo ───────────────────
 DEPTH_HISTORY_LIMIT = {'fast': 3, 'normal': 15, 'detailed': 25}
@@ -126,6 +126,27 @@ FORMATO DE RESPUESTA:
 - Si es el PRIMER mensaje, puedes añadir "title": "..." dentro del JSON."""
 
 
+VERDURAS_SECTION = """
+SECCIÓN VERDULERÍA (el negocio del usuario NO es un restaurante):
+- Es una verdulería: los productos se venden por KG, LIBRA o UNIDAD. Los
+  precios del catálogo son por esa unidad (ej. $3.200/kg).
+- Las cantidades fraccionadas son gramos: 0.5 kg = 500 g, 1.250 kg = 1.250 g.
+- Cuando menciones cantidades, incluye siempre la unidad ("vendiste 12 kg
+  de tomate", no "vendiste 12 de tomate").
+- STOCK, COSTOS Y MERMA (FASE 1): el contexto puede traer secciones
+  "inventory" (stock derivado = compras − ventas − merma, con su valor en
+  COP), "margins" (ingreso − costo ponderado por producto) y "merma"
+  (pérdida congelada en COP por producto y motivo). Úsalas para responder
+  con cifras exactas y citarlas.
+- Si una sección falta o marca sin_datos (ej. producto sin lotes de compra),
+  DILO explícitamente ("aún no registras compras de X") y NUNCA inventes el
+  costo, el stock ni la merma. Sugiere registrar el lote o la merma.
+- REPOSICIÓN: propone cantidades con la fórmula visible
+  (venta diaria promedio × días a cubrir − stock actual), citando cada
+  número. NUNCA inventes puntos de reorden ni lead times.
+- El precio vigente de un producto está en catalog_items (price + unit).
+"""
+
 CASH_SYSTEM_PROMPT = """Eres Copilot de Caja, el asistente inteligente del Centro de Caja de \
 Velzia. Tu trabajo es ayudar al dueño de un restaurante a entender el estado de su caja \
 (qué entró, por qué método, qué falta por cobrar) respondiendo en español de Colombia, \
@@ -165,7 +186,7 @@ responde ÚNICAMENTE con un objeto JSON válido (sin markdown) con esta forma:
 def build_analysis_messages(user_message, context, history=None, restaurant_name=None,
                              context_summary=None, compressed=False, system_prompt=None,
                              max_history=None, knowledge=None, analysis_depth='normal',
-                             web_results=None):
+                             web_results=None, vertical='restaurant', business_name=None):
     """
     Construye la lista de mensajes para la API de chat.
 
@@ -190,6 +211,9 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
         web_results: lista opcional de resultados de búsqueda web
             (Tavily). Cada elemento es {'title': str, 'url': str, 'content': str}.
             Si se provee, se inyecta como contexto externo al LLM.
+        vertical: 'restaurant' (default) o 'verduras'. Con 'verduras' se
+            activa VERDURAS_SECTION y el bloque se titula CONTEXTO DEL NEGOCIO.
+        business_name: nombre del negocio verdulero para personalizar.
     Returns:
         list of {role, content} listo para la API.
     """
@@ -207,12 +231,20 @@ def build_analysis_messages(user_message, context, history=None, restaurant_name
     max_history = max(1, int(max_history))
 
     ctx_block = json.dumps(context, ensure_ascii=False, indent=2)
-    restaurant_line = f"Restaurante: {restaurant_name}\n" if restaurant_name else ""
+    is_verduras = (vertical == 'verduras')
+    verduras_section = VERDURAS_SECTION if (is_verduras and not system_prompt) else ''
+    if is_verduras and business_name:
+        business_line = f"Negocio (verdulería): {business_name}\n"
+    elif restaurant_name:
+        business_line = f"Restaurante: {restaurant_name}\n"
+    else:
+        business_line = ""
+    context_title = "CONTEXTO DEL NEGOCIO" if is_verduras else "CONTEXTO DEL RESTAURANTE"
     depth_suffix = DEPTH_INSTRUCTIONS.get(analysis_depth, '') if not system_prompt else ''
     system_content = (
-        f"{(system_prompt or SYSTEM_PROMPT)}{depth_suffix}\n\n"
-        f"{restaurant_line}"
-        "CONTEXTO DEL RESTAURANTE (preparado por el sistema, no lo edites):\n"
+        f"{(system_prompt or SYSTEM_PROMPT)}{verduras_section}{depth_suffix}\n\n"
+        f"{business_line}"
+        f"{context_title} (preparado por el sistema, no lo edites):\n"
         f"```json\n{ctx_block}\n```"
     )
 

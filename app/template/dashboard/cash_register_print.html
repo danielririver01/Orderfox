@@ -70,6 +70,23 @@
         <div class="row"><span class="lbl">Vuelto entregado (efectivo)</span><span>${{ '{:,}'.format(closing.cash_change_total).replace(',', '.') }}</span></div>
     </div>
 
+    {% if closing.counted_cash is not none %}
+    <hr>
+    <div class="box">
+        <div class="row"><span class="lbl">Arqueo de efectivo</span><span></span></div>
+        {% if closing.opening_amount %}
+        <div class="row mt"><span class="lbl">Fondo inicial</span><span>${{ '{:,}'.format(closing.opening_amount).replace(',', '.') }}</span></div>
+        {% endif %}
+        {% if closing.expected_cash is not none %}
+        <div class="row mt"><span class="lbl">Esperado</span><span>${{ '{:,}'.format(closing.expected_cash).replace(',', '.') }}</span></div>
+        {% endif %}
+        <div class="row mt"><span class="lbl">Contado</span><span>${{ '{:,}'.format(closing.counted_cash).replace(',', '.') }}</span></div>
+        {% if closing.difference is not none %}
+        <div class="row mt"><span class="lbl">Diferencia</span><span>${{ '{:,}'.format(closing.difference).replace(',', '.') }}</span></div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="footer">
         Este documento certifica el cierre de caja del periodo indicado.<br>
         Generado por Velzia · {{ restaurant.name }}

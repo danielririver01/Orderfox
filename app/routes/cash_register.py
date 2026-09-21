@@ -27,11 +27,12 @@ from flask import (
     session,
 )
 
-from app.models import User
+from app.models import User, db
 from app.services.cash_register_copilot import handle_cash_message
 from app.services.cash_register_service import (
     RANGE_TYPES,
     CashRegisterService,
+    CashShiftService,
     NoSalesError,
 )
 from app.services.insights import conversation_service as cs
@@ -140,6 +141,132 @@ def api_closes():
     return jsonify({'success': True, 'data': closes})
 
 
+def _cash_settings_payload(restaurant):
+    """Flags de caja del admin: modo estricto + cajón físico (QZ Tray)."""
+    return {
+        'require_cash_shift': bool(getattr(restaurant, 'require_cash_shift', False)),
+        'drawer_enabled': bool(getattr(restaurant, 'drawer_enabled', False)),
+        'drawer_auto_open': bool(getattr(restaurant, 'drawer_auto_open', False)),
+    }
+
+
+@cash_register_bp.route('/api/settings', methods=['GET'])
+@require_auth
+@require_active
+@require_role('owner')
+def api_get_cash_settings():
+    """Flags de caja del admin (modo estricto + cajón físico)."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify({'success': True, 'data': _cash_settings_payload(restaurant)})
+
+
+@cash_register_bp.route('/api/settings', methods=['PUT'])
+@require_auth
+@require_active
+@require_role('owner')
+def api_update_cash_settings():
+    """Actualiza flags de caja (solo dueño). Acepta cualquier subconjunto."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    data = request.get_json(silent=True) or {}
+    allowed = {'require_cash_shift', 'drawer_enabled', 'drawer_auto_open'}
+    updated = False
+    for key in allowed:
+        if key in data:
+            setattr(restaurant, key, bool(data.get(key)))
+            updated = True
+    if not updated:
+        return jsonify({'success': False, 'error': 'Nada que actualizar'}), 400
+    db.session.commit()
+    return jsonify({'success': True, 'data': _cash_settings_payload(restaurant)})
+
+
+@cash_register_bp.route('/api/drawer', methods=['GET'])
+@require_auth
+@require_active
+@require_role('owner', 'cashier')
+def api_drawer_config():
+    """Config del cajón para el POS: el frontend decide si dispara QZ.
+
+    Cachéese en el navegador (cambia solo desde el Centro de Caja).
+    """
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify({'success': True, 'data': {
+        'drawer_enabled': bool(getattr(restaurant, 'drawer_enabled', False)),
+        'drawer_auto_open': bool(getattr(restaurant, 'drawer_auto_open', False)),
+    }})
+
+
+@cash_register_bp.route('/api/shift', methods=['GET'])
+@require_auth
+@require_active
+@require_role('owner', 'cashier')
+def api_shift_status():
+    """Estado del turno vigente + efectivo esperado en vivo."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'not found'}), 404
+    shift = CashShiftService.get_open_shift(restaurant.id)
+    expected = CashShiftService.expected_cash_now(restaurant.id, shift) if shift else 0
+    return jsonify({'success': True, 'data': {
+        'open': shift is not None,
+        'shift': CashShiftService.serialize_shift(shift, expected_cash=expected if shift else None),
+        'expected_cash': expected,
+        'require_cash_shift': bool(getattr(restaurant, 'require_cash_shift', False)),
+    }})
+
+
+@cash_register_bp.route('/shift/open', methods=['POST'])
+@require_auth
+@require_active
+@require_role('owner', 'cashier')
+def shift_open():
+    """Abre un turno de caja con fondo inicial."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'not found'}), 404
+    user_id = session.get('user_id')
+    data = request.get_json(silent=True) or {}
+    try:
+        shift = CashShiftService.open_shift(
+            restaurant.id, user_id, data.get('opening_amount', 0))
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 409
+    return jsonify({'success': True, 'data': CashShiftService.serialize_shift(shift)}), 201
+
+
+@cash_register_bp.route('/shift/close', methods=['POST'])
+@require_auth
+@require_active
+@require_role('owner', 'cashier')
+def shift_close():
+    """Cierra el turno con conteo físico + snapshot para el ticket."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'success': False, 'error': 'not found'}), 404
+    user_id = session.get('user_id')
+    data = request.get_json(silent=True) or {}
+    try:
+        shift, closing = CashShiftService.close_shift(
+            restaurant.id, user_id, data.get('counted_cash'))
+    except ValueError as e:
+        msg = str(e)
+        status = 400 if 'conteo' in msg.lower() else 409
+        return jsonify({'success': False, 'error': msg}), status
+    return jsonify({'success': True, 'data': {
+        'shift': CashShiftService.serialize_shift(shift),
+        'close_id': closing.id,
+        'expected_cash': shift.expected_cash,
+        'counted_cash': shift.counted_cash,
+        'difference': shift.difference,
+    }})
+
+
 @cash_register_bp.route('/close', methods=['POST'])
 @require_auth
 @require_active
@@ -167,13 +294,17 @@ def close():
 
     try:
         closing = CashRegisterService.close_register(
-            restaurant.id, user_id, start, end)
+            restaurant.id, user_id, start, end,
+            counted_cash=data.get('counted_cash'))
     except NoSalesError as e:
         # 400: no hay ventas en el periodo → no se puede cerrar caja.
         return jsonify({'success': False, 'error': str(e)}), 400
     except ValueError as e:
         # 409: solapamiento o duplicado → el frontend recarga el resumen.
-        return jsonify({'success': False, 'error': str(e)}), 409
+        # 400: conteo físico inválido o faltante en modo estricto.
+        msg = str(e)
+        status = 400 if 'conteo' in msg.lower() else 409
+        return jsonify({'success': False, 'error': msg}), status
 
     return jsonify({
         'success': True,
