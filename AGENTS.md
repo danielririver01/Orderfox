@@ -1,6 +1,6 @@
 # Orderfox / Velzia — AI Agent Guide
 
-**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MariaDB (XAMPP, local) / MySQL 8 (CI, prod)
+**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + PostgreSQL 14+ (local, CI, prod)
 **Version:** v1.6.0
 
 ## Skills & MCP
@@ -17,9 +17,9 @@
 ### MCP Configurados
 | Servidor | Conexión | Uso |
 |----------|----------|-----|
-| `Conexion_MYSQL` | MariaDB local (XAMPP, :3306, root sin password) | Consultar DB, ver tablas, ejecutar queries |
+| `Conexion_PG` | PostgreSQL local (`localhost:5432`, db `orderfox`) | Consultar DB, ver tablas, ejecutar queries (solo lectura) |
 
-> **⚠️ IMPORTANTE:** `Conexion_MYSQL` apunta al **MariaDB de XAMPP** local (puerto 3306, usuario `root` sin password, base `orderfox` — ver `DATABASE_URL` en `.env`). Si el MCP se ve rojo/inaccesible, encender **MySQL** desde el XAMPP Control Panel (Start → MySQL) y verificar que el puerto 3306 esté libre. No usar el contenedor Docker `orderfox-db` para la DB local.
+> **⚠️ IMPORTANTE:** La DB real es **PostgreSQL** (local `localhost:5432`, db `orderfox` — ver `DATABASE_URL` en `.env`). El MCP `Conexion_PG` (servidor oficial `@modelcontextprotocol/server-postgres`, solo lectura) apunta ahí. El antiguo `Conexion_MYSQL` (gateway Docker → MariaDB/XAMPP) quedó legado: desactívalo en Docker Desktop si lo ves en rojo. Si un MCP se ve rojo/inaccesible, verificar que Postgres esté corriendo y que el puerto 5432 esté libre. Las líneas `mysql+pymysql` del `.env` están comentadas (legado XAMPP/Seenode, no se usan).
 
 **Regla:** Todo agente DEBE cargar los skills relevantes al iniciar su tarea usando el tool `skill`. Ningún agente debe trabajar sin sus skills cargados.
 
@@ -91,7 +91,19 @@ Flask (app/)         → dashboard + auth + APIs REST
   app/utils/         → helpers (subscription, rate_limiter, auth)
   app/template/      → Jinja2 (dashboard, auth, common)
 Astro (astro/)       → menú digital público (SSR, Tailwind v4)
+verduras/            → app Flask propia del vertical verduras (monorepo,
+                       puerto 5100, comparte DB con core vía puente Business)
 ```
+
+### Submódulos (multi-vertical)
+- `verduras/` es una app Flask SEPARADA dentro del monorepo: su factory es
+  `verduras.app_factory.create_app` (puerto 5100), sus settings leen el `.env`
+  de la raíz y su suite corre con `pytest verduras/tests` (no se coleciona en
+  la de core).
+- Contrato: `db` es LA de core (`app.models.db` re-exportada); toda FK nueva
+  del módulo apunta a `business_id`, nunca a `restaurants`. Acceso a `Business`
+  solo vía `verduras/services/context.py` (punto único para extracción futura).
+- Detalles y guía de extracción: `verduras/README.md`.
 
 ### Entrypoints & Límites
 - `run.py` → `app.create_app()` → registra blueprints, extensiones y APScheduler
@@ -136,7 +148,7 @@ El agente principal PUEDE invocar sub-agentes automáticamente sin esperar instr
 ### Transparencia
 Siempre informar al usuario cuando se esté delegando: *"Voy a lanzar X en paralelo para Y mientras yo hago Z"*.
 
-Tests usan `sqlite:///:memory:` localmente. CI corre contra MySQL en contenedor.
+Tests usan `sqlite:///:memory:` localmente. CI corre contra PostgreSQL 14 en contenedor.
 
 ## Security Audit
 
@@ -178,6 +190,10 @@ Máx 3/min por IP. Ban 10 min si excede. Honeypot + mínimo 3s entre checkout y 
 - **Web Search (Tavily):** consultas externas activadas por toggle del usuario. Fuentes se devuelven como `sources[]` en el response JSON, el frontend pinta tarjeta clickable. Los patrones de detección están en `web_search.py` (precios, tendencias, noticias). Los alimentos/commodities están en `_COMMON_NOUNS` del classifier para evitar falsos positivos.
 - **Response format:** `{"success": true, "content": "...", "chart": ..., "sources": [{title, url, snippet}], "metadata": {...}, "thinking_steps": [...]}`
 - **Thinking Panel:** pasos del sistema (clasificación, datos, web search, LLM) expandibles debajo de cada respuesta
+- **Copilot único (regla multi-vertical):** hay UN solo Copilot VZ, en core. Los
+  submódulos (verduras/, ...) NUNCA construyen copilotos propios; se conectan
+  al de core por `business_id`. El roadmap puede MEJORAR el Copilot existente,
+  jamás clonarlo.
 
 ### Menú Público
 Redirige de Flask (`/menu/<slug>`) al frontend Astro (`ASTRO_BASE_URL/<slug>/`).
@@ -195,9 +211,10 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 
 ## Gotchas
 
-- Conexión local = **MariaDB XAMPP**: `mysql+pymysql://root:@localhost:3306/orderfox` (root sin password; encender **MySQL** en el XAMPP Control Panel). CI usa MySQL 8 en contenedor. Driver: `mysql+pymysql://user:pass@host/db`
+- Conexión local = **PostgreSQL**: `postgresql://orderfox@localhost:5432/orderfox` (ver `DATABASE_URL` en `.env`; las líneas `mysql+pymysql` están comentadas — legado XAMPP/Seenode). CI usa PostgreSQL 14 en contenedor. Driver: `postgresql+psycopg2://user:pass@host/db`
 - CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
 - `settings.APP_VERSION` debe ir sincronizado con el último tag git (actualmente `v1.6.0`)
+- **Puente multi-vertical (rama `feature/verduras`):** `businesses.id == restaurants.id` para espejos (ver `app/models/business.py`). SQL crudo contra `restaurants` (UPDATE/DELETE) bypassa el puente — usar ORM. Verticales directos (verduras, delivery, etc.) usan `Business.create_direct()` con IDs `>= 1.000.000`. Código NUEVO usa `Business`/`Tenant` + `business_id`; nunca crear FKs nuevas hacia `restaurants`
 - Rate limiter es in-memory (se pierde al reiniciar)
 - Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
 - Gmail requiere app-specific password, TLS por defecto

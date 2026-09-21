@@ -4,6 +4,115 @@ Todas las fechas en UTC.
 
 ---
 
+## [Sin release] - rama `feature/verduras` — puente multi-vertical
+
+> Trabajo en rama `feature/verduras`, no mergeado a `main`. El tag
+> `v1.6.0` sigue siendo la última versión estable del monolito. Requiere
+> `flask db upgrade` al aplicar.
+
+### Añadido
+
+#### Puente multi-vertical `Business` ↔ `Restaurant` (estrategia expand-contract)
+- Nuevo modelo `Business` en `app/models/business.py`: raíz del tenant
+  multi-vertical con columna `vertical` ('restaurant' | 'delivery' | ...).
+- Backfill alineado por ID: migración `a1f6e3d2b4c5_add_businesses_table`
+  crea `businesses` e inserta un Business por cada Restaurant existente
+  **con el mismo ID**, así las FKs `restaurant_id` vigentes siguen válidas
+  sin migración masiva.
+- Listeners ORM (mismo flush, sin sesión anidada): `after_insert` crea el
+  espejo, `before_update` sincroniza name/slug/is_active, `before_delete`
+  borra el espejo (sin FK → cascada manual).
+- `Business.create_direct(vertical, name, slug)`: verticales sin Restaurant
+  espejo (delivery, etc.) con banda de IDs reservada `>= 1.000.000` para no
+  chocar con los espejos (los espejos usan el autoincrement de
+  `restaurants`). Rechaza `vertical='restaurant'`.
+- Alias `Tenant = Business` en `app/models/__init__.py` + `__all__` explícito.
+  Código NUEVO habla de `Business`/`Tenant` y `business_id`; código viejo
+  sigue intacto.
+- Tests `tests/test_business_bridge.py` (11 casos): invariante 1:1, sync,
+  borrado, banda de IDs, unicidad de slug y backfill validado sobre SQLite.
+- Relación `Business.restaurant_profile` (viewonly, por ID compartido).
+
+#### Módulo vertical `verduras/` — primera app de submódulo (monorepo, Opción A)
+- Nueva app Flask separada en `verduras/`: propia factory (`verduras.app_factory.create_app`),
+  settings propios (leen el `.env` de la raíz), blueprints y suite de tests
+  independiente (sqlite in-memory, corre con `pytest verduras/tests`, no se
+  coleciona en la suite de core).
+- Contrato con core: comparte la DB y re-exporta `app.models.db` como su `db`
+  (nunca instancia otra); toda FK nueva del módulo apunta a `business_id`,
+  nunca a `restaurants`. El acceso a `Business` pasa por el punto único
+  `verduras/services/context.py` (`require_business` valida existencia,
+  vertical y estado activo).
+- Endpoints iniciales: `GET /`, `GET /health`, `GET /health/core-bridge`,
+  `GET /api/businesses`, `GET /api/businesses/<id>` (404 si no existe, 409 si
+  es de otro vertical). Entrypoint: `python verduras/run.py` (puerto 5100).
+- `verduras/extensions.py` inicializa Migrate con directorio de migraciones
+  PROPIO del módulo (aún inexistente): un `flask db` accidental desde verduras
+  falla ruidoso en vez de ejecutar las migraciones de core.
+- Tests `verduras/tests/test_skeleton.py` (14 casos): endpoints, filtro por
+  vertical, servicio de contexto y puente activo en el proceso del módulo.
+- `verduras/README.md`: contrato completo core↔módulo y guía de extracción
+  futura (git subtree split).
+
+#### Módulo verduras — Semana 1: catálogo + precios por peso (v0.2.0)
+- Models `verduras/models.py`: `verduras_categories`, `verduras_products`
+  (precio por kg/lb/unidad, foto) y `verduras_price_history` (curva histórica
+  de precios). Todas con FK a `businesses.id` — primeras tablas nacidas bajo
+  el contrato del puente; prefijo `verduras_` obligatorio.
+- Servicio `verduras/services/catalog.py`: precios Decimal(12,2) con
+  ROUND_HALF_UP y > 0, unidades normalizadas (kg|lb|unidad), unicidad
+  por business, anti-IDOR (pedir recurso de otro business = 404), y
+  `update_price()` que appendea al historial (rechaza precio idéntico;
+  baseline automático al crear producto).
+- API `verduras/routes/catalog.py` bajo `/api/verduras/businesses/<bid>/...`:
+  categorías y productos (GET público, POST con header `x-api-key` contra
+  `SERVICE_API_KEY`, comparación en tiempo constante vía `verduras/auth.py`),
+  y `POST .../products/<pid>/price` para el cambio diario con historial.
+- Migraciones PROPIAS del módulo: `verduras/migrations/` con
+  `version_table='alembic_version_verduras'` y filtro include_object a solo
+  tablas `verduras_*`; revisión inicial `3fdc7c9baadf` (3 tablas + índices,
+  downgrade completo). El `env.py` de core EXCLUYE `verduras_*` de su
+  autogenerate: las dos cadenas conviven en la misma DB sin tocarse.
+- Tests `verduras/tests/test_catalog.py` (23 casos) + smoke previos: 37 en
+  total, en verde. Autogenerate + upgrade + roundtrip verificados sobre
+  sqlite desechable. Suite completa de core: 633 passed.
+
+#### Módulo verduras — Semana 2: ventas por peso + pedidos WhatsApp (v0.3.0)
+- Models `verduras/models_sales.py`: `verduras_business_settings` (WhatsApp
+  del negocio, abierto/cerrado, domicilio habilitado), `verduras_sales`
+  (walk-in POS o delivery, con `idempotency_key` + constraint único
+  business+key igual que `orders` en core), `verduras_sale_items` (líneas
+  con SNAPSHOT de nombre/unidad/precio — integridad contable) y
+  `verduras_sale_counters` (numeración atómica diaria). FKs solo a
+  `businesses.id` / tablas `verduras_*`.
+- Servicio `verduras/services/sales.py`: cantidades Decimal con precisión de
+  gramo (0.001 kg; enteras para 'unidad'), precio SIEMPRE del catálogo
+  (nunca del cliente), idempotencia con recuperación por IntegrityError
+  (patrón `create_order_idempotent` de core), numeración `V-YYYYMMDD-NNN`
+  con row lock y fecha UTC (regla timezone del repo: `date.today()`
+  desalinearía los contadores en Colombia a las 7pm), rate limiter 3/min por
+  IP+business con ban de 10 min, honeypot + time-to-submit ≥ 3s en checkout
+  público, transiciones pending→completed|cancelled idempotentes, anti-IDOR
+  por business y builder del enlace `wa.me` con resumen del pedido (teléfono
+  del negocio en settings; `Business` no lo tiene a propósito).
+- API `verduras/routes/sales.py`: settings (GET/POST), creación de venta
+  (delivery público con guards / walk-in POS con `x-api-key`), listado con
+  filtros `status`/`date_from`/`date_to`, detalle, complete y cancel.
+  Respuestas incluyen `whatsapp_link` prearmado; el replay de idempotencia
+  se marca con `"replay": true`.
+- Migración delta `b8d2e4f6a9c1_add_verduras_sales_tables` (4 tablas +
+  índices, downgrade completo), verificada en sqlite desechable con ciclo
+  upgrade → downgrade → upgrade: 7/7 tablas `verduras_*` y core intacto.
+- Tests `verduras/tests/test_sales.py` (50 casos): matemática por peso,
+  snapshot contable, idempotencia (replay + carrera concurrente simulada),
+  numeración diaria por business, gates de delivery, transiciones, rate
+  limiter, guards públicos, enlace wa.me y API completa (auth del POS,
+  checkout público, scoping, espejo de restaurante → 409). Módulo: 87/87
+  en verde. Suite completa de core: 633 passed (sin regresiones).
+  Ruff: all checks passed.
+
+---
+
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)
 
 > Versión estable etiquetada. Incluye
