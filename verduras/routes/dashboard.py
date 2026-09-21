@@ -17,6 +17,7 @@ from flask import (
 )
 
 from ..auth import require_service_api_key
+from ..services import alerts as alerts_service
 from ..services import catalog
 from ..services import sales as sales_service
 from ..services import scale as scale_service
@@ -117,8 +118,18 @@ def pos_view(slug: str):
     if business is None or business.slug != slug:
         return redirect(url_for('dashboard.pos_login'))
     products = catalog.list_products(business.id)
+    # Mapa product_id → severidad de alerta de rotación (Semana 5): el POS
+    # pinta un badge por producto, informativo — nunca bloquea la venta.
+    try:
+        alerts_map = {
+            str(a['product_id']): a['severity']
+            for a in alerts_service.list_alerts(business.id)['alerts']
+        }
+    except Exception:  # noqa: BLE001 — las alertas jamás tumban el POS
+        alerts_map = {}
     pos_data = {
         'scale_enabled': bool(current_app.config.get('SCALE_ENABLED', False)),
+        'alerts': alerts_map,
         'products': [
             {
                 'id': p.id,

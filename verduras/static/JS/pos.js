@@ -156,6 +156,11 @@
     });
   }
 
+  const ALERT_BADGES = {
+    low: { cls: 'badge-warn', icon: 'warning', text: 'Queda poco' },
+    out: { cls: 'badge-danger', icon: 'error', text: 'Agotado' },
+  };
+
   function renderProductCard(p) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -171,6 +176,23 @@
     btn.querySelector('.product-name').textContent = p.name;
     btn.querySelector('.product-price').textContent = fmtCop(p.price);
     btn.querySelector('.product-unit').textContent = '/ ' + p.unit;
+
+    // Alerta de rotación (Semana 5): badge informativo, siempre icono +
+    // texto (nunca solo color) — la venta sigue funcionando igual.
+    const alert = PRICES.alerts && PRICES.alerts[String(p.id)];
+    const badge = ALERT_BADGES[alert];
+    if (badge) {
+      const el = document.createElement('span');
+      el.className = 'badge ' + badge.cls + ' product-alert';
+      el.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true"></span>';
+      const label = document.createElement('span');
+      label.textContent = badge.text;
+      el.setAttribute('aria-label',
+        badge.text + ': ' + p.name); // accesible (no depende del color)
+      el.querySelector('.material-symbols-rounded').textContent = badge.icon;
+      el.appendChild(label);
+      btn.appendChild(el);
+    }
     return btn;
   }
 

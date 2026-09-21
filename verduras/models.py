@@ -74,6 +74,10 @@ class VerdurasProduct(db.Model):
     # kg | lb | unidad (validado en servicio; default server para DDL directa)
     unit = db.Column(db.String(10), nullable=False, server_default='kg')
     current_price = db.Column(Numeric(12, 2), nullable=False)
+    # Umbral de alerta de rotación (Semana 5). NULL = sin alerta (opt-in:
+    # solo los productos que el tendero quiere vigilar generan alertas).
+    # Misma precisión que las cantidades: gramo (0.001).
+    min_stock = db.Column(Numeric(12, 3), nullable=True)
     photo_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True, nullable=False,
                           server_default='1')

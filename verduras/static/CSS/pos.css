@@ -442,6 +442,9 @@ button { font-family: inherit; }
 .badge-danger { background: var(--danger-soft); color: var(--danger); }
 .badge-info { background: var(--info-soft); color: var(--info); }
 
+/* Badge de alerta de rotación dentro de la tarjeta de producto */
+.product-alert { align-self: flex-start; margin-top: 0.2rem; }
+
 /* ── Barra del carrito (fija abajo, sobre el bottom-nav) ───── */
 
 .cart-bar {

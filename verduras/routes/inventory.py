@@ -11,6 +11,7 @@ valida pertenencia (anti-IDOR) y el producto ajeno responde 404.
 from flask import Blueprint, jsonify, request
 
 from ..auth import VerdurasAuthError, require_service_api_key
+from ..services.alerts import list_alerts, set_min_stock
 from ..services.context import (
     BusinessNotFoundError,
     BusinessNotVegetalError,
@@ -229,3 +230,46 @@ def get_merma_report(business_id: int):
     except VerdurasValidationError as e:
         return _error_response(e)
     return jsonify(success=True, data=report)
+
+
+# ── Alertas de rotación (Semana 5) ──────────────────────────
+
+
+@inventory_bp.route('/businesses/<int:business_id>/inventory/alerts',
+                    methods=['GET'])
+def get_alerts(business_id: int):
+    """Alertas activas (stock <= umbral): severidad, días restantes y mensaje."""
+    biz, err = _business_or_error(business_id)
+    if err:
+        return err
+    err = _api_key_or_error()
+    if err:
+        return err
+    try:
+        return jsonify(success=True, data=list_alerts(
+            biz.id, until=request.args.get('until')))
+    except VerdurasValidationError as e:
+        return _error_response(e)
+
+
+@inventory_bp.route(
+    '/businesses/<int:business_id>/inventory/products/<int:product_id>/min-stock',
+    methods=['POST'])
+def post_min_stock(business_id: int, product_id: int):
+    """Configura el umbral de alerta del producto (null = sin alerta)."""
+    biz, err = _business_or_error(business_id)
+    if err:
+        return err
+    err = _api_key_or_error()
+    if err:
+        return err
+    try:
+        product = set_min_stock(biz.id, product_id,
+                                _body().get('min_stock'))
+    except (VerdurasValidationError, VerdurasNotFoundError) as e:
+        return _error_response(e)
+    return jsonify(success=True, data={
+        'product_id': product.id,
+        'min_stock': str(product.min_stock) if product.min_stock is not None
+        else None,
+    })

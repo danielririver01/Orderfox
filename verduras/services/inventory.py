@@ -195,8 +195,13 @@ def average_unit_cost(business_id: int, product_id: int,
 # ── Stock derivado ──────────────────────────────────────────
 
 
-def _sum_sales(business_id: int, product_id: int, until):
-    """Kg/lb/unidades vendidas del producto (ventas no canceladas)."""
+def _sum_sales(business_id: int, product_id: int, until=None, since=None):
+    """Kg/lb/unidades vendidas del producto (ventas no canceladas).
+
+    `since`/`until` delimitan la ventana por created_at (Semana 5: la
+    velocidad de venta de las alertas usa esta misma fuente — la
+    semántica de "qué cuenta como vendido" vive SOLO aquí).
+    """
     query = db.session.query(func.sum(VerdurasSaleItem.quantity)).join(
         VerdurasSale, VerdurasSale.id == VerdurasSaleItem.sale_id,
     ).filter(
@@ -206,6 +211,8 @@ def _sum_sales(business_id: int, product_id: int, until):
     )
     if until is not None:
         query = query.filter(VerdurasSale.created_at <= until)
+    if since is not None:
+        query = query.filter(VerdurasSale.created_at > since)
     return Decimal(str(query.scalar() or 0))
 
 

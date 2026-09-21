@@ -60,6 +60,8 @@ No se collecionan en la suite de core (`pytest.ini` limita `testpaths` a
 | POST/GET | `/api/verduras/businesses/<bid>/inventory/lots` | Registrar compra por lote (costo/kg derivado) o listar lotes (`x-api-key`) |
 | POST/GET | `/api/verduras/businesses/<bid>/inventory/merma` | Registrar pérdida (COP congelado) o listar con filtros (`x-api-key`) |
 | GET | `/api/verduras/businesses/<bid>/inventory/merma/report` | Reporte semanal/mensual: pérdida por producto, % y % sobre compras (`x-api-key`) |
+| GET | `/api/verduras/businesses/<bid>/inventory/alerts` | Alertas de rotación activas: severidad, días restantes, mensaje (`x-api-key`) |
+| POST | `/api/verduras/businesses/<bid>/inventory/products/<pid>/min-stock` | Configurar el umbral de alerta del producto (`null` = sin alerta) (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/pos-pin` | Configurar el PIN del POS (onboarding server-to-server, `x-api-key`) |
 | GET | `/pos/<slug>/api/scale/weight` | Leer la báscula del POS por sesión (409 con `error_code` si falla; el manual sigue siendo la fuente de verdad) |
 | GET/POST | `/pos/login` | Login del tendero (slug + PIN, sesión firmada; CSRF activo) |
@@ -104,7 +106,7 @@ verduras/
 | 2 | Ventas: venta por peso, pedidos WhatsApp (mismo patrón core), tickets | ✅ Implementado (tickets en Semana 3) |
 | 3 | Inventario (compras por lote, costo/kg, stock) + **Merma** (la joya: kg dañados y pérdida en COP por producto) | ✅ Implementado (tickets comparten flujo con core) |
 | 4 | Báscula digital (USB serial, protocolos `generic`/`toledo`; fallback manual de peso) | ✅ Implementado (opcional, apagada por defecto) |
-| 5 | Alertas de rotación ("te quedan 3kg de banano") | ⬜ |
+| 5 | Alertas de rotación ("te quedan 3kg de banano") | ✅ Implementado (umbral opt-in por producto, badges en el POS) |
 | 6 | Piloto con cliente real | ⬜ |
 
 Notas de arquitectura del plan:
@@ -145,6 +147,14 @@ VERDURAS_SCALE_TIMEOUT_S=2
 Con la báscula activada, el POS muestra un botón "Leer báscula" junto a la
 cantidad de los productos por peso (kg y lb). Si falla la lectura, el
 tendero teclea el peso: la venta nunca se bloquea por la báscula.
+
+> **Decisión de producto (piloto):** la pantalla "Configurar báscula" con
+> detección automática queda DIFERIDA hasta tener la primera báscula física
+> para probar. Cuando se construya, la configuración debe moverse del
+> `.env` (una báscula por servidor) a **por negocio** en
+> `verduras_business_settings` — cada tendero tiene SU báscula. El endpoint
+> ya acepta los parámetros por llamada, así que el cambio de fuente es
+> trivial.
 
 ## Extracción futura a repo propio
 

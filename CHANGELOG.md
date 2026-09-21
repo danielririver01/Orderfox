@@ -191,6 +191,33 @@ Todas las fechas en UTC.
   sesión y flag `scale_enabled` en pos-data. Módulo: 172/172 en verde.
   Ruff: all checks passed.
 
+#### Módulo verduras — Semana 5: alertas de rotación (v0.7.0)
+- Columna `min_stock` (Numeric 12,3 nullable) en `verduras_products`:
+  umbral OPT-IN por producto — sin configuración, cero alertas (el
+  verdulero decide qué vigilar). Migración delta `d9c4e2a6b8f1`
+  (batch_alter, verificada upgrade→downgrade→re-upgrade con columna
+  presente/ausente).
+- Servicio `verduras/services/alerts.py`: REUTILIZA el stock derivado de
+  inventario (compras − ventas − merma; fuente única de verdad, cero
+  recálculo) y la única semántica de "vendido" (excluye canceladas, vía
+  nuevo parámetro `since` en `_sum_sales`). Velocidad de venta de los
+  últimos 7 días → "a este ritmo te dura ~N días" (estimación, None sin
+  datos; solo para severidad `low`). Severidades: `out` (stock ≤ 0) y
+  `low` (stock ≤ umbral). Mensajes en lenguaje de verdulero con plural
+  de 'unidad' ("2 unidades"). Orden: out primero; entre lows, el que se
+  agota antes; sin estimación al final.
+- API: `GET .../inventory/alerts` y `POST
+  .../inventory/products/<pid>/min-stock` (x-api-key, anti-IDOR heredado;
+  `null` limpia el umbral, 0 se rechaza a favor de null).
+- POS: mapa product_id→severidad en pos-data; badge "Queda poco"
+  (warn) / "Agotado" (danger) en las tarjetas — SIEMPRE icono + texto
+  (accesibilidad), informativo, jamás bloquea la venta; el cálculo de
+  alertas está blindado para no tumbar el POS.
+- Tests `verduras/tests/test_alerts.py` (26 casos): umbrales, velocidad,
+  canceladas, ventana de 7 días, merma cuenta, orden, plural, API auth,
+  anti-IDOR y mapa del POS. Módulo: 198/198 en verde. Ruff: all checks
+  passed.
+
 ---
 
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)
