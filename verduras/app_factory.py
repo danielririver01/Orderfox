@@ -37,18 +37,21 @@ def create_app(config_object=Config) -> Flask:
     # Registra las tablas verduras_* en el metadata compartido (orden matters:
     # debe importarse antes de create_all/migrate autogenerate).
     import verduras.models
+    import verduras.models_inventory
     import verduras.models_sales  # noqa: F401
     from app.models import Business, Restaurant  # noqa: F401
 
     from .routes.businesses import businesses_bp
     from .routes.catalog import catalog_bp
     from .routes.health import health_bp
+    from .routes.inventory import inventory_bp
     from .routes.sales import sales_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(businesses_bp)
     app.register_blueprint(catalog_bp)
     app.register_blueprint(sales_bp)
+    app.register_blueprint(inventory_bp)
 
     @app.errorhandler(404)
     def not_found(_e):

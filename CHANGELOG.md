@@ -107,9 +107,38 @@ Todas las fechas en UTC.
   snapshot contable, idempotencia (replay + carrera concurrente simulada),
   numeración diaria por business, gates de delivery, transiciones, rate
   limiter, guards públicos, enlace wa.me y API completa (auth del POS,
-  checkout público, scoping, espejo de restaurante → 409). Módulo: 87/87
+  checkout público, scoping,  espejo de restaurante → 409). Módulo: 87/87
   en verde. Suite completa de core: 633 passed (sin regresiones).
   Ruff: all checks passed.
+
+#### Módulo verduras — Semana 3: inventario por lotes + merma (v0.4.0)
+- Models `verduras/models_inventory.py`: `verduras_lots` (compras por
+  lote: "50kg de tomate a $90.000" — el costo/kg se DERIVA de
+  total/cantidad, jamás se almacena) y `verduras_merma` (kg dañados con
+  la PÉRDIDA en COP congelada al registrar, snapshot contable). FKs solo
+  a `businesses.id` / tablas `verduras_*`.
+- Servicio `verduras/services/inventory.py`: stock EN TIEMPO REAL
+  DERIVADO como compras − ventas − merma (no se almacena: auditable,
+  sin bugs de sincronización; ventas canceladas no descuentan), costo
+  promedio PONDERADO por cantidad (30kg a $1.500 + 20kg a $2.500 →
+  $1.900, no $2.000), valor del stock en COP, merma con costo promedio
+  de lotes (o costo manual si aún no hay lotes; sin base de costo se
+  rechaza para no inventar pérdidas en cero) y reporte semanal/mensual
+  con pérdida por producto, % de aporte y % sobre las compras del
+  período (el indicador que el verdulero quiere bajar).
+- API `verduras/routes/inventory.py` bajo `/api/verduras/businesses/<bid>/
+  inventory/...`: stock (total y por producto), lotes (POST/GET), merma
+  (POST/GET) y reporte. TODO requiere `x-api-key`: costos, stock y
+  pérdidas son dato privado del negocio.
+- Migración delta `e7a9c1d3f5b2_add_verduras_inventory_tables` (2 tablas
+  + índices, downgrade completo), verificada en sqlite desechable con
+  upgrade → roundtrip → downgrade → re-upgrade: 9/9 tablas `verduras_*`,
+  core intacto.
+- Tests `verduras/tests/test_inventory.py` (31 casos): ciclo completo
+  compro→vender→perder integrado con las ventas reales de Semana 2,
+  stock negativo visible, snapshot inmune a lotes futuros, reporte con
+  límites de período y API auth. Módulo: 118/118 en verde. Ruff: all
+  checks passed. Puente de core: 11/11.
 
 ---
 

@@ -55,6 +55,11 @@ No se collecionan en la suite de core (`pytest.ini` limita `testpaths` a
 | GET | `/api/verduras/businesses/<bid>/sales/<id>` | Detalle de venta con items y `whatsapp_link` (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/sales/<id>/complete` | Marcar completada (solo desde pending) (`x-api-key`) |
 | POST | `/api/verduras/businesses/<bid>/sales/<id>/cancel` | Marcar cancelada (solo desde pending) (`x-api-key`) |
+| GET | `/api/verduras/businesses/<bid>/inventory` | Stock derivado de todos los productos activos (compras − ventas − merma) (`x-api-key`) |
+| GET | `/api/verduras/businesses/<bid>/inventory/<pid>` | Stock, costo promedio y valor del stock de un producto (`x-api-key`) |
+| POST/GET | `/api/verduras/businesses/<bid>/inventory/lots` | Registrar compra por lote (costo/kg derivado) o listar lotes (`x-api-key`) |
+| POST/GET | `/api/verduras/businesses/<bid>/inventory/merma` | Registrar pérdida (COP congelado) o listar con filtros (`x-api-key`) |
+| GET | `/api/verduras/businesses/<bid>/inventory/merma/report` | Reporte semanal/mensual: pérdida por producto, % y % sobre compras (`x-api-key`) |
 
 ## Estructura
 
@@ -86,7 +91,7 @@ verduras/
 | 1 | **Catálogo + precios por peso** (categorías, productos kg/lb/unidad, historial de precios) | ✅ Implementado |
 | 1 | **Catálogo + precios por peso** (categorías, productos kg/lb/unidad, historial de precios) | ✅ Implementado |
 | 2 | Ventas: venta por peso, pedidos WhatsApp (mismo patrón core), tickets | ✅ Implementado (tickets en Semana 3) |
-| 3 | Inventario (compras por lote, costo/kg, stock) + **Merma** (la joya: kg dañados y pérdida en COP por producto) | ⬜ (los tickets comparten flujo aquí) |
+| 3 | Inventario (compras por lote, costo/kg, stock) + **Merma** (la joya: kg dañados y pérdida en COP por producto) | ✅ Implementado (tickets comparten flujo con core) |
 | 4 | Báscula digital (USB serial / Bluetooth; fallback manual de peso) | ⬜ |
 | 5 | Alertas de rotación ("te quedan 3kg de banano") | ⬜ |
 | 6 | Piloto con cliente real | ⬜ |
