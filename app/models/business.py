@@ -1,0 +1,135 @@
+"""
+Business — raíz del tenant multi-vertical (puente expand-contract).
+
+Estrategia (rama feature/verduras, ver CHANGELOG):
+- La tabla `businesses` alinea sus IDs con `restaurants` (b.id == r.id),
+  así las FKs `restaurant_id` existentes siguen válidas SIN migración masiva.
+- Los listeners ORM de este módulo mantienen el invariante 1:1:
+  crear/actualizar/borrar un Restaurant se refleja en `businesses`.
+- Código nuevo (módulo verduras y futuros verticales) usa `Business`
+  y `business_id` directamente, nunca FKs nuevas hacia `restaurants`.
+
+⚠️ Gotchas (documentados en AGENTS.md):
+- UPDATE/DELETE por SQL crudo sobre `restaurants` bypassa el puente.
+- Este módulo se importa desde app/models/__init__.py para que los
+  listeners queden registrados siempre.
+"""
+from datetime import datetime, timezone
+
+from sqlalchemy import event
+
+from app.models import db
+from app.models.core import AwareDateTime, Restaurant
+
+# Banda de IDs reservada para Businesses de verticales creados DIRECTAMENTE
+# (sin Restaurant espejo: verduras, delivery, farmacia, etc.). Los espejos de
+# restaurantes usan el ID real de `restaurants` (autoincrement < 1M), así
+# ambas poblaciones nunca chocan en la PK compartida.
+DIRECT_VERTICAL_ID_FLOOR = 1_000_000
+
+
+class Business(db.Model):
+    """
+    Raíz del tenant multi-vertical: una cuenta (negocio) con un `vertical`.
+
+    Para los negocios de restaurante existe una fila espejo con EL MISMO ID
+    (creada automáticamente por los listeners de este módulo). Los verticales
+    nuevos (verduras, delivery, etc.) crean `Business` directamente con
+    autoincrement.
+    """
+    __tablename__ = 'businesses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Vertical activo: 'restaurant' | 'verduras' | ... (futuros: delivery,
+    # farmacia, ...)
+    vertical = db.Column(db.String(30), default='restaurant',
+                         server_default='restaurant', nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False,
+                          server_default='1')
+    created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),
+                           server_default='CURRENT_TIMESTAMP')
+    updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc),
+                           server_default='CURRENT_TIMESTAMP')
+
+    # Perfil del vertical restaurante: fila de `restaurants` con el mismo ID.
+    # Solo lectura — la escritura vive en los listeners (mismo ID, sin FK).
+    restaurant_profile = db.relationship(
+        'Restaurant',
+        primaryjoin='foreign(Restaurant.id) == Business.id',
+        viewonly=True,
+        uselist=False,
+    )
+
+    def __repr__(self):
+        return f'<Business {self.slug} ({self.vertical})>'
+
+    @classmethod
+    def create_direct(cls, vertical, name, slug, is_active=True):
+        """
+        Crea un Business de un vertical NO-restaurante (sin Restaurant espejo).
+
+        Usa la banda reservada de IDs (>= DIRECT_VERTICAL_ID_FLOOR) para no
+        colisionar con los espejos creados desde `restaurants`.
+
+        ⚠️ MAX(id)+1 es susceptible de carrera bajo alta concurrencia; a la
+        escala actual es aceptable y la PK única falla ruidosamente (no
+        corrompe datos). Si algún día hay escritura concurrente real de
+        verticales, migrar a un sequence/table aparte.
+        """
+        if vertical == 'restaurant':
+            raise ValueError(
+                "Verticales 'restaurant' deben nacer como Restaurant (espejo "
+                "automático); no usar create_direct()."
+            )
+        max_id = db.session.query(db.func.max(cls.id)).scalar() or 0
+        next_id = max(max_id + 1, DIRECT_VERTICAL_ID_FLOOR)
+        biz = cls(id=next_id, vertical=vertical, name=name, slug=slug,
+                  is_active=is_active)
+        db.session.add(biz)
+        db.session.flush()
+        return biz
+
+
+# ── Listeners del puente Restaurant ↔ Business ──────────────
+# Usan la connection del flush (mismo commit/rollback, sin sesión anidada).
+
+
+@event.listens_for(Restaurant, 'after_insert')
+def create_business_for_restaurant(mapper, connection, target):
+    """Todo Restaurant nuevo nace con su Business espejo (mismo ID)."""
+    connection.execute(
+        Business.__table__.insert().values(
+            id=target.id,
+            vertical='restaurant',
+            name=target.name,
+            slug=target.slug,
+            is_active=bool(target.is_active),
+        )
+    )
+
+
+@event.listens_for(Restaurant, 'before_update')
+def sync_business_on_restaurant_update(mapper, connection, target):
+    """Renombrar/desactivar un restaurante se refleja en su Business."""
+    connection.execute(
+        Business.__table__.update()
+        .where(Business.__table__.c.id == target.id)
+        .values(
+            name=target.name,
+            slug=target.slug,
+            is_active=bool(target.is_active),
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+
+
+@event.listens_for(Restaurant, 'before_delete')
+def delete_business_before_restaurant(mapper, connection, target):
+    """Borrar el restaurante borra su fila espejo (sin FK, puente manual)."""
+    connection.execute(
+        Business.__table__.delete()
+        .where(Business.__table__.c.id == target.id)
+    )
