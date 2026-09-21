@@ -60,6 +60,11 @@ No se collecionan en la suite de core (`pytest.ini` limita `testpaths` a
 | POST/GET | `/api/verduras/businesses/<bid>/inventory/lots` | Registrar compra por lote (costo/kg derivado) o listar lotes (`x-api-key`) |
 | POST/GET | `/api/verduras/businesses/<bid>/inventory/merma` | Registrar pérdida (COP congelado) o listar con filtros (`x-api-key`) |
 | GET | `/api/verduras/businesses/<bid>/inventory/merma/report` | Reporte semanal/mensual: pérdida por producto, % y % sobre compras (`x-api-key`) |
+| POST | `/api/verduras/businesses/<bid>/pos-pin` | Configurar el PIN del POS (onboarding server-to-server, `x-api-key`) |
+| GET/POST | `/pos/login` | Login del tendero (slug + PIN, sesión firmada; CSRF activo) |
+| GET | `/pos/<slug>` | Dashboard POS (venta de mostrador; requiere sesión) |
+| POST | `/pos/<slug>/sell` | Cobrar venta walk-in por sesión (sin x-api-key en el navegador) |
+| POST | `/pos/logout` | Cerrar sesión del POS |
 
 ## Estructura
 
@@ -68,7 +73,7 @@ verduras/
 ├── run.py              # Entrypoint (puerto 5100)
 ├── settings.py         # Config propia; lee el .env de la raíz
 ├── app_factory.py      # create_app() del módulo
-├── extensions.py       # db (la de core) + migrate propia
+├── extensions.py       # db (la de core) + migrate propia + CSRF
 ├── auth.py             # x-api-key (tiempo constante), mismo patrón que core
 ├── models.py           # Catálogo (categorías, productos, price_history)
 ├── models_sales.py     # Ventas (settings, sales, sale_items, counters)
@@ -76,11 +81,17 @@ verduras/
 ├── services/
 │   ├── context.py      # Resolución/validación de tenant (punto único)
 │   ├── catalog.py      # Lógica de catálogo y precios
-│   └── sales.py        # Venta por peso, idempotencia, guards, wa.me
+│   ├── sales.py        # Venta por peso, idempotencia, guards, wa.me
+│   ├── inventory.py    # Lotes, stock derivado, merma y reportes
+│   └── pos_auth.py     # Login slug+PIN, lockout, sesión del POS
 ├── routes/
 │   ├── health.py       # Healthchecks
 │   ├── businesses.py   # API JSON de businesses del vertical
-│   └── sales.py        # API de settings y ventas (Semana 2)
+│   ├── sales.py        # API de settings y ventas (Semana 2)
+│   ├── inventory.py    # API de inventario y merma (Semana 3)
+│   └── dashboard.py    # Dashboard POS (login + venta por sesión)
+├── templates/          # Jinja2 (pos_login, pos)
+├── static/CSS|JS/      # Design system verde claro + vanilla JS
 └── tests/              # Suite propia (sqlite in-memory)
 ```
 
@@ -101,6 +112,22 @@ Notas de arquitectura del plan:
   (kg dañados, motivo) para no perder la serie histórica del piloto.
 - **Copilot VZ: ÚNICO, en core.** Este módulo se conecta por `business_id`;
   nunca construye un copiloto propio (regla en AGENTS.md).
+
+## Dashboard POS (frontend del tendero)
+
+**Design system propio del vertical** (diferente a Restaurantes a propósito):
+claro (`#FAFAFA`), verde (`--brand-accent: #16A34A` para iconos/detalles,
+`--brand: #15803D` para botones con texto blanco — contraste WCAG), estados
+SIEMPRE con icono + texto (nunca solo color), mobile first con bottom-nav y
+targets táctiles ≥ 56px, lenguaje de verdulero ("Registrar compra", no
+"crear lote"). Tokens completos en `static/CSS/pos.css`.
+
+**Auth:** login slug + PIN (4-6 dígitos, hash werkzeug, lockout 5 intentos
+→ 10 min). El PIN vive en `verduras_business_settings` (tabla propia del
+módulo) y lo configura el onboarding vía `POST .../pos-pin` con
+`x-api-key` — la SERVICE_API_KEY **jamás llega al navegador**. La venta del
+POS va por sesión con CSRF (guard manual en la factory, exento para
+`/api/*`).
 
 ## Extracción futura a repo propio
 

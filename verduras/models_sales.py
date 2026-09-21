@@ -47,6 +47,11 @@ class VerdurasBusinessSettings(db.Model):
                         server_default='1')
     delivery_enabled = db.Column(db.Boolean, default=True, nullable=False,
                                  server_default='1')
+    # PIN del POS (dashboard del tendero): hash werkzeug, nunca plano.
+    # El login del POS es por slug + PIN — la SERVICE_API_KEY es
+    # server-to-server y JAMÁS llega al navegador.
+    pos_pin_hash = db.Column(db.String(255))
+    pos_pin_updated_at = db.Column(AwareDateTime)
     updated_at = db.Column(AwareDateTime,
                            default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc),

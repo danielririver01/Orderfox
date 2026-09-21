@@ -33,6 +33,9 @@ def app():
     app.config.update({
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        # CSRF se apaga por defecto en tests (es engorroso por-request);
+        # test_pos.py tiene UNA prueba que lo enciende para validar el guard.
+        'WTF_CSRF_ENABLED': False,
     })
     with app.app_context():
         _db.create_all()
@@ -49,6 +52,11 @@ def db(app):
         _db.session.rollback()
         _db.session.close()
         _db.drop_all()
+        # Estado en memoria entre tests: el lockout del POS sobreviviría al
+        # drop_all (los IDs de la banda reservada se reinician y la clave
+        # (business_id, ip) se repetiría entre tests).
+        from verduras.services import pos_auth as _pos_auth
+        _pos_auth._failed.clear()
 
 
 @pytest.fixture(scope='function')

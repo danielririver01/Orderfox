@@ -29,6 +29,11 @@ def get_business(business_id: int) -> Business | None:
     return db.session.get(Business, business_id)
 
 
+def get_business_by_slug(slug: str) -> Business | None:
+    """Business por slug (login del POS: la URL amable del tendero)."""
+    return Business.query.filter_by(slug=slug).first()
+
+
 def require_business(business_id: int) -> Business:
     """
     Devuelve el Business validado para este vertical, o levanta:

@@ -140,6 +140,30 @@ Todas las fechas en UTC.
   límites de período y API auth. Módulo: 118/118 en verde. Ruff: all
   checks passed. Puente de core: 11/11.
 
+#### Módulo verduras — Dashboard POS del tendero (v0.5.0)
+- Frontend Jinja2 + sesión (mismo patrón que core): login slug+PIN y
+  pantalla de venta de mostrador, con design system PROPIO del vertical
+  (claro #FAFAFA, verde #16A34A/#15803D con separación acento/botón por
+  contraste WCAG, estados siempre con icono+texto, sidebar propia, bottom
+  nav, targets táctiles ≥ 56px, lenguaje de verdulero).
+- Auth del POS: PIN 4-6 dígitos hasheado con werkzeug en
+  `verduras_business_settings` (tabla propia del módulo; core es dueño de
+  `businesses`), configurado por onboarding server-to-server (`POST
+  .../pos-pin` con x-api-key) — la SERVICE_API_KEY jamás llega al
+  navegador. Lockout 5 intentos → 10 min. Mensajes de login genéricos.
+- Venta walk-in por sesión con CSRF (guard manual en la factory que
+  respeta WTF_CSRF_ENABLED y exenta /api/*, mismo criterio de core); el
+  frontend envía X-CSRFToken. Ticket imprimible (window.print con CSS
+  @media print) y formato es-CO ($1.234.567,00).
+- Migración delta `f3b8d2c4e6a1` (columnas pos_pin_hash/pos_pin_updated_at
+  vía batch mode, verificada en sqlite desechable upgrade→downgrade→
+  re-upgrade).
+- Tests `verduras/tests/test_pos.py` (21 casos): setup de PIN, login,
+  lockout, segregación de claves (la x-api-key NO da sesión), venta por
+  sesión, pantalla POS y guard CSRF activado. Fixtures limpian el lockout
+  en memoria entre tests (aislamiento). Módulo: 139/139 en verde. Ruff:
+  all checks passed.
+
 ---
 
 ## [1.6.0] - 2026-09-20 (tag git `v1.6.0` — versión estable)

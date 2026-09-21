@@ -20,8 +20,13 @@ del código no cambia porque solo usa `verduras.extensions.db`.
 """
 
 from flask_migrate import Migrate
+from flask_wtf import CSRFProtect
 
 from app.models import db  # noqa: F401  (re-export: es la instancia de core)
+
+# CSRF para el dashboard POS (login y venta por sesión). Igual que core:
+# WTF_CSRF_CHECK_DEFAULT=False + guard manual en la factory, para no
+# romper las APIs JSON (esas van con x-api-key).
 
 
 def _only_module_tables(obj, name, type_, reflected, compare_to) -> bool:
@@ -33,3 +38,4 @@ def _only_module_tables(obj, name, type_, reflected, compare_to) -> bool:
 
 migrate = Migrate(version_table='alembic_version_verduras',
                   include_object=_only_module_tables)
+csrf = CSRFProtect()

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar al POS · Velzia Verduras</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+</head>
+<body>
+  <div class="login-wrap">
+    <p class="login-logo">Velzia <span>Verduras</span></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ 'ok' if category == 'ok' else 'error' }}" role="alert">
+          <span class="material-symbols-rounded" aria-hidden="true">{{ 'check_circle' if category == 'ok' else 'error' }}</span>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="login-card">
+      <h1>Entrar a tu punto de venta</h1>
+      <p class="login-hint">Usa el nombre de tu negocio y tu PIN.</p>
+
+      <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>
+          Tu negocio
+          <input type="text" name="slug" required
+                 placeholder="verduras-la-central" autocomplete="username"
+                 value="{{ request.form.get('slug', '') }}">
+        </label>
+        <label>
+          PIN (4 a 6 dígitos)
+          <input type="password" name="pin" required inputmode="numeric"
+                 pattern="[0-9]{4,6}" maxlength="6"
+                 autocomplete="current-password" placeholder="••••">
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+      </form>
+
+      <p class="login-hint">
+        ¿No tienes PIN? Quien te configuró el sistema puede creártelo.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

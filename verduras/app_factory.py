@@ -13,15 +13,33 @@ Uso:
 import logging
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
-from .extensions import db, migrate
+from .extensions import csrf, db, migrate
 from .settings import Config
 
 
 def create_app(config_object=Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_object)
+    # CSRF manual (mismo patrón que core): las APIs JSON van con x-api-key
+    # y quedan exentas; el dashboard POS valida vía el guard de abajo.
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+    csrf.init_app(app)
+
+    @app.before_request
+    def _pos_csrf_guard():
+        """CSRF en los POST del dashboard (login, logout, venta por sesión).
+
+        Las rutas /api/* van con x-api-key y quedan fuera del guard (mismo
+        criterio de core: CSRF para formularios con sesión, no para APIs
+        autenticadas por header). Respeta WTF_CSRF_ENABLED (los tests lo
+        apagan; protect() directo no lo consulta por sí solo).
+        """
+        if (request.method == 'POST' and request.blueprint == 'dashboard'
+                and not request.path.startswith('/api/')
+                and app.config.get('WTF_CSRF_ENABLED', True)):
+            csrf.protect()
 
     db.init_app(app)
     # Directorio de migraciones PROPIO del módulo (aún no existe): si alguien
@@ -43,6 +61,7 @@ def create_app(config_object=Config) -> Flask:
 
     from .routes.businesses import businesses_bp
     from .routes.catalog import catalog_bp
+    from .routes.dashboard import dashboard_bp
     from .routes.health import health_bp
     from .routes.inventory import inventory_bp
     from .routes.sales import sales_bp
@@ -52,6 +71,7 @@ def create_app(config_object=Config) -> Flask:
     app.register_blueprint(catalog_bp)
     app.register_blueprint(sales_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(dashboard_bp)
 
     @app.errorhandler(404)
     def not_found(_e):
