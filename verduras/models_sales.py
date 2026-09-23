@@ -30,6 +30,10 @@ from verduras.models import ALLOWED_UNITS  # noqa: F401  (re-export)
 # Estados de una venta (máquina simple: pending → completed | cancelled).
 SALE_STATUSES = ('pending', 'completed', 'cancelled')
 SALE_TYPES = ('walk_in', 'delivery')
+# Métodos de pago del mostrador (lista cerrada — el ticket solo MUESTRA el
+# método; "libreta" es etiqueta en v1, sin ledger: el saldo por cliente
+# llega con Clientes/Fiados en Semana 3. No mostrar "saldo"/"deuda" aún.
+PAYMENT_METHODS = ('efectivo', 'tarjeta', 'transferencia', 'libreta')
 
 
 class VerdurasBusinessSettings(db.Model):
@@ -83,6 +87,9 @@ class VerdurasSale(db.Model):
                                server_default='')
     # walk_in | delivery
     sale_type = db.Column(db.String(15), nullable=False, server_default='walk_in')
+    # Método de pago (v1 POS rediseñado): efectivo | tarjeta |
+    # transferencia | libreta. Nullable = ventas viejas sin dato.
+    payment_method = db.Column(db.String(20), nullable=True)
     delivery_address = db.Column(db.String(200))
     total = db.Column(Numeric(12, 2), nullable=False)
     # pending | completed | cancelled

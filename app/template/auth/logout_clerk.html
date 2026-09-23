@@ -1,4 +1,6 @@
-{% extends "common/base.html" %}
+{# Standalone a propósito (igual que sync_clerk): durante el logout la
+   sesión ya murió y el sidebar del dashboard aquí es un fantasma. #}
+{% extends "common/base_fullscreen.html" %}
 
 {% block title %}Cerrando sesión...{% endblock %}
 

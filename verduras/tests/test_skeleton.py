@@ -1,13 +1,15 @@
 """
-Smoke tests del esqueleto Verduras.
+Contratos base del módulo Verduras (Tier MODULO).
 
 Cubren:
-1. Endpoints base (/, /health, /health/core-bridge).
-2. API /api/businesses filtrada por el vertical (nunca expone espejos
+1. API /api/businesses filtrada por el vertical (nunca expone espejos
    de restaurantes).
-3. Servicio de contexto: require_business valida existencia/vertical/activo.
-4. El puente Business ↔ Restaurant está ACTIVO en el proceso del módulo
+2. Servicio de contexto: require_business valida existencia/vertical/activo.
+3. El puente Business ↔ Restaurant está ACTIVO en el proceso del módulo
    (crear un Restaurant de core desde el módulo genera su espejo).
+
+NOTA: el smoke de endpoints base (/, /health, 404) se movió a
+verify_verduras_skeleton.py (Tier DESECHABLE, no corre en CI).
 """
 import pytest
 
@@ -43,39 +45,6 @@ def _mk_verduras_business(db):
     """Business directo del vertical (banda >= 1_000_000)."""
     return Business.create_direct(vertical='verduras', name='Verduras La Central',
                                   slug=_slug())
-
-
-# ── Endpoints base ──────────────────────────────────────────
-
-
-class TestBaseEndpoints:
-    def test_index(self, client):
-        res = client.get('/')
-        assert res.status_code == 200
-        body = res.get_json()
-        assert body['success'] is True
-        assert body['module'] == 'verduras'
-
-    def test_health_ok(self, client):
-        res = client.get('/health')
-        assert res.status_code == 200
-        body = res.get_json()
-        assert body['success'] is True
-        assert body['database'] is True
-
-    def test_health_core_bridge_counts(self, client, db):
-        _mk_restaurant(db)
-        _mk_verduras_business(db)
-        res = client.get('/health/core-bridge')
-        assert res.status_code == 200
-        bridge = res.get_json()['bridge']
-        assert bridge['restaurant_mirrors'] >= 1
-        assert bridge['verduras_businesses'] >= 1
-
-    def test_404_json(self, client):
-        res = client.get('/no-existe')
-        assert res.status_code == 404
-        assert res.get_json()['error_code'] == 'not_found'
 
 
 # ── API /api/businesses ─────────────────────────────────────

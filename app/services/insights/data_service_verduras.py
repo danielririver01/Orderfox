@@ -34,7 +34,11 @@ from sqlalchemy import func
 from app import db
 from app.models import Business
 from verduras.models import VerdurasCategory, VerdurasProduct
-from verduras.models_inventory import VerdurasLot, VerdurasMerma
+from verduras.models_inventory import (
+    VerdurasAjuste,
+    VerdurasLot,
+    VerdurasMerma,
+)
 from verduras.models_sales import VerdurasSale, VerdurasSaleItem
 
 
@@ -696,7 +700,7 @@ def _last_sale_date(business_id, product_id):
 
 
 def _stock_of(business_id, product):
-    """Stock derivado (compras − ventas − merma) + costo ponderado."""
+    """Stock derivado (compras − ventas − merma ± ajustes) + costo."""
     bought = _dec(db.session.query(func.sum(VerdurasLot.quantity)).filter(
         VerdurasLot.business_id == business_id,
         VerdurasLot.product_id == product.id).scalar())
@@ -704,7 +708,10 @@ def _stock_of(business_id, product):
     lost = _dec(db.session.query(func.sum(VerdurasMerma.quantity)).filter(
         VerdurasMerma.business_id == business_id,
         VerdurasMerma.product_id == product.id).scalar())
-    stock = bought - sold - lost
+    adjusted = _dec(db.session.query(func.sum(VerdurasAjuste.delta)).filter(
+        VerdurasAjuste.business_id == business_id,
+        VerdurasAjuste.product_id == product.id).scalar())
+    stock = bought - sold - lost + adjusted
     avg_cost = _weighted_avg_cost(business_id, product.id)
     value = (stock * avg_cost).quantize(_CENTS) if avg_cost is not None and stock > 0 else None
     return {

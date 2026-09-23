@@ -2,9 +2,10 @@
 Servicio de inventario y merma del vertical Verduras (Semana 3).
 
 Filosofía (misma del módulo): la DB calcula, el servicio organiza.
-- El stock NO se almacena: se DERIVA como compras − ventas − merma.
-  Derivarlo elimina la clase entera de bugs de sincronización y hace el
-  dato auditable (siempre se puede reconstruir desde los movimientos).
+- El stock NO se almacena: se DERIVA como compras − ventas − merma
+  ± ajustes. Derivarlo elimina la clase entera de bugs de sincronización
+  y hace el dato auditable (siempre se puede reconstruir desde los
+  movimientos).
 - El costo por kg de un lote NO se guarda: se deriva (total / cantidad).
 - El costo de referencia del producto es el PROMEDIO PONDERADO de sus
   lotes (no el último): 30kg a $1.500 + 20kg a $2.500 → 50kg a $1.900.
@@ -21,7 +22,9 @@ from sqlalchemy import func
 from app.models import db
 from verduras.models import VerdurasProduct
 from verduras.models_inventory import (
+    AJUSTE_MOTIVOS,
     MERMA_REASONS,
+    VerdurasAjuste,
     VerdurasLot,
     VerdurasMerma,
 )
@@ -236,8 +239,70 @@ def _sum_merma(business_id: int, product_id: int, until):
     return Decimal(str(query.scalar() or 0))
 
 
+def _sum_ajustes(business_id: int, product_id: int, until):
+    """Suma firmada de ajustes (deltas +/− por conteos físicos)."""
+    query = db.session.query(func.sum(VerdurasAjuste.delta)).filter(
+        VerdurasAjuste.business_id == business_id,
+        VerdurasAjuste.product_id == product_id,
+    )
+    if until is not None:
+        query = query.filter(VerdurasAjuste.registered_at <= until)
+    return Decimal(str(query.scalar() or 0))
+
+
+def _parse_motivo(value) -> str:
+    motivo = str(value or 'conteo').strip().lower()
+    if motivo not in AJUSTE_MOTIVOS:
+        raise VerdurasValidationError(
+            f"Motivo de ajuste inválido: '{motivo}'. "
+            f"Válidos: {', '.join(AJUSTE_MOTIVOS)}")
+    return motivo
+
+
+def register_ajuste(business_id: int, product_id: int, counted,
+                    motivo='conteo', note=None) -> VerdurasAjuste:
+    """Corrección de stock FIRMADA por conteo físico (filosofía Velzia:
+    "puedes corregirlo, pero Velzia registra que fue una corrección").
+
+    El dueño ingresa lo que CONTÓ; el backend calcula la diferencia contra
+    el stock del sistema. Delta cero se rechaza (no hay nada que corregir).
+    El ajuste NUNCA re-escribe historia: es un movimiento más, con anterior
+    + contado + diferencia con signo + motivo + fecha.
+    """
+    product = _get_product(business_id, product_id)
+    try:
+        counted = Decimal(str(counted)).quantize(
+            _MILLIS, rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        raise VerdurasValidationError(
+            f'Cantidad contada inválida: {counted!r}')
+    if counted < 0:
+        raise VerdurasValidationError(
+            'Lo contado no puede ser negativo')
+    motivo = _parse_motivo(motivo)
+    # stock actual como Decimal (get_stock lo devuelve str).
+    current = Decimal(get_stock(business_id, product.id)['stock'])
+    delta = (counted - current).quantize(_MILLIS, rounding=ROUND_HALF_UP)
+    if delta == 0:
+        raise VerdurasValidationError(
+            f'Lo contado ({counted} {product.unit}) iguala el stock del '
+            f'sistema: no hay nada que ajustar')
+    ajuste = VerdurasAjuste(
+        business_id=business_id,
+        product_id=product.id,
+        stock_before=current,
+        counted=counted,
+        delta=delta,
+        motivo=motivo,
+        note=(note or '').strip() or None,
+    )
+    db.session.add(ajuste)
+    db.session.commit()
+    return ajuste
+
+
 def get_stock(business_id: int, product_id: int, until=None) -> dict:
-    """Stock en tiempo real DERIVADO: compras − ventas − merma.
+    """Stock en tiempo real DERIVADO: compras − ventas − merma ± ajustes.
 
     Incluye el valor del stock (stock × costo promedio ponderado) cuando
     hay lotes: lo que el tendero tiene parado en la trakta, en COP.
@@ -248,7 +313,9 @@ def get_stock(business_id: int, product_id: int, until=None) -> dict:
     purchased = _sum_purchased(business_id, product.id, moment)
     sold = _sum_sales(business_id, product.id, moment)
     lost = _sum_merma(business_id, product.id, moment)
-    stock = (purchased - sold - lost).quantize(_MILLIS, rounding=ROUND_HALF_UP)
+    adjusted = _sum_ajustes(business_id, product.id, moment)
+    stock = (purchased - sold - lost + adjusted).quantize(
+        _MILLIS, rounding=ROUND_HALF_UP)
 
     avg_cost = average_unit_cost(business_id, product.id, until=moment)
     return {
@@ -258,6 +325,7 @@ def get_stock(business_id: int, product_id: int, until=None) -> dict:
         'purchased': str(purchased),
         'sold': str(sold),
         'merma': str(lost),
+        'ajustes': str(adjusted),
         'stock': str(stock),
         'avg_unit_cost': str(avg_cost) if avg_cost is not None else None,
         'stock_value': (str((stock * avg_cost).quantize(

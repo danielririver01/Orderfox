@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Entrar al POS · Velzia Verduras</title>
+  <title>Recuperar PIN del POS · Velzia Verduras</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
 </head>
@@ -24,29 +24,23 @@
     {% endwith %}
 
     <div class="login-card">
-      <h1>Entrar a tu punto de venta</h1>
-      <p class="login-hint">Usa tu correo o número de teléfono registrado y tu PIN.</p>
+      <h1>Recuperar tu PIN</h1>
+      <p class="login-hint">Ingresa el correo electrónico con el que registraste tu negocio y te enviaremos un enlace seguro para crear un nuevo PIN.</p>
 
       <form method="post" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>
-          Correo o teléfono
-          <input type="text" name="identifier" required
-                 placeholder="tu@correo.com o +57 300 123 4567" autocomplete="username"
-                 value="{{ request.form.get('identifier', request.form.get('slug', '')) }}">
+          Correo electrónico
+          <input type="email" name="email" required
+                 placeholder="tu@correo.com" autocomplete="email"
+                 value="{{ request.form.get('email', '') }}">
         </label>
-        <label>
-          PIN (4 a 6 dígitos)
-          <input type="password" name="pin" required inputmode="numeric"
-                 pattern="[0-9]{4,6}" maxlength="6"
-                 autocomplete="current-password" placeholder="••••">
-        </label>
-        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        <button type="submit" class="btn btn-primary btn-block">Enviar enlace de recuperación</button>
       </form>
 
-      <div style="margin-top: 1.25rem; text-align: center;">
-        <a href="{{ url_for('dashboard.pos_forgot_pin') }}" style="color: var(--color-primary, #15803d); text-decoration: none; font-size: 0.875rem; font-weight: 500;">
-          ¿Olvidaste tu PIN?
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <a href="{{ url_for('dashboard.pos_login') }}" style="color: var(--color-primary, #15803d); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+          ← Volver a iniciar sesión
         </a>
       </div>
     </div>

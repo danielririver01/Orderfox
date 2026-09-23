@@ -13,7 +13,9 @@ Contrato:
 - Los Business con `vertical='restaurant'` existen en la misma tabla
   (espejos del puente) pero NO son tenants de este módulo.
 """
-from app.models import Business, db
+import re
+from sqlalchemy import func
+from app.models import Business, User, db
 
 
 class BusinessNotFoundError(LookupError):
@@ -32,6 +34,68 @@ def get_business(business_id: int) -> Business | None:
 def get_business_by_slug(slug: str) -> Business | None:
     """Business por slug (login del POS: la URL amable del tendero)."""
     return Business.query.filter_by(slug=slug).first()
+
+
+def find_business_by_identifier(identifier: str) -> Business | None:
+    """Busca un Business del vertical 'verduras' por correo, teléfono o slug.
+
+    Permite al tendero/dueño iniciar sesión usando su email de registro, su
+    número de WhatsApp configurado, o el slug del negocio.
+    """
+    if not identifier:
+        return None
+    raw = str(identifier).strip()
+    if not raw:
+        return None
+
+    # 1. Si contiene '@', buscar por correo del dueño (User.email)
+    if '@' in raw:
+        email_clean = raw.lower()
+        user = User.query.filter(func.lower(User.email) == email_clean).first()
+        if user:
+            biz = Business.query.filter(
+                Business.vertical == 'verduras',
+                db.or_(
+                    Business.owner_user_id == user.id,
+                    Business.id == user.restaurant_id,
+                ),
+            ).first()
+            if biz:
+                return biz
+
+    # 2. Si contiene dígitos, intentar coincidencia por teléfono
+    phone_digits = re.sub(r'\D', '', raw)
+    if len(phone_digits) >= 7:
+        from verduras.models_sales import VerdurasBusinessSettings
+
+        bizs = Business.query.filter(
+            Business.vertical == 'verduras',
+            Business.whatsapp_phone.isnot(None),
+        ).all()
+        for b in bizs:
+            b_digits = re.sub(r'\D', '', b.whatsapp_phone or '')
+            if b_digits and (b_digits == phone_digits or b_digits.endswith(phone_digits) or phone_digits.endswith(b_digits)):
+                return b
+
+        settings = VerdurasBusinessSettings.query.filter(
+            VerdurasBusinessSettings.whatsapp_phone.isnot(None)
+        ).all()
+        for s in settings:
+            s_digits = re.sub(r'\D', '', s.whatsapp_phone or '')
+            if s_digits and (s_digits == phone_digits or s_digits.endswith(phone_digits) or phone_digits.endswith(s_digits)):
+                biz = get_business(s.business_id)
+                if biz and biz.vertical == 'verduras':
+                    return biz
+
+    # 3. Buscar por slug directo
+    biz = Business.query.filter(
+        Business.vertical == 'verduras',
+        func.lower(Business.slug) == raw.lower(),
+    ).first()
+    if biz:
+        return biz
+
+    return None
 
 
 def require_business(business_id: int) -> Business:

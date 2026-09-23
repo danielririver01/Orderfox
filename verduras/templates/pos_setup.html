@@ -16,7 +16,10 @@
         {% for category, message in messages %}
           <div class="flash {{ 'flash-ok' if category == 'ok' else 'flash-error' }}" role="alert">
             <span class="material-symbols-rounded" aria-hidden="true">{{ 'check_circle' if category == 'ok' else 'error' }}</span>
-            {{ message }}
+            <span class="flash-text">{{ message }}</span>
+            <button type="button" class="flash-close" aria-label="Cerrar mensaje">
+              <span class="material-symbols-rounded" style="font-size: 18px;" aria-hidden="true">close</span>
+            </button>
           </div>
         {% endfor %}
       {% endif %}
@@ -25,34 +28,42 @@
     <form class="login-card" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-      <h1>Configura el POS de {{ business.name }}</h1>
+      <h1>¡Ya casi terminamos!</h1>
+      <p class="login-hint" style="font-size:1rem; color:var(--text-main); font-weight:700;">
+        Configura el acceso de <strong>{{ business.name }}</strong>.
+      </p>
       <p class="login-hint">
-        Último paso: elige un PIN de 4 a 6 dígitos para entrar a vender.
-        El WhatsApp es para los pedidos a domicilio.
+        Crea un PIN de 4 a 6 números. Lo usarás para entrar
+        y gestionar las ventas de tu negocio.
       </p>
 
       <label>
-        PIN de acceso (4-6 dígitos)
+        PIN de acceso
         <input type="password" name="pin" inputmode="numeric" pattern="[0-9]*"
-               minlength="4" maxlength="6" autocomplete="new-password"
+               minlength="4" maxlength="6" autocomplete="new-password" placeholder="Ej. 1234"
                required aria-label="PIN de acceso">
       </label>
 
       <label>
-        Repite el PIN
+        Confirma tu PIN
         <input type="password" name="pin2" inputmode="numeric" pattern="[0-9]*"
-               minlength="4" maxlength="6" autocomplete="new-password"
-               required aria-label="Repite el PIN">
+               minlength="4" maxlength="6" autocomplete="new-password" placeholder="Repite el PIN"
+               required aria-label="Confirma tu PIN">
       </label>
 
       <label>
-        WhatsApp del negocio (opcional, ej: +573001112233)
-        <input type="tel" name="whatsapp_phone" placeholder="+573001112233"
+        WhatsApp del negocio (opcional)
+        <input type="tel" name="whatsapp_phone" placeholder="Ej. +57 300 111 2233"
+               value="{{ business.whatsapp_phone or '' }}"
                autocomplete="tel" aria-label="WhatsApp del negocio">
+        {% if business.whatsapp_phone %}
+        <p class="login-hint" style="margin-top:0.35rem;">Trajimos el que nos diste en el registro; cámbialo si el del mostrador es otro.</p>
+        {% endif %}
       </label>
 
-      <button type="submit" class="btn btn-primary btn-block">Guardar y empezar a vender</button>
+      <button type="submit" class="btn btn-primary btn-block">Finalizar configuración</button>
     </form>
   </div>
+  <script src="{{ url_for('static', filename='JS/pos_auth.js') }}"></script>
 </body>
 </html>

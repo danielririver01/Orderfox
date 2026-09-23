@@ -32,35 +32,57 @@
                 <div class="mb-6" style="text-align:center;">
                     <div class="auth-card-icon mb-4"
                         style="background:rgba(22,163,74,.12); border:1px solid rgba(22,163,74,.35);">
-                        <span class="material-symbols-outlined" style="color:#22c55e; font-size:1.6rem;">storefront</span>
+                        <span class="material-symbols-outlined" style="color:#22c55e; font-size:1.6rem;">celebration</span>
                     </div>
                     <h1 class="auth-card-title" style="text-align:center;">
-                        ¡Tu negocio está <em>listo</em>!
+                        ¡Listo, <em>{{ business_name }}</em>!
                     </h1>
                     <p class="auth-card-sub" style="text-align:center; margin-top:0.35rem;">
-                        Último paso: configura el PIN con el que entrarás a vender.
+                        Tu negocio fue registrado correctamente.<br>
+                        Ahora vamos a configurar tu tienda.
                     </p>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:1rem;">
                     <a href="{{ setup_url }}"
                         style="display:flex; align-items:center; justify-content:center; gap:0.5rem; min-height:52px; border-radius:14px; background:#15803D; color:#fff; font-weight:700; text-decoration:none;">
-                        <span class="material-symbols-outlined">pin</span>
-                        Configurar el POS ahora
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                        Continuar configuración
                     </a>
 
-                    <div
-                        style="background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.15); border-radius:12px; padding:0.9rem 1rem; font-size:0.8rem; color:#9ca3af; word-break:break-all;">
-                        <strong style="color:#e5e7eb;">Guarda este enlace</strong> — sirve una sola
-                        vez. Si lo pierdes, podrás reenviarlo desde tu dashboard:<br>
-                        {{ setup_url }}
-                    </div>
+                    <button type="button" id="copy-setup-link"
+                        style="display:flex; align-items:center; justify-content:center; gap:0.5rem; min-height:48px; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); color:#e5e7eb; font-weight:700; cursor:pointer;">
+                        <span class="material-symbols-outlined">content_copy</span>
+                        Copiar enlace
+                    </button>
+                    <p id="copy-setup-feedback"
+                        style="display:none; text-align:center; color:#22c55e; font-size:0.85rem; font-weight:700;">
+                        ¡Copiado! Guárdalo donde quieras.
+                    </p>
 
-                    <a href="{{ url_for('dashboard.index') }}"
-                        style="text-align:center; color:#9ca3af; font-size:0.85rem; text-decoration:none;">
-                        Ir a mi dashboard por ahora
-                    </a>
+                    <p style="text-align:center; color:#9ca3af; font-size:0.8rem; margin:0;">
+                        Guarda esta página en favoritos para volver cuando quieras.
+                    </p>
                 </div>
+
+                <script>
+                    (function () {
+                        var btn = document.getElementById('copy-setup-link');
+                        var feedback = document.getElementById('copy-setup-feedback');
+                        if (!btn) return;
+                        btn.addEventListener('click', function () {
+                            var done = function () {
+                                if (feedback) feedback.style.display = 'block';
+                                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> ¡Copiado!';
+                            };
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText({{ setup_url | tojson }}).then(done, done);
+                            } else {
+                                done();
+                            }
+                        });
+                    })();
+                </script>
 
             </div>
         </div>

@@ -128,6 +128,33 @@ class TestPosLogin:
                           follow_redirects=False)
         assert res.status_code == 302
 
+    def test_login_with_owner_email_success(self, client, db, biz):
+        from app.models import User
+        user = User(username='dueño', email='dueno@verduras.com', password='hashedpassword')
+        db.session.add(user)
+        db.session.flush()
+        biz.owner_user_id = user.id
+        db.session.commit()
+        _set_pin(biz)
+
+        res = client.post('/pos/login',
+                          data={'identifier': 'dueno@verduras.com', 'pin': '4321'},
+                          follow_redirects=False)
+        assert res.status_code == 302
+        assert f'/pos/{biz.slug}' in res.headers['Location']
+
+    def test_login_with_phone_success(self, client, db, biz):
+        biz.whatsapp_phone = '+573001234567'
+        db.session.commit()
+        _set_pin(biz)
+
+        # Login con número sin código de país
+        res = client.post('/pos/login',
+                          data={'identifier': '3001234567', 'pin': '4321'},
+                          follow_redirects=False)
+        assert res.status_code == 302
+        assert f'/pos/{biz.slug}' in res.headers['Location']
+
     def test_logout_kills_session(self, client, db, biz, catalog_row):
         _set_pin(biz)
         _login(client, biz)
@@ -204,6 +231,25 @@ class TestPosSell:
         res = client.post(f'/pos/{biz.slug}/sell', json={'items': []})
         assert res.status_code == 400
 
+    def test_sell_with_payment_method_in_ticket(self, client, db, biz,
+                                               catalog_row):
+        self._login_client(client, biz)
+        res = client.post(f'/pos/{biz.slug}/sell', json={
+            'items': [{'product_id': catalog_row.tomate.id,
+                       'quantity': '1'}],
+            'payment_method': 'efectivo'})
+        assert res.status_code == 200
+        assert res.get_json()['data']['payment_method'] == 'efectivo'
+
+    def test_sell_invalid_payment_method_400(self, client, db, biz,
+                                             catalog_row):
+        self._login_client(client, biz)
+        res = client.post(f'/pos/{biz.slug}/sell', json={
+            'items': [{'product_id': catalog_row.tomate.id,
+                       'quantity': '1'}],
+            'payment_method': 'trueque'})
+        assert res.status_code == 400
+
 
 # ═════════════════ Pantalla del POS ═════════════════
 
@@ -260,3 +306,49 @@ class TestCsrfGuard:
             assert res.status_code == 302
         finally:
             app.config['WTF_CSRF_ENABLED'] = False
+
+
+# ═════════════════ Recuperación de PIN por Correo ═════════════════
+
+
+class TestPosForgotPin:
+    def test_forgot_pin_renders_form(self, client, db):
+        res = client.get('/pos/forgot-pin')
+        assert res.status_code == 200
+        assert 'Recuperar tu PIN'.encode('utf-8') in res.data
+        assert 'csrf_token'.encode('utf-8') in res.data
+
+    def test_forgot_pin_sends_email_and_generates_token(self, client, db, biz, monkeypatch):
+        from app.models import User
+        user = User(username='dueño_verduras', email='owner@verduras.com', password='hashedpassword')
+        db.session.add(user)
+        db.session.flush()
+        biz.owner_user_id = user.id
+        db.session.commit()
+
+        sent_emails = []
+        def _mock_send_email(**kwargs):
+            sent_emails.append(kwargs)
+            return True
+
+        monkeypatch.setattr('app.services.mail_service.send_email', _mock_send_email)
+
+        res = client.post('/pos/forgot-pin', data={'email': 'owner@verduras.com'}, follow_redirects=True)
+        assert res.status_code == 200
+        assert 'recibirás un enlace'.encode('utf-8') in res.data
+        assert 'Entrar a tu punto de venta'.encode('utf-8') in res.data
+
+        # Verificar que el token se generó
+        db.session.refresh(biz)
+        assert biz.pos_setup_token is not None
+        assert len(biz.pos_setup_token) >= 20
+
+        # Verificar que el email se intentó enviar
+        assert len(sent_emails) == 1
+        assert sent_emails[0]['to'] == 'owner@verduras.com'
+        assert f'/pos/setup/{biz.slug}/{biz.pos_setup_token}' in sent_emails[0]['html_body']
+
+    def test_forgot_pin_unknown_email_silent_success(self, client, db):
+        res = client.post('/pos/forgot-pin', data={'email': 'desconocido@ejemplo.com'}, follow_redirects=True)
+        assert res.status_code == 200
+        assert 'recibirás un enlace'.encode('utf-8') in res.data

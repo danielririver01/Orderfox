@@ -24,6 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models import db
 from verduras.models import VerdurasProduct
 from verduras.models_sales import (
+    PAYMENT_METHODS,
     SALE_STATUSES,
     SALE_TYPES,
     VerdurasBusinessSettings,
@@ -251,6 +252,7 @@ def find_by_idempotency_key(business_id: int, key):
 def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in',
                 customer_name: str = '', customer_phone: str = '',
                 delivery_address: str | None = None,
+                payment_method: str | None = None,
                 idempotency_key: str | None = None,
                 ip_address: str | None = None,
                 skip_open_check: bool = False) -> tuple[VerdurasSale, bool]:
@@ -268,6 +270,14 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
     if sale_type not in SALE_TYPES:
         raise VerdurasValidationError(
             f"Tipo de venta inválido: '{sale_type}'. Válidos: {', '.join(SALE_TYPES)}")
+
+    # Método de pago (v1 POS rediseñado): lista cerrada, sin strings
+    # inventados. None = venta vieja / no especificado (columna nullable).
+    payment_method = (str(payment_method or '').strip().lower() or None)
+    if payment_method is not None and payment_method not in PAYMENT_METHODS:
+        raise VerdurasValidationError(
+            f"Método de pago inválido: '{payment_method}'. "
+            f"Válidos: {', '.join(PAYMENT_METHODS)}")
 
     settings = get_settings(business_id)
 
@@ -308,6 +318,7 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
         if (customer_name or '').strip() else '',
         customer_phone=_clean_phone(customer_phone) if customer_phone else '',
         delivery_address=(delivery_address or '').strip() or None,
+        payment_method=payment_method,
         idempotency_key=idem_key,
         ip_address=ip_address,
         status='pending',

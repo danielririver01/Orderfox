@@ -77,11 +77,21 @@ class Business(db.Model):
     dormant_at = db.Column(AwareDateTime, nullable=True)
     has_used_trial = db.Column(db.Boolean, default=False, nullable=False,
                                server_default='0')
+    # WhatsApp dado en el registro de core (una sola vez): el setup del POS
+    # lo trae pre-llenado (editable). NULL = no dado / espejos viejos.
+    whatsapp_phone = db.Column(db.String(20), nullable=True)
     # Token de UN SOLO USO para el setup del POS del módulo (PIN + WhatsApp).
     # Core lo emite al registrar; el módulo lo consume (comparación en tiempo
     # constante) y lo limpia — vía la DB compartida, el canal de integración
     # de la arquitectura. NULL = sin setup pendiente.
     pos_setup_token = db.Column(db.String(64), nullable=True)
+    # Handoff Mundos → POS: token de UN SOLO USO con expiración corta para
+    # que el dueño salte de su dashboard (core) al POS del módulo (5100)
+    # sin re-loguearse. Core lo emite, el módulo lo consume y lo limpia.
+    # Solo un token vivo a la vez: mintear reemplaza el anterior.
+    # NULL = sin handoff pendiente.
+    pos_sso_token = db.Column(db.String(64), nullable=True)
+    pos_sso_expires_at = db.Column(AwareDateTime, nullable=True)
 
     # Perfil del vertical restaurante: fila de `restaurants` con el mismo ID.
     # Solo lectura — la escritura vive en los listeners (mismo ID, sin FK).

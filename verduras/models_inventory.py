@@ -14,8 +14,8 @@ Semana 3 — Inventario por lotes + Merma (la joya del producto):
   líneas de venta). El reporte semanal/mensual se construye desde aquí.
 
 El stock en tiempo real NO se almacena: se DERIVA como
-compras − ventas − merma (servicio inventory.py). Derivarlo evita la
-clase entera de bugs de sincronización y hace el dato auditable.
+compras − ventas − merma ± ajustes (servicio inventory.py). Derivarlo
+evita la clase entera de bugs de sincronización y hace el dato auditable.
 """
 from datetime import datetime, timezone
 
@@ -119,3 +119,61 @@ class VerdurasMerma(db.Model):
     def __repr__(self):
         return (f'<VerdurasMerma {self.product_id}: {self.quantity} '
                 f'({self.reason})>')
+
+
+# Motivos de ajuste soportados (conteo físico y correcciones; validado en
+# el servicio, sin CHECK en DB como MERMA_REASONS).
+AJUSTE_MOTIVOS = ('conteo', 'error_pesaje', 'otro')
+AJUSTE_MOTIVO_LABELS = {
+    'conteo': 'Conteo físico',
+    'error_pesaje': 'Error de pesaje',
+    'otro': 'Otro',
+}
+
+
+class VerdurasAjuste(db.Model):
+    """Corrección de stock FIRMADA: el dueño contó y el sistema cuadra.
+
+    Guarda anterior + contado + diferencia (con signo: + sobrante,
+    − faltante) + motivo + fecha. El stock se DERIVA incluyendo ajustes:
+    compras − ventas − merma ± ajustes. Ajustar NUNCA re-escribe historia:
+    es un movimiento más, auditable. Sin ajuste no hay forma honesta de
+    corregir un conteo (la alternativa sería mentir con compras falsas).
+    """
+    __tablename__ = 'verduras_ajustes'
+    __table_args__ = (
+        db.Index('ix_verduras_ajustes_business_product', 'business_id',
+                 'product_id'),
+        db.Index('ix_verduras_ajustes_registered', 'business_id',
+                 'registered_at'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(
+        db.Integer, db.ForeignKey('businesses.id'), nullable=False,
+    )
+    product_id = db.Column(
+        db.Integer, db.ForeignKey('verduras_products.id'), nullable=False,
+    )
+    # Stock del sistema ANTES del ajuste, en la unidad del producto.
+    stock_before = db.Column(Numeric(12, 3), nullable=False)
+    # Lo que el dueño contó físicamente.
+    counted = db.Column(Numeric(12, 3), nullable=False)
+    # Diferencia con signo (counted − stock_before). NUNCA cero.
+    delta = db.Column(Numeric(12, 3), nullable=False)
+    # conteo | error_pesaje | otro (validado en servicio).
+    motivo = db.Column(db.String(20), nullable=False,
+                       server_default='conteo')
+    note = db.Column(db.String(255))
+    registered_at = db.Column(AwareDateTime, nullable=False,
+                              default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(AwareDateTime,
+                           default=lambda: datetime.now(timezone.utc),
+                           server_default='CURRENT_TIMESTAMP')
+
+    business = db.relationship('Business', viewonly=True)
+    product = db.relationship('VerdurasProduct', viewonly=True)
+
+    def __repr__(self):
+        return (f'<VerdurasAjuste {self.product_id}: {self.delta} '
+                f'({self.motivo})>')

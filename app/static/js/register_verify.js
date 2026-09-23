@@ -12,7 +12,7 @@ if (!window.__registerVerifyLoaded) {
                     signUp: {
                         start: {
                             title: "Únete a Velzia",
-                            subtitle: "Crea tu cuenta y digitaliza tu restaurante"
+                            subtitle: "Crea tu cuenta y digitaliza tu negocio"
                         }
                     },
                     formFieldLabel__firstName: "Nombre",
@@ -40,11 +40,16 @@ if (!window.__registerVerifyLoaded) {
 
             const signUpDiv = document.getElementById('clerk-signup');
 
-            // Absoluta: al completar un sign-up con Google, Clerk debe volver
-            // al puente de sync (crea el usuario local) y NO a '/' (que cae en
-            // la landing sin sesión).
+            // Absoluta: al completar un sign-up (email o Google), Clerk debe
+            // volver al puente de sync (crea el usuario local) y NO a '/'
+            // (que cae en la landing sin sesión).
+            // forceRedirectUrl manda aunque el Dashboard de Clerk tenga otra
+            // URL; se conservan fallback + legacy por compatibilidad.
+            var syncBridgeUrl = window.location.origin + '/api/sync-clerk-redirect';
             window.Clerk.mountSignUp(signUpDiv, {
-                afterSignUpUrl: window.location.origin + '/api/sync-clerk-redirect',
+                forceRedirectUrl: syncBridgeUrl,
+                fallbackRedirectUrl: syncBridgeUrl,
+                afterSignUpUrl: syncBridgeUrl,
                 appearance: {
                     baseTheme: window.Clerk.themes ? window.Clerk.themes.dark : undefined,
                     variables: {

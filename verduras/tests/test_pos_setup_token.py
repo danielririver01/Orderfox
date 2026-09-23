@@ -106,7 +106,12 @@ class TestSetupRoutes:
     def test_get_form_with_valid_token(self, client, db, biz):
         res = client.get(f'/pos/setup/{biz.slug}/token-secreto-123')
         assert res.status_code == 200
-        assert b'Configura el POS' in res.data
+        html = res.data.decode()
+        # Copy de cliente (nada de "POS" como titular ni jerga).
+        assert 'Ya casi terminamos' in html
+        assert 'Confirma tu PIN' in html
+        assert 'Finalizar configuraci' in html
+        assert 'Configura el POS' not in html
         assert b'csrf_token' in res.data  # el POST estará protegido
 
     def test_get_form_with_dead_token_redirects(self, client, db, biz):
@@ -114,6 +119,23 @@ class TestSetupRoutes:
                          follow_redirects=False)
         assert res.status_code == 302
         assert '/pos/login' in res.headers['Location']
+
+    def test_get_form_prefills_whatsapp_from_core(self, client, db, biz):
+        """El número dado en el registro de core viene pre-llenado
+        (editable): no se pregunta dos veces."""
+        biz.whatsapp_phone = '+573001112233'
+        db.session.commit()
+        res = client.get(f'/pos/setup/{biz.slug}/token-secreto-123')
+        assert res.status_code == 200
+        assert b'value="+573001112233"' in res.data
+        assert 'ya nos diste este'.encode() in res.data or \
+            'Trajimos el que nos diste'.encode() in res.data
+
+    def test_get_form_empty_without_core_phone(self, client, db, biz):
+        assert biz.whatsapp_phone is None
+        res = client.get(f'/pos/setup/{biz.slug}/token-secreto-123')
+        assert res.status_code == 200
+        assert b'value=""' in res.data
 
     def test_post_consumes_and_enables_login(self, client, db, biz):
         res = client.post(f'/pos/setup/{biz.slug}/token-secreto-123',

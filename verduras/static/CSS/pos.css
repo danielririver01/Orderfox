@@ -1,10 +1,13 @@
 /*
  * Velzia Verduras — Design System del POS (claro, verde, operativo).
  * Diferente al dashboard oscuro/naranja de Restaurantes a propósito:
- *   Velzia Restaurantes → oscuro, naranja, nocturno.
+ * Velzia Restaurantes → oscuro, naranja, nocturno.
  *   Velzia Verduras     → claro, verde, fresco y operativo.
  * Misma tipografía y radios que Velzia para que se sientan familia.
  * Mobile first: targets ≥56px, total gigante, lenguaje de verdulero.
+ * CONTRATO (2026-09-22): fondo blanco (#FAFAFA/#FFFFFF), marca verde
+ * (#15803D), grid 3 cols desktop / 1 col móvil. No naranja, no oscuro,
+ * no 2 columnas en móvil. Ver `.product-grid`.
  */
 
 :root {
@@ -173,6 +176,33 @@ button { font-family: inherit; }
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.flash.fade-out {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+}
+.flash-text {
+  flex: 1;
+}
+.flash-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.65;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.flash-close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.06);
 }
 .flash-error {
   background: var(--danger-soft);
@@ -262,6 +292,12 @@ button { font-family: inherit; }
     height: 12px;
     border-radius: 50%;
     background: var(--brand-accent);
+  }
+  .sidebar-brand .brand-logo {
+    height: 2.4rem;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
   }
   .sidebar a {
     display: flex;
@@ -369,7 +405,11 @@ button { font-family: inherit; }
   border-color: transparent;
 }
 
-/* ── Grid de productos (tap grande) ────────────────────────── */
+/* ── Grid de productos (tap grande) ──────────────────────────
+ * CONTRATO VISUAL (decisión dueño 2026-09-22, corrección móvil):
+ * 3 columnas en desktop, 1 en móvil/tablet. NO cambiar a 2 columnas en
+ * móvil ni a auto-fill sin confirmación.
+ */
 
 .product-grid {
   display: grid;
@@ -377,11 +417,8 @@ button { font-family: inherit; }
   gap: 0.7rem;
   padding: 0.7rem 1rem 1.2rem;
 }
-@media (min-width: 560px) {
-  .product-grid { grid-template-columns: repeat(2, 1fr); }
-}
 @media (min-width: 900px) {
-  .product-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .product-card {
@@ -606,7 +643,7 @@ button { font-family: inherit; }
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(26, 46, 34, 0.45);
+  background: rgba(20, 35, 26, 0.62);
   padding: 1rem;
 }
 .ticket-modal.show { display: flex; }
@@ -713,4 +750,584 @@ button { font-family: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
+}
+
+/* ── Inventario y Precios v1 ─────────────────────────────────
+ * Misma carcasa del POS (sidebar/topbar/tokens). Tabla en desktop,
+ * filas apiladas en móvil. Precio inline + modal (Fase 2, sin roles).
+ */
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+  margin-bottom: 0.2rem;
+}
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.kpi-value { font-size: 1.35rem; font-weight: 800; }
+
+.inv-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  margin: 0 1rem 1.2rem;
+}
+.inv-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.inv-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.inv-table td { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--bg-hover); }
+.inv-table tr:last-child td { border-bottom: none; }
+.inv-name { font-weight: 700; }
+.inv-price { cursor: pointer; font-weight: 700; color: var(--brand); white-space: nowrap; }
+.inv-price:hover { text-decoration: underline; }
+.inv-price input {
+  width: 7rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-main);
+  border: 1.5px solid var(--brand-accent);
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
+.inv-empty { text-align: center; color: var(--text-muted); padding: 2rem 1rem !important; }
+.badge-ok { background: var(--brand-soft); color: var(--brand); }
+.btn-danger { background: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: #B91C1C; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+.inv-actions { white-space: nowrap; }
+.inv-actions .btn { padding: 0.4rem 0.7rem; font-size: 0.8rem; min-height: 0; }
+.inv-actions .btn + .btn { margin-left: 0.35rem; }
+.mov-type {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.mov-tab {
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mov-tab.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.inv-note { font-size: 0.75rem; font-weight: 400; color: var(--text-muted); }
+.inv-check { flex-direction: row !important; align-items: center; gap: 0.5rem; }
+.inv-check input { min-height: 0; width: 1.1rem; height: 1.1rem; accent-color: var(--brand); }
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 0.7rem;
+}
+.inv-field input, .inv-field select {
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 0.6rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  background: var(--bg-surface);
+  min-height: var(--tap);
+}
+.soon-panels {
+  padding: 0 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+@media (min-width: 900px) {
+  .soon-panels { grid-template-columns: repeat(3, 1fr); }
+}
+/* Tercera columna a la derecha (como el ticket del POS): tabla + paneles
+   lado a lado en desktop amplio; apilados en móvil/tablet. */
+.inv-layout { display: block; min-width: 0; }
+@media (min-width: 1200px) {
+  .inv-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1rem;
+    align-items: start;
+    padding: 0 1rem 1.2rem;
+  }
+  .inv-layout .inv-table-wrap { margin: 0; min-width: 0; }
+  .inv-layout .soon-panels { padding: 0; grid-template-columns: 1fr; }
+}
+.panel-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+}
+.panel-card h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.panel-card h3 .material-symbols-rounded { color: var(--brand); }
+.panel-big { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.5rem; }
+.panel-big small { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.panel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.panel-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+.panel-empty { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+.reco-list li { align-items: flex-start; }
+.reco-edit { display: flex; gap: 0.35rem; align-items: center; flex-shrink: 0; }
+.reco-edit input {
+  width: 4.2rem;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+}
+.reco-edit .btn { padding: 0.35rem 0.6rem; font-size: 0.78rem; min-height: 0; }
+.cat-gear { padding-left: 0.7rem; padding-right: 0.7rem; }
+.cat-gear .material-symbols-rounded { font-size: 1.1rem; }
+#inv-cats-list .cat-name { font-weight: 700; flex: 1; min-width: 0; }
+#inv-cats-list .cat-count { color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
+.cat-rename-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+  border: 1.5px solid var(--brand-accent);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+}
+#inv-cats-modal .ticket { max-height: 80vh; overflow-y: auto; }
+.cat-move-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-basis: 100%;
+}
+#inv-cats-list li { flex-wrap: wrap; }
+#inv-cats-list li { flex-wrap: wrap; }
+.cat-move-row select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+.cat-move-row .btn { padding: 0.4rem 0.7rem; font-size: 0.8rem; min-height: 0; }
+.panel-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.panel-actions .btn { flex: 1; }
+/* Nuevo Producto: visible solo al pedirlo; en móvil es pantalla completa. */
+#inv-create-panel[hidden] { display: none; }
+@media (max-width: 1199px) {
+  #inv-create-panel:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    border-radius: 0;
+    overflow-y: auto;
+    padding: 1.2rem 1.2rem 2rem;
+  }
+}
+.soon-card {
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  padding: 1.4rem 1rem;
+}
+.soon-card .material-symbols-rounded { font-size: 2rem; color: var(--text-subtle); }
+.soon-card p { margin: 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+.soon-card p strong { color: var(--text-main); }
+
+@media (max-width: 700px) {
+  .inv-table thead { display: none; }
+  .inv-table, .inv-table tbody, .inv-table tr, .inv-table td { display: block; width: 100%; }
+  .inv-table tr.inv-row {
+    border-bottom: 2px solid var(--bg-hover);
+    padding: 0.4rem 0;
+  }
+  .inv-table td { border-bottom: none; padding: 0.25rem 0.9rem; }
+  .inv-table td.inv-name { font-size: 1rem; padding-top: 0.7rem; }
+  .inv-table td.inv-state { padding-bottom: 0.7rem; }
+  .kpi-value { font-size: 1.1rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * POS rediseñado v1 (diseño Stitch "Rediseño Dashboard Frutería").
+ * CONTRATO: tokens intactos (blanco #FAFAFA, verde #15803D), grid
+ * 3 cols desktop / 1 col móvil, clases que usa pos.js intactas
+ * (.product-card/.product-name/.product-price/.product-unit,
+ * .cart-*, .badge/.product-alert, .cat-pill). Sin Tailwind: el POS
+ * debe funcionar offline y ligero.
+ * ═══════════════════════════════════════════════════════════ */
+
+/* ── Nav deshabilitada (futuro: inventario, ventas, clientes, config) ── */
+
+.nav-disabled {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  opacity: 0.55;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: default;
+  min-width: 0;
+}
+.nav-disabled .nav-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+}
+.nav-disabled .soon-tag { flex-shrink: 0; margin-left: 0; }
+.sidebar .nav-disabled .material-symbols-rounded { font-size: 24px; }
+.soon-tag {
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--warn-text);
+  background: var(--warn-soft);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.bottom-nav .nav-disabled {
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  padding: 0;
+}
+.bottom-nav .nav-disabled .material-symbols-rounded { font-size: 26px; }
+.bottom-nav .nav-disabled .soon-tag { display: none; }
+
+/* ── Buscador: icono + báscula + venta rápida ── */
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.search-field {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+}
+.search-field .search-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+.search-box input[type="search"] { padding-left: 2.6rem; }
+.search-box .scale-badge,
+.search-box #quick-sale-btn { flex-shrink: 0; }
+.scale-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+}
+.scale-badge .material-symbols-rounded { font-size: 1rem; }
+#quick-sale-btn { white-space: nowrap; }
+
+/* ── Tarjeta de producto v1 (la pinta pos.js) ── */
+
+.product-card {
+  text-align: left;
+  cursor: pointer;
+  padding: 0.7rem;
+  gap: 0.5rem;
+  border-radius: 16px;
+}
+.product-card:hover { box-shadow: var(--shadow-lift); }
+.product-card:active { transform: scale(0.98); }
+.product-top {
+  display: flex;
+  justify-content: flex-end;
+}
+.unit-chip {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border-radius: 0.45rem;
+  padding: 0.15rem 0.45rem;
+}
+.product-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.product-photo .material-symbols-rounded { font-size: 2.2rem; }
+.product-card .product-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-card .product-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+.product-card .product-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+.product-card .product-unit { font-size: 0.78rem; color: var(--text-muted); }
+/* Opción A: la tarjeta es contenedor; el botón interno hereda el look. */
+.product-main {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+/* Editor de peso inline: input + báscula + agregar, dentro de la tarjeta. */
+.weigh-editor {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  background: var(--bg-hover);
+  border-radius: 0.6rem;
+  padding: 0.4rem;
+  margin-top: 0.1rem;
+}
+.weigh-editor input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--brand-accent);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  min-height: var(--tap);
+}
+.weigh-editor button {
+  flex-shrink: 0;
+  min-height: var(--tap);
+  min-width: 2.8rem;
+  border-radius: 0.55rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.weigh-editor .weigh-scale {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.weigh-editor .weigh-scale:disabled { opacity: 0.5; }
+.weigh-editor .weigh-add {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 0 0.9rem;
+}
+.product-card.expanded { border-color: var(--brand-accent); }
+.product-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.product-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  background: var(--brand);
+  color: #fff;
+}
+.product-add .material-symbols-rounded { font-size: 1.1rem; }
+.product-card .product-alert { margin-top: 0.1rem; }
+
+/* ── Catálogo vacío (distinto a "sin resultados de búsqueda") ── */
+
+.empty-catalog {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--text-muted);
+}
+.empty-catalog .material-symbols-rounded {
+  font-size: 2.4rem;
+  color: var(--text-subtle);
+}
+.empty-catalog p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.empty-catalog p strong { color: var(--text-main); }
+.empty-catalog .btn[disabled] { opacity: 0.6; cursor: default; }
+
+/* ── Ticket actual: drawer en móvil, panel lateral en desktop ── */
+
+.ticket-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--brand);
+  margin-right: 0.4rem;
+}
+.cart-head h2 { display: flex; align-items: center; }
+.customer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 1.2rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.customer-row .material-symbols-rounded { color: var(--text-muted); }
+.ticket-totals { padding: 0.2rem 1.2rem 0; }
+.pay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem 0;
+}
+.pay-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+.pay-btn .material-symbols-rounded { color: var(--brand); font-size: 1.2rem; }
+.pay-btn.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.ticket-method {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 0 0 0.6rem;
+}
+
+@media (min-width: 1200px) {
+  /* El drawer pasa a ser columna fija: siempre visible, sin overlay. */
+  .cart-drawer {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    max-height: 100vh;
+    width: 380px;
+    flex-shrink: 0;
+    border-radius: 0;
+    border-left: 1px solid var(--border);
+    box-shadow: none;
+    transform: none;
+  }
+  .cart-overlay { display: none; }
+  #cart-close-btn { display: none; }
+  .cart-bar { display: none; } /* el panel ya tiene su Cobrar */
+  .main { padding-bottom: 0; }
 }

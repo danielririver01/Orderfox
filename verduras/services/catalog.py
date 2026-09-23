@@ -27,6 +27,25 @@ from verduras.models import (
 _CENTS = Decimal('0.01')
 
 
+def _has_movements(business_id: int, product_id: int) -> bool:
+    """True si el producto ya movió inventario (lotes, ventas o merma).
+
+    Puerta de las reglas contables: con movimientos, la unidad es
+    intocable y el borrado físico está prohibido (solo soft).
+    """
+    from verduras.models_inventory import VerdurasLot, VerdurasMerma
+    from verduras.models_sales import VerdurasSale, VerdurasSaleItem
+    if VerdurasLot.query.filter_by(
+            business_id=business_id, product_id=product_id).first():
+        return True
+    if VerdurasSaleItem.query.join(VerdurasSale).filter(
+            VerdurasSale.business_id == business_id,
+            VerdurasSaleItem.product_id == product_id).first():
+        return True
+    return VerdurasMerma.query.filter_by(
+        business_id=business_id, product_id=product_id).first() is not None
+
+
 class VerdurasValidationError(ValueError):
     """Datos inválidos o regla de negocio incumplida."""
 
@@ -127,9 +146,25 @@ def create_product(business_id: int, category_id: int, name: str, unit: str,
 
     exists = VerdurasProduct.query.filter_by(
         business_id=business_id, name=name).first()
-    if exists:
+    if exists is not None and exists.is_active:
         raise VerdurasValidationError(
             f"El producto '{name}' ya existe en este business")
+    if exists is not None:
+        # Recrear tras eliminar = REACTIVAR (eliminar es soft: la fila
+        # sigue con su historial). Unidad intocable si ya tuvo movimientos:
+        # rompería stock e historial igual que en update_product.
+        if exists.unit != unit and _has_movements(business_id, exists.id):
+            raise VerdurasValidationError(
+                f"'{name}' existe desactivado en {exists.unit}: no se puede "
+                f"recrear en {unit} (rompería su historial). Usa otro nombre.")
+        exists.is_active = True
+        exists.category_id = category.id
+        exists.unit = unit
+        db.session.commit()
+        if exists.current_price != price:
+            return update_price(business_id, exists.id, price,
+                                source=source)
+        return exists
 
     product = VerdurasProduct(
         business_id=business_id, category_id=category.id,
@@ -147,6 +182,99 @@ def create_product(business_id: int, category_id: int, name: str, unit: str,
         db.session.rollback()
         raise VerdurasValidationError(
             f"El producto '{name}' ya existe en este business")
+    return product
+
+
+def rename_category(business_id: int, category_id: int, name
+                    ) -> VerdurasCategory:
+    """Renombra una categoría. Siempre seguro: no toca FKs ni historial."""
+    category = db.session.get(VerdurasCategory, category_id)
+    if category is None or category.business_id != business_id:
+        raise VerdurasNotFoundError('Categoría no encontrada')
+    name = _normalize_name(name)
+    dup = VerdurasCategory.query.filter_by(
+        business_id=business_id, name=name).first()
+    if dup is not None and dup.id != category.id:
+        raise VerdurasValidationError(
+            f"La categoría '{name}' ya existe en este business")
+    category.name = name
+    db.session.commit()
+    return category
+
+
+def delete_category(business_id: int, category_id: int,
+                    move_to_category_id=None) -> dict:
+    """Elimina una categoría, moviendo sus productos si se pide destino.
+
+    - Vacía → se elimina sin más.
+    - Con productos y SIN destino → bloqueado (borrarla arrastraría
+      productos por cascade y rompería historial). El error trae el conteo
+      para que el frontend ofrezca el destino.
+    - Con destino válido del mismo business → reasigna TODOS (activos e
+      inactivos, el historial no se toca: solo cambia la etiqueta) y
+      elimina, todo en una transacción.
+    """
+    category = db.session.get(VerdurasCategory, category_id)
+    if category is None or category.business_id != business_id:
+        raise VerdurasNotFoundError('Categoría no encontrada')
+    prods = VerdurasProduct.query.filter_by(
+        business_id=business_id, category_id=category.id).all()
+    moved = 0
+    if prods:
+        if move_to_category_id is None:
+            raise VerdurasValidationError(
+                f"'{category.name}' tiene {len(prods)} producto(s): elige "
+                f"a qué categoría moverlos", )
+        try:
+            move_to_id = int(move_to_category_id)
+        except (TypeError, ValueError):
+            raise VerdurasValidationError('Categoría destino inválida')
+        if move_to_id == category.id:
+            raise VerdurasValidationError(
+                'El destino no puede ser la misma categoría')
+        target = db.session.get(VerdurasCategory, move_to_id)
+        if target is None or target.business_id != business_id:
+            raise VerdurasNotFoundError('Categoría destino no encontrada')
+        for p in prods:
+            p.category_id = target.id
+            moved += 1
+    db.session.delete(category)
+    db.session.commit()
+    return {'deleted': True, 'moved': moved}
+
+
+def update_product(business_id: int, product_id: int, *,
+                   name=None, category_id=None, is_active=None
+                   ) -> VerdurasProduct:
+    """Edición de ficha (nombre/categoría/activo). Segura por diseño:
+    - Unidad JAMÁS editable aquí: rompería stock e historial (kg≠unidad).
+      ¿Unidad mal? Desactivar y crear el producto de nuevo.
+    - Nombre único por business (mismo constraint que create, excluyéndose).
+    - Los tickets viejos no se tocan: guardan snapshot por venta.
+    """
+    product = get_product(business_id, product_id)
+    if product is None:
+        raise VerdurasNotFoundError('Producto no encontrado')
+    if name is not None:
+        name = _normalize_name(name)
+        dup = VerdurasProduct.query.filter_by(
+            business_id=business_id, name=name).first()
+        if dup is not None and dup.id != product.id:
+            raise VerdurasValidationError(
+                f"El producto '{name}' ya existe en este business")
+        product.name = name
+    if category_id is not None:
+        try:
+            category_id = int(category_id)
+        except (TypeError, ValueError):
+            raise VerdurasValidationError('Categoría inválida')
+        category = db.session.get(VerdurasCategory, category_id)
+        if category is None or category.business_id != business_id:
+            raise VerdurasNotFoundError('Categoría no encontrada')
+        product.category_id = category.id
+    if is_active is not None:
+        product.is_active = bool(is_active)
+    db.session.commit()
     return product
 
 

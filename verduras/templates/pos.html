@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+{# POS rediseñado v1 (diseño Stitch "Rediseño Dashboard Frutería" portado).
+   CONTRATO: IDs y ganchos del backend INTACTOS (pos.js los usa):
+   pos-data, POS_URLS, search-input, cat-pill[data-cat-id], product-grid,
+   cart-bar/count/total/open-btn, cart-overlay, cart-drawer (+close-btn,
+   cart-items, cart-drawer-total, checkout-btn), ticket-modal (+number,
+   items, total, print/close-btn), toast, csrf. No inventar datos: sin
+   banner de balance, sin stock por producto, sin "últimas ventas". #}
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -11,15 +18,18 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navegación principal">
-      <p class="sidebar-brand"><span class="dot" aria-hidden="true"></span> Velzia Verduras</p>
-      <a href="#" class="active"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
-      {# Pantallas futuras: catálogo, inventario, merma #}
+      <p class="sidebar-brand"><img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}" alt="Velzia Verduras" class="brand-logo"></p>
+      <a href="#" class="active" aria-current="page"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span> Inventario y Precios</a>
+      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> <span class="nav-text">Ventas del Día</span> <em class="soon-tag">Próximamente</em></span>
+      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">group</span> <span class="nav-text">Clientes / Fiados</span> <em class="soon-tag">Próximamente</em></span>
+      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">settings</span> <span class="nav-text">Configuración</span> <em class="soon-tag">Próximamente</em></span>
       <p class="sidebar-footer">{{ business.name }}</p>
     </aside>
 
     <div class="main">
       <header class="topbar">
-        <h1>{{ business.name }}</h1>
+        {# Sin h1: el nombre ya vive en el sidebar (brand + footer). Duplicarlo aquí era ruido. #}
         <span class="open-state {{ 'is-open' if pos_settings.is_open else 'is-closed' }}">
           <span class="material-symbols-rounded" aria-hidden="true">{{ 'storefront' if pos_settings.is_open else 'lock' }}</span>
           {{ 'Abierto' if pos_settings.is_open else 'Cerrado' }}
@@ -32,8 +42,17 @@
 
       <div class="pos-tools">
         <div class="search-box">
-          <input type="search" id="search-input" placeholder="Buscar producto…"
-                 autocomplete="off" aria-label="Buscar producto">
+          <div class="search-field">
+            <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+            <input type="search" id="search-input" placeholder="Buscar producto…"
+                   autocomplete="off" aria-label="Buscar producto">
+          </div>
+          {% if pos_data.scale_enabled %}
+          <span class="scale-badge" title="Balanza lista"><span class="material-symbols-rounded" aria-hidden="true">scale</span> Balanza lista</span>
+          {% endif %}
+          <button type="button" class="btn btn-ghost" id="quick-sale-btn">
+            <span class="material-symbols-rounded" aria-hidden="true">add_circle</span> Venta Rápida
+          </button>
         </div>
         <div class="cat-pills" role="tablist" aria-label="Categorías">
           <button type="button" class="cat-pill active" data-cat-id="">Todo</button>
@@ -58,38 +77,57 @@
       </div>
     </div>
 
+    {# Ticket actual: panel lateral en desktop (≥1200px), drawer en móvil.
+       Mismo elemento, mismo JS: solo cambia el CSS por breakpoint. #}
+    <section class="cart-drawer" id="cart-drawer" aria-label="Ticket actual">
+      <header class="cart-head">
+        <h2><span class="ticket-dot" aria-hidden="true"></span> Ticket Actual</h2>
+        <button type="button" class="btn btn-ghost" id="cart-close-btn">Cerrar</button>
+      </header>
+      <div class="customer-row">
+        <span class="material-symbols-rounded" aria-hidden="true">person</span>
+        <span class="customer-name">Cliente General</span>
+      </div>
+      <div class="cart-items" id="cart-items"></div>
+      <div class="ticket-totals">
+        <div class="cart-foot-row">
+          <span class="cart-foot-label">Total</span>
+          <span class="cart-foot-total" id="cart-drawer-total">$0,00</span>
+        </div>
+      </div>
+      <div class="pay-grid" role="group" aria-label="Método de pago">
+        <button type="button" class="pay-btn active" data-pay="efectivo"><span class="material-symbols-rounded" aria-hidden="true">payments</span> Efectivo</button>
+        <button type="button" class="pay-btn" data-pay="tarjeta"><span class="material-symbols-rounded" aria-hidden="true">credit_card</span> Tarjeta</button>
+        <button type="button" class="pay-btn" data-pay="transferencia"><span class="material-symbols-rounded" aria-hidden="true">qr_code_2</span> Transferencia</button>
+        <button type="button" class="pay-btn" data-pay="libreta"><span class="material-symbols-rounded" aria-hidden="true">menu_book</span> Libreta</button>
+      </div>
+      <footer class="cart-foot">
+        <button type="button" class="btn btn-primary btn-block" id="checkout-btn">
+          Cobrar venta
+        </button>
+        <p class="cart-hint">El precio sale de tu catálogo; el cliente no puede cambiarlo.</p>
+      </footer>
+    </section>
+
     <nav class="bottom-nav" aria-label="Navegación principal">
-      <a href="#" class="active">
+      <a href="#" class="active" aria-current="page">
         <span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span>
         Vender
       </a>
-      {# Secciones futuras: catálogo, inventario, merma #}
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+        Inventario
+      </a>
     </nav>
   </div>
 
   <div class="cart-overlay" id="cart-overlay"></div>
-  <section class="cart-drawer" id="cart-drawer" aria-label="Venta actual">
-    <header class="cart-head">
-      <h2>Venta actual</h2>
-      <button type="button" class="btn btn-ghost" id="cart-close-btn">Cerrar</button>
-    </header>
-    <div class="cart-items" id="cart-items"></div>
-    <footer class="cart-foot">
-      <div class="cart-foot-row">
-        <span class="cart-foot-label">Total</span>
-        <span class="cart-foot-total" id="cart-drawer-total">$0,00</span>
-      </div>
-      <p class="cart-hint">El precio sale de tu catálogo; el cliente no puede cambiarlo.</p>
-      <button type="button" class="btn btn-primary btn-block" id="checkout-btn">
-        Cobrar venta
-      </button>
-    </footer>
-  </section>
 
   <div class="ticket-modal" id="ticket-modal" role="dialog" aria-modal="true" aria-label="Ticket de venta">
     <div class="ticket">
       <h3>{{ business.name }}</h3>
       <p class="ticket-number" id="ticket-number"></p>
+      <p class="ticket-method" id="ticket-method"></p>
       <table>
         <tbody id="ticket-items"></tbody>
         <tr class="ticket-total-row">

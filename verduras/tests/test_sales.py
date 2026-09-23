@@ -485,3 +485,20 @@ class TestSalesAPI:
         db.session.flush()
         res = client.get(f'/api/verduras/businesses/{r.id}/sales')
         assert res.status_code == 409
+
+
+# ═════════════════ Método de pago (POS rediseñado v1, guardian) ═════════
+
+
+class TestSalePaymentMethod:
+    def test_valid_method_saved(self, db, biz, products):
+        sale, _ = _sale(biz, products, payment_method='transferencia')
+        assert sale.payment_method == 'transferencia'
+
+    def test_invalid_method_rejected(self, db, biz, products):
+        with pytest.raises(VerdurasValidationError, match='pago'):
+            _sale(biz, products, payment_method='trueque')
+
+    def test_default_none_for_old_sales(self, db, biz, products):
+        sale, _ = _sale(biz, products)
+        assert sale.payment_method is None
