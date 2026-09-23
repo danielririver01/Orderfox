@@ -23,11 +23,14 @@ def _garbage_file(filename='foto.jpg'):
 
 
 class TestAllowedFile:
+    # Fusionado desde test_image_handler.py (Tier DESECHABLE → MODULO).
     def test_allowed_extensions(self):
         assert allowed_file('foto.jpg')
         assert allowed_file('foto.JPEG')
         assert allowed_file('foto.png')
         assert allowed_file('foto.webp')
+        assert allowed_file('photo.PNG') is True
+        assert allowed_file('photo.JPG') is True
 
     def test_rejects_unsupported(self):
         assert not allowed_file('foto.heic')
@@ -35,6 +38,8 @@ class TestAllowedFile:
         assert not allowed_file('foto.txt')
         assert not allowed_file('foto')
         assert not allowed_file('')
+        assert allowed_file('document.pdf') is False
+        assert allowed_file(None) is False
 
 
 class TestSaveImage:

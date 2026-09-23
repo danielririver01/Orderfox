@@ -70,13 +70,25 @@ cd astro; npm run dev                 # Frontend Astro (menú público)
 El usuario no puede revisar cada cambio: el agente es 100% responsable de que nada se rompa en producción ni en desarrollo. Todo cambio DEBE cumplir:
 
 - **Cero bugs escondidos.** Antes de dar una tarea por terminada: comprobar sintaxis de los archivos tocados (`py_compile`, `node --check`), y revisar manualmente los edge cases que los QA testers no cubren.
-  - **Suite completa SOLO si se tocan archivos críticos:** correr la suite completa de pytest SOLO cuando el cambio toca archivos críticos del sistema (models, services, routes, utils, auth, init, settings, migrations). Si el cambio es solo frontend (JS, CSS, HTML, Astro) o docs/config, basta con `node --check`/build + verificar sintaxis. **No correr la suite completa "por si acaso".**
-  - **Tests puntuales para cambios no críticos:** si se modifica un archivo JS/HTML/CSS específico, correr solo los tests que apliquen a ese archivo (si existen), no la suite completa.
-- **No confiar ciegamente en pytest.** Un test en verde no es suficiente. Si una suite falla de forma intermitente, encontrar la causa raíz y arreglarla (ej. stubbear threads/hilos que pelean por recursos, mocks), nunca ignorarla ni asumir que "no volverá a pasar".
-- **Los tests son tan importantes como el código.** Todo bug o regresión detectada se cubre con un test que lo reproduce antes de mergear.
+- **No confiar ciegamente en pytest.** Un test en verde no es suficiente. Si una suite falla de forma intermitente, encontrar la causa raíz y arreglarla (ej. threads/hilos que pelean por recursos, mocks), nunca ignorarla ni asumir que "no volverá a pasar".
 - **Sin efectos colaterales.** Un cambio no debe alterar comportamiento no relacionado: backward-compatible, no romper APIs existentes, no tocar lógica ajena al ticket.
 - **Verificación explícita.** Al terminar, reportar qué se validó (suite de tests, sintaxis, lint, corridas repetidas) para que el usuario vea la evidencia.
 - **Pruebas reales cuando se pueda.** Si el cambio toca emails, integraciones o flujos externos, validar con un caso real (ej. script de prueba contra el servicio) además de los mocks.
+
+### Modelo de Tests en 3 Tiers (obligatorio)
+
+Los tests son un seguro, no documentación. Solo se asegura lo que si falla cuesta dinero, datos, acceso o problemas legales.
+
+- **Tier GUARDIAN (`@pytest.mark.guardian`) — CI bloqueante en cada PR.** <300 tests, <3 min. Solo: auth/RBAC, dinero (pedidos, pagos, caja/turnos), suscripción/trial/límites, registro tenants + anti-doble-trial, aislamiento `business_id` (bridge), borrado sin huérfanos, cap de costo IA, gates legales (Ley 1581), path revenue público (`is_open`→403). Lista actual de archivos guardian en `pytest.ini` (clave `guardian_files` en comentario).
+- **Tier MODULO (`@pytest.mark.module`) — solo corre si tocas ese dominio.** Contratos por dominio (reservas panel/público, inventario, catálogo, theme, imágenes, benchmarks privacidad, Copilot fase0/fase1). En PR se skipean; en `main` + nightly corre full.
+- **Tier DESECHABLE — PROHIBIDO commitear como `test_*.py`.** Verificación de un solo uso (repro de bug puntual, spike, asserts de copy, defaults implícitos, checks estructurales `inspect.getsource`) va a `tests/verify_*.py` (pytest NO lo colecta: `python_files = test_*.py`; se corre explícito con `pytest tests/verify_x.py` y sí tiene fixtures de `conftest`). Se corre una vez y **se borra**. Si pasados 30 días nadie lo corrió, se borra sin discusión.
+
+**Reglas:**
+1. Feature nueva: máx 5-7 tests guardian. El resto a `tests/verify-*.py`.
+2. PROHIBIDO: asserts de copy literales (`chart.title == ...`), tests de redirects/flash, tests de defaults ya implícitos en payload, `inspect.getsource` como test.
+3. Bug/regresión real (dinero, datos, acceso): sí se cubre con test guardian que lo reproduce antes de mergear. Bug cosmético: verify desechable, no test perpetuo.
+4. Qué correr: cambio en archivo crítico → archivos guardian de `pytest.ini` (`pytest tests/test_payment.py ...`, o `pytest -m guardian` cuando el marcado migre) + archivo módulo afectado. Frontend/docs/config → `node --check`/build + sintaxis. Nunca full suite "por si acaso" en local.
+5. Poda trimestral: si guardian supera 300 tests o 3 min, podar/fusionar antes de agregar.
 
 ## Arquitectura
 

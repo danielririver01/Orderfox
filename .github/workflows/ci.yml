@@ -63,7 +63,25 @@ jobs:
       - name: Lint
         run: flake8 app/ --max-line-length=120 --exit-zero
 
-      - name: Run tests
+      # Modelo 3 Tiers: PR = solo GUARDIAN (rápido, bloqueante).
+      # main = suite completa. Marcado progresivo vía @pytest.mark.guardian;
+      # mientras se migra, el job PR corre la lista explícita de archivos guardian.
+      - name: Run guardian tests (PR)
+        if: github.event_name == 'pull_request'
+        run: >-
+          pytest --tb=short -q --no-header -k "not TestLLMCallTelemetry"
+          -m "guardian or not module"
+          tests/test_account_deletion.py tests/test_employees.py tests/test_payment.py
+          tests/test_copilot_follow_up_cap.py tests/test_cash_register.py
+          tests/test_user_billing.py tests/test_order_idempotency.py
+          tests/test_reservations.py tests/test_race_conditions.py
+          tests/test_business_subscription.py tests/test_subscription.py
+          tests/test_business_registration.py tests/test_register_vertical.py
+          tests/test_business_bridge.py tests/test_public_menu.py
+          tests/test_auth_setup_terms.py tests/test_mundos_pos_sso.py
+
+      - name: Run full tests (main)
+        if: github.event_name != 'pull_request'
         run: pytest --tb=short -q --no-header -k "not TestLLMCallTelemetry"
 
   deploy:

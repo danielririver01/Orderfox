@@ -1,3 +1,10 @@
+"""Tier DESECHABLE (era test_rate_limiter.py).
+
+Solo asserts de conteo: NO cubre el bloqueo 3/min, el ban de 10 min ni la
+expiración. No corre en CI (verify_*.py). Correr explícito:
+    pytest tests/verify_rate_limiter.py
+Si pasan 30 días sin correrlo, borrar sin discusión.
+"""
 from datetime import datetime, timezone, timedelta
 from app.utils.rate_limiter import OrderRateLimiter
 
