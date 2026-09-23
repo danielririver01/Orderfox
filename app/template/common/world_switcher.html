@@ -1,0 +1,67 @@
+{% if user and user_worlds %}
+<!-- ═══ World Switcher (Ecosistema Multi-Mundos) ═══
+     Dropdown de mundos del dueño en la sidebar. El JS vive en
+     static/js/world_switcher.js (regla del repo: nada de JS inline). -->
+<div class="px-2 pt-3 sidebar-expanded:px-4 transition-all duration-300"
+     id="world-switcher"
+     data-switcher-root>
+    <div class="relative">
+        <button id="world-switcher-btn" type="button"
+            class="w-full flex items-center gap-3 px-2 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="world-switcher-menu">
+            <span class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-orange-500 text-[16px]">hub</span>
+            </span>
+            <span class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">
+                <span class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Mundos</span>
+                <span class="block text-xs font-bold text-white truncate">
+                    {% for w in user_worlds if w.is_active %}{{ w.name }}{% else %}{{ user_worlds[0].name }}{% endfor %}
+                </span>
+            </span>
+            <span class="material-symbols-outlined text-gray-500 text-[18px] hidden sidebar-expanded:block transition-transform duration-200"
+                  data-switcher-chevron>expand_more</span>
+        </button>
+
+        <div id="world-switcher-menu"
+            class="hidden absolute top-full left-0 mt-2 w-64 bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[70] py-2"
+            role="menu"
+            aria-label="Cambiar de mundo">
+            <p class="px-4 pt-1 pb-2 text-[9px] font-black text-gray-500 uppercase tracking-[0.15em]">
+                Tus mundos
+            </p>
+
+            {% for w in user_worlds %}
+            <a href="{{ w.entry_url if w.entry_url else '#' }}"
+               class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors {{ 'cursor-default' if not w.entry_url else '' }} {{ 'text-white bg-orange-500/10' if w.is_active else 'text-gray-400 hover:text-white hover:bg-white/5' }}"
+               role="menuitem"
+               {% if not w.entry_url %}aria-disabled="true" title="Este mundo aún no tiene panel"{% endif %}>
+                <span class="material-symbols-outlined text-[18px] flex-shrink-0 {{ 'text-orange-500' if w.is_active else 'text-gray-500' }}">
+                    {{ 'restaurant' if w.vertical == 'restaurant' else 'nutrition' }}
+                </span>
+                <span class="flex-1 min-w-0">
+                    <span class="block truncate font-semibold">{{ w.name }}</span>
+                    <span class="block text-[10px] text-gray-500 lowercase">
+                        {{ 'Restaurante' if w.vertical == 'restaurant' else w.vertical }}
+                    </span>
+                </span>
+                {% if not w.is_active %}
+                <span class="text-[9px] font-black uppercase tracking-wide text-amber-400 flex-shrink-0"
+                      title="Pausado — revisa tu suscripción">⏸</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+
+            <div class="border-t border-white/10 mt-2 pt-2">
+                <a href="{{ url_for('dashboard.mundos') }}"
+                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-colors"
+                   role="menuitem">
+                    <span class="material-symbols-outlined text-[18px]">grid_view</span>
+                    Todos mis mundos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

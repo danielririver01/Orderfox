@@ -6,6 +6,7 @@ from app.models import AITokenTransaction, AITokenWallet, Product, db
 
 PLAN_LIMITS = {
     'emprendedor': {
+        'max_worlds': 2,      # Ecosistema Multi-Mundos: mundos incluidos
         'max_products': 25,
         'max_employees': 1,   # v2.1.0: empleados (cashier/waiter) por plan
         'has_qr': True,
@@ -20,6 +21,7 @@ PLAN_LIMITS = {
         'duration_days': 30
     },
     'crecimiento': {
+        'max_worlds': 4,      # Ecosistema Multi-Mundos: mundos incluidos
         'max_products': 100,
         'max_employees': 5,
         'has_qr': True,
@@ -34,6 +36,7 @@ PLAN_LIMITS = {
         'duration_days': 30
     },
     'elite': {
+        'max_worlds': None,   # None = mundos ilimitados
         'max_products': float('inf'),
         'max_employees': None,  # None = ilimitado
         'has_qr': True,
@@ -48,6 +51,7 @@ PLAN_LIMITS = {
         'duration_days': 30
     },
     'trial': {
+        'max_worlds': 2,      # Decisión de producto: trial con límites
         'max_products': float('inf'),
         'max_employees': None,  # None = ilimitado
         'has_qr': True,
@@ -101,6 +105,177 @@ GRACE_PERIOD_DAYS = 5
 # que Restaurant.subscription_state: 'active' | 'dormant' | 'cancellation_pending'.
 BUSINESS_SUBSCRIPTION_STATES = ('active', 'dormant', 'cancellation_pending')
 
+
+# ─── Billing unificado (Ecosistema Multi-Mundos) ────────────────────────────
+# El User dueño es la ÚNICA fuente de verdad del billing: un pago cubre todos
+# sus mundos. Las columnas de Restaurant/Business pasan a ser caché de
+# legibilidad. Regla de compatibilidad: si el dueño aún no tiene datos de
+# billing, el subject se gobierna con sus columnas locales — los tenants
+# legacy (piloto, API, datos viejos) siguen funcionando idéntico que siempre.
+
+def _resolve_owner(subject):
+    """User dueño del subject (Restaurant o Business), o None."""
+    from app.models import User
+    if subject is None:
+        return None
+    owner_id = getattr(subject, 'owner_user_id', None)
+    if owner_id:
+        return db.session.get(User, owner_id)
+    if type(subject).__name__ == 'Restaurant':
+        return (User.query.filter_by(restaurant_id=subject.id, role='owner')
+                .order_by(User.id.asc()).first())
+    return None
+
+
+def _owner_carries_billing(owner):
+    """True si el dueño YA tiene datos de billing (goberna sus mundos).
+
+    Un User recién creado (trial, sin fecha, active, sin trial usado) NO
+    goberna: el subject usa sus columnas locales hasta que exista un ciclo
+    propagado (pago, trial, dormido)."""
+    return bool(
+        getattr(owner, 'subscription_expires_at', None)
+        or getattr(owner, 'has_used_trial', False)
+        or (getattr(owner, 'subscription_state', 'active') or 'active') != 'active'
+    )
+
+
+def _billing_view_for(subject):
+    """Snapshot de billing para leer: desde el User dueño (fuente única) o
+    desde las columnas locales del subject (legacy). Expone la misma interfaz
+    (plan_type, subscription_expires_at, subscription_state, is_active) que
+    las funciones de status ya conocen.
+
+    is_active conjuga la bandera del dueño y la del subject: la suspensión
+    administrativa de un mundo o una cuenta pausada bloquean, cada una por
+    su lado (un mundo pending_payment nunca se abre aunque la cuenta esté
+    activa)."""
+    from types import SimpleNamespace
+    owner = _resolve_owner(subject)
+    if owner is not None and _owner_carries_billing(owner):
+        return SimpleNamespace(
+            plan_type=owner.plan_type or 'trial',
+            subscription_expires_at=owner.subscription_expires_at,
+            subscription_state=owner.subscription_state or 'active',
+            is_active=(bool(owner.is_active)
+                       and bool(getattr(subject, 'is_active', True))),
+        )
+    return SimpleNamespace(
+        plan_type=getattr(subject, 'plan_type', None) or 'trial',
+        subscription_expires_at=getattr(subject, 'subscription_expires_at', None),
+        subscription_state=getattr(subject, 'subscription_state', None) or 'active',
+        is_active=bool(getattr(subject, 'is_active', True)),
+    )
+
+
+def propagate_billing_up(subject):
+    """Copia el billing del subject (Restaurant/Business) a su User dueño y
+    sincroniza hacia abajo el resto de mundos del dueño (cachés de lectura).
+
+    - Sin dueño: no-op (regla de oro legacy: cada fila se gobierna sola).
+    - El trial de un dueño que ya lo usó NO se extiende al añadir mundos:
+      el ciclo es del usuario (un solo reloj), no de cada fila.
+    - No hace commit: se integra en la transacción del llamador."""
+    owner = _resolve_owner(subject)
+    if owner is None:
+        return None
+    is_trial_row = (getattr(subject, 'plan_type', None) == 'trial')
+    if not (is_trial_row and owner.has_used_trial):
+        owner.plan_type = (getattr(subject, 'plan_type', None)
+                           or owner.plan_type)
+        if getattr(subject, 'subscription_expires_at', None) is not None:
+            owner.subscription_expires_at = subject.subscription_expires_at
+    owner.subscription_state = (getattr(subject, 'subscription_state', None)
+                                or 'active')
+    if getattr(subject, 'has_used_trial', False):
+        owner.has_used_trial = True
+    _sync_billing_down(owner, exclude_id=getattr(subject, 'id', None))
+    return owner
+
+
+def _sync_billing_down(owner, exclude_id=None, set_active=None):
+    """Replica el billing del dueño a sus filas (cachés): su restaurante y
+    todos los businesses que posee. Los writes de ciclo (pago, dormido)
+    llegan a un subject y de aquí saltan a los demás mundos.
+
+    set_active (opcional): además sincroniza la bandera `is_active` de las
+    filas — True al activar/reactivar la cuenta, False al pausarla. None
+    (default) deja `is_active` intacto: el estado de suscripción se
+    propaga, el apagón administrativo de una fila concreta no se pisa."""
+    from app.models import Business, Restaurant
+    plan = owner.plan_type
+    expires = owner.subscription_expires_at
+    state = owner.subscription_state or 'active'
+    if owner.restaurant_id:
+        r = db.session.get(Restaurant, owner.restaurant_id)
+        if r is not None and r.id != exclude_id:
+            r.plan_type = plan
+            r.subscription_expires_at = expires
+            r.subscription_state = state
+            if set_active is not None:
+                r.is_active = bool(set_active)
+    owned = Business.query.filter(Business.owner_user_id == owner.id).all()
+    for b in owned:
+        if b.id == exclude_id:
+            continue
+        b.plan_type = plan
+        b.subscription_expires_at = expires
+        b.subscription_state = state
+        if set_active is not None:
+            b.is_active = bool(set_active)
+
+
+def count_user_worlds(user):
+    """Mundos en uso de un dueño: su restaurante (si tiene) + sus verticales
+    directos. Los espejos de restaurantes NO suman doble."""
+    from app.models import Business
+    if user is None:
+        return 0
+    count = Business.query.filter(
+        Business.owner_user_id == user.id,
+        Business.vertical != 'restaurant',
+    ).count()
+    if user.restaurant_id:
+        count += 1
+    return count
+
+
+_NEXT_TIER = {'trial': 'Crecimiento', 'emprendedor': 'Crecimiento',
+              'crecimiento': 'Élite'}
+
+
+def can_activate_vertical(user):
+    """¿Puede el dueño activar OTRO mundo según su plan?
+
+    Returns (ok, info): info trae max_worlds/current_worlds y, si está
+    bloqueado, plan_name + upgrade_to para el mensaje de upgrade."""
+    if user is None:
+        return False, {}
+    limits = get_plan_limits(getattr(user, 'plan_type', None) or 'trial')
+    max_worlds = limits.get('max_worlds')
+    current = count_user_worlds(user)
+    info = {'max_worlds': max_worlds, 'current_worlds': current}
+    if max_worlds is None or current < max_worlds:
+        return True, info
+    info['plan_name'] = limits.get('name')
+    info['upgrade_to'] = _NEXT_TIER.get(getattr(user, 'plan_type', None))
+    return False, info
+
+
+def vertical_quota_message(info):
+    """Mensaje de upgrade para el flash cuando can_activate_vertical
+    bloquea. Un solo texto para servicio y rutas (no duplicar lógica)."""
+    max_w = info.get('max_worlds')
+    current = info.get('current_worlds', '?')
+    plan_name = info.get('plan_name') or 'actual'
+    base = (f'Tu plan {plan_name} incluye {max_w} mundo(s) y ya tienes '
+            f'{current} activos.')
+    upgrade_to = info.get('upgrade_to')
+    if upgrade_to:
+        return base + f' Sube al plan {upgrade_to} para activar más mundos.'
+    return base + ' Revisa tus mundos activos o contacta soporte.'
+
+
 def is_subscription_active(restaurant, include_grace_period=False):
     """
     Verifica centralmente si una suscripción está activa y no ha expirado.
@@ -113,13 +288,19 @@ def is_subscription_active(restaurant, include_grace_period=False):
     Returns:
         bool: True si la suscripción es válida (o está en gracia si se solicita)
     """
-    if not restaurant or not restaurant.is_active:
+    if not restaurant:
         return False
-    
-    if not restaurant.subscription_expires_at:
+
+    # Billing unificado: resuelve desde el User dueño (fuente única) o desde
+    # las columnas locales si el tenant es legacy (regla de oro).
+    view = _billing_view_for(restaurant)
+    if not view.is_active:
         return False
-    
-    expires_at = restaurant.subscription_expires_at
+
+    if not view.subscription_expires_at:
+        return False
+
+    expires_at = view.subscription_expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     
@@ -159,11 +340,11 @@ def get_plan_limits(plan_type):
 def check_feature_access(restaurant, feature):
     if not restaurant:
         return False
-    
+
     if not is_subscription_active(restaurant):
         return False
-    
-    limits = get_plan_limits(restaurant.plan_type)
+
+    limits = get_plan_limits(_billing_view_for(restaurant).plan_type)
     return limits.get(feature, False)
 
 def check_product_limit(restaurant):
@@ -173,7 +354,7 @@ def check_product_limit(restaurant):
     if not is_subscription_active(restaurant):
         return False, "Tu suscripción ha expirado. Renueva tu plan para continuar."
     
-    limits = get_plan_limits(restaurant.plan_type)
+    limits = get_plan_limits(_billing_view_for(restaurant).plan_type)
     max_products = limits['max_products']
     
     if max_products == float('inf'):
@@ -198,7 +379,11 @@ def get_subscription_status(restaurant):
             'badge_text': 'No encontrado',
             'plan': None
         }
-    
+
+    # Billing unificado: la fuente de verdad es el User dueño (o columnas
+    # locales si el tenant es legacy). El resto de la función no cambia.
+    restaurant = _billing_view_for(restaurant)
+
     if not restaurant.is_active:
         if restaurant.subscription_state == 'dormant':
             return {
@@ -396,6 +581,10 @@ def get_business_subscription_status(business):
             'badge_text': 'No encontrado', 'plan': None,
         }
 
+    # Billing unificado: la fuente de verdad es el User dueño (o columnas
+    # locales si el tenant es legacy). El resto de la función no cambia.
+    business = _billing_view_for(business)
+
     now = datetime.now(timezone.utc)
 
     if not business.is_active:
@@ -550,7 +739,7 @@ def sanitize_restaurant_limits(restaurant):
     if not restaurant:
         return
 
-    limits = get_plan_limits(restaurant.plan_type)
+    limits = get_plan_limits(_billing_view_for(restaurant).plan_type)
     max_products = limits.get('max_products', float('inf'))
     
     if max_products != float('inf'):
@@ -591,7 +780,14 @@ def initialize_or_reset_token_wallet(user, is_reset=False, mp_payment_id=None):
         return None
 
     wallet = user.token_wallet
-    plan_type = user.restaurant.plan_type
+    # Billing unificado: el plan del dueño vive en el User si ya tiene ciclo
+    # propio; fallback al restaurante (empleados, datos legacy).
+    if _owner_carries_billing(user):
+        plan_type = user.plan_type
+    elif user.restaurant:
+        plan_type = user.restaurant.plan_type
+    else:
+        plan_type = 'trial'
     
     # Importar los límites centrales de este MISMO archivo (subscription.py)
     plan_limit = AI_TOKEN_LIMITS.get(plan_type, 10)

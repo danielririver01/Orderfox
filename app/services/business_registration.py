@@ -23,6 +23,7 @@ import unicodedata
 from app.models import Business, User, db
 from app.models.rewards import TrialHistory
 from app.utils.constants import RESERVED_SLUGS
+from app.utils.subscription import can_activate_vertical, vertical_quota_message
 
 TRIAL_DAYS = 60
 
@@ -88,10 +89,16 @@ def register_verduras_business(user: User, business_name: str,
         raise BusinessRegistrationError(
             'El WhatsApp del negocio no parece válido (usa formato '
             'internacional, ej: +573001112233).')
-    if user.restaurant_id:
-        raise BusinessRegistrationError(
-            'Tu cuenta ya administra un restaurante. Usa esa sesión para '
-            'operarlo.')
+
+    # Ecosistema Multi-Mundos: cupo de mundos por plan (autoritativo —
+    # la ruta solo adelanta la validación para la UX de upgrade). El User
+    # en sesión manda; la fila del Business aún no existe.
+    ok, info = can_activate_vertical(user)
+    if not ok:
+        raise BusinessRegistrationError(vertical_quota_message(info))
+    # Multi-Mundos: el dueño de restaurante SÍ puede agregar verdulería
+    # (el cupo de arriba ya es el guard). Era un resto de la era "una
+    # cuenta = un restaurante" y bloqueaba el 2º mundo legítimo.
 
     is_trial = selected_plan == 'trial'
     if is_trial:
@@ -107,9 +114,17 @@ def register_verduras_business(user: User, business_name: str,
         plan_type=selected_plan,
         trial_days=TRIAL_DAYS,
     )
+    # El número se pide UNA vez aquí y viaja al módulo por la DB compartida
+    # (el setup del POS lo pre-llena; el tendero lo puede cambiar).
+    business.whatsapp_phone = phone
 
     if is_trial:
         db.session.add(TrialHistory(email=user.email, whatsapp_phone=phone))
+        # Ecosistema Multi-Mundos: el trial es de la CUENTA (User), un solo
+        # reloj para todos sus mundos. Es no-op si el dueño ya tiene ciclo
+        # (p.ej. ya tenía restaurante con trial o plan pago).
+        from app.services.user_billing import start_user_trial
+        start_user_trial(user, days=TRIAL_DAYS)
 
     # Token de UN SOLO USO para el setup del POS en el módulo (PIN +
     # WhatsApp). Consumido por verduras/services/pos_auth.consume_setup_token.

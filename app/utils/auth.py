@@ -90,6 +90,14 @@ def require_active(f):
             return redirect(url_for(redirect_to))
 
         if not restaurant:
+            # Multi-Mundos: el dueño no está obligado a tener restaurante.
+            # Sin uno (solo-verduras, o aún sin ningún mundo), su centro de
+            # control es el selector de mundos — no el formulario de restaurante.
+            if 'user_id' in session and 'employee_id' not in session:
+                from app.models import User
+                user = User.query.get(session.get('user_id'))
+                if user is not None:
+                    return redirect(url_for('auth.register_vertical'))
             return return_error('Tu cuenta no está asociada a ningún restaurante.', redirect_to='auth.setup_account')
 
         if not restaurant.is_active:
@@ -111,6 +119,10 @@ def require_active(f):
         if not is_subscription_active(restaurant, include_grace_period=True) and not has_tokens:
             # Auto-transición: cancellation_pending + vencido → dormant
             if restaurant.subscription_state == 'cancellation_pending':
+                # Imports locales: el módulo no puede importarlos arriba sin
+                # riesgo de circularidad (app/__init__ importa estas rutas).
+                from datetime import datetime, timezone
+                from app import db
                 restaurant.is_active = False
                 restaurant.subscription_state = 'dormant'
                 restaurant.dormant_at = datetime.now(timezone.utc)

@@ -438,6 +438,50 @@ def subscription():
         created_date=created_date
     )
 
+
+@dashboard_bp.route('/mundos')
+@require_auth
+def mundos():
+    """Compat: /dashboard/mundos → selector en su modo hub.
+
+    El Hub de mundos vive en auth.register_vertical (modo con-tenant):
+    UNA sola superficie lista/agrega/entra a los mundos. Esta ruta queda
+    como red permanente para bookmarks, el switcher y enlaces antiguos.
+    """
+    return redirect(url_for('auth.register_vertical'))
+
+
+@dashboard_bp.route('/mundos/pos/<slug>')
+@require_auth
+def mundos_pos(slug):
+    """Handoff Mundos → POS: el dueño salta al mostrador sin escribir el PIN.
+
+    Emite un token de un solo uso (5 min, solo uno vivo) y redirige a la app
+    del módulo (5100), que lo consume y abre la sesión del POS. 404 genérico
+    si el mundo no es suyo (no revelar slugs ajenos).
+    """
+    user = (User.query.get(session.get('user_id'))
+            if session.get('user_id') else None)
+    if not user:
+        abort(404)
+
+    from app.models import Business
+    business = Business.query.filter_by(
+        slug=(slug or '').strip(), vertical='verduras').first()
+    if business is None or business.owner_user_id != user.id:
+        abort(404)
+    if not business.is_active:
+        flash('Ese mundo está pausado: revisa tu suscripción.', 'warning')
+        # Red de pausa: el selector (modo hub) muestra el chip del estado.
+        return redirect(url_for('auth.register_vertical'))
+
+    from verduras.services.pos_auth import mint_pos_sso_token
+    token = mint_pos_sso_token(business.id)
+    verduras_base = (current_app.config.get('VERDURAS_BASE_URL')
+                     or 'http://localhost:5100').rstrip('/')
+    return redirect(f'{verduras_base}/pos/sso/{business.slug}/{token}')
+
+
 @dashboard_bp.route('/cancel-account', methods=['POST'])
 @require_auth
 def cancel_account():
@@ -449,6 +493,12 @@ def cancel_account():
         now = datetime.now(timezone.utc)
         restaurant.subscription_state = 'cancellation_pending'
         restaurant.cancellation_requested_at = now
+        # Ecosistema Multi-Mundos: cancelar es de la CUENTA — deja de
+        # renovar en TODOS los mundos del dueño (cachés sincronizadas).
+        from app.services.user_billing import request_user_cancellation, resolve_owner
+        owner = resolve_owner(restaurant)
+        if owner is not None:
+            request_user_cancellation(owner)
         db.session.commit()
 
         expires_msg = ''
@@ -486,11 +536,12 @@ def resume_subscription():
     try:
         restaurant.subscription_state = 'active'
         restaurant.cancellation_requested_at = None
+        # Ecosistema Multi-Mundos: reactivar es de la CUENTA completa.
+        from app.services.user_billing import resume_user_subscription, resolve_owner
+        owner = resolve_owner(restaurant)
+        if owner is not None:
+            resume_user_subscription(owner)
         db.session.commit()
-        return jsonify({
-            'success': True,
-            'message': '¡Tu suscripción ha sido reactivada! Tu plan continúa activo.'
-        })
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error reactivando suscripción: {e}")

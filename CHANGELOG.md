@@ -12,6 +12,95 @@ Todas las fechas en UTC.
 
 ### Añadido
 
+#### Delivery fuera del core (decisión de producto 2026-09-22)
+- La tarjeta de Delivery se elimina del selector de mundos: Delivery NO es
+  mundo del core Velzia (su destino se definirá después). Solo Farmacia
+  queda como "Próximamente". Nota durable en `verticals.py`: no re-agregar
+  sin confirmación del dueño.
+
+#### Selector de Mundos unificado — una sola superficie (Multi-Mundos v2)
+- El selector `/register/vertical` pasa a tener DOS modos en la misma
+  página y look: sin tenant → registro ("¿Qué tipo de negocio tienes?",
+  intacto); con tenant → **hub** ("Tus mundos" con chip de estado +
+  Entrar, "Agregar según tu plan" con cupo, Próximamente).
+- `/dashboard/mundos` queda como redirect de compatibilidad hacia el
+  selector (bookmarks, switcher y enlaces antiguos).
+- `register_vertical_pick` con tenant: vertical propio → su entrada
+  directa (restaurante → dashboard, verduras → handoff SSO del POS, sin
+  dejar `selected_vertical` en sesión); vertical nuevo → setup con el
+  guard de cupo autoritativo de la Etapa 4.
+- Consolidación anti-duplicación: `build_user_worlds()` +
+  `subscription_chip()` en `verticals.py` son la única fuente de la lista
+  de mundos y de sus chips — las consumen el selector, el World Switcher
+  (context processor) y cualquier superficie futura.
+- `post_login_target`: con mundo → selector en modo hub (antes
+  `/dashboard/mundos`); `require_active` sin restaurante → selector.
+- Se preservan la regla de trial usado → `/planes` y el cupo por plan
+  (trial=2, emprendedor=2, crecimiento=4, élite=∞).
+- Bug latente corregido en `require_active`: la auto-transición
+  `cancellation_pending → dormant` usaba `datetime`/`db` sin importarlos
+  (`NameError` garantizado al ejecutarse); imports locales añadidos.
+
+#### Hub de Mundos + World Switcher — Etapa 5 (UI del ecosistema)
+- Nueva página `/dashboard/mundos`: tarjetas por mundo con chip de estado
+  (Activo / Vence pronto / Gracia / Pausado — icono + color, no solo color),
+  barra de cupo del plan, tarjetas "Activar" para verticales disponibles y
+  bloqueo de cupo con enlace a planes. MVP sin métricas por tarjeta (core
+  no lee tablas de los módulos; se hará vía API cuando exista).
+- World Switcher en la sidebar (`common/world_switcher.html`): dropdown de
+  los mundos del dueño con salto directo (restaurante → dashboard core,
+  verduras → POS del módulo vía `VERDURAS_BASE_URL`), mundo pausado
+  marcado, y enlace a "Todos mis mundos". JS en `static/js/world_switcher.js`
+  (nada de JS inline), accesible (aria-expanded, Escape, click-fuera).
+- Context processor enriquecido: `user_worlds` (lista de dicts con
+  entry_url por vertical) disponible en todas las plantillas; vacío para
+  empleados/anónimos — el componente no se renderiza.
+- Lectura pura: sin migraciones ni escrituras; todo sale de las utilidades
+  de las Etapas 1-4.
+- Tests: `tests/test_worlds_hub.py` (8) — ruta, tarjetas, cupo lleno,
+  elite ilimitado, entrada cross-app al POS, switcher presente/ausente.
+
+#### Cupo de mundos por plan — Etapa 4 (enforcement de límites)
+- `can_activate_vertical` (existente) ahora aplica en TODAS las puertas de
+  activación: el servicio `register_verduras_business` la hace autoritativa
+  (lanza `BusinessRegistrationError` con mensaje de upgrade) y las rutas
+  `/register/verduras` + `/setup-account` adelantan el check con redirect a
+  `/planes` + flash (UX de upgrade).
+- `vertical_quota_message`: un solo texto de upgrade para servicio y rutas.
+- Fronteras respetadas: el retomar de setup pendiente NO consume cupo (no
+  crea mundos), los espejos de restaurante no suman al conteo, y el trial
+  bloquea en 2 mundos igual que los planes de pago.
+- Tests: `tests/test_world_quota.py` (17) — frontera exacta por plan
+  (trial=2, emprendedor=2, crecimiento=4, elite=∞), espejos, servicio y
+  rutas con y sin cupo.
+
+#### Billing unificado por User — Etapa 3 (escrituras de ciclo al dueño)
+- Nuevo servicio `app/services/user_billing.py`: TODA escritura de ciclo
+  (pago, trial, cancelación, expiración) se aplica al **User dueño**
+  (fuente única del billing) y sincroniza las columnas equivalentes de
+  `restaurants`/`businesses` como caché de lectura.
+- `activate_user_from_payment`: un pago activa/extiende la CUENTA y todos
+  sus mundos a la vez (limpia dormant_at, reactiva filas). Idempotente por
+  `mp_payment_id` (marcador tx wallet, constraint único) — callback y
+  webhook nunca duplican efectos.
+- Frontera write == read (`owner_carries_billing` + `row_has_live_cycle`):
+  un pago escribe al User si el dueño ya gobierna o la fila no tiene ciclo
+  vivo (bootstrap). Renovación de fila legacy con ciclo vivo y dueño sin
+  ciclo conserva sus días restantes (`propagate_row_renewal`) — el test de
+  cupones de restaurantes quedó intacto.
+- `start_user_trial`: el trial es de la CUENTA (un solo reloj para todos
+  los mundos); no-op con ciclo activo o trial ya usado.
+- Scheduler: nueva rutina `_lifecycle_users` — una cuenta vencida pausa
+  TODOS los mundos de su dueño juntos; los caminos legacy por fila
+  (restaurante/business sin dueño) siguen intactos; los espejos quedan
+  excluidos por `vertical='restaurant'` (robusto pre/post backfill).
+- Cancelar/reactivar suscripción es de la cuenta: `cancel-account` y
+  `resume-subscription` (dashboard + API) propagan el estado a todos los
+  mundos del dueño.
+- Tests: `tests/test_user_billing.py` (18) — pago a User con sync de
+  cachés, idempotencia, trial de cuenta, cancelación, scheduler por User,
+  ambos carriles de pago y regla de oro legacy.
+
 #### Puente multi-vertical `Business` ↔ `Restaurant` (estrategia expand-contract)
 - Nuevo modelo `Business` en `app/models/business.py`: raíz del tenant
   multi-vertical con columna `vertical` ('restaurant' | 'delivery' | ...).

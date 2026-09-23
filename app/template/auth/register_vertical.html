@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Velzia · ¿Qué mundo eres?</title>
+    <title>Velzia · {% if has_tenant %}Tus mundos{% else %}¿Qué mundo eres?{% endif %}</title>
     <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="connect" />
@@ -30,23 +30,71 @@
 
     <main style="position:relative; z-index:1; max-width:72rem; margin:0 auto; padding:3rem 1.5rem 5rem;">
 
-        <!-- Header -->
-        <div style="text-align:center; margin-bottom:3rem;">
+        <!-- Salir: la página es standalone (sin sidebar) y sin esto el dueño
+             queda encerrado. Arriba a la izquierda para no chocar con la
+             píldora de cupo (arriba derecha en desktop). -->
+        <div style="display:flex; justify-content:flex-start; margin-bottom:0.5rem;">
+            <a href="{{ url_for('auth.logout') }}"
+               style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.82rem; font-weight:700; color:#9a9088; text-decoration:none; padding:0.45rem 0.8rem; border-radius:0.7rem; border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.02);">
+                <span class="material-symbols-outlined" style="font-size:1rem;">logout</span>
+                Salir
+            </a>
+        </div>
+
+        <!-- Header (relative: ancla la píldora de cupo arriba a la derecha en desktop) -->
+        <div style="text-align:center; margin-bottom:3rem; position:relative;">
             <div style="display:inline-flex; align-items:center; justify-content:center; width:3.5rem; height:3.5rem; border-radius:1.2rem; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.2); margin-bottom:1.5rem;">
                 <img src="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" alt="Velzia"
                     style="width:2.4rem; height:2.4rem; object-fit:contain; filter:drop-shadow(0 0 8px rgba(249,115,22,0.4));">
             </div>
 
+            {% if has_tenant %}
             <h1 style="font-size:clamp(2rem,5vw,3.2rem); font-weight:800; letter-spacing:-0.03em; line-height:1.1; margin:0 0 1rem; color:#f5f0eb;">
-                ¿Qué mundo
+                Tus
                 <span style="background:linear-gradient(90deg,#f97316,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
-                    eres?
+                    mundos
                 </span>
             </h1>
             <p style="font-size:1rem; color:#7a6f67; max-width:32rem; margin:0 auto;">
-                Elige tu vertical para configurar tu negocio. Siempre podrás explorar más mundos después.
+                Entra a cada mundo en un clic o agrega uno nuevo según tu plan.
             </p>
+            {# Píldora de cupo: discreta arriba a la derecha en desktop (md:absolute),
+               centrada y compacta en móvil. No debe gritar, solo estar ahí. #}
+            <div class="md:absolute md:top-0 md:right-0"
+                 style="max-width:15rem; margin:1.25rem auto 0; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:0.8rem; padding:0.6rem 0.8rem; text-align:left;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:0.45rem;">
+                    <span style="font-size:0.6rem; font-weight:800; color:#6b6058; text-transform:uppercase; letter-spacing:0.08em;">Cupo del plan</span>
+                    {% if quota_info.max_worlds %}
+                    <span style="font-size:0.72rem; font-weight:800; color:#9a9088;">{{ quota_info.current_worlds }} de {{ quota_info.max_worlds }}</span>
+                    {% else %}
+                    <span style="font-size:0.72rem; font-weight:800; color:#4ade80;">Mundos ilimitados</span>
+                    {% endif %}
+                </div>
+                {% if quota_info.max_worlds %}
+                <div style="height:0.32rem; background:rgba(255,255,255,0.06); border-radius:999px; overflow:hidden;">
+                    <div style="height:100%; border-radius:999px; {% if not can_more %}background:#f87171;{% else %}background:linear-gradient(90deg,#f97316,#fbbf24);{% endif %} width:{{ (quota_info.current_worlds / quota_info.max_worlds * 100) | round | int }}%;"></div>
+                </div>
+                {% if not can_more %}
+                <a href="{{ url_for('auth.plans') }}" style="display:inline-flex; align-items:center; gap:0.25rem; margin-top:0.5rem; font-size:0.72rem; font-weight:700; color:#f97316; text-decoration:none;">
+                    Aumentar capacidad
+                    <span class="material-symbols-outlined" style="font-size:0.85rem;">trending_up</span>
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% else %}
+            <h1 style="font-size:clamp(2rem,5vw,3.2rem); font-weight:800; letter-spacing:-0.03em; line-height:1.1; margin:0 0 1rem; color:#f5f0eb;">
+                ¿Qué tipo de
+                <span style="background:linear-gradient(90deg,#f97316,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+                    negocio tienes?
+                </span>
+            </h1>
+            <p style="font-size:1rem; color:#7a6f67; max-width:32rem; margin:0 auto;">
+                Elige cómo quieres comenzar con Velzia.
+            </p>
+            {% endif %}
         </div>
+
 
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -68,7 +116,116 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Mundos grid: se construye SOLO desde VERTICALS (app/utils/verticals.py) -->
+        {% if has_tenant %}
+        <!-- ══════════ MODO HUB: una sola fila ══════════ -->
+        {# Tus mundos + agregar + próximamente en la MISMA fila (desktop al
+           lado, móvil apila). Tarjetas compactas tope 320px + centradas para
+           que 1-2 mundos no se estiren a todo el ancho (1fr = sancocho). #}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 320px)); justify-content:center; gap:1.25rem; align-items:stretch;">
+
+            {% for w in world_cards %}
+            <div class="plan-card" style="display:flex; flex-direction:column;">
+                <div style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:1rem; background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.25);">
+                        <span class="material-symbols-outlined" style="font-size:1.6rem; color:#f97316;">{{ w.icon }}</span>
+                    </span>
+                    {# Estado con icono + texto, nunca solo color (accesibilidad). #}
+                    <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; padding:0.35rem 0.6rem; border-radius:0.6rem;
+                        {% if w.chip_color == 'green' %}background:rgba(34,197,94,0.12); color:#4ade80;
+                        {% elif w.chip_color == 'amber' %}background:rgba(245,158,11,0.12); color:#fbbf24;
+                        {% elif w.chip_color == 'red' %}background:rgba(239,68,68,0.12); color:#f87171;
+                        {% else %}background:rgba(255,255,255,0.05); color:#9a9088;{% endif %}">
+                        {% if w.chip_color == 'green' %}<span class="material-symbols-outlined" style="font-size:0.85rem;">check_circle</span>
+                        {% elif w.chip_color == 'amber' %}<span class="material-symbols-outlined" style="font-size:0.85rem;">schedule</span>
+                        {% elif w.chip_color == 'red' %}<span class="material-symbols-outlined" style="font-size:0.85rem;">pause_circle</span>{% endif %}
+                        {{ w.chip_label }}
+                    </span>
+                </div>
+
+                <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.3rem;">{{ w.name }}</h2>
+                <p style="font-size:0.78rem; color:#9a9088; margin:0 0 0.5rem; font-weight:600;">{{ w.vertical_label }}</p>
+                {% if w.message %}
+                <p style="font-size:0.78rem; color:#7a6f67; margin:0 0 1.5rem; flex:1; line-height:1.45;">{{ w.message }}</p>
+                {% else %}
+                <div style="flex:1;"></div>
+                {% endif %}
+
+                {% if w.entry_url %}
+                <a href="{{ w.entry_url }}" class="btn-primary"
+                   style="display:flex; align-items:center; justify-content:center; gap:0.4rem; text-decoration:none;">
+                    Entrar
+                    <span class="material-symbols-outlined" style="font-size:1rem;">arrow_forward</span>
+                </a>
+                {% else %}
+                <span style="display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.7rem 1rem; border-radius:0.8rem; border:1px solid rgba(255,255,255,0.08); color:#6b6058; font-size:0.85rem; font-weight:700;">
+                    Panel próximamente
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {# Misma fila: activar / bloqueo / todos + proximamente #}
+            {% if can_more %}
+            {% for v in available_verticals %}
+            <a href="{{ url_for('auth.register_vertical_pick', slug=v.slug) }}"
+                class="plan-card"
+                style="text-decoration:none; display:flex; flex-direction:column;">
+                <div style="margin-bottom:1.25rem;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:1rem; background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.25);">
+                        <span class="material-symbols-outlined" style="font-size:1.6rem; color:#f97316;">{{ v.icono }}</span>
+                    </span>
+                </div>
+                <h2 style="font-size:1.1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.4rem;">Activar {{ v.nombre }}</h2>
+                <p style="font-size:0.82rem; color:#9a9088; margin:0 0 1.5rem; flex:1;">{{ v.descripcion }}</p>
+                <span class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                    Activar
+                    <span class="material-symbols-outlined" style="font-size:1rem;">add_circle</span>
+                </span>
+            </a>
+            {% endfor %}
+            {% if not available_verticals %}
+            <div class="plan-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+                <span class="material-symbols-outlined" style="font-size:2rem; color:#4ade80; margin-bottom:0.75rem;">verified</span>
+                <h2 style="font-size:1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.3rem;">Ya tienes todos los mundos disponibles</h2>
+                <p style="font-size:0.8rem; color:#7a6f67; margin:0;">Los nuevos verticales aparecerán aquí cuando lleguen.</p>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="plan-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+                <span class="material-symbols-outlined" style="font-size:2rem; color:#fbbf24; margin-bottom:0.75rem;">lock</span>
+                <h2 style="font-size:1rem; font-weight:700; color:#f0ebe4; margin:0 0 0.3rem;">Cupo lleno</h2>
+                <p style="font-size:0.8rem; color:#7a6f67; margin:0 0 1.25rem; line-height:1.5;">
+                    Tu plan {{ quota_info.plan_name or '' }} incluye {{ quota_info.max_worlds }} mundos y ya tienes {{ quota_info.current_worlds }}.
+                </p>
+                <a href="{{ url_for('auth.plans') }}" class="btn-primary"
+                   style="display:flex; align-items:center; justify-content:center; gap:0.4rem; text-decoration:none;">
+                    Aumentar capacidad
+                    <span class="material-symbols-outlined" style="font-size:1rem;">upgrade</span>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Próximamente (siempre visibles en modo hub) -->
+            {% for v in verticals %}
+            {% if not (v.enabled and v.setup_route) %}
+            <div class="plan-card" aria-disabled="true"
+                style="opacity:0.55; display:flex; flex-direction:column;">
+                <div style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:1rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);">
+                        <span class="material-symbols-outlined" style="font-size:1.6rem; color:#6b6058;">{{ v.icono }}</span>
+                    </span>
+                    <span class="plan-tag plan-tag--free">Próximamente</span>
+                </div>
+                <h2 style="font-size:1.1rem; font-weight:700; color:#9a9088; margin:0 0 0.4rem;">{{ v.nombre }}</h2>
+                {# Próximamente: promesa genérica, sin describir funciones que aún no existen. #}
+                <p style="font-size:0.82rem; color:#6b6058; margin:0; flex:1;">Muy pronto podrás administrar tu negocio con Velzia.</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- ══════════ MODO REGISTRO (sin tenant) ══════════ -->
+        <!-- Tarjetas: se construyen SOLO desde el registro central de mundos (ver utils en el repo) -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; align-items:stretch;">
 
             {% for v in verticals %}
@@ -98,19 +255,14 @@
                     <span class="plan-tag plan-tag--free">Próximamente</span>
                 </div>
                 <h2 style="font-size:1.1rem; font-weight:700; color:#9a9088; margin:0 0 0.4rem;">{{ v.nombre }}</h2>
-                <p style="font-size:0.82rem; color:#6b6058; margin:0; flex:1;">{{ v.descripcion }}</p>
+                {# Próximamente: promesa genérica, sin describir funciones que aún no existen. #}
+                <p style="font-size:0.82rem; color:#6b6058; margin:0; flex:1;">Muy pronto podrás administrar tu negocio con Velzia.</p>
             </div>
             {% endif %}
             {% endfor %}
 
         </div>
-
-        <!-- Footer note -->
-        <div style="margin-top:4rem; text-align:center;">
-            <p style="font-size:0.78rem; color:#4b4440; font-style:italic;">
-                Un plan, todos tus mundos: la suscripción es del SaaS completo.
-            </p>
-        </div>
+        {% endif %}
 
     </main>
 

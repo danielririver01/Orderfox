@@ -4,8 +4,8 @@ Selector de mundos post-registro (`/register/vertical`).
 Cubre:
 - Acceso explícito: sin sesión → /register; con tenant → dashboard;
   sin tenant → 200 con tarjetas desde VERTICALS.
-- Tarjetas: restaurante y verdurería con link; delivery/farmacia como
-  "Próximamente" sin link.
+- Tarjetas: restaurante y verdurería con link; farmacia como
+  "Próximamente" sin link. (Delivery no es mundo del core.)
 - Fork: pick restaurante → setup-account; pick verdurería → register_verduras.
 - `selected_vertical` se consume con pop (no permanece en sesión).
 - Compatibilidad: /register manda al selector; /register/verduras directo
@@ -86,20 +86,46 @@ class TestRegisterVerticalPage:
         assert resp.status_code == 302
         assert '/register' in resp.headers['Location']
 
-    def test_con_restaurante_va_al_dashboard(self, client, sample_user):
+    def test_puerta_responde_directo(self, client, db):
+        _login(client, _mk_bare_user(db, 'legacy@test.com'))
+        resp = client.get('/register/vertical', follow_redirects=False)
+        assert resp.status_code == 200
+
+    def test_con_restaurante_muestra_hub(self, client, sample_user):
+        """Multi-Mundos: con tenant el selector muestra su modo hub (tus
+        mundos + agregar), ya no rebota al dashboard."""
         _login(client, sample_user)
         resp = client.get('/register/vertical')
-        assert resp.status_code == 302
-        assert '/dashboard' in resp.headers['Location'] or 'dashboard' in resp.headers['Location']
+        html = resp.get_data(as_text=True)
+        assert resp.status_code == 200
+        assert 'Tus mundos' in html
 
-    def test_con_business_propio_va_al_dashboard(self, client, db):
+    def test_con_business_propio_muestra_hub(self, client, db):
         bare = _mk_bare_user(db, 'duenomundo@test.com')
         db.session.add(Business(id=1000002, vertical='verduras', name='V',
                                 slug='v-mundo-dash', owner_user_id=bare.id))
         db.session.commit()
         _login(client, bare)
         resp = client.get('/register/vertical')
-        assert resp.status_code == 302
+        html = resp.get_data(as_text=True)
+        assert resp.status_code == 200
+        assert 'Tus mundos' in html
+        assert 'V' in html  # el mundo verduras aparece como tarjeta propia
+
+    def test_sin_restaurante_ofrece_activarlo(self, client, db):
+        """Dueño solo-verduras (con cupo): el restaurante aparece como
+        tarjeta "Activar", no se oculta (un restaurante por cuenta ≠
+        ninguno si aún no tiene)."""
+        bare = _mk_bare_user(db, 'soloverduras@test.com')
+        db.session.add(Business(id=1000003, vertical='verduras', name='V',
+                                slug='v-solo-verd', owner_user_id=bare.id))
+        db.session.commit()
+        _login(client, bare)
+        resp = client.get('/register/vertical')
+        html = resp.get_data(as_text=True)
+        assert resp.status_code == 200
+        assert 'Activar Restaurante' in html
+        assert 'Ya tienes todos los mundos disponibles' not in html
 
     def test_sin_tenant_muestra_tarjetas(self, client, db):
         _login(client, _mk_bare_user(db, 'explorador@test.com'))
@@ -109,6 +135,21 @@ class TestRegisterVerticalPage:
         assert 'Restaurante' in html
         assert 'Verdurer' in html  # Verdurería (con o sin tilde en slug/título)
         assert 'Próximamente' in html
+        # Copy de cliente: "vertical" solo vive en la URL de la puerta,
+        # nunca en el texto visible (se strips la ruta antes de asertar).
+        # El H1 va partido por el span del gradiente: se asertan las mitades.
+        assert '¿Qué tipo de' in html
+        assert 'negocio tienes?' in html
+        texto = html.replace('/register/vertical', '')
+        assert 'vertical' not in texto.lower()
+        assert 'comenzar con Velzia' in html
+        assert 'SaaS' not in html
+        assert 'Organiza tu menú' in html
+        assert 'todo en orden fácilmente' in html
+        # Próximamente no promete funciones inexistentes.
+        assert 'Muy pronto podrás administrar tu negocio con Velzia' in html
+        assert 'repartidores' not in html
+        assert 'recetas' not in html
         assert '/register/vertical/elegir/restaurant' in html
         assert '/register/vertical/elegir/verduras' in html
         assert '/register/vertical/elegir/delivery' not in html
@@ -147,10 +188,44 @@ class TestRegisterVerticalPick:
         assert resp.status_code == 302
         assert 'vertical' in resp.headers['Location']
 
-    def test_pick_con_tenant_va_al_dashboard(self, client, sample_user):
-        _login(client, sample_user)
-        resp = client.get('/register/vertical/elegir/verduras')
+    def test_pick_con_tenant_mundo_propio_va_a_su_entrada(self, client, db):
+        """Modo hub: pickear un vertical que YA posee lleva a su entrada
+        (verduras → handoff SSO del POS), sin tocar selected_vertical."""
+        bare = _mk_bare_user(db, 'propiobiz@test.com')
+        db.session.add(Business(id=1000003, vertical='verduras', name='V Propio',
+                                slug='v-propio', owner_user_id=bare.id))
+        db.session.commit()
+        _login(client, bare)
+        resp = client.get('/register/vertical/elegir/verduras',
+                          follow_redirects=False)
         assert resp.status_code == 302
+        assert '/dashboard/mundos/pos/v-propio' in resp.headers['Location']
+        # No deja elección pendiente: entró a un mundo que ya tenía.
+        assert _session_vertical(client) == '<ausente>'
+
+    def test_pick_con_tenant_mundo_nuevo_va_al_setup(self, client, sample_user):
+        """Modo hub: pickear un vertical que NO posee guarda la elección y
+        va a su setup (el cupo se verifica en el setup, guard autoritativo)."""
+        _login(client, sample_user)
+        resp = client.get('/register/vertical/elegir/verduras',
+                          follow_redirects=False)
+        assert resp.status_code == 302
+        assert '/register/verduras' in resp.headers['Location']
+        assert _session_vertical(client) == 'verduras'
+
+    def test_pick_con_tenant_restaurante_sigue_ofreciendose(self, client, db):
+        """Dueño solo-verduras que pica restaurante → setup-account (el
+        restaurante sigue activable; la FK única lo limita en su setup)."""
+        bare = _mk_bare_user(db, 'solojardin2@test.com')
+        db.session.add(Business(id=1000004, vertical='verduras', name='V2',
+                                slug='v-solojardin2', owner_user_id=bare.id))
+        db.session.commit()
+        _login(client, bare)
+        resp = client.get('/register/vertical/elegir/restaurant',
+                          follow_redirects=False)
+        assert resp.status_code == 302
+        assert 'setup-account' in resp.headers['Location']
+        assert _session_vertical(client) == 'restaurant'
 
 
 # ═════════════════ Consumo con pop + compatibilidad ═════════════════

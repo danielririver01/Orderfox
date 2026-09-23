@@ -141,6 +141,23 @@ class User(db.Model):
     # Permite desactivar empleados sin borrarlos. El dueño siempre queda activo.
     is_active = db.Column(db.Boolean, default=True, server_default='1', nullable=False)
 
+    # ── Billing SaaS: ÚNICA fuente de verdad (Ecosistema Multi-Mundos) ──
+    # El User dueño paga UNA suscripción que cubre todos sus mundos
+    # (restaurante + verticales directos). Las columnas equivalentes en
+    # `restaurants`/`businesses` pasan a ser CACHE de legibilidad: los reads
+    # delegan aquí cuando existe dueño (ver app/utils/subscription.py) y las
+    # escrituras (pago, scheduler) sincronizan hacia abajo. Empleados
+    # (role != 'owner') nunca tienen billing propio: heredan el del User
+    # dueño de su restaurante.
+    plan_type = db.Column(db.String(20), default='trial',
+                          server_default='trial', nullable=False)
+    subscription_expires_at = db.Column(AwareDateTime, nullable=True)
+    # Ciclo de vida SaaS: active | cancellation_pending | grace_period | dormant
+    subscription_state = db.Column(db.String(20), default='active',
+                                   server_default='active', nullable=False)
+    has_used_trial = db.Column(db.Boolean, default=False, nullable=False,
+                               server_default='0')
+
     # Relación con Restaurant
     restaurant = db.relationship('Restaurant', backref=db.backref('users', lazy=True, cascade='all, delete-orphan'))
 

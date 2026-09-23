@@ -396,6 +396,33 @@ def create_app():
             data['plan_name'] = PLAN_LIMITS.get(restaurant.plan_type, {}).get('name', restaurant.plan_type.capitalize())
         else:
             data['plan_name'] = None
+
+        # Ecosistema Multi-Mundos: mundos del dueño para el World Switcher
+        # (sidebar) y enlaces "Mis mundos". Lista de dicts simples: name,
+        # slug, vertical, is_active, entry_url (None = vertical sin frontend
+        # aún). Vacía para empleados/anónimos — el switcher no se renderiza.
+        data['user_worlds'] = []
+        if data.get('user') is not None:
+            try:
+                # Única fuente (build_user_worlds): la misma lista alimenta
+                # el selector modo hub y este switcher. Aquí solo se mapea
+                # al shape plano que el JS del switcher ya consume.
+                from app.utils.verticals import build_user_worlds
+                data['user_worlds'] = [
+                    {
+                        'kind': w['kind'],
+                        'vertical': ('restaurant' if w['kind'] == 'restaurant'
+                                     else w['vertical_label'].lower()),
+                        'name': w['name'],
+                        'slug': w['slug'],
+                        'is_active': w['is_active'],
+                        'entry_url': w['entry_url'],
+                    }
+                    for w in build_user_worlds(data['user'])
+                ]
+            except Exception as e:
+                app.logger.error(f"Error construyendo user_worlds: {e}")
+                data['user_worlds'] = []
         return data
 
     # --- Comandos CLI ---

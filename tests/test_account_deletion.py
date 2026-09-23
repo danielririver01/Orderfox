@@ -340,7 +340,13 @@ class TestE2EAccountLifecycle:
         assert data1['is_new_user'] is True
         assert data1['is_first_time'] is True
         assert data1['trial_plan'] is True
-        assert data1['redirect_url'] == '/setup-account'
+        assert data1['redirect_url'] == '/register/vertical'
+
+        # Elige mundo restaurante → setup-account → restaurante trial creado
+        r_pick = client.get('/register/vertical/elegir/restaurant',
+                            follow_redirects=False)
+        assert r_pick.status_code == 302
+        assert 'setup-account' in r_pick.headers['Location']
 
         # Completa el setup → restaurante trial creado
         r_setup = client.post(
@@ -391,8 +397,9 @@ class TestE2EAccountLifecycle:
         data3 = r3.get_json()
         assert r3.status_code == 200
         assert data3['success'] is True
-        # Usuario existente (no nuevo): re-enlaza la cuenta y redirige al dashboard.
-        assert data3['redirect_url'].endswith('/dashboard/')
+        # Usuario existente (no nuevo): re-enlaza la cuenta y redirige al
+        # selector en modo hub (Multi-Mundos: con tenant, el centro manda).
+        assert data3['redirect_url'].endswith('/register/vertical')
         # La cuenta sigue existiendo con cancelación diferida (reactivable)
         user3 = User.query.filter_by(email='e2e@test.com').first()
         assert user3 is not None
@@ -503,7 +510,7 @@ class TestPaidPlanAfterTrialBlocked:
         assert data['success'] is True
         assert data.get('trial_blocked') is None or data.get('trial_blocked') is False
         assert data['is_new_user'] is True
-        assert data['redirect_url'] == '/setup-account'
+        assert data['redirect_url'] == '/register/vertical'
         # Plan de pago (no trial)
         assert data['trial_plan'] is False
 
@@ -641,7 +648,7 @@ class TestSessionUserMismatchSecurity:
 # Regresión: con user_id en sesión pero SIN restaurante, GET / redirigía a
 # /dashboard/ → require_active → flash "Tu cuenta no está asociada a ningún
 # restaurante" (alerta confusa). Debe llevar al flujo correcto: /planes si ya
-# usó el trial, /setup-account si tiene plan elegido o es cuenta nueva.
+# usó el trial, /register/vertical si tiene plan elegido o es cuenta nueva.
 
 class TestLoginNoRestaurantRouting:
 
@@ -664,7 +671,7 @@ class TestLoginNoRestaurantRouting:
         assert resp.status_code == 302
         assert resp.headers['Location'].endswith('/planes')
 
-    def test_login_without_restaurant_with_plan_goes_setup(self, app, db):
+    def test_login_without_restaurant_with_plan_goes_vertical(self, app, db):
         user = User(
             restaurant_id=None, username='withplan2',
             email='withplan2@test.com', password='x',
@@ -681,10 +688,11 @@ class TestLoginNoRestaurantRouting:
 
         resp = client.get('/login', follow_redirects=False)
         assert resp.status_code == 302
-        assert resp.headers['Location'].endswith('/setup-account')
+        assert resp.headers['Location'].endswith('/register/vertical')
 
-    def test_login_with_restaurant_goes_dashboard(self, app, db, sample_restaurant, sample_user):
-        """Con restaurante el comportamiento original se mantiene: / → dashboard."""
+    def test_login_with_restaurant_goes_hub(self, app, db, sample_restaurant, sample_user):
+        """Multi-Mundos: con restaurante, el login lleva al selector de mundos
+        en su modo hub (centro de control desde el que entra a cada mundo)."""
         client = app.test_client()
         with client.session_transaction() as sess:
             sess['user_id'] = sample_user.id
@@ -692,7 +700,51 @@ class TestLoginNoRestaurantRouting:
 
         resp = client.get('/login', follow_redirects=False)
         assert resp.status_code == 302
-        assert resp.headers['Location'].endswith('/dashboard/')
+        assert resp.headers['Location'].endswith('/register/vertical')
+
+    def test_login_veggies_only_owner_goes_hub(self, app, db):
+        """El dueño SOLO-verduras (sin restaurante) va al HUB, no al selector
+        ni al formulario de restaurante (rebote histórico)."""
+        from app.models import Business
+        user = User(
+            restaurant_id=None, username='solojard',
+            email='solojard@test.com', password='x',
+            clerk_id='user_solojard',
+        )
+        db.session.add(user)
+        db.session.commit()
+        biz = Business.create_direct('verduras', 'Verduras La 80', 'verd-solojard')
+        biz.owner_user_id = user.id
+        db.session.commit()
+
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = user.id
+
+        # Login y raíz: ambos al selector en modo hub.
+        for path in ('/login', '/'):
+            resp = client.get(path, follow_redirects=False)
+            assert resp.status_code == 302
+            assert resp.headers['Location'].endswith('/register/vertical')
+
+    def test_root_without_tenant_goes_selector(self, app, db):
+        """Cuenta sin NINGÚN mundo: la raíz manda al selector (comportamiento
+        preexistente del selector, ahora vía post_login_target)."""
+        user = User(
+            restaurant_id=None, username='vacio1',
+            email='vacio1@test.com', password='x',
+            clerk_id='user_vacio1',
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess['user_id'] = user.id
+
+        resp = client.get('/', follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers['Location'].endswith('/register/vertical')
 
 
 # ───────────── UX: /planes muestra los flashes (trial usado) ─────────────
@@ -806,8 +858,8 @@ class TestSessionEscape:
 # cualquier usuario con user_id sin restaurante, impidiendo elegir plan.
 # El fix:
 #  - sync_clerk: usuario existente sin restaurante y sin selected_plan que ya
-#    usó trial → redirige a /planes (NO a setup-account).
-#  - /planes: solo redirige a setup-account si el usuario NO usó trial.
+#    usó trial → redirige a /planes (NO al setup).
+#  - /planes: solo redirige al selector de mundos si el usuario NO usó trial.
 #  - /setup-account: defensivo, redirige a /planes si llega sin plan y usó trial.
 
 class TestExistingUserNoRestaurantTrialUsed:
@@ -862,9 +914,9 @@ class TestExistingUserNoRestaurantTrialUsed:
         with client.session_transaction() as sess:
             assert sess.get('trial_blocked') is True
 
-    def test_sync_existing_user_no_trial_goes_setup_with_trial(self, app, db, monkeypatch):
-        """Usuario existente sin restaurante que NO usó trial → setup-account
-        con plan trial (comportamiento original intacto)."""
+    def test_sync_existing_user_no_trial_goes_vertical_with_trial(self, app, db, monkeypatch):
+        """Usuario existente sin restaurante que NO usó trial → selector de
+        mundos con plan trial (el setup se elige ahí)."""
         self._mock_clerk_verify(monkeypatch, email='fresh@test.com')
         user = User(
             restaurant_id=None, username='fresh',
@@ -882,13 +934,13 @@ class TestExistingUserNoRestaurantTrialUsed:
             'username': 'fresh',
         })
         data = r.get_json()
-        assert data['redirect_url'] == '/setup-account'
+        assert data['redirect_url'] == '/register/vertical'
         with client.session_transaction() as sess:
             assert sess.get('selected_plan') == 'trial'
 
     def test_planes_shows_plans_for_existing_user_trial_used(self, app, db):
-        """/planes con user_id en sesión + trial usado NO redirige a
-        setup-account: permite ver y elegir plan."""
+        """/planes con user_id en sesión + trial usado NO redirige al setup:
+        permite ver y elegir plan."""
         user = User(
             restaurant_id=None, username='plansuser',
             email='plansuser@test.com', password='x',
@@ -953,10 +1005,10 @@ class TestExistingUserNoRestaurantTrialUsed:
         assert "/register?plan=emprendedor" in html
         assert "/renew" not in html
 
-    def test_sync_existing_user_with_plan_goes_setup(self, app, db, monkeypatch):
+    def test_sync_existing_user_with_plan_goes_vertical(self, app, db, monkeypatch):
         """Usuario existente sin restaurante que ya eligió plan (selected_plan en
-        sesión) → sync manda a setup-account con ese plan, no a /planes ni a
-        dashboard.index (404)."""
+        sesión) → sync manda al selector de mundos con ese plan, no a /planes
+        ni a dashboard.index (404)."""
         self._mock_clerk_verify(monkeypatch, email='withplan@test.com')
         user = User(
             restaurant_id=None, username='withplan',
@@ -977,7 +1029,7 @@ class TestExistingUserNoRestaurantTrialUsed:
             'username': 'withplan',
         })
         data = r.get_json()
-        assert data['redirect_url'] == '/setup-account'
+        assert data['redirect_url'] == '/register/vertical'
 
     def test_setup_post_trial_blocked_redirects_planes(self, app, db):
         """POST /setup-account con plan trial + teléfono que ya usó trial

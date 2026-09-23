@@ -1,8 +1,9 @@
-from app import db, scheduler
-from app.models import Restaurant, Order, DiscountCoupon
-from app.models import Business
 from datetime import datetime, timedelta, timezone
-from flask import has_app_context, current_app
+
+from flask import current_app, has_app_context
+
+from app import db, scheduler
+from app.models import Business, DiscountCoupon, Order, Restaurant, User
 from app.services.order_service import log_event
 
 
@@ -17,7 +18,10 @@ def scan_business_events():
 
 def _perform_event_scan():
     try:
-        from app.services.insights.event_engine import scan_all_restaurants, auto_dismiss_expired
+        from app.services.insights.event_engine import (
+            auto_dismiss_expired,
+            scan_all_restaurants,
+        )
         dismissed = auto_dismiss_expired()
         results = scan_all_restaurants()
         current_app.logger.info(
@@ -52,38 +56,52 @@ INACTIVE_GRACE_DAYS = 30
 
 
 def _lifecycle_businesses(grace_cutoff, now):
-    """Ciclo de vida de businesses de verticales directos (verduras, ...).
+    """Ciclo de vida de businesses. Ecosistema Multi-Mundos:
 
-    MISMA política que restaurantes (cuenta compartida, nunca borrar datos):
-    - Vencidos más allá del grace period → dormant (datos preservados).
-    - cancellation_pending con fecha pasada → dormant.
-    - Los espejos de restaurantes NO se tocan: su dueño es la fila de
-      `restaurants` (owner_user_id IS NULL) y su ciclo ya corre en
-      _perform_lifecycle() — correr ambos sería doble contabilidad.
+    - CON dueño que YA gobierna (ciclo propio): NO se tocan aquí — su ciclo
+      vive en el USER y _lifecycle_users() pausa todos sus mundos juntos.
+    - Espejos de restaurantes (vertical='restaurant'): NUNCA aquí — su
+      ciclo vive en la fila Restaurant (robusto antes/después del backfill
+      de owner_user_id).
+    - SIN dueño, o dueño aún sin ciclo propio (piloto legacy, transición):
+      la fila se gobierna sola — ciclo clásico (dormant al vencer, datos
+      preservados). Misma frontera que los reads (owner_carries_billing).
     """
-    try:
-        # Verticales con dueño (self-service). Los espejos (owner NULL) no
-        # aplican: su ciclo vive en la fila Restaurant correspondiente.
-        expired = Business.query.filter(
-            Business.owner_user_id.isnot(None),
-            Business.is_active == True,
-            Business.subscription_state != 'dormant',
-            Business.subscription_state != 'cancellation_pending',
-            Business.subscription_expires_at.isnot(None),
-            Business.subscription_expires_at < grace_cutoff
-        ).all()
+    from app.services.user_billing import owner_carries_billing
 
-        cancelled_expired = Business.query.filter(
-            Business.owner_user_id.isnot(None),
-            Business.subscription_state == 'cancellation_pending',
-            Business.subscription_expires_at.isnot(None),
-            Business.subscription_expires_at < now
-        ).all()
+    def _row_legacy(b):
+        if b.vertical == 'restaurant':
+            return False
+        if b.owner_user_id is None:
+            return True
+        owner = db.session.get(User, b.owner_user_id)
+        return owner is None or not owner_carries_billing(owner)
+
+    try:
+        expired = [
+            b for b in Business.query.filter(
+                Business.is_active == True,
+                Business.subscription_state != 'dormant',
+                Business.subscription_state != 'cancellation_pending',
+                Business.subscription_expires_at.isnot(None),
+                Business.subscription_expires_at < grace_cutoff
+            ).all()
+            if _row_legacy(b)
+        ]
+
+        cancelled_expired = [
+            b for b in Business.query.filter(
+                Business.subscription_state == 'cancellation_pending',
+                Business.subscription_expires_at.isnot(None),
+                Business.subscription_expires_at < now
+            ).all()
+            if _row_legacy(b)
+        ]
 
         total = list({b.id: b for b in expired + cancelled_expired}.values())
         if not total:
             current_app.logger.info(
-                f"[{now}] No direct-vertical businesses to mark dormant.")
+                f"[{now}] No ownerless legacy businesses to mark dormant.")
             return 0
 
         count = 0
@@ -98,12 +116,55 @@ def _lifecycle_businesses(grace_cutoff, now):
                     f"Error marking business {biz.id} dormant: {e}")
         db.session.commit()
         current_app.logger.info(
-            f"[{now}] Business lifecycle: marked {count} businesses dormant "
-            "(data preserved).")
+            f"[{now}] Business lifecycle (legacy sin dueño): {count} "
+            "businesses dormant (data preserved).")
         return count
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Business lifecycle failed: {e}")
+        return 0
+
+
+def _lifecycle_users(grace_cutoff, now):
+    """Ciclo de vida por USER (fuente única del billing).
+
+    Cuenta vencida (o cancelada con fecha pasada) → pausa TODOS los mundos
+    del dueño (restaurante + businesses) vía user_billing.pause_user_worlds:
+    un pago los activa, un vencimiento los pausa — nunca hay cuentas a
+    medias. Nada se borra: datos preservados y dormant_at auditado."""
+    from app.services.user_billing import pause_user_worlds
+
+    try:
+        owners = User.query.filter(
+            User.subscription_state.in_(
+                ('active', 'cancellation_pending', 'grace_period')),
+            User.subscription_expires_at.isnot(None),
+            User.subscription_expires_at < grace_cutoff,
+        ).all()
+        owners = [u for u in owners if u.is_active]
+
+        if not owners:
+            current_app.logger.info(
+                f"[{now}] User lifecycle: no expired owners to pause.")
+            return 0
+
+        count = 0
+        for owner in owners:
+            try:
+                pause_user_worlds(owner, now)
+                count += 1
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(
+                    f"Error pausing worlds of user {owner.id}: {e}")
+        db.session.commit()
+        current_app.logger.info(
+            f"[{now}] User lifecycle: paused worlds of {count} owners "
+            "(data preserved).")
+        return count
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"User lifecycle failed: {e}")
         return 0
 
 
@@ -130,25 +191,51 @@ def _perform_lifecycle():
         grace_cutoff = datetime.now(timezone.utc) - timedelta(days=GRACE_PERIOD_DAYS)
         now = datetime.now(timezone.utc)
 
-        # Verticales directos (verduras, ...): mismo ciclo sobre `businesses`.
+        # Verticales sin dueño (piloto legacy): ciclo clásico sobre la fila.
         _lifecycle_businesses(grace_cutoff, now)
 
-        # Restaurantes con suscripción vencida más allá del grace period:
-        expired_restaurants = Restaurant.query.filter(
-            Restaurant.is_active == True,
-            Restaurant.subscription_state != 'dormant',
-            Restaurant.subscription_state != 'cancellation_pending',
-            Restaurant.subscription_expires_at.isnot(None),
-            Restaurant.subscription_expires_at < grace_cutoff
-        ).all()
+        # Ecosistema Multi-Mundos: ciclo por USER (fuente única) — una cuenta
+        # vencida pausa TODOS los mundos de su dueño juntos.
+        _lifecycle_users(grace_cutoff, now)
+
+        # Restaurantes con suscripción vencida más allá del grace period.
+        # Ecosistema Multi-Mundos: los restaurantes CON dueño que ya gobierna
+        # (ciclo propio) se excluyen — su ciclo vive en el User y
+        # _lifecycle_users() pausa sus mundos juntos (doble contabilidad
+        # imposible). Sin dueño (o dueño sin ciclo propio): ciclo clásico.
+        from app.services.user_billing import (
+            owner_carries_billing,
+            resolve_owner,
+        )
+
+        def _row_governed_by_owner(r):
+            # Restaurant no tiene owner_user_id: el dueño se resuelve por la
+            # inversa User.restaurant_id (mismo resolver de las lecturas).
+            owner = resolve_owner(r)
+            return owner is not None and owner_carries_billing(owner)
+
+        expired_restaurants = [
+            r for r in Restaurant.query.filter(
+                Restaurant.is_active == True,
+                Restaurant.subscription_state != 'dormant',
+                Restaurant.subscription_state != 'cancellation_pending',
+                Restaurant.subscription_expires_at.isnot(None),
+                Restaurant.subscription_expires_at < grace_cutoff
+            ).all()
+            if not _row_governed_by_owner(r)
+        ]
 
         # Cancelaciones pendientes cuya fecha de expiración ya pasó:
         # pasan directamente a dormant (el usuario ya no tiene acceso).
-        cancelled_expired = Restaurant.query.filter(
-            Restaurant.subscription_state == 'cancellation_pending',
-            Restaurant.subscription_expires_at.isnot(None),
-            Restaurant.subscription_expires_at < datetime.now(timezone.utc)
-        ).all()
+        # Mismo filtro Multi-Mundos que arriba.
+        cancelled_expired = [
+            r for r in Restaurant.query.filter(
+                Restaurant.subscription_state == 'cancellation_pending',
+                Restaurant.subscription_expires_at.isnot(None),
+                Restaurant.subscription_expires_at < datetime.now(timezone.utc)
+            ).all()
+            if not _row_governed_by_owner(r)
+        ]
 
         total = list(set(inactive_restaurants + expired_restaurants + cancelled_expired))
 

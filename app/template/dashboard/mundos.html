@@ -1,0 +1,140 @@
+{% extends 'common/base.html' %}
+
+{% block title %}Mis Mundos — Velzia{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/dashboard.css') }}">
+
+<div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
+
+    <!-- HEADER + CUPO -->
+    <header class="mb-6 md:mb-8">
+        <div class="flex justify-between items-start gap-4 flex-wrap">
+            <div>
+                <h1 class="text-xl md:text-2xl lg:text-3xl font-black tracking-[-0.04em] text-white leading-tight">
+                    Mis Mundos
+                </h1>
+                <p class="text-xs md:text-sm text-gray-500 font-medium mt-1.5">
+                    Todos tus negocios bajo una sola cuenta y suscripción.
+                </p>
+            </div>
+
+            {% if quota_info.max_worlds %}
+            <div class="bg-[#0f0f10] border border-white/5 rounded-2xl px-4 py-3 min-w-[220px]">
+                <div class="flex items-center justify-between gap-6 mb-2">
+                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cupo del plan</span>
+                    <span class="text-xs font-black text-white">{{ quota_info.current_worlds }} / {{ quota_info.max_worlds }}</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700 {{ 'bg-orange-500' if quota_info.current_worlds < quota_info.max_worlds else 'bg-red-500' }}"
+                         style="width: {{ (quota_info.current_worlds / quota_info.max_worlds * 100) | round | int }}%"></div>
+                </div>
+                {% if not can_more %}
+                <a href="{{ url_for('auth.plans') }}"
+                   class="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    Aumentar capacidad
+                </a>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="bg-[#0f0f10] border border-white/5 rounded-2xl px-4 py-3">
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Plan {{ quota_info.plan_name or 'Élite' }}</span>
+                <p class="text-xs font-bold text-white mt-1">Mundos ilimitados ∞</p>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- MUNDOS ACTIVOS -->
+    <section class="mb-10">
+        <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.15em] mb-4">Tus mundos</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for w in worlds %}
+            <article class="group bg-[#0f0f10] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all flex flex-col">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-11 h-11 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-orange-500 text-[22px]">{{ w.icon }}</span>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-lg
+                        {% if w.chip_color == 'green' %} bg-green-500/10 text-green-400
+                        {% elif w.chip_color == 'amber' %} bg-amber-500/10 text-amber-400
+                        {% elif w.chip_color == 'red' %} bg-red-500/10 text-red-400
+                        {% else %} bg-white/5 text-gray-400 {% endif %}">
+                        {% if w.chip_color == 'green' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                        {% elif w.chip_color == 'amber' %}<span class="material-symbols-outlined text-[12px]">schedule</span>
+                        {% elif w.chip_color == 'red' %}<span class="material-symbols-outlined text-[12px]">pause_circle</span>{% endif %}
+                        {{ w.chip_label }}
+                    </span>
+                </div>
+
+                <h3 class="text-base font-black text-white tracking-tight mb-0.5 truncate">{{ w.name }}</h3>
+                <p class="text-xs text-gray-500 font-medium mb-3">{{ w.vertical_label }}</p>
+
+                {% if w.message %}
+                <p class="text-[11px] text-gray-500 leading-snug mb-4 flex-1">{{ w.message }}</p>
+                {% else %}
+                <div class="flex-1"></div>
+                {% endif %}
+
+                {% if w.entry_url %}
+                <a href="{{ w.entry_url }}"
+                   class="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-white text-black text-sm font-black hover:bg-gray-200 transition-colors">
+                    Entrar
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </a>
+                {% else %}
+                <span class="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-white/10 text-gray-500 text-sm font-bold cursor-default">
+                    Panel próximamente
+                </span>
+                {% endif %}
+            </article>
+            {% endfor %}
+
+            <!-- Tarjeta: activar nuevo mundo -->
+            {% if can_more %}
+            {% for v in available_verticals %}
+            <a href="{{ url_for(v.setup_route) }}"
+               class="group/add bg-transparent border border-dashed border-white/10 rounded-2xl p-5 hover:border-orange-500/40 hover:bg-orange-500/[0.03] transition-all flex flex-col items-center justify-center text-center min-h-[220px]">
+                <div class="w-11 h-11 rounded-xl bg-white/[0.04] group-hover/add:bg-orange-500/10 flex items-center justify-center mb-3 transition-colors">
+                    <span class="material-symbols-outlined text-gray-500 group-hover/add:text-orange-500 text-[22px] transition-colors">add</span>
+                </div>
+                <h3 class="text-sm font-black text-gray-300 group-hover/add:text-white transition-colors">Activar {{ v.nombre }}</h3>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">{{ v.descripcion }}</p>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="bg-transparent border border-dashed border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[220px]">
+                <div class="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3">
+                    <span class="material-symbols-outlined text-amber-400 text-[22px]">lock</span>
+                </div>
+                <h3 class="text-sm font-black text-gray-300">Cupo lleno</h3>
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug mb-3">
+                    Tu plan {{ quota_info.plan_name or '' }} incluye {{ quota_info.max_worlds }} mundos.
+                </p>
+                <a href="{{ url_for('auth.plans') }}"
+                   class="inline-flex items-center gap-1.5 text-xs font-black text-orange-400 hover:text-orange-300 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    Aumentar capacidad
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- PRÓXIMAMENTE -->
+    <section class="mb-6">
+        <h2 class="text-[10px] font-black text-gray-600 uppercase tracking-[0.15em] mb-4">Próximamente en Velzia</h2>
+        <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs font-bold text-gray-600">
+                <span class="material-symbols-outlined text-[14px]">medication</span> Farmacia
+            </span>
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs font-bold text-gray-600">
+                <span class="material-symbols-outlined text-[14px]">storefront</span> Supermercado
+            </span>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

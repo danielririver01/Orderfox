@@ -212,6 +212,12 @@ def cancel_account():
         now = datetime.now(timezone.utc)
         restaurant.subscription_state = 'cancellation_pending'
         restaurant.cancellation_requested_at = now
+        # Ecosistema Multi-Mundos: cancelar es de la CUENTA — deja de
+        # renovar en TODOS los mundos del dueño (cachés sincronizadas).
+        from app.services.user_billing import request_user_cancellation, resolve_owner
+        owner = resolve_owner(restaurant)
+        if owner is not None:
+            request_user_cancellation(owner)
         db.session.commit()
 
         expires_msg = ''

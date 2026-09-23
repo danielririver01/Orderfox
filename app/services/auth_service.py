@@ -245,6 +245,11 @@ class AuthService:
         if is_trial:
             trial_record = TrialHistory(email=email, whatsapp_phone=phone)
             db.session.add(trial_record)
+            # Ecosistema Multi-Mundos: el trial es de la CUENTA (User), un
+            # solo reloj para todos sus mundos. La fila restaurante queda
+            # como caché de lectura. Es no-op si el dueño ya tiene ciclo.
+            from app.services.user_billing import start_user_trial
+            start_user_trial(user, days=60)
 
         try:
             db.session.commit()

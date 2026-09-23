@@ -17,7 +17,7 @@ VERTICALS = [
         'slug': 'restaurant',
         'nombre': 'Restaurante',
         'icono': 'restaurant',
-        'descripcion': 'Menú digital con QR, pedidos a WhatsApp, caja y Copilot VZ.',
+        'descripcion': 'Organiza tu menú, recibe pedidos y administra tu restaurante desde un solo lugar.',
         'setup_route': 'auth.setup_account',
         'enabled': True,
     },
@@ -25,23 +25,18 @@ VERTICALS = [
         'slug': 'verduras',
         'nombre': 'Verdurería',
         'icono': 'nutrition',
-        'descripcion': 'POS de mostrador con PIN, inventario por kilos y control de merma.',
+        'descripcion': 'Controla tus productos, ventas e inventario y mantén todo en orden fácilmente.',
         'setup_route': 'auth.register_verduras',
         'enabled': True,
     },
-    {
-        'slug': 'delivery',
-        'nombre': 'Delivery',
-        'icono': 'delivery_dining',
-        'descripcion': 'Reparto propio con zonas, tarifas y seguimiento de pedidos.',
-        'setup_route': None,
-        'enabled': False,
-    },
+    # NOTA PRODUCTO (2026-09-22): Delivery NO es mundo del core Velzia.
+    # Su tarjeta se eliminó del selector a propósito; su destino se definirá
+    # después. No re-agregar aquí sin confirmación del dueño.
     {
         'slug': 'farmacia',
         'nombre': 'Farmacia',
         'icono': 'medication',
-        'descripcion': 'Catálogo por laboratorio, control de recetas e inventario.',
+        'descripcion': 'Administra tus productos, ventas e inventario desde un solo lugar.',
         'setup_route': None,
         'enabled': False,
     },
@@ -64,6 +59,106 @@ def get_enabled_vertical(slug):
     if v and v['enabled'] and v['setup_route']:
         return v
     return None
+
+
+def subscription_chip(status):
+    """(etiqueta, color) del estado de suscripción para chips de tarjeta.
+
+    Única fuente del mapeo estado → chip: el selector de mundos y
+    cualquier superficie futura la reutilizan (no duplicar lógica).
+    Color ('green'|'amber'|'red'|'gray') + etiqueta; los estados se
+    indican con icono+texto en el template (no solo color).
+    """
+    s = status.get('status')
+    if status.get('is_active') and s in ('active', 'cancellation_pending'):
+        return 'Activo', 'green'
+    if s == 'pending_payment':
+        return 'Esperando pago', 'amber'
+    if s and s.startswith('expiring_soon'):
+        return 'Vence pronto', 'amber'
+    if s == 'grace_period':
+        return 'En período de gracia', 'amber'
+    if s in ('expired', 'dormant'):
+        return 'Pausado', 'red'
+    return (s or '—'), 'gray'
+
+
+def build_user_worlds(user):
+    """Mundos activados del dueño, con estado de suscripción y entrada.
+
+    Única fuente de la lista de mundos (regla del repo: no duplicar):
+    - dashboard.mundos (Hub/redirect), el World Switcher y el modo hub
+      del selector la consumen directa o indirectamente.
+    - `chip_label`/`chip_color` salen de subscription_chip(); `message`
+      es el texto de ayuda del estado (ej. "Vence en 20 días").
+    - `entry_url` None = vertical con mundo creado pero sin frontend aún.
+    """
+    from flask import url_for
+
+    from app.models import Business
+    from app.utils.subscription import (
+        get_business_subscription_status,
+        get_subscription_status,
+    )
+
+    if user is None:
+        return []
+
+    worlds = []
+    if user.restaurant is not None:
+        r = user.restaurant
+        status = get_subscription_status(r)
+        chip_label, chip_color = subscription_chip(status)
+        worlds.append({
+            'kind': 'restaurant',
+            'vertical_label': 'Restaurante',
+            'icon': 'restaurant',
+            'name': r.name,
+            'slug': r.slug,
+            'is_active': bool(r.is_active),
+            'chip_label': chip_label,
+            'chip_color': chip_color,
+            'message': status.get('message'),
+            'entry_url': url_for('dashboard.index'),
+        })
+
+    owned = Business.query.filter(
+        Business.owner_user_id == user.id,
+        Business.vertical != 'restaurant',
+    ).order_by(Business.created_at.asc()).all()
+    for b in owned:
+        status = get_business_subscription_status(b)
+        chip_label, chip_color = subscription_chip(status)
+        entry = None
+        if b.vertical == 'verduras':
+            # Handoff: core emite el token SSO y redirige al POS.
+            entry = url_for('dashboard.mundos_pos', slug=b.slug)
+        worlds.append({
+            'kind': 'business',
+            'vertical_label': b.vertical.capitalize(),
+            'icon': ('nutrition' if b.vertical == 'verduras' else 'storefront'),
+            'name': b.name,
+            'slug': b.slug,
+            'is_active': bool(b.is_active),
+            'chip_label': chip_label,
+            'chip_color': chip_color,
+            'message': status.get('message'),
+            'entry_url': entry,
+        })
+    return worlds
+
+
+def post_login_target(user):
+    """Destino único tras iniciar sesión (regla del Multi-Mundos).
+
+    Con mundo configurado → el SELECTOR de mundos en su modo hub (tarjetas
+    con estado + agregar según plan). Sin mundo → selector en modo registro.
+    Un solo lugar: /, login (GET/POST), sync-clerk y los guards del selector
+    delegan aquí — el destino nunca se duplica por ruta.
+    """
+    if user is None:
+        return 'auth.login'
+    return 'auth.register_vertical'
 
 
 def user_has_tenant(user):

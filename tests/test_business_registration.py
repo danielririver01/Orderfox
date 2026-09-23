@@ -66,6 +66,8 @@ class TestRegisterVerdurasService:
         assert biz.pos_setup_token == token
         assert token  # token de setup emitido
         assert biz.id >= DIRECT_VERTICAL_ID_FLOOR
+        # El WhatsApp se pide UNA vez en core y viaja al módulo (prefill).
+        assert biz.whatsapp_phone == '+573001112233'
 
     def test_paid_plan_inactive_until_payment(self, db):
         user = _mk_user(db, 'dueño2@test.com')
@@ -113,7 +115,10 @@ class TestRegisterVerdurasService:
             register_verduras_business(user, 'Verduras Ocho', 'hola',
                                        'trial')
 
-    def test_owner_with_restaurant_rejected(self, db):
+    def test_owner_with_restaurant_can_add_verduras(self, db):
+        """Multi-Mundos: el dueño de restaurante SÍ puede activar su 2º
+        mundo (verdulería) si tiene cupo. El guard autoritativo es el cupo,
+        no la era "una cuenta = un restaurante"."""
         from app.models import Restaurant
         restaurant = Restaurant(name='Rest Duo', slug='rest-duo-x',
                                 whatsapp_phone='+573001112233')
@@ -122,9 +127,10 @@ class TestRegisterVerdurasService:
         user = _mk_user(db, 'dueño9@test.com')
         user.restaurant_id = restaurant.id
         db.session.commit()
-        with pytest.raises(BusinessRegistrationError, match='restaurante'):
-            register_verduras_business(user, 'Verduras Nueve',
-                                       '+573001000009', 'trial')
+        biz, _token = register_verduras_business(user, 'Verduras Nueve',
+                                                 '+573001000009', 'trial')
+        assert biz.owner_user_id == user.id
+        assert biz.vertical == 'verduras'
 
     def test_slug_uniqueness_on_same_name(self, db):
         user = _mk_user(db, 'dueño10@test.com')
@@ -192,16 +198,22 @@ class TestRegisterVerdurasFlow:
         assert res.status_code == 302
         assert '/register/verduras/ready/' in res.headers['Location']
 
-        # Pantalla ready con el enlace de setup
+        # Pantalla ready humana: nombre visible, CTA y copiar; nada de
+        # jerga ("una sola vez", token) ni link roto al dashboard.
         res = client.get(res.headers['Location'])
         assert res.status_code == 200
-        assert b'/pos/setup/' in res.data
-        assert b'Verduras El Flujo' not in res.data  # slug en el enlace
+        html = res.data.decode()
+        assert '/pos/setup/' in html  # el token viaja SOLO en los href
+        assert 'Verduras El Flujo' in html
+        assert 'Continuar configuraci' in html
+        assert 'Copiar enlace' in html
+        assert 'una sola vez' not in html
+        assert 'dashboard' not in html
 
-        # El token en DB coincide con el mostrado
+        # El token en DB coincide con el del enlace
         biz = Business.query.filter_by(owner_user_id=user.id).first()
         assert biz.pos_setup_token  # emitido
-        assert biz.slug in res.data.decode()
+        assert biz.slug in html
 
     def test_ready_without_token_redirects(self, client, db):
         user = _mk_user(db, 'flow2@test.com')
@@ -209,6 +221,21 @@ class TestRegisterVerdurasFlow:
         res = client.get('/register/verduras/ready/algun-slug',
                          follow_redirects=False)
         assert res.status_code == 302
+
+    def test_register_retoma_setup_pendiente(self, client, db):
+        """Con setup pendiente (token sin usar), volver al registro muestra
+        la pantalla de configuración en vez de otro formulario."""
+        user = _mk_user(db, 'retomar@test.com')
+        biz, _token = register_verduras_business(
+            user, 'Verduras Retomar', '+573001230099', 'trial')
+        _login(client, user)
+        res = client.get('/register/verduras', follow_redirects=False)
+        assert res.status_code == 302
+        assert f'/register/verduras/ready/{biz.slug}' in res.headers['Location']
+        # Y la pantalla recuperada funciona (token vía DB, sesión limpia).
+        res = client.get(res.headers['Location'])
+        assert res.status_code == 200
+        assert 'Verduras Retomar' in res.data.decode()
 
 
 # ═════════════════ Compatibilidad con restaurantes ═════════════════
@@ -228,14 +255,15 @@ class TestRestaurantFlowUnchanged:
         assert pick.status_code == 302
         assert 'setup-account' in pick.headers['Location']
 
-    def test_register_redirects_dashboard_for_verduras_owner(self, client,
-                                                             db):
-        """Dueño de verduras que vuelve a /register → dashboard (no al
-        setup de restaurante; anti-bucle)."""
+    def test_register_redirects_hub_for_verduras_owner(self, client,
+                                                        db):
+        """Dueño de verduras que vuelve a /register → HUB de mundos (no al
+        setup de restaurante; anti-bucle). Multi-Mundos: el centro de control
+        del dueño es el Hub, no el dashboard del restaurante."""
         user = _mk_user(db, 'verd@test.com')
         register_verduras_business(user, 'Verduras Anti Bucle',
                                    '+573001230002', 'trial')
         _login(client, user)
         res = client.get('/register', follow_redirects=False)
         assert res.status_code == 302
-        assert res.headers['Location'].endswith('/dashboard/')
+        assert res.headers['Location'].endswith('/dashboard/mundos')

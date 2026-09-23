@@ -9,6 +9,7 @@ from flask import current_app
 
 from app import db
 from app.models import Business, DiscountCoupon, Restaurant, User
+from app.services import user_billing
 from app.utils.subscription import (
     AI_TOKEN_LIMITS,
     TOP_UP_PACKS,
@@ -191,9 +192,9 @@ class SubscriptionService:
                                        preference_id=None):
         """
         Activación idempotente de un Business tras pago aprobado (callback o
-        webhook — el callback marca el pago con la tx de wallet, el webhook no
-        repite efectos). Activa el negocio, sube de plan y extiende la
-        suscripción por la duración del plan.
+        webhook). Ecosistema Multi-Mundos: el ciclo se escribe al USER dueño
+        (fuente única) y sincroniza todos sus mundos; la fila `biz` queda
+        como caché. Sin dueño (legacy), la fila se activa directamente.
         """
         from app.models import AITokenTransaction, User
 
@@ -209,52 +210,67 @@ class SubscriptionService:
         if not biz:
             return None
 
-        biz.is_active = True
-        if biz.subscription_state in ('dormant', 'cancellation_pending'):
-            biz.subscription_state = 'active'
-        biz.dormant_at = None
-        if plan_type in ('emprendedor', 'crecimiento', 'elite'):
-            biz.plan_type = plan_type
+        # Ecosistema Multi-Mundos: el ciclo se escribe AL USER dueño (fuente
+        # única) y se sincroniza a todas sus cachés — un pago activa la
+        # cuenta completa. Sin dueño (espejos, piloto legacy): la fila se
+        # gobierna sola (regla de oro), camino directo de siempre.
+        owner = User.query.get(biz.owner_user_id) if biz.owner_user_id else None
+        if owner is None:
+            biz.is_active = True
+            if biz.subscription_state in ('dormant', 'cancellation_pending'):
+                biz.subscription_state = 'active'
+            biz.dormant_at = None
+            if plan_type in ('emprendedor', 'crecimiento', 'elite'):
+                biz.plan_type = plan_type
 
-        duration_days = get_plan_limits(biz.plan_type).get('duration_days', 30)
-        now_utc = datetime.now(timezone.utc)
-        expires_at = biz.subscription_expires_at
-        if expires_at and expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if expires_at and expires_at > now_utc:
-            biz.subscription_expires_at = expires_at + timedelta(days=duration_days)
+            duration_days = get_plan_limits(biz.plan_type).get('duration_days', 30)
+            now_utc = datetime.now(timezone.utc)
+            expires_at = biz.subscription_expires_at
+            if expires_at and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at and expires_at > now_utc:
+                biz.subscription_expires_at = expires_at + timedelta(days=duration_days)
+            else:
+                biz.subscription_expires_at = now_utc + timedelta(days=duration_days)
+            db.session.commit()
+            return biz
+
+        # Frontera write == read (idéntica a _finalize_payment): se escribe
+        # al User si el dueño YA gobierna (ciclo propio) o la fila no tiene
+        # ciclo vivo (pago bootstrap). Fila legacy con ciclo vivo y dueño
+        # sin ciclo: renovación por fila (conserva días restantes).
+        if (user_billing.owner_carries_billing(owner)
+                or not user_billing.row_has_live_cycle(biz)):
+            # Dueño nuevo (pago directo sin trial): el pago fija su ciclo por
+            # primera vez. Dueño con ciclo: el pago extiende/renueva para
+            # TODOS sus mundos. El plan contratado aplica primero para que
+            # la extensión use la duración correcta.
+            if plan_type in ('emprendedor', 'crecimiento', 'elite'):
+                owner.plan_type = plan_type
+            user_billing.activate_user_from_payment(
+                owner, owner.plan_type, payment_id)
         else:
-            biz.subscription_expires_at = now_utc + timedelta(days=duration_days)
+            user_billing.propagate_row_renewal(
+                biz, plan_type or biz.plan_type)
+
+        # Marcador de pago idempotente (callback ↔ webhook): tx de wallet
+        # con mp_payment_id (constraint UNIQUE). activate_user_from_payment
+        # ya lo crea vía initialize_or_reset_token_wallet cuando el wallet
+        # existe; este seguro cubre el edge de wallet ausente.
+        if payment_id and not AITokenTransaction.query.filter_by(
+            mp_payment_id=payment_id,
+            type='topup_plan',
+        ).first():
+            db.session.add(AITokenTransaction(
+                user_id=owner.id,
+                type='topup_plan',
+                amount=0,
+                source='biz_plan_renewal',
+                mp_payment_id=payment_id,
+                description=(f'Renovación {owner.plan_type} — '
+                             f'{biz.vertical} #{biz.id}'),
+            ))
         db.session.commit()
-
-        # Marcador de pago idempotente: transacción de wallet del dueño con
-        # mp_payment_id (constraint UNIQUE). Es la MISMA convención con la que
-        # los restaurantes hacen idempotente _finalize_payment — así callback
-        # y webhook nunca duplican efectos. Los dueños de verticales no tienen
-        # Restaurant (el wallet exige user.restaurant): por eso la tx se crea
-        # directamente, no vía initialize_or_reset_token_wallet.
-        if payment_id:
-            try:
-                owner = User.query.get(biz.owner_user_id) if biz.owner_user_id else None
-                if owner and not AITokenTransaction.query.filter_by(
-                    mp_payment_id=payment_id,
-                    type='topup_plan',
-                ).first():
-                    db.session.add(AITokenTransaction(
-                        user_id=owner.id,
-                        type='topup_plan',
-                        amount=0,
-                        source='biz_plan_renewal',
-                        mp_payment_id=payment_id,
-                        description=(f'Renovación {biz.plan_type} — '
-                                     f'{biz.vertical} #{biz.id}'),
-                    ))
-                    db.session.commit()
-            except Exception:
-                current_app.logger.exception(
-                    "biz payment: error en marcador de pago")
-                db.session.rollback()
-
         return biz
 
     @staticmethod
@@ -310,6 +326,11 @@ class SubscriptionService:
         extiende la suscripción por la duración del plan y entrega la Sorpresa
         Velzia (recompensa + email) en segundo plano.
         Idempotente por pago: la Sorpresa ocurre solo la primera vez.
+
+        Ecosistema Multi-Mundos: con dueño, el ciclo se escribe AL USER
+        (fuente única) y se sincroniza a todos sus mundos; la fila del
+        restaurante queda como caché. Sin dueño: la fila se gobierna sola
+        (regla de oro legacy).
         """
         from app.models import AITokenTransaction
 
@@ -333,23 +354,51 @@ class SubscriptionService:
         if coupon:
             SubscriptionService.apply_coupon(coupon, payment_id)
 
-        duration_days = get_plan_limits(plan_type or restaurant.plan_type).get('duration_days', 30)
-        now_utc = datetime.now(timezone.utc)
-        expires_at = restaurant.subscription_expires_at
-        if expires_at and expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if expires_at and expires_at > now_utc:
-            restaurant.subscription_expires_at = expires_at + timedelta(days=duration_days)
+        # Ecosistema Multi-Mundos: el ciclo vive en el USER dueño. La fila
+        # restaurante recibe el mismo billing (caché de lectura) y el plan
+        # contratado aplica a la cuenta completa.
+        # Frontera write == read: se escribe al User si el dueño YA gobierna
+        # (ciclo propio) o la fila no tiene ciclo vivo (pago bootstrap: un
+        # dueño nuevo sin ciclo arranca la cuenta al pagar). Una fila legacy
+        # con ciclo vivo y dueño sin ciclo (renovación por fila histórica)
+        # se renueva en la fila: conserva sus días restantes.
+        from app.services import user_billing
+        effective_plan = plan_type or restaurant.plan_type
+        owner = user_billing.resolve_owner(restaurant)
+        governs = (
+            owner is not None
+            and (user_billing.owner_carries_billing(owner)
+                 or not user_billing.row_has_live_cycle(restaurant))
+        )
+        if governs:
+            if effective_plan in ('emprendedor', 'crecimiento', 'elite'):
+                owner.plan_type = effective_plan
+            user_billing.activate_user_from_payment(
+                owner, effective_plan, payment_id)
+        elif owner is None:
+            # Legacy sin dueño: la fila se gobierna sola (regla de oro).
+            duration_days = get_plan_limits(effective_plan).get('duration_days', 30)
+            now_utc = datetime.now(timezone.utc)
+            expires_at = restaurant.subscription_expires_at
+            if expires_at and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at and expires_at > now_utc:
+                restaurant.subscription_expires_at = expires_at + timedelta(days=duration_days)
+            else:
+                restaurant.subscription_expires_at = now_utc + timedelta(days=duration_days)
         else:
-            restaurant.subscription_expires_at = now_utc + timedelta(days=duration_days)
+            # Renovación legacy por fila: extiende la fila (días intactos).
+            # El dueño hereda el billing como caché, SIN renarrar su ciclo.
+            user_billing.propagate_row_renewal(restaurant, effective_plan)
         db.session.commit()
 
         # Sorpresa Velzia en segundo plano (fire-and-forget), sin HTTP a n8n.
+        # Común a ambas ramas: el premio es por pagar, sea cual sea la vía.
         threading.Thread(
             target=_deliver_sorpresa_velzia,
             args=(
                 restaurant.id,
-                plan_type or restaurant.plan_type,
+                effective_plan,
                 current_app._get_current_object(),
             ),
             daemon=True,
@@ -381,9 +430,13 @@ class SubscriptionService:
             db.session.commit()
 
             if payment_id:
+                # Con dueño, activate_user_from_payment (dentro de
+                # _finalize_payment) escribe el ciclo al User y sincroniza;
+                # el commit posterior no repite efectos (idempotente).
                 SubscriptionService._finalize_payment(
                     restaurant, plan_type or restaurant.plan_type, payment_id,
                 )
+                db.session.commit()
 
         sanitize_restaurant_limits(restaurant)
 

@@ -145,6 +145,8 @@
                 </div>
             </div>
 
+            {% include 'common/world_switcher.html' %}
+
             <!-- Navigation -->
             <nav class="flex-1 px-2 py-4 overflow-y-auto overflow-x-hidden" id="desktop-nav">
 
@@ -449,6 +451,7 @@
 
     </div>
     <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/world_switcher.js') }}"></script>
     {% include 'components/modal_delete.html' %}
     <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
     {% if session.get('user_id') %}

@@ -16,6 +16,7 @@ from app.utils.verticals import (
     DEFAULT_VERTICAL,
     VERTICALS,
     get_enabled_vertical,
+    post_login_target,
     user_has_tenant,
 )
 import mercadopago
@@ -25,13 +26,14 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/')
 def index():
-    """Raíz → dashboard si hay sesión activa, landing pública si no.
+    """Raíz → Hub de Mundos si hay sesión activa, landing pública si no.
 
     Sin sesión: 301 permanente al dominio de la landing (SEO).
-    Con sesión: redirect al dashboard (evita el loop login→landing→login).
+    Con sesión: redirect al Hub (centro de control del ecosistema; evita
+    el loop login→landing→login).
     """
     if 'user_id' in session:
-        return redirect(url_for('dashboard.index'))
+        return redirect(url_for(post_login_target(AuthService.get_user(session['user_id']))))
     landing = current_app.config.get('LANDING_URL') or 'https://velzia.shop/'
     return redirect(landing, code=301)
 
@@ -129,14 +131,15 @@ def sync_clerk():
                 'is_new_user': True,
                 'is_first_time': is_first_time,
                 'trial_plan': plan_or_error == 'trial',
-                'redirect_url': url_for('auth.setup_account')
+                'redirect_url': url_for(post_login_target(user))
             })
 
-        redirect_url = url_for('dashboard.index')
-        if not user.restaurant:
-            # Usuario existente sin restaurante.
+        redirect_url = url_for(post_login_target(user))
+        if not user_has_tenant(user):
+            # Usuario existente sin mundo → selector de mundos (el fork a
+            # cada setup vive ahí; setup-account queda como red).
             if session.get('selected_plan'):
-                redirect_url = url_for('auth.setup_account')
+                redirect_url = url_for('auth.register_vertical')
             else:
                 already_used_trial = TrialHistory.query.filter_by(email=email).first() is not None
                 if already_used_trial:
@@ -149,7 +152,7 @@ def sync_clerk():
                     redirect_url = url_for('auth.plans')
                 else:
                     session['selected_plan'] = 'trial'
-                    redirect_url = url_for('auth.setup_account')
+                    redirect_url = url_for('auth.register_vertical')
 
         return jsonify({
             'success': True,
@@ -184,18 +187,18 @@ def login():
             session.pop('clerk_id', None)
             form = LoginForm()
             return render_template('auth/index.html', form=form)
-        # Cuenta logueada sin restaurante: NO ir a dashboard.index (require_active
-        # lanza "Tu cuenta no está asociada a ningún restaurante" y redirige en
-        # loop). Llevar al flujo correcto según su estado.
-        if user and not user.restaurant:
-            if session.get('selected_plan'):
-                return redirect(url_for('auth.setup_account'))
-            used_trial = TrialHistory.query.filter_by(email=user.email).first() is not None
-            if used_trial:
-                session['trial_blocked'] = True
-                return redirect(url_for('auth.plans'))
-            return redirect(url_for('auth.setup_account'))
-        return redirect(url_for('dashboard.index'))
+        if user:
+            # Cuenta sin NINGÚN mundo: o viene de elegir plan (→ selector) o
+            # ya quemó su trial (→ planes: el selector terminaría en
+            # TRIAL_ALREADY_USED). Con mundo → el Hub manda.
+            if not user_has_tenant(user):
+                if session.get('selected_plan'):
+                    return redirect(url_for('auth.register_vertical'))
+                if TrialHistory.query.filter_by(email=user.email).first() is not None:
+                    session['trial_blocked'] = True
+                    return redirect(url_for('auth.plans'))
+                return redirect(url_for('auth.register_vertical'))
+            return redirect(url_for(post_login_target(user)))
     form = LoginForm()
     if form.validate_on_submit():
         user, error = AuthService.authenticate(
@@ -214,7 +217,7 @@ def login():
                 flash('Tu suscripción está pendiente de pago.', 'info')
                 return redirect(url_for('auth.payment'))
 
-            return redirect(url_for('dashboard.index'))
+            return redirect(url_for(post_login_target(user)))
         else:
             flash('Email o contraseña incorrectos')
     return render_template('auth/index.html', form=form)
@@ -244,11 +247,11 @@ def plans():
             has_restaurant = user.restaurant is not None
             # Usuario con cuenta local pero sin restaurante. Si ya usó el trial,
             # DEBE poder ver /planes para elegir un plan pago; solo se le fuerza
-            # a setup-account si todavía no usó el trial (flujo de registro).
+            # al selector de mundos si todavía no usó el trial (registro).
             if not user.restaurant:
                 used_trial = TrialHistory.query.filter_by(email=user.email).first() is not None
                 if not used_trial:
-                    return redirect(url_for('auth.setup_account'))
+                    return redirect(url_for('auth.register_vertical'))
     return render_template('auth/plans.html', has_restaurant=has_restaurant)
 
 
@@ -265,9 +268,9 @@ def register():
     if 'user_id' in session:
         user = AuthService.get_user(session['user_id'])
         if user:
-            # Con tenant (cualquier vertical) → dashboard, nunca al selector.
+            # Con tenant (cualquier vertical) → Hub; sin tenant → selector.
             if user_has_tenant(user):
-                return redirect(url_for('dashboard.index'))
+                return redirect(url_for('dashboard.mundos'))
             # Sin tenant → primero elige su mundo (fork multi-vertical).
             return redirect(url_for('auth.register_vertical'))
 
@@ -277,36 +280,91 @@ def register():
 
 @auth_bp.route('/register/vertical', methods=['GET'])
 def register_vertical():
-    """Selector de mundos post-registro.
+    """Selector de mundos — la UNICA superficie de mundos del dueño.
 
-    Acceso explícito: autenticado + email verificado (user en sesión) +
-    SIN tenant. Con tenant → dashboard. Las tarjetas se construyen desde
-    VERTICALS (app/utils/verticals.py): el 3er/4º mundo es solo una entrada.
+    Dos modos (misma página, mismo look plan-card):
+    - Sin tenant (registro): "¿Qué tipo de negocio tienes?" — tarjetas
+      desde VERTICALS; el 3er/4º mundo es solo una entrada.
+    - Con tenant (hub): "Tus mundos" (estado por chip + Entrar) + "Agregar
+      según tu plan" (cupo por can_activate_vertical) + Próximamente.
+
+    Autenticación explícita en ambos modos; el template pinta, la cuota
+    y el estado salen de las utilidades compartidas (no duplicar).
     """
     if 'user_id' not in session:
         return redirect(url_for('auth.register'))
     user = AuthService.get_user(session['user_id'])
-    if user_has_tenant(user):
-        return redirect(url_for('dashboard.index'))
-    return render_template('auth/register_vertical.html', verticals=VERTICALS)
+
+    if not user_has_tenant(user):
+        return render_template('auth/register_vertical.html',
+                               verticals=VERTICALS, has_tenant=False)
+
+    from app.utils.subscription import can_activate_vertical
+    from app.utils.verticals import build_user_worlds
+
+    # Lista compartida única: URLs de entrada ya resueltas, chips y estado.
+    worlds = build_user_worlds(user)
+    can_more, quota_info = can_activate_vertical(user)
+
+    # Agregar según tu plan: habilitados que el dueño aún no tenga. La cuota
+    # decide si se pintan como acción o como bloqueo+upgrade; el guard
+    # autoritativo vive en pick + setups (Etapa 4), aquí solo se pinta.
+    # OJO: 'restaurant' solo se excluye si YA tiene uno (FK única = un
+    # restaurante por cuenta). Sin restaurante, se ofrece "Activar".
+    owned_verticals = set()
+    for w in worlds:
+        if w['kind'] == 'business':
+            owned_verticals.add(w['vertical_label'].lower())
+        elif w['kind'] == 'restaurant':
+            owned_verticals.add('restaurant')
+    available = [
+        v for v in VERTICALS
+        if v['enabled'] and v['slug'] not in owned_verticals
+    ]
+
+    return render_template('auth/register_vertical.html',
+                           verticals=VERTICALS,
+                           has_tenant=True,
+                           world_cards=worlds,
+                           can_more=can_more,
+                           quota_info=quota_info,
+                           available_verticals=available)
 
 
 @auth_bp.route('/register/vertical/elegir/<slug>', methods=['GET'])
 def register_vertical_pick(slug):
-    """Guarda el mundo elegido y manda a su setup.
+    """Elige un mundo: propio → su entrada; nuevo → setup (cupo en el setup).
 
+    Con tenant el selector es la casa del dueño: pickear un vertical que
+    YA posee lo lleva a su entrada (no duplica: restaurante único por
+    cuenta vía FK, verticales directos bloqueados por cupo en su setup).
     `selected_vertical` se consume con pop en el setup destino: no
     permanece en sesión (evita rebotes a un mundo elegido semanas atrás).
     """
     if 'user_id' not in session:
         return redirect(url_for('auth.register'))
     user = AuthService.get_user(session['user_id'])
-    if user_has_tenant(user):
-        return redirect(url_for('dashboard.index'))
     vertical = get_enabled_vertical(slug)
     if not vertical:
         flash('Ese mundo aún no está disponible.', 'warning')
         return redirect(url_for('auth.register_vertical'))
+
+    # Con tenant (modo hub): mundo propio → entrada directa.
+    if user_has_tenant(user):
+        from app.utils.verticals import build_user_worlds
+        worlds = build_user_worlds(user)
+        owned = {
+            ('restaurant' if w['kind'] == 'restaurant'
+             else w['vertical_label'].lower()): w['entry_url']
+            for w in worlds
+        }
+        entry = owned.get(slug)
+        if entry:
+            return redirect(entry)
+        # Mundo nuevo: la cuota se verifica en su setup (guard autoritativo
+        # de la Etapa 4) — aquí solo guardamos la elección.
+
+    # Sin tenant (registro) o mundo nuevo: guardar elección y al setup.
     session['selected_vertical'] = vertical['slug']
     return redirect(url_for(vertical['setup_route']))
 
@@ -357,6 +415,15 @@ def setup_account():
     # consume aquí con pop (default restaurante para accesos directos).
     if session.pop('selected_vertical', DEFAULT_VERTICAL) == 'verduras':
         return redirect(url_for('auth.register_verduras'))
+
+    # Ecosistema Multi-Mundos: cupo por plan. Con cupo lleno, activar un
+    # segundo restaurante no procede — pantalla de upgrade. El fork hacia
+    # verduras ya pasó arriba (esa puerta tiene su propio guard).
+    from app.utils.subscription import can_activate_vertical, vertical_quota_message
+    ok, quota_info = can_activate_vertical(user)
+    if not ok:
+        flash(vertical_quota_message(quota_info), 'warning')
+        return redirect(url_for('auth.plans'))
 
     # Defensivo: usuario sin restaurante que ya usó el trial y aún no eligió
     # plan. No debe quedar en setup-account con plan=None (el template lo
@@ -455,6 +522,25 @@ def register_verduras():
     # esta puerta nunca exigió selected_vertical).
     session.pop('selected_vertical', None)
 
+    # Retomar: si ya tiene un negocio con setup pendiente (token sin usar),
+    # mostrarle su pantalla de configuración en vez de otro formulario.
+    # Es la recuperación real si perdió el enlace (sin prometer paneles).
+    if request.method == 'GET':
+        pending = Business.query.filter_by(
+            owner_user_id=user.id, vertical='verduras').filter(
+            Business.pos_setup_token.isnot(None)).order_by(
+            Business.id.desc()).first()
+        if pending is not None:
+            return redirect(url_for('auth.verduras_ready', slug=pending.slug))
+
+    # Ecosistema Multi-Mundos: sin cupo en el plan → pantalla de upgrade.
+    # Se comprueba DESPUÉS del retomar (el retomar no crea mundos nuevos).
+    from app.utils.subscription import can_activate_vertical, vertical_quota_message
+    ok, quota_info = can_activate_vertical(user)
+    if not ok:
+        flash(vertical_quota_message(quota_info), 'warning')
+        return redirect(url_for('auth.plans'))
+
     selected_plan = session.get('selected_plan', 'trial')
     form = BusinessSetupForm()
 
@@ -502,19 +588,21 @@ def verduras_ready(slug):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     setup_token = session.pop('pos_setup_token', None)
+    business = Business.query.filter_by(
+        slug=slug, vertical='verduras').first()
     if not setup_token:
-        business = Business.query.filter_by(
-            slug=slug, vertical='verduras').first()
         if business is not None and business.pos_setup_token:
             setup_token = business.pos_setup_token
         else:
             return redirect(url_for('dashboard.index'))
     # El setup vive en la APP del módulo (puerto 5100), no en core: la URL
     # sale de config, igual que ASTRO_BASE_URL para el menú público.
+    # El token viaja SOLO en el href: en pantalla no se muestra ni se
+    # explica (al tendero se le guía, no se le enseña seguridad).
     verduras_base = (current_app.config.get('VERDURAS_BASE_URL')
                      or 'http://localhost:5100')
     return render_template('auth/verduras_ready.html', slug=slug,
-                           setup_token=setup_token,
+                           business_name=business.name if business else slug,
                            setup_url=f'{verduras_base}/pos/setup/{slug}/{setup_token}')
 
 
