@@ -403,6 +403,117 @@ def list_merma(business_id: int, product_id: int | None = None,
                            VerdurasMerma.id.desc()).all())
 
 
+# ── Actividad reciente (idioma de mostrador) ────────────────
+
+
+def _bogota_label(value) -> str:
+    """'Hoy, 10:30 AM' | 'Ayer, ...' | '23/09, ...' (hora Bogotá).
+
+    El dueño lee acciones, no códigos: V-20260923-001 no le dice nada;
+    "Venta de Tomate · Hoy, 10:30 AM" sí. El código técnico sigue
+    guardado (ref) para auditoría, pero no se pinta.
+    """
+    if value is None:
+        return ''
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        local = value.astimezone(ZoneInfo('America/Bogota'))
+    except Exception:  # noqa: BLE001
+        local = value - timedelta(hours=5)
+    try:
+        today = datetime.now(local.tzinfo).date()
+    except Exception:  # noqa: BLE001
+        today = None
+    day = local.date()
+    hour = f'{local.hour % 12 or 12}:{local.minute:02d} ' + (
+        'p. m.' if local.hour >= 12 else 'a. m.')
+    if today is not None and day == today:
+        return f'Hoy, {hour}'
+    if today is not None and (today - day).days == 1:
+        return f'Ayer, {hour}'
+    return f"{day.strftime('%d/%m')}, {hour}"
+
+
+def activity_feed(business_id: int, limit: int = 8) -> list[dict]:
+    """Actividad reciente en idioma de mostrador (ventas+lotes+merma+ajustes).
+
+    Cada item: kind, icon (material), tone (green|red|neutral), text
+    ("Venta de Tomate"), detail (cantidades), amount, when humano y ref
+    (código técnico, solo auditoría/tooltip — NO se pinta).
+    """
+    names = {p.id: p.name for p in VerdurasProduct.query.filter_by(
+        business_id=business_id).all()}
+    events = []
+
+    for s in (VerdurasSale.query.filter_by(business_id=business_id)
+              .filter(VerdurasSale.status != 'cancelled')
+              .order_by(VerdurasSale.created_at.desc(),
+                        VerdurasSale.id.desc()).limit(limit).all()):
+        items = sorted({it.product_name for it in s.items})
+        label = items[0] if len(items) == 1 else (
+            f'{items[0]} +{len(items) - 1} más' if items else 'Venta')
+        events.append({
+            'kind': 'venta', 'icon': 'trending_up', 'tone': 'green',
+            'text': f'Venta de {label}',
+            'detail': f'{len(s.items)} ítems',
+            'amount': f'${int(s.total):,}'.replace(',', '.'),
+            'when': _bogota_label(s.created_at),
+            'ref': s.sale_number,
+            'at': s.created_at,
+        })
+    for lot in (VerdurasLot.query.filter_by(business_id=business_id)
+                .order_by(VerdurasLot.purchased_at.desc(),
+                          VerdurasLot.id.desc()).limit(limit).all()):
+        pname = names.get(lot.product_id, 'Producto')
+        prod = db.session.get(VerdurasProduct, lot.product_id)
+        unit = prod.unit if prod else ''
+        events.append({
+            'kind': 'compra', 'icon': 'add_shopping_cart', 'tone': 'green',
+            'text': f'Compra de {pname}',
+            'detail': f'{lot.quantity} {unit}',
+            'amount': f'${int(lot.total_cost):,}'.replace(',', '.'),
+            'when': _bogota_label(lot.purchased_at or lot.created_at),
+            'ref': f'lote-#{lot.id}',
+            'at': lot.purchased_at or lot.created_at,
+        })
+    for mr in (VerdurasMerma.query.filter_by(business_id=business_id)
+               .order_by(VerdurasMerma.registered_at.desc(),
+                         VerdurasMerma.id.desc()).limit(limit).all()):
+        pname = names.get(mr.product_id, 'Producto')
+        prod = db.session.get(VerdurasProduct, mr.product_id)
+        unit = prod.unit if prod else ''
+        events.append({
+            'kind': 'merma', 'icon': 'trending_down', 'tone': 'red',
+            'text': f'Merma de {pname}',
+            'detail': f'{mr.quantity} {unit} · {mr.reason}',
+            'amount': f"−${int(mr.cost_loss):,}".replace(',', '.'),
+            'when': _bogota_label(mr.registered_at),
+            'ref': f'merma-#{mr.id}',
+            'at': mr.registered_at,
+        })
+    for aj in (VerdurasAjuste.query.filter_by(business_id=business_id)
+               .order_by(VerdurasAjuste.registered_at.desc(),
+                         VerdurasAjuste.id.desc()).limit(limit).all()):
+        pname = names.get(aj.product_id, 'Producto')
+        prod = db.session.get(VerdurasProduct, aj.product_id)
+        unit = prod.unit if prod else ''
+        delta = float(aj.delta or 0)
+        events.append({
+            'kind': 'ajuste', 'icon': 'tune', 'tone': 'neutral',
+            'text': f'Ajuste de {pname}',
+            'detail': f"{aj.counted} {unit} contados ({aj.motivo})",
+            'amount': f"{'+' if delta > 0 else '−'}{aj.counted} {unit}",
+            'when': _bogota_label(aj.registered_at),
+            'ref': f'ajuste-#{aj.id}',
+            'at': aj.registered_at,
+        })
+    events = [e for e in events if e['at'] is not None]
+    events.sort(key=lambda e: e['at'], reverse=True)
+    return events[:limit]
+
+
 # ── Reporte semanal/mensual (la joya) ───────────────────────
 
 

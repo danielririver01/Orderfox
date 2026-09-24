@@ -21,10 +21,13 @@
       <p class="sidebar-brand"><img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}" alt="Velzia Verduras" class="brand-logo"></p>
       <a href="#" class="active" aria-current="page"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
       <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span> Inventario y Precios</a>
-      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> <span class="nav-text">Ventas del Día</span> <em class="soon-tag">Próximamente</em></span>
-      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">group</span> <span class="nav-text">Clientes / Fiados</span> <em class="soon-tag">Próximamente</em></span>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> Ventas del Día</a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">group</span> Clientes / Fiados</a>
       <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">settings</span> <span class="nav-text">Configuración</span> <em class="soon-tag">Próximamente</em></span>
-      <p class="sidebar-footer">{{ business.name }}</p>
+      <div class="biz-card">
+        <span class="biz-avatar" aria-hidden="true"><span class="material-symbols-rounded">storefront</span></span>
+        <span class="biz-name">{{ business.name }}</span>
+      </div>
     </aside>
 
     <div class="main">
@@ -86,7 +89,24 @@
       </header>
       <div class="customer-row">
         <span class="material-symbols-rounded" aria-hidden="true">person</span>
-        <span class="customer-name">Cliente General</span>
+        <span class="customer-name" id="customer-label">Cliente General</span>
+      </div>
+      {# Libreta exige cliente (dueño): buscador + crear al vuelo + elegido.
+         Solo visible con método libreta; el resto lo gobierna pos.js. #}
+      <div class="client-picker" id="client-picker" hidden>
+        <div class="client-search-row">
+          <input id="client-search" autocomplete="off"
+                 placeholder="Buscar cliente…" aria-label="Buscar cliente">
+        </div>
+        <div class="client-results" id="client-results"></div>
+        <div class="client-new" id="client-new" hidden>
+          <input id="client-new-name" autocomplete="off" placeholder="Nombre">
+          <input id="client-new-phone" autocomplete="off" inputmode="tel"
+                 placeholder="Teléfono (opcional)">
+          <button type="button" class="btn btn-ghost" id="client-new-save">
+            Crear cliente
+          </button>
+        </div>
       </div>
       <div class="cart-items" id="cart-items"></div>
       <div class="ticket-totals">
@@ -100,6 +120,12 @@
         <button type="button" class="pay-btn" data-pay="tarjeta"><span class="material-symbols-rounded" aria-hidden="true">credit_card</span> Tarjeta</button>
         <button type="button" class="pay-btn" data-pay="transferencia"><span class="material-symbols-rounded" aria-hidden="true">qr_code_2</span> Transferencia</button>
         <button type="button" class="pay-btn" data-pay="libreta"><span class="material-symbols-rounded" aria-hidden="true">menu_book</span> Libreta</button>
+      </div>
+      <div class="cash-box" id="cash-box">
+        <label class="inv-field">Recibido
+          <input id="cash-received" inputmode="decimal" placeholder="Ej. 50000" autocomplete="off">
+        </label>
+        <p class="cash-change">Vueltas: <strong id="cash-change">$0</strong></p>
       </div>
       <footer class="cart-foot">
         <button type="button" class="btn btn-primary btn-block" id="checkout-btn">
@@ -118,6 +144,14 @@
         <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
         Inventario
       </a>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+        Ventas
+      </a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+        Clientes
+      </a>
     </nav>
   </div>
 
@@ -127,7 +161,10 @@
     <div class="ticket">
       <h3>{{ business.name }}</h3>
       <p class="ticket-number" id="ticket-number"></p>
+      <p class="ticket-method" id="ticket-customer"></p>
       <p class="ticket-method" id="ticket-method"></p>
+      <p class="ticket-method" id="ticket-received" hidden></p>
+      <p class="ticket-method" id="ticket-change" hidden></p>
       <table>
         <tbody id="ticket-items"></tbody>
         <tr class="ticket-total-row">

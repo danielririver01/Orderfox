@@ -121,9 +121,18 @@
     });
   }
 
+  // Marca visible de selección: la tarjeta queda resaltada mientras su
+  // producto esté en el ticket (el dueño pedía "que se marque").
+  function renderCartMarks() {
+    $$('#product-grid .product-card').forEach((card) => {
+      card.classList.toggle('in-cart', cart.has(Number(card.dataset.productId)));
+    });
+  }
+
   function sync() {
     renderCartBar();
     renderCartDrawer();
+    renderCartMarks();
   }
 
   // ── Render: grid de productos ───────────────────────────────
@@ -253,7 +262,9 @@
     const ed = document.createElement('div');
     ed.className = 'weigh-editor';
     ed.innerHTML = `
-      <input inputmode="decimal" value="0.5" aria-label="Peso en ${p.unit} de ${p.name}">
+      <label class="weigh-label">¿Cuántos ${p.unit}?
+        <input inputmode="decimal" value="0.5" aria-label="Peso en ${p.unit} de ${p.name}">
+      </label>
       ${PRICES.scale_enabled ? '<button type="button" class="weigh-scale" title="Leer báscula" aria-label="Leer báscula"><span class="material-symbols-rounded" aria-hidden="true">scale</span></button>' : ''}
       <button type="button" class="weigh-add">Agregar</button>
     `;
@@ -310,6 +321,9 @@
     card.classList.add('expanded');
     input.focus();
     input.select();
+    try {
+      ed.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } catch (err) { /* scroll opcional */ }
   }
 
   function addToCart(id, qtyOverride) {
@@ -401,26 +415,183 @@
     $$('.pay-btn').forEach((b) => {
       b.classList.toggle('active', b.dataset.pay === method);
     });
+    // La caja de recibido solo tiene sentido en efectivo.
+    const cashBox = $('#cash-box');
+    if (cashBox) cashBox.hidden = method !== 'efectivo';
+    updateChange();
+    // Al salir de libreta se suelta el cliente (no cruzar deudas).
+    if (method !== 'libreta') clearPosClient();
+    renderClientPicker();
   }
+
+  // ── Cliente de libreta (dueño): exige dueño de la deuda ──────
+  let posClient = null; // {id, name}
+
+  function clientesBase() {
+    return String(POS_URLS.sell || '').replace(/\/sell$/, '');
+  }
+
+  function renderClientPicker() {
+    const picker = $('#client-picker');
+    if (picker) picker.hidden = payMethod !== 'libreta';
+    renderClientLabel();
+  }
+
+  function renderClientLabel() {
+    const label = $('#customer-label');
+    if (label) {
+      label.textContent = posClient ? posClient.name : 'Cliente General';
+    }
+  }
+
+  function clearPosClient() {
+    posClient = null;
+    renderClientLabel();
+  }
+
+  async function searchClients(query) {
+    const box = $('#client-results');
+    if (!box) return;
+    box.innerHTML = '';
+    const toggleNew = (show, name) => {
+      const pane = $('#client-new');
+      if (!pane) return;
+      pane.hidden = !show;
+      if (show) {
+        const input = $('#client-new-name');
+        if (input && name) input.value = name;
+      }
+    };
+    if (!query) {
+      toggleNew(false);
+      return;
+    }
+    let rows = [];
+    try {
+      const res = await fetch(
+        `${clientesBase()}/clientes/buscar?q=${encodeURIComponent(query)}`);
+      const json = await res.json();
+      if (res.ok && json.success) rows = json.data.clientes || [];
+    } catch (err) {
+      rows = [];
+    }
+    rows.slice(0, 6).forEach((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'client-result';
+      btn.textContent = `${c.name} · $${c.saldo}`;
+      btn.addEventListener('click', () => {
+        posClient = { id: c.id, name: c.name };
+        renderClientLabel();
+        box.innerHTML = '';
+        toggleNew(false);
+        const search = $('#client-search');
+        if (search) search.value = '';
+      });
+      box.appendChild(btn);
+    });
+    toggleNew(rows.length === 0, query);
+  }
+
+  async function createPosClient() {
+    const name = ($('#client-new-name') || {}).value || '';
+    const phone = ($('#client-new-phone') || {}).value || '';
+    if (!name.trim()) {
+      showToast('Escribe el nombre del cliente');
+      return;
+    }
+    try {
+      const res = await fetch(`${clientesBase()}/clientes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+        },
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'No se pudo crear el cliente');
+        return;
+      }
+      posClient = { id: json.data.client_id, name: json.data.name };
+      renderClientLabel();
+      $('#client-results').innerHTML = '';
+      $('#client-new').hidden = true;
+      const search = $('#client-search');
+      if (search) search.value = '';
+      showToast(json.data.created ? 'Cliente creado' : 'Cliente elegido');
+    } catch (err) {
+      showToast('Sin conexión con el servidor');
+    }
+  }
+
+  function cashReceived() {
+    const input = $('#cash-received');
+    if (!input) return null;
+    const raw = String(input.value || '').trim().replace(/[.,\s]/g, '');
+    if (!raw) return null;
+    const v = Number(raw);
+    return Number.isFinite(v) && v > 0 ? v : NaN;
+  }
+
+  function updateChange() {
+    const changeEl = $('#cash-change');
+    if (!changeEl) return;
+    if (payMethod !== 'efectivo') {
+      changeEl.textContent = '$0';
+      return;
+    }
+    const received = cashReceived();
+    if (received === null || Number.isNaN(received)) {
+      changeEl.textContent = '$0';
+      return;
+    }
+    changeEl.textContent = fmtCop(Math.max(0, received - cartTotal()));
+  }
+
+  // Refrescar vueltas al cambiar el carrito también.
+  const _sync = sync;
+  sync = function () {
+    _sync();
+    updateChange();
+  };
 
   async function checkout() {
     if (cart.size === 0) return;
     const btn = $('#checkout-btn');
     btn.disabled = true;
     try {
+      const payload = {
+        items: cartItems().map((it) => ({
+          product_id: it.id,
+          quantity: it.unit === 'unidad' ? Math.round(it.qty) : it.qty,
+        })),
+        payment_method: payMethod,
+      };
+      if (payMethod === 'efectivo') {
+        const received = cashReceived();
+        if (received !== null && !Number.isNaN(received)) {
+          payload.amount_received = received;
+        }
+        // Vacío = venta rápida sin control de recibido (válido).
+      }
+      if (payMethod === 'libreta') {
+        if (!posClient) {
+          showToast('Elige o crea el cliente para fiar');
+          btn.disabled = false;
+          return;
+        }
+        payload.client_id = posClient.id;
+        payload.customer_name = posClient.name;
+      }
       const res = await fetch(POS_URLS.sell, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': CSRF_TOKEN,
         },
-        body: JSON.stringify({
-          items: cartItems().map((it) => ({
-            product_id: it.id,
-            quantity: it.unit === 'unidad' ? Math.round(it.qty) : it.qty,
-          })),
-          payment_method: payMethod,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
@@ -429,6 +600,9 @@
       }
       showTicket(json.data);
       cart.clear();
+      const cashInput = $('#cash-received');
+      if (cashInput) cashInput.value = '';
+      clearPosClient();
       sync();
     } catch (err) {
       showToast('Sin conexión con el servidor');
@@ -438,10 +612,33 @@
   }
 
   function showTicket(sale) {
+    document.body.classList.add('print-ticket');
     $('#ticket-number').textContent = sale.sale_number;
+    const customerEl = $('#ticket-customer');
+    if (customerEl) {
+      customerEl.textContent = 'Cliente: ' + (sale.customer_name || 'Cliente General');
+    }
     const methodEl = $('#ticket-method');
     if (methodEl) {
       methodEl.textContent = 'Método: ' + (PAY_LABELS[sale.payment_method] || 'Sin registro');
+    }
+    const receivedEl = $('#ticket-received');
+    if (receivedEl) {
+      if (sale.amount_received) {
+        receivedEl.hidden = false;
+        receivedEl.textContent = 'Recibido: ' + sale.amount_received;
+      } else {
+        receivedEl.hidden = true;
+      }
+    }
+    const changeEl = $('#ticket-change');
+    if (changeEl) {
+      if (sale.change_due) {
+        changeEl.hidden = false;
+        changeEl.textContent = 'Vueltas: ' + sale.change_due;
+      } else {
+        changeEl.hidden = true;
+      }
     }
     const body = $('#ticket-items');
     body.innerHTML = '';
@@ -461,6 +658,7 @@
 
   function closeTicket() {
     $('#ticket-modal').classList.remove('show');
+    document.body.classList.remove('print-ticket');
   }
 
   function ticketIsOpen() {
@@ -509,6 +707,19 @@
     $$('.pay-btn').forEach((b) => {
       b.addEventListener('click', () => setPayMethod(b.dataset.pay));
     });
+    const cashInput = $('#cash-received');
+    if (cashInput) cashInput.addEventListener('input', updateChange);
+    const clientSearch = $('#client-search');
+    if (clientSearch) {
+      let timer = null;
+      clientSearch.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => searchClients(clientSearch.value.trim()), 250);
+      });
+    }
+    const clientSave = $('#client-new-save');
+    if (clientSave) clientSave.addEventListener('click', createPosClient);
+    renderClientPicker();
 
     const quickBtn = $('#quick-sale-btn');
     if (quickBtn) {

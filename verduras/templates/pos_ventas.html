@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+{# Ventas del Día v1 (diseño Stitch portado, misma carcasa del POS).
+   CONTRATO: todo número es real (ventas de hoy Bogotá, no canceladas).
+   Sin cierre Z en v1 (sin backend de caja): resumen computable +
+   imprimir; Cierre/Ingreso-Retiro deshabilitados. Sin Tailwind.
+   IDs que usa ventas.js: vtas-search, vtas-grid (filas .vtas-row),
+   vtas-count, vtas-modal (+m-num/m-customer/m-method/m-items/m-total),
+   vtas-print. #}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventas del Día · {{ business.name }} · Velzia Verduras</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <p class="sidebar-brand"><img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}" alt="Velzia Verduras" class="brand-logo"></p>
+      <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span> Inventario y Precios</a>
+      <a href="#" class="active" aria-current="page"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> Ventas del Día</a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">group</span> Clientes / Fiados</a>
+      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">settings</span> <span class="nav-text">Configuración</span> <em class="soon-tag">Próximamente</em></span>
+      <div class="biz-card">
+        <span class="biz-avatar" aria-hidden="true"><span class="material-symbols-rounded">storefront</span></span>
+        <span class="biz-name">{{ business.name }}</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <span class="open-state is-open">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          Ventas del Día · {{ today_label }}
+        </span>
+        <form method="post" action="{{ url_for('dashboard.pos_logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-ghost">Salir</button>
+        </form>
+      </header>
+
+      <div class="pos-tools">
+        <div class="kpi-row kpi-row-4">
+          <div class="kpi-card">
+            <span class="kpi-label">Venta total hoy</span>
+            <span class="kpi-value">${{ kpis.total }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Tickets</span>
+            <span class="kpi-value">{{ kpis.tickets }}</span>
+            <span class="kpi-sub">Promedio ${{ kpis.avg }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Kilos vendidos</span>
+            <span class="kpi-value">{{ kpis.kg }} kg</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Efectivo en caja</span>
+            <span class="kpi-value">${{ kpis.efectivo }}</span>
+          </div>
+        </div>
+        <div class="vtas-toolbar">
+          <button type="button" class="btn btn-ghost" id="vtas-print">
+            <span class="material-symbols-rounded" aria-hidden="true">print</span> Imprimir resumen
+          </button>
+          <button type="button" class="btn btn-ghost" id="vtas-csv">
+            <span class="material-symbols-rounded" aria-hidden="true">download</span> Exportar CSV
+          </button>
+          {# Un solo control de fecha (dueño): el input viaja a hoy/ayer/otro
+             día; "Hoy" solo aparece fuera de hoy para volver. #}
+          <input type="date" id="vtas-day" value="{{ viewed_day }}" max="{{ today_iso }}"
+                 aria-label="Ver día" title="Ver día">
+          {% if viewed_day != today_iso %}
+          <a class="btn btn-ghost" href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}">Hoy</a>
+          {% endif %}
+          {% if cierre.closed %}
+          <span class="badge badge-ok">Día cerrado · dif. ${{ cierre.difference }}</span>
+          {% else %}
+          <button type="button" class="btn btn-primary" id="vtas-cierre-open">
+            <span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Cerrar caja
+          </button>
+          {% endif %}
+          <button type="button" class="btn btn-ghost" id="vtas-mov-open">
+            <span class="material-symbols-rounded" aria-hidden="true">swap_vert</span> Ingreso / Retiro
+          </button>
+        </div>
+        <div class="search-box">
+          <div class="search-field">
+            <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+            <input type="search" id="vtas-search" placeholder="Buscar por ticket, cliente o producto…"
+                   autocomplete="off" aria-label="Buscar ventas">
+          </div>
+        </div>
+        <div class="cat-pills" role="tablist" aria-label="Método de pago">
+          <button type="button" class="cat-pill active" data-method="">Todos (<span id="vtas-count">{{ sales|length }}</span>)</button>
+          <button type="button" class="cat-pill" data-method="efectivo">Efectivo</button>
+          <button type="button" class="cat-pill" data-method="tarjeta">Tarjeta</button>
+          <button type="button" class="cat-pill" data-method="transferencia">Transferencia</button>
+          <button type="button" class="cat-pill" data-method="libreta">Libreta</button>
+        </div>
+      </div>
+
+      <div class="inv-layout">
+      <div>
+      <div class="inv-table-wrap">
+        <div class="vtas-table-head">
+          <h3><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> Historial de Ventas</h3>
+          <span class="vtas-live">Turno actual</span>
+        </div>
+        <table class="inv-table" id="vtas-grid" aria-label="Ventas de hoy">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Hora</th>
+              <th>Cliente</th>
+              <th>Canasta</th>
+              <th>Pago</th>
+              <th>Total</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sales %}
+            <tr class="inv-row vtas-row" data-number="{{ s.number }}" data-method="{{ s.method or '' }}"
+                data-search="{{ (s.number ~ ' ' ~ s.customer ~ ' ' ~ s['items']|map(attribute='name')|join(' '))|lower }}">
+              <td class="inv-name">{{ s.number }}</td>
+              <td>{{ s.time }}</td>
+              <td>{{ s.customer }}</td>
+              <td class="vtas-basket">{{ s['items']|length }} ítems · {{ s['items']|map(attribute='name')|join(', ')|truncate(48) }}</td>
+              <td>
+                {% if s.method == 'efectivo' %}<span class="badge badge-ok">Efectivo</span>
+                {% elif s.method == 'tarjeta' %}<span class="badge badge-info">Tarjeta</span>
+                {% elif s.method == 'transferencia' %}<span class="badge badge-info">Transferencia</span>
+                {% elif s.method == 'libreta' %}<span class="badge badge-warn">Libreta</span>
+                {% else %}<span class="badge">Sin registro</span>{% endif %}
+              </td>
+              <td class="inv-price">${{ s.total }}</td>
+              <td class="inv-actions">
+                <button type="button" class="btn btn-ghost vtas-view" data-number="{{ s.number }}">Ver</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="inv-empty">Aún no hay ventas hoy. El primer ticket aparecerá aquí.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="cart-hint" id="vtas-noresults" hidden>Ninguna venta coincide con la búsqueda.</p>
+      </div>
+      <div class="vtas-pager" id="vtas-pager" hidden>
+        <button type="button" class="btn btn-ghost" id="vtas-prev">Anterior</button>
+        <span id="vtas-page-label"></span>
+        <button type="button" class="btn btn-ghost" id="vtas-next">Siguiente</button>
+      </div>
+
+      <div class="panel-card">
+        <h3><span class="material-symbols-rounded" aria-hidden="true">bar_chart</span> Curva del día por hora</h3>
+        {% if hourly_max > 0 %}
+        <p class="panel-empty">Hora pico: {{ '%02d' % peak_hour }}:00 (la hora que más se vendió)</p>
+        <div class="vtas-curve" role="img" aria-label="Ventas por hora">
+          {% for h in range(24) %}
+          <div class="vtas-bar{% if h == peak_hour %} peak{% endif %}"
+               style="height:{{ (hourly[h] / hourly_max * 100)|round|int }}%"
+               title="{{ '%02d' % h }}:00"></div>
+          {% endfor %}
+        </div>
+        <div class="vtas-curve-labels"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+        {% else %}
+        <p class="panel-empty">Sin ventas aún: la curva se dibuja sola con el primer ticket.</p>
+        {% endif %}
+      </div>
+      </div>
+
+      <div class="soon-panels">
+        <div class="panel-card">
+          <h3><span class="material-symbols-rounded" aria-hidden="true">savings</span> Desglose por método</h3>
+          {% if breakdown %}
+          <ul class="panel-list">
+            {% for b in breakdown %}
+            <li><span>{{ b.key|capitalize }} ({{ b.count }})</span><span>${{ b.total }} · {{ b.pct }}%</span></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="panel-empty">Sin movimientos hoy.</p>
+          {% endif %}
+        </div>
+        <div class="panel-card">
+          <h3><span class="material-symbols-rounded" aria-hidden="true">eco</span> Top 5 por kilos</h3>
+          {% if top5 %}
+          <ul class="panel-list">
+            {% for t in top5 %}
+            <li>
+              <span>{{ loop.index }}. {{ t.name }}</span>
+              <span>{{ t.kg|round(2) }} kg</span>
+            </li>
+            <div class="vtas-topbar"><div style="width:{{ (t.kg / top_max * 100)|round|int }}%"></div></div>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="panel-empty">Aún no hay kilos vendidos hoy.</p>
+          {% endif %}
+        </div>
+        <div class="panel-card">
+          <h3><span class="material-symbols-rounded" aria-hidden="true">calculate</span> Plata que debería haber</h3>
+          <p class="panel-big">${{ kpis.efectivo }}</p>
+          <p class="panel-empty">Ventas en efectivo más ingresos, menos retiros de hoy.</p>
+        </div>
+        {% if cierres_hist %}
+        <div class="panel-card">
+          <h3><span class="material-symbols-rounded" aria-hidden="true">history</span> Cierres anteriores</h3>
+          <ul class="panel-list">
+            {% for c in cierres_hist %}
+            <li><span>{{ c.day }}</span><span>dif. ${{ c.difference }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span>
+        Vender
+      </a>
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+        Inventario
+      </a>
+      <a href="#" class="active" aria-current="page">
+        <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+        Ventas
+      </a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+        Clientes
+      </a>
+    </nav>
+  </div>
+
+  <div class="ticket-modal" id="vtas-modal" role="dialog" aria-modal="true" aria-label="Detalle del ticket">
+    <div class="ticket">
+      <h3>Ticket <span id="vtas-m-num"></span></h3>
+      <p class="ticket-method" id="vtas-m-customer"></p>
+      <p class="ticket-method" id="vtas-m-method"></p>
+      <table>
+        <tbody id="vtas-m-items"></tbody>
+        <tr class="ticket-total-row">
+          <td>Total</td>
+          <td id="vtas-m-total"></td>
+        </tr>
+      </table>
+      <div class="ticket-actions">
+        <button type="button" class="btn btn-ghost" id="vtas-m-close">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="vtas-m-print">Reimprimir</button>
+      </div>
+    </div>
+  </div>
+
+  {% if not cierre.closed %}
+  <div class="ticket-modal" id="vtas-cierre-modal" role="dialog" aria-modal="true" aria-label="Cerrar caja">
+    <div class="ticket">
+      <h3>Cerrar la caja de hoy</h3>
+      <p class="cart-hint">Hoy vendiste {{ cierre.tickets }} ticket(s) y en efectivo deberían haber ${{ cierre.expected }}. Cuenta los billetes del cajón, escríbelo aquí y te digo si sobra o falta.</p>
+      <label class="inv-field">¿Cuánta plata hay en el cajón?
+        <input id="vtas-cierre-counted" inputmode="decimal" placeholder="Ej. 312400" autocomplete="off">
+      </label>
+      <p class="cash-change">Sobra o falta: <strong id="vtas-cierre-diff">$0</strong></p>
+      <div class="ticket-actions">
+        <button type="button" class="btn btn-ghost" id="vtas-cierre-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="vtas-cierre-confirm">Cerrar caja</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="ticket-modal" id="vtas-mov-modal" role="dialog" aria-modal="true" aria-label="Ingreso o retiro de caja">
+    <div class="ticket">
+      <h3>Plata que entra o sale</h3>
+      <p class="cart-hint">Ej: fondo que metes en la mañana, salida al mercado. Suma al esperado del cierre.</p>
+      <div class="mov-type" role="tablist" aria-label="Tipo de movimiento">
+        <button type="button" class="mov-tab active" data-mov="ingreso">Ingreso</button>
+        <button type="button" class="mov-tab" data-mov="retiro">Retiro</button>
+      </div>
+      <label class="inv-field">Monto
+        <input id="vtas-mov-amount" inputmode="decimal" placeholder="Ej. 50000" autocomplete="off">
+      </label>
+      <label class="inv-field">Motivo (opcional)
+        <input id="vtas-mov-reason" autocomplete="off" placeholder="Ej. fondo de mañana">
+      </label>
+      <div class="ticket-actions">
+        <button type="button" class="btn btn-ghost" id="vtas-mov-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="vtas-mov-confirm">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="toast" id="toast" role="status"></p>
+
+  {# Mismo patrón que pos.html: JSON en bloque application/json (nunca se
+     ejecuta como JS). Inmune a "</script>" y a HTML colado en strings. #}
+  <script type="application/json" id="ventas-data">{{ sales|tojson }}</script>
+  <script>window.VENTAS_CIERRE = {
+    closeUrl: "{{ url_for('dashboard.pos_ventas_cierre', slug=business.slug) }}",
+    expected: {{ cierre.expected|replace('.', '')|int if cierre.expected else 0 }},
+    movUrl: "{{ url_for('dashboard.pos_ventas_movimiento', slug=business.slug) }}",
+    day: "{{ viewed_day }}",
+    baseUrl: "{{ url_for('dashboard.pos_ventas', slug=business.slug) }}",
+  };</script>
+  <script src="{{ url_for('static', filename='JS/ventas.js') }}"></script>
+</body>
+</html>

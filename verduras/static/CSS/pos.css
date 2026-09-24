@@ -323,6 +323,38 @@ button { font-family: inherit; }
     font-size: 0.8rem;
     color: var(--text-subtle);
   }
+  /* Tarjeta de perfil del negocio (dueño la pidió: icono + nombre). */
+  .biz-card {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.7rem;
+    min-width: 0;
+  }
+  .biz-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 0.6rem;
+    background: var(--brand);
+    color: #fff;
+  }
+  .biz-avatar .material-symbols-rounded { font-size: 1.2rem; }
+  .biz-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
 }
 
 /* ── Topbar del POS ────────────────────────────────────────── */
@@ -679,16 +711,27 @@ button { font-family: inherit; }
 }
 
 @media print {
-  body * { visibility: hidden; }
-  .ticket-modal.show, .ticket-modal.show * { visibility: visible; }
-  .ticket-modal.show {
+  /* Solo-ticket (POS): se activa con body.print-ticket al abrir el modal.
+     Sin esa clase (Ventas/Inventario) se imprime el contenido visible. */
+  body.print-ticket * { visibility: hidden; }
+  body.print-ticket .ticket-modal.show,
+  body.print-ticket .ticket-modal.show * { visibility: visible; }
+  body.print-ticket .ticket-modal.show {
     position: absolute;
     inset: 0;
     background: #FFFFFF;
     padding: 0;
   }
-  .ticket { box-shadow: none; border-radius: 0; max-width: 100%; }
-  .ticket-actions { display: none; }
+  body.print-ticket .ticket { box-shadow: none; border-radius: 0; max-width: 100%; }
+  body.print-ticket .ticket-actions { display: none; }
+  /* Resumen (Ventas): fuera navegación y controles. */
+  body:not(.print-ticket) .sidebar,
+  body:not(.print-ticket) .bottom-nav,
+  body:not(.print-ticket) .vtas-toolbar,
+  body:not(.print-ticket) .pos-tools .search-box,
+  body:not(.print-ticket) .pos-tools .cat-pills,
+  body:not(.print-ticket) .inv-actions,
+  body:not(.print-ticket) .toast { display: none !important; }
 }
 
 /* ── Toast de feedback ─────────────────────────────────────── */
@@ -781,6 +824,108 @@ button { font-family: inherit; }
   color: var(--text-muted);
 }
 .kpi-value { font-size: 1.35rem; font-weight: 800; }
+.kpi-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+.kpi-row-4 { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 900px) {
+  .kpi-row-4 { grid-template-columns: repeat(4, 1fr); }
+}
+/* ── Ventas del Día v1 ─────────────────────────────────────── */
+
+.vtas-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.vtas-toolbar .btn { white-space: nowrap; }
+.vtas-toolbar a.btn { text-decoration: none; }
+.vtas-toolbar input[type="date"] {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0.45rem 0.6rem;
+  min-height: 0;
+}
+.vtas-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 0.4rem;
+}
+.vtas-table-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.vtas-table-head h3 .material-symbols-rounded { color: var(--brand); }
+.vtas-live {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+}
+.vtas-basket { max-width: 22rem; }
+.vtas-basket span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vtas-pager[hidden] { display: none; }
+.vtas-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.vtas-pager .btn { min-height: 0; padding: 0.45rem 0.9rem; font-size: 0.82rem; }
+/* Curva horaria con divs (sin librerías): alturas % desde el backend. */
+.vtas-curve {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding-top: 0.4rem;
+}
+.vtas-bar {
+  flex: 1;
+  min-height: 3px;
+  background: var(--brand-soft);
+  border-radius: 4px 4px 0 0;
+}
+.vtas-bar.peak { background: var(--brand); }
+.vtas-curve-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  margin-top: 0.3rem;
+}
+/* Top 5 con barra de proporción. */
+.vtas-topbar {
+  height: 0.35rem;
+  background: var(--bg-hover);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+.vtas-topbar div { height: 100%; background: var(--brand); border-radius: 999px; }
 
 .inv-table-wrap {
   background: var(--bg-surface);
@@ -829,7 +974,7 @@ button { font-family: inherit; }
 .inv-actions .btn + .btn { margin-left: 0.35rem; }
 .mov-type {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.4rem;
   margin-bottom: 0.8rem;
 }
@@ -945,6 +1090,29 @@ button { font-family: inherit; }
   color: var(--text-main);
 }
 #inv-cats-modal .ticket { max-height: 80vh; overflow-y: auto; }
+/* Actividad en idioma de mostrador: icono direccional + acción + hora. */
+.act-list li { align-items: center; }
+.act-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+.act-icon .material-symbols-rounded { font-size: 1.1rem; }
+.act-icon.tone-green { background: var(--brand-soft); color: var(--brand); }
+.act-icon.tone-red { background: var(--danger-soft); color: var(--danger); }
+.act-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.act-text strong { font-size: 0.85rem; }
+.act-text small { font-size: 0.72rem; color: var(--text-muted); }
+.act-amount { font-size: 0.85rem; font-weight: 800; white-space: nowrap; }
+.act-amount.tone-green { color: var(--brand); }
+.act-amount.tone-red { color: var(--danger); }
+.act-amount.tone-neutral { color: var(--text-main); }
 .cat-move-row {
   display: flex;
   gap: 0.4rem;
@@ -965,6 +1133,22 @@ button { font-family: inherit; }
   background: var(--bg-surface);
 }
 .cat-move-row .btn { padding: 0.4rem 0.7rem; font-size: 0.8rem; min-height: 0; }
+/* ── Clientes / Fiados v1 ──────────────────────────────────── */
+
+.ctes-phone { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+.ctes-saldo { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
+.ctes-fecha {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  max-width: 9.5rem;
+}
+.ctes-h { font-size: 0.8rem; font-weight: 800; margin: 0.8rem 0 0.3rem; color: var(--text-muted); }
+#ctes-modal table { margin-bottom: 0.4rem; }
 .panel-actions {
   display: flex;
   gap: 0.5rem;
@@ -1179,8 +1363,7 @@ button { font-family: inherit; }
   margin-top: 0.1rem;
 }
 .weigh-editor input {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   font: inherit;
   font-size: 1rem;
   font-weight: 800;
@@ -1215,6 +1398,21 @@ button { font-family: inherit; }
   padding: 0 0.9rem;
 }
 .product-card.expanded { border-color: var(--brand-accent); }
+/* Producto en el ticket: marcado visible permanente (dueño lo pidió). */
+.product-card.in-cart {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-soft), var(--shadow);
+}
+.weigh-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--brand);
+}
 .product-foot {
   display: flex;
   align-items: center;
@@ -1311,6 +1509,60 @@ button { font-family: inherit; }
   color: var(--text-muted);
   margin: 0 0 0.6rem;
 }
+/* Selector de cliente de libreta (dueño): buscar + crear al vuelo. */
+.client-picker { padding: 0.6rem 1.2rem 0; }
+.client-picker[hidden] { display: none; }
+.client-search-row input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+.client-results { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
+.client-result {
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  cursor: pointer;
+}
+.client-result:hover { border-color: var(--brand-accent); }
+.client-new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.client-new input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+/* Caja de recibido (solo efectivo): input + vueltas en vivo. */
+.cash-box {
+  padding: 0.8rem 1.2rem 0;
+}
+.cash-box[hidden] { display: none; }
+.cash-box .inv-field { margin-bottom: 0.4rem; }
+.cash-change {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.cash-change strong { color: var(--brand); font-size: 1.1rem; }
 
 @media (min-width: 1200px) {
   /* El drawer pasa a ser columna fija: siempre visible, sin overlay. */

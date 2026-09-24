@@ -99,17 +99,50 @@ class Config:
     AUTOPHOTO_ENABLED = os.environ.get('AUTOPHOTO_ENABLED', 'true').lower() in ('1', 'true', 'yes', 'on')
 
     # JWT Configuration (Mobile API)
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    # - En prod JWT_SECRET_KEY es OBLIGATORIA y DISTINTA de SECRET_KEY
+    #   (misma clave para sesión Flask y JWT = confusión cross-protocolo:
+    #   un token de un sistema podría aceptarse en el otro).
+    # - Access corto (30min): el refresh (7d) renueva. La app móvil ya usa
+    #   POST /api/auth/refresh, así que no hay cambio de contrato.
+    # - Solo por header Authorization (nunca query/cookies: quedan en logs).
+    _is_prod_env = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+    _jwt_secret = os.environ.get('JWT_SECRET_KEY')
+    if _is_prod_env and (not _jwt_secret or _jwt_secret == os.environ.get('SECRET_KEY')):
+        raise ValueError(
+            "JWT_SECRET_KEY debe estar configurada y ser distinta de SECRET_KEY "
+            "en producción."
+        )
+    JWT_SECRET_KEY = _jwt_secret or os.environ.get('SECRET_KEY')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
+    JWT_TOKEN_LOCATION = ['headers']
+    JWT_HEADER_NAME = 'Authorization'
+    JWT_HEADER_TYPE = 'Bearer'
+    JWT_DECODE_LEEWAY = 0
 
     # CSRF: disable default check; we run it manually for non-API routes
     WTF_CSRF_CHECK_DEFAULT = False
 
-    # Session cookies
+    # Session cookies — endurecidas:
+    # - Secure solo en prod/HTTPS (en local http://localhost debe ser False
+    #   o el navegador descarta la sesión). Se activa con FLASK_ENV=production
+    #   o HTTPS=1.
+    # - SameSite=Lax por defecto (Strict rompería el retorno OAuth de Clerk y
+    #   los retornos de pago de Mercado Pago). Configurable vía
+    #   SESSION_COOKIE_SAMESITE=Strict en despliegues sin OAuth externo.
+    # - Lifetime acotado a 8h + refresh en cada request.
+    _is_https = (
+        os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+        or os.environ.get('HTTPS', '').lower() in ('1', 'true', 'yes', 'on')
+    )
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = False  # True en producción con HTTPS
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    SESSION_COOKIE_SECURE = _is_https
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
+    SESSION_REFRESH_EACH_REQUEST = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = _is_https
+    REMEMBER_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
 
     # Correo (Gmail SMTP) — reemplaza el envío que hacía n8n
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'

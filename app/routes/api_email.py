@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 
 from app.services.reminder_service import build_subscription_reminders
+from app.utils.service_auth import validate_service_key
 
 api_email_bp = Blueprint('api_email', __name__, url_prefix='/api/email')
 
@@ -13,7 +14,8 @@ def pending_reminders():
     Se mantiene por compatibilidad con flujos externos.
     """
     api_key = request.headers.get('x-api-key')
-    if api_key != current_app.config.get('SERVICE_API_KEY'):
+    # Fail-closed + tiempo constante (ver app/utils/service_auth.py).
+    if not validate_service_key(api_key):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
     try:

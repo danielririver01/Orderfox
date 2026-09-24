@@ -20,10 +20,13 @@
       <p class="sidebar-brand"><img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}" alt="Velzia Verduras" class="brand-logo"></p>
       <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
       <a href="#" class="active" aria-current="page"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span> Inventario y Precios</a>
-      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> <span class="nav-text">Ventas del Día</span> <em class="soon-tag">Próximamente</em></span>
-      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">group</span> <span class="nav-text">Clientes / Fiados</span> <em class="soon-tag">Próximamente</em></span>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> Ventas del Día</a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">group</span> Clientes / Fiados</a>
       <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">settings</span> <span class="nav-text">Configuración</span> <em class="soon-tag">Próximamente</em></span>
-      <p class="sidebar-footer">{{ business.name }}</p>
+      <div class="biz-card">
+        <span class="biz-avatar" aria-hidden="true"><span class="material-symbols-rounded">storefront</span></span>
+        <span class="biz-name">{{ business.name }}</span>
+      </div>
     </aside>
 
     <div class="main">
@@ -98,7 +101,7 @@
               <td class="inv-name">{{ r.name }}</td>
               <td class="inv-cat">{{ (categories|selectattr('id', 'equalto', r.category_id)|first).name if r.category_id else '—' }}</td>
               <td class="inv-stock">{% if r.stock is not none %}{{ r.stock }} {{ r.unit }}{% else %}—{% endif %}</td>
-              <td class="inv-price" tabindex="0" title="Clic para editar precio">${{ r.price }} /{{ r.unit }}</td>
+              <td class="inv-price" tabindex="0" title="Clic para editar precio">{{ r.price_fmt }} /{{ r.unit }}</td>
               <td class="inv-state">
                 {% if not r.is_active %}<span class="badge badge-warn">Inactivo</span>
                 {% elif r.alert == 'out' %}<span class="badge badge-danger">Agotado</span>
@@ -179,23 +182,27 @@
         </div>
         <div class="panel-card" id="panel-actividad">
           <h3><span class="material-symbols-rounded" aria-hidden="true">history</span> Actividad reciente</h3>
-          {% if recent_sales %}
-          <ul class="panel-list">
-            {% for s in recent_sales %}
-            <li><span>{{ s.number }}</span><span>${{ s.total }}</span></li>
+          {% if actividad %}
+          <ul class="panel-list act-list">
+            {% for e in actividad %}
+            <li title="{{ e.ref }}">
+              <span class="act-icon tone-{{ e.tone }}"><span class="material-symbols-rounded" aria-hidden="true">{{ e.icon }}</span></span>
+              <span class="act-text"><strong>{{ e.text }}</strong><small>{{ e.detail }} · {{ e.when }}</small></span>
+              <span class="act-amount tone-{{ e.tone }}">{{ e.amount }}</span>
+            </li>
             {% endfor %}
           </ul>
           {% else %}
-          <p class="panel-empty">Aún no hay ventas registradas.</p>
+          <p class="panel-empty">Aún no hay movimientos registrados.</p>
           {% endif %}
         </div>
         {% if margin %}
         <div class="panel-card">
           <h3><span class="material-symbols-rounded" aria-hidden="true">insights</span> Salud del Margen</h3>
-          <p class="panel-big">${{ margin.totals.margin }} <small>({{ margin.totals.margin_pct }}%)</small></p>
+          <p class="panel-big">{{ margin.totals.margin }} <small>({{ margin.totals.margin_pct }}%)</small></p>
           <ul class="panel-list">
             {% for it in margin['items'][:3] %}
-            <li><span>{{ it.name }}</span><span>${{ it.margin }}</span></li>
+            <li><span>{{ it.name }}</span><span>{{ it.margin }}</span></li>
             {% endfor %}
           </ul>
         </div>
@@ -228,6 +235,14 @@
       <a href="#" class="active" aria-current="page">
         <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
         Inventario
+      </a>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+        Ventas
+      </a>
+      <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+        Clientes
       </a>
     </nav>
   </div>

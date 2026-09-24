@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+{# Clientes / Fiados v1: cuentas con saldo derivado, abonos y compromiso.
+   CONTRATO: tokens intactos, sin Tailwind. La deuda NUNCA se edita: solo
+   abonos y compromiso. IDs que usa clientes.js: ctes-search, ctes-list
+   (filas .ctes-row con data-*), detalle vía GET detalle del backend. #}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes / Fiados · {{ business.name }} · Velzia Verduras</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/pos.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <p class="sidebar-brand"><img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}" alt="Velzia Verduras" class="brand-logo"></p>
+      <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span> Vender</a>
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span> Inventario y Precios</a>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}"><span class="material-symbols-rounded" aria-hidden="true">receipt_long</span> Ventas del Día</a>
+      <a href="#" class="active" aria-current="page"><span class="material-symbols-rounded" aria-hidden="true">group</span> Clientes / Fiados</a>
+      <span class="nav-disabled" title="Próximamente"><span class="material-symbols-rounded" aria-hidden="true">settings</span> <span class="nav-text">Configuración</span> <em class="soon-tag">Próximamente</em></span>
+      <div class="biz-card">
+        <span class="biz-avatar" aria-hidden="true"><span class="material-symbols-rounded">storefront</span></span>
+        <span class="biz-name">{{ business.name }}</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <span class="open-state is-open">
+          <span class="material-symbols-rounded" aria-hidden="true">group</span>
+          Clientes / Fiados
+        </span>
+        <form method="post" action="{{ url_for('dashboard.pos_logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-ghost">Salir</button>
+        </form>
+      </header>
+
+      <div class="pos-tools">
+        <div class="search-box">
+          <div class="search-field">
+            <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+            <input type="search" id="ctes-search" placeholder="Buscar por nombre o teléfono…"
+                   autocomplete="off" aria-label="Buscar clientes">
+          </div>
+        </div>
+      </div>
+
+      <div class="inv-table-wrap">
+        <table class="inv-table" id="ctes-list" aria-label="Cuentas de fiado">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Deuda</th>
+              <th>Compromiso</th>
+              <th>Abonar</th>
+              <th><span class="sr-only">Detalle</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in cuentas %}
+            <tr class="inv-row ctes-row" data-client-id="{{ c.id }}"
+                data-name="{{ c.name|lower }} {{ c.phone or '' }}">
+              <td class="inv-name">{{ c.name }}
+                {% if c.phone %}<br><small class="ctes-phone">{{ c.phone }}</small>{% endif %}
+              </td>
+              <td class="ctes-saldo">${{ c.saldo }}</td>
+              <td>
+                <input type="date" class="ctes-fecha" value="{{ c.fecha_compromiso or '' }}"
+                       aria-label="Fecha de compromiso de {{ c.name }}">
+              </td>
+              <td>
+                <span class="reco-edit">
+                  <input inputmode="decimal" class="ctes-monto" placeholder="Monto" aria-label="Monto a abonar">
+                  <button type="button" class="btn btn-ghost ctes-abonar">Abonar</button>
+                </span>
+              </td>
+              <td class="inv-actions">
+                <button type="button" class="btn btn-ghost ctes-ver">Ver</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="inv-empty">Aún no hay clientes. Nacen solos al fiar en el POS.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="cart-hint" id="ctes-noresults" hidden>Ningún cliente coincide con la búsqueda.</p>
+      </div>
+
+      <div class="ticket-modal" id="ctes-modal" role="dialog" aria-modal="true" aria-label="Detalle de cuenta">
+        <div class="ticket">
+          <h3 id="ctes-m-name"></h3>
+          <p class="ticket-method" id="ctes-m-saldo"></p>
+          <h4 class="ctes-h">Tickets fiados</h4>
+          <table><tbody id="ctes-m-tickets"></tbody></table>
+          <h4 class="ctes-h">Abonos</h4>
+          <table><tbody id="ctes-m-abonos"></tbody></table>
+          <div class="ticket-actions">
+            <button type="button" class="btn btn-ghost" id="ctes-m-close">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">point_of_sale</span>
+        Vender
+      </a>
+      <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+        Inventario
+      </a>
+      <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}">
+        <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+        Ventas
+      </a>
+      <a href="#" class="active" aria-current="page">
+        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+        Clientes
+      </a>
+    </nav>
+  </div>
+
+  <p class="toast" id="toast" role="status"></p>
+
+  <script>window.CTES_URLS = {
+    base: "{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}",
+  };</script>
+  <script src="{{ url_for('static', filename='JS/clientes.js') }}"></script>
+</body>
+</html>

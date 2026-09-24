@@ -90,6 +90,16 @@ class VerdurasSale(db.Model):
     # Método de pago (v1 POS rediseñado): efectivo | tarjeta |
     # transferencia | libreta. Nullable = ventas viejas sin dato.
     payment_method = db.Column(db.String(20), nullable=True)
+    # Dueño de la deuda cuando es libreta (nullable: otros métodos y
+    # ventas viejas quedan NULL con su nombre libre intacto).
+    client_id = db.Column(
+        db.Integer, db.ForeignKey('verduras_clientes.id'), nullable=True,
+    )
+    # Efectivo con control de caja: lo RECIBIDO y las VUELTAS. Solo tiene
+    # sentido en efectivo; otros métodos lo dejan NULL. Sin recibido no
+    # hay forma de saber si faltó o sobró plata al cuadrar.
+    amount_received = db.Column(Numeric(12, 2), nullable=True)
+    change_due = db.Column(Numeric(12, 2), nullable=True)
     delivery_address = db.Column(db.String(200))
     total = db.Column(Numeric(12, 2), nullable=False)
     # pending | completed | cancelled
@@ -142,6 +152,137 @@ class VerdurasSaleItem(db.Model):
 
     def __repr__(self):
         return f'<VerdurasSaleItem {self.product_name} x{self.quantity}>'
+
+
+class VerdurasCierre(db.Model):
+    """Cierre Z del día: snapshot de lo vendido + conteo físico del cajón.
+
+    v1 sin turnos: un cierre por día y negocio (unique). El esperado sale
+    de las ventas no canceladas del día Bogotá; el contado lo escribe el
+    tendero; la diferencia se calcula, nunca se edita. Ingresos/retiros
+    de caja llegan después (requieren libro de movimientos).
+    """
+    __tablename__ = 'verduras_cierres'
+    __table_args__ = (
+        UniqueConstraint('business_id', 'day',
+                         name='uq_verduras_cierres_business_day'),
+        db.Index('ix_verduras_cierres_business', 'business_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(
+        db.Integer, db.ForeignKey('businesses.id'), nullable=False,
+    )
+    # Día operativo (America/Bogota) en formato YYYY-MM-DD.
+    day = db.Column(db.String(10), nullable=False)
+    # Snapshot al cerrar: total vendido y esperado en efectivo.
+    total_sales = db.Column(Numeric(12, 2), nullable=False)
+    cash_expected = db.Column(Numeric(12, 2), nullable=False)
+    # Lo que contó el tendero en el cajón (efectivo físico).
+    counted_cash = db.Column(Numeric(12, 2), nullable=False)
+    # diferencia = contado − esperado (+ sobrante, − faltante).
+    difference = db.Column(Numeric(12, 2), nullable=False)
+    closed_at = db.Column(AwareDateTime, nullable=False,
+                          default=lambda: datetime.now(timezone.utc))
+
+    business = db.relationship('Business', viewonly=True)
+
+    def __repr__(self):
+        return (f'<VerdurasCierre {self.business_id} {self.day}: '
+                f'diff={self.difference}>')
+
+
+class VerdurasMovimientoCaja(db.Model):
+    """Libro de caja mínimo: ingresos/retiros fuera de ventas.
+
+    Ej: el dueño saca plata para el mercado o mete fondo en la mañana.
+    Entran al esperado del cierre (efectivo + ingresos − retiros). Sin
+    turnos en v1: los movimientos son del día operativo (Bogotá).
+    """
+    __tablename__ = 'verduras_movimientos_caja'
+    __table_args__ = (
+        db.Index('ix_verduras_movimientos_business_day', 'business_id',
+                 'day'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(
+        db.Integer, db.ForeignKey('businesses.id'), nullable=False,
+    )
+    # Día operativo (America/Bogota) en formato YYYY-MM-DD.
+    day = db.Column(db.String(10), nullable=False)
+    # ingreso | retiro (validado en servicio).
+    tipo = db.Column(db.String(10), nullable=False)
+    monto = db.Column(Numeric(12, 2), nullable=False)
+    motivo = db.Column(db.String(120))
+    registered_at = db.Column(AwareDateTime, nullable=False,
+                              default=lambda: datetime.now(timezone.utc))
+
+    business = db.relationship('Business', viewonly=True)
+
+    def __repr__(self):
+        return (f'<VerdurasMovimientoCaja {self.business_id} {self.day}: '
+                f'{self.tipo} {self.monto}>')
+
+
+class VerdurasCliente(db.Model):
+    """Cuenta de fiado del vecino (libreta): el dueño le fía, él abona.
+
+    Sin roles en v1: nace desde la venta (elegir/crear al cobrar con
+    libreta). Duplicado de nombre en el mismo negocio se reutiliza, no se
+    duplica. La deuda NUNCA se almacena: se deriva (fiados − abonos).
+    """
+    __tablename__ = 'verduras_clientes'
+    __table_args__ = (
+        UniqueConstraint('business_id', 'name',
+                         name='uq_verduras_clientes_business_name'),
+        db.Index('ix_verduras_clientes_business', 'business_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(
+        db.Integer, db.ForeignKey('businesses.id'), nullable=False,
+    )
+    name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20))
+    # Fecha de compromiso de pago (una por cuenta, v1). Nullable = sin fecha.
+    fecha_compromiso = db.Column(Date)
+    is_active = db.Column(db.Boolean, default=True, nullable=False,
+                          server_default='1')
+    created_at = db.Column(AwareDateTime,
+                           default=lambda: datetime.now(timezone.utc),
+                           server_default='CURRENT_TIMESTAMP')
+
+    business = db.relationship('Business', viewonly=True)
+
+    def __repr__(self):
+        return f'<VerdurasCliente {self.name} (business {self.business_id})>'
+
+
+class VerdurasAbono(db.Model):
+    """Pago parcial contra la deuda (la otra pata del saldo derivado)."""
+    __tablename__ = 'verduras_abonos'
+    __table_args__ = (
+        db.Index('ix_verduras_abonos_client', 'client_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(
+        db.Integer, db.ForeignKey('businesses.id'), nullable=False,
+    )
+    client_id = db.Column(
+        db.Integer, db.ForeignKey('verduras_clientes.id'), nullable=False,
+    )
+    monto = db.Column(Numeric(12, 2), nullable=False)
+    note = db.Column(db.String(255))
+    registered_at = db.Column(AwareDateTime, nullable=False,
+                              default=lambda: datetime.now(timezone.utc))
+
+    business = db.relationship('Business', viewonly=True)
+    client = db.relationship('VerdurasCliente', viewonly=True)
+
+    def __repr__(self):
+        return (f'<VerdurasAbono cliente={self.client_id}: {self.monto}>')
 
 
 class VerdurasSaleCounter(db.Model):

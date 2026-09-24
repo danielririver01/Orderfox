@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request, session, current_app, redirect, u
 from app import db
 from app.models import User, AITokenTransaction
 from app.csrf import csrf
+from app.utils.service_auth import validate_service_key
 from app.utils.subscription import TOP_UP_PACKS, is_subscription_active
 import mercadopago
 from app.services.token_service import TokenService
@@ -37,17 +38,19 @@ def _get_user_from_request() -> User | None:
         if clerk_id:
             return User.query.filter_by(clerk_id=clerk_id).first()
 
-    # Soporte para Server-to-Server (S2S) con x-api-key
-    api_key = request.headers.get('x-api-key')
-    valid_api_key = current_app.config.get('SERVICE_API_KEY')
-    if api_key and valid_api_key and api_key == valid_api_key:
+    # Soporte para Server-to-Server (S2S) con x-api-key.
+    # SOLO header (nunca query: queda en logs) + identidad SOLO en body JSON
+    # (el ?userId= en URL permitía suplantar a cualquier usuario en logs y
+    # predecir/enumerar identities). Comparación en tiempo constante.
+    if validate_service_key(request.headers.get('x-api-key')):
         data = request.get_json(silent=True) or {}
-        clerk_id = request.args.get('userId') or data.get('clerk_id')
+        clerk_id = data.get('clerk_id')
         email = data.get('email')
 
         if clerk_id:
             user = User.query.filter_by(clerk_id=clerk_id).first()
             if user:
+                current_app.logger.info('S2S x-api-key: identidad resuelta por clerk_id')
                 return user
 
             # Auto-healing DB: vincular por email

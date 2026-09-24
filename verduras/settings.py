@@ -45,6 +45,19 @@ class Config:
     # Protege las mutaciones del catálogo (POST /api/verduras/*).
     SERVICE_API_KEY = os.environ.get('SERVICE_API_KEY')
 
+    # Cookies de sesión del POS (slug+PIN): mismo endurecimiento que core.
+    # Secure solo con HTTPS en prod; Lax para no romper retornos externos.
+    from datetime import timedelta as _td
+    _is_https = (
+        os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+        or os.environ.get('HTTPS', '').lower() in ('1', 'true', 'yes', 'on')
+    )
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    SESSION_COOKIE_SECURE = _is_https
+    PERMANENT_SESSION_LIFETIME = _td(hours=8)
+    SESSION_REFRESH_EACH_REQUEST = True
+
     # Báscula digital (Semana 4) — OPCIONAL: el POS funciona sin ella.
     # VERDURAS_SCALE_ENABLED=1 activa el botón "Leer báscula" del POS.
     # Requiere pyserial (pip install pyserial) solo si se activa.

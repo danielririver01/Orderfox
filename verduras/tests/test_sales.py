@@ -502,3 +502,28 @@ class TestSalePaymentMethod:
     def test_default_none_for_old_sales(self, db, biz, products):
         sale, _ = _sale(biz, products)
         assert sale.payment_method is None
+
+
+class TestSaleCashTender:
+    def test_change_computed(self, db, biz, products):
+        sale, _ = _sale(biz, products, payment_method='efectivo',
+                        amount_received='50000')
+        # 2600 total, recibe 50000 → vueltas 47400.
+        assert sale.amount_received == Decimal('50000.00')
+        assert sale.change_due == Decimal('47400.00')
+
+    def test_short_payment_rejected(self, db, biz, products):
+        with pytest.raises(VerdurasValidationError, match='Faltan'):
+            _sale(biz, products, payment_method='efectivo',
+                  amount_received='1000')
+
+    def test_invalid_received_rejected(self, db, biz, products):
+        with pytest.raises(VerdurasValidationError, match='inválido'):
+            _sale(biz, products, payment_method='efectivo',
+                  amount_received='mucho')
+
+    def test_non_cash_ignores_received(self, db, biz, products):
+        sale, _ = _sale(biz, products, payment_method='tarjeta',
+                        amount_received='50000')
+        assert sale.amount_received is None
+        assert sale.change_due is None

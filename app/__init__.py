@@ -18,12 +18,6 @@ from .routes.api_docs import api_docs_bp
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import can_perform_crud, get_subscription_status, PLAN_LIMITS
 
-# 2. El "Pase VIP" (Sustituto de exempt_when)
-@limiter.request_filter
-def exempt_admins():
-    return 'user_id' in session
-
-
 def create_app():
     app = Flask(__name__, 
                 template_folder='template',
@@ -290,7 +284,15 @@ def create_app():
         response.headers['X-XSS-Protection'] = '0'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
-        response.headers['Content-Security-Policy'] = (
+        # CSP: 'unsafe-inline'/'unsafe-eval' + cdn.tailwindcss.com siguen por
+        # deuda conocida — 57 <script> inline y 18 templates con Play CDN en
+        # runtime. Plan de salida: (1) migrar esos templates a output.css
+        # compilado, (2) nonces por request para el inline restante, (3) quitar
+        # 'unsafe-eval' y el CDN. Lo NUEVO sí se endurece: object-src none
+        # (bloquea plugins), base-uri/form-action 'self' (anti base-hijack y
+        # exfiltración por form), frame-ancestors 'none' (clickjacking aunque
+        # un proxy quite X-Frame-Options).
+        csp = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
             "cdn.jsdelivr.net cdn.tailwindcss.com "
@@ -304,8 +306,16 @@ def create_app():
             "challenges.cloudflare.com *.protect.clerk.com; "
             "frame-src 'self' oriented-tortoise-50.clerk.accounts.dev clerk.velzia.shop "
             "challenges.cloudflare.com *.protect.clerk.com; "
-            "worker-src 'self' blob:"
+            "worker-src 'self' blob:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'"
         )
+        if not app.debug:
+            # Solo prod: en local http://localhost rompería recursos http.
+            csp += "; upgrade-insecure-requests"
+        response.headers['Content-Security-Policy'] = csp
 
         # HSTS solo si no está en debug
         if not app.debug:

@@ -102,8 +102,16 @@
     input.addEventListener('blur', () => commit(true));
   }
 
+  // Formato es-CO con decimales, igual que el servidor (_fmt_cop).
+  function fmtCop(n) {
+    return '$' + Number(n).toLocaleString('es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
   function paintPrice(cell, row) {
-    cell.textContent = '$' + row.dataset.price + ' /' + row.dataset.unit;
+    cell.textContent = fmtCop(row.dataset.price) + ' /' + row.dataset.unit;
   }
 
   // ── Nuevo producto (Fase 2, sin roles) ────────────────────

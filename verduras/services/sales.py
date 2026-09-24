@@ -253,6 +253,8 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
                 customer_name: str = '', customer_phone: str = '',
                 delivery_address: str | None = None,
                 payment_method: str | None = None,
+                amount_received=None,
+                client_id=None,
                 idempotency_key: str | None = None,
                 ip_address: str | None = None,
                 skip_open_check: bool = False) -> tuple[VerdurasSale, bool]:
@@ -278,6 +280,27 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
         raise VerdurasValidationError(
             f"Método de pago inválido: '{payment_method}'. "
             f"Válidos: {', '.join(PAYMENT_METHODS)}")
+
+    # Libreta exige dueño de la deuda (la ruta lo pide primero en UX; aquí
+    # el guard autoritativo: sin cliente no hay a quién cargarle).
+    client_row_id = None
+    if payment_method == 'libreta':
+        if client_id in (None, ''):
+            raise VerdurasValidationError(
+                'La venta con libreta exige un cliente')
+        from verduras.services import clientes as clientes_svc
+        try:
+            cid = int(client_id)
+        except (TypeError, ValueError):
+            raise VerdurasValidationError('Cliente inválido')
+        try:
+            clientes_svc.require_client(business_id, cid)  # 404 si ajeno
+        except LookupError as e:
+            raise VerdurasNotFoundError(str(e))
+        client_row_id = cid
+    elif client_id not in (None, ''):
+        raise VerdurasValidationError(
+            'El cliente solo aplica a ventas con libreta')
 
     settings = get_settings(business_id)
 
@@ -319,6 +342,7 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
         customer_phone=_clean_phone(customer_phone) if customer_phone else '',
         delivery_address=(delivery_address or '').strip() or None,
         payment_method=payment_method,
+        client_id=client_row_id,
         idempotency_key=idem_key,
         ip_address=ip_address,
         status='pending',
@@ -350,6 +374,23 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
         raise VerdurasValidationError('El total de la venta debe ser mayor a 0')
 
     sale.total = total
+    # Control de caja (solo efectivo): lo recibido debe cubrir el total y
+    # las vueltas se calculan, nunca se inventan. Otros métodos lo ignoran.
+    if payment_method == 'efectivo' and amount_received not in (None, ''):
+        try:
+            received = Decimal(str(amount_received)).quantize(_CENTS)
+        except (InvalidOperation, ValueError):
+            raise VerdurasValidationError(
+                f'Monto recibido inválido: {amount_received!r}')
+        if received <= 0:
+            raise VerdurasValidationError(
+                'El monto recibido debe ser mayor a 0')
+        if received < total:
+            raise VerdurasValidationError(
+                f'Faltan ${(total - received):,.0f}: recibido '
+                f'${received:,.0f} para un total de ${total:,.0f}')
+        sale.amount_received = received
+        sale.change_due = (received - total).quantize(_CENTS)
     sale.sale_number = generate_sale_number(business_id)
     db.session.add(sale)
     try:

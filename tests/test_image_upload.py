@@ -64,18 +64,34 @@ class TestSaveImage:
             with patch('cloudinary.uploader.upload', return_value={'secure_url': 'x'}):
                 assert save_image(_garbage_file(), 'products') is None
 
-    def test_decompression_bomb_guard_disabled(self):
+    def test_decompression_bomb_guard_enabled(self):
+        from app.utils import image_handler
+        # El guard NUNCA debe estar desactivado (antes era None).
+        assert image_handler.MAX_IMAGE_PIXELS == 150_000_000
+        assert Image.MAX_IMAGE_PIXELS == 150_000_000
+        # Pillow sigue lanzando DecompressionBombError cuando se supera.
         buf = io.BytesIO()
         Image.new('RGB', (2000, 2000), 'blue').save(buf, format='JPEG')
         buf.seek(0)
-        assert Image.MAX_IMAGE_PIXELS is None
         with patch('PIL.Image.MAX_IMAGE_PIXELS', 100):
             with pytest.raises(Image.DecompressionBombError):
-                Image.open(buf)
-        buf.seek(0)
-        img = Image.open(buf)
-        assert img.size == (2000, 2000)
-        img.close()
+                Image.open(buf).load()
+
+
+class TestDeleteImageTraversal:
+    def test_rejects_dotdot_local_path(self, app):
+        with app.app_context():
+            with patch('os.remove') as mock_remove:
+                delete_image('../../run.py')
+                delete_image('/etc/passwd')
+                delete_image('https://evil.com/x.jpg')
+        mock_remove.assert_not_called()
+
+    def test_rejects_cloudinary_public_id_fuera_de_allowlist(self, app):
+        with app.app_context():
+            with patch('cloudinary.uploader.destroy') as mock_destroy:
+                delete_image('https://res.cloudinary.com/d/image/upload/v1/velzia/../../otro.jpg')
+        mock_destroy.assert_not_called()
 
 
 class TestProductServiceImage:

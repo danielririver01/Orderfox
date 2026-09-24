@@ -1,7 +1,7 @@
 import os
 import uuid
 import io
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from flask import current_app
 from werkzeug.utils import secure_filename
 import cloudinary
@@ -9,13 +9,24 @@ import cloudinary.uploader
 import cloudinary.api
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+ALLOWED_FORMATS = {'JPEG', 'JPG', 'PNG', 'WEBP'}
 
-# Fotos de alta resolución (cámaras de 108MP+) superan el límite por defecto de Pillow.
-Image.MAX_IMAGE_PIXELS = None
+# Límite anti-bomba de descompresión: 150MP cubre cámaras de 108MP pero
+# bloquea imágenes gigantes que agotarían la RAM al decodificar. Pillow
+# lanza DecompressionBombError al superarlo (se captura en save_image).
+# NUNCA volver a None: desactiva la protección global del proceso.
+Image.MAX_IMAGE_PIXELS = 150_000_000
+MAX_IMAGE_PIXELS = 150_000_000
+# Tope de bytes leídos del stream (defensa en profundidad junto al
+# MAX_CONTENT_LENGTH=16MB de Flask, que puede no aplicar a tests o
+# a llamadas internas).
+MAX_IMAGE_BYTES = 16 * 1024 * 1024
 
 def allowed_file(filename):
     if not filename:
         return False
+    # Sanitizar antes de validar: evita "foto.jpg\x00.png" y rarezas.
+    filename = secure_filename(filename)
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -35,7 +46,48 @@ def save_image(file, subfolder, max_size=(800, 800)):
     )
 
     try:
-        img = Image.open(file.stream)
+        # Leer el stream con tope de bytes (defensa en profundidad).
+        raw = file.stream.read(MAX_IMAGE_BYTES + 1)
+        if len(raw) > MAX_IMAGE_BYTES:
+            current_app.logger.warning(
+                'Imagen rechazada (%s): supera %d bytes',
+                secure_filename(file.filename or 'unknown'), MAX_IMAGE_BYTES,
+            )
+            return None
+        if not raw:
+            return None
+        try:
+            img = Image.open(io.BytesIO(raw))
+            img.load()  # fuerza decodificación aquí, dentro del try
+        except Image.DecompressionBombError:
+            current_app.logger.warning(
+                'Imagen rechazada (%s): bomba de descompresión (>%d px)',
+                secure_filename(file.filename or 'unknown'), MAX_IMAGE_PIXELS,
+            )
+            return None
+        except (UnidentifiedImageError, OSError, ValueError) as e:
+            current_app.logger.warning(
+                'Imagen rechazada (%s): no es imagen válida (%s)',
+                secure_filename(file.filename or 'unknown'), e,
+            )
+            return None
+
+        # Formato real (magic bytes), no solo extensión.
+        if (img.format or '').upper() not in ALLOWED_FORMATS:
+            current_app.logger.warning(
+                'Imagen rechazada (%s): formato %s no permitido',
+                secure_filename(file.filename or 'unknown'), img.format,
+            )
+            return None
+
+        # Cinturón extra aunque Pillow ya limita por píxeles totales.
+        w, h = img.size
+        if w * h > MAX_IMAGE_PIXELS or w <= 0 or h <= 0:
+            current_app.logger.warning(
+                'Imagen rechazada (%s): dimensiones %dx%d exceden el límite',
+                secure_filename(file.filename or 'unknown'), w, h,
+            )
+            return None
         
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
@@ -59,7 +111,7 @@ def save_image(file, subfolder, max_size=(800, 800)):
         return upload_result.get('secure_url')
         
     except Exception as e:
-        filename = file.filename if file else 'unknown'
+        filename = secure_filename(file.filename) if file and file.filename else 'unknown'
         current_app.logger.error(
             f"Error al subir imagen a Cloudinary ({filename}): {e}"
         )
@@ -102,12 +154,39 @@ def delete_image(image_url):
             if 'velzia' in image_url:
                 start_index = image_url.find('velzia')
                 public_id = image_url[start_index:].rsplit('.', 1)[0]
+                # Allowlist estricta: solo nuestros prefijos, sin '..' ni
+                # caracteres de traversal. Evita destroy arbitrario vía URL
+                # manipulada (p. ej. ".../velzia/../../otro").
+                if ('..' in public_id or public_id.startswith('/')
+                        or not public_id.startswith('velzia/')):
+                    current_app.logger.warning(
+                        'Borrado Cloudinary rechazado: public_id fuera de allowlist (%s)',
+                        public_id,
+                    )
+                    return
                 cloudinary.uploader.destroy(public_id)
         except Exception as e:
             current_app.logger.error(f"Error al eliminar imagen de Cloudinary: {e}")
     else:
-        # Construir ruta completa para eliminación local (compatibilidad con imágenes viejas)
-        full_path = os.path.join(current_app.root_path, 'static', image_url)
+        # Borrado local (compatibilidad con imágenes viejas).
+        # Anti-traversal: solo rutas relativas dentro de app/static, nunca
+        # URLs absolutas ni escapes con '..'. Se canonicaliza con realpath
+        # (resuelve symlinks) y se exige que quede bajo el dir permitido.
+        lowered = image_url.strip().lower()
+        if (lowered.startswith(('http://', 'https://', 'data:', 'blob:'))
+                or os.path.isabs(image_url)
+                or '..' in image_url.split('/')):
+            current_app.logger.warning(
+                'Borrado local rechazado: ruta fuera de allowlist (%s)', image_url,
+            )
+            return
+        static_dir = os.path.realpath(os.path.join(current_app.root_path, 'static'))
+        full_path = os.path.realpath(os.path.join(static_dir, image_url.lstrip('/')))
+        if full_path != static_dir and not full_path.startswith(static_dir + os.sep):
+            current_app.logger.warning(
+                'Borrado local rechazado: escape de static (%s)', image_url,
+            )
+            return
         
         if os.path.exists(full_path):
             try:

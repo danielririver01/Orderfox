@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, decode_token
 from app.utils.auth import require_auth, require_active
 from app.utils.jwt_auth import get_current_user_jwt, get_current_restaurant_jwt
 from app.services.auth_service import AuthService
@@ -146,6 +146,21 @@ def refresh():
         return jsonify({'success': False, 'error': 'Refresh token requerido'}), 400
 
     refresh_token = data.get('refresh_token')
+
+    # Endurecimiento (sin tocar auth_service.py, 500+ líneas: regla del repo):
+    # 1) el token debe ser de tipo refresh (un access robado no sirve para
+    #    renovar) y 2) el iss debe coincidir con este backend (no aceptar
+    #    tokens firmados para otro entorno). decode_token ya valida firma
+    #    y expiración.
+    try:
+        decoded = decode_token(refresh_token)
+    except Exception:
+        return jsonify({'success': False, 'error': 'Token inválido o expirado'}), 401
+    if decoded.get('type') != 'refresh':
+        return jsonify({'success': False, 'error': 'Se requiere un refresh token'}), 401
+    expected_iss = current_app.config.get('BASE_URL', 'https://velzia.co')
+    if decoded.get('iss') not in (None, expected_iss):
+        return jsonify({'success': False, 'error': 'Token inválido'}), 401
 
     result, error = AuthService.api_refresh_token(refresh_token)
     if error:

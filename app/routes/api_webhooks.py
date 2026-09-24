@@ -16,6 +16,7 @@ from app.services.token_service import TokenService
 from app import db
 from app.models import AITokenTransaction, User, Restaurant
 from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
+from app.utils.service_auth import validate_service_key
 from app.utils.subscription import TOP_UP_PACKS
 
 api_webhooks_bp = Blueprint('api_webhooks', __name__, url_prefix='/api/v1/webhooks')
@@ -322,9 +323,9 @@ def trigger_achievement():
     Útil para logros huérfanos: fundador_2026, madrugador, etc.
     Body: {"user_id": int, "achievement_id": str}
     """
-    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
-    expected = current_app.config.get('SERVICE_API_KEY')
-    if not expected or api_key != expected:
+    # S2S: SOLO header x-api-key (la query queda en logs). Fail-closed y
+    # tiempo constante vía validate_service_key.
+    if not validate_service_key(request.headers.get('x-api-key')):
         return jsonify({'success': False, 'error': 'unauthorized'}), 401
 
     data = request.get_json(silent=True) or {}
@@ -360,9 +361,9 @@ def generate_reward():
     Se mantiene por compatibilidad. Protegido por SERVICE_API_KEY.
     Body: {"plan": str, "user_id": int, "restaurant_id": int, "last_reward_label": str?}
     """
-    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
-    expected = current_app.config.get('SERVICE_API_KEY')
-    if not expected or api_key != expected:
+    # S2S: SOLO header x-api-key (la query queda en logs). Fail-closed y
+    # tiempo constante vía validate_service_key.
+    if not validate_service_key(request.headers.get('x-api-key')):
         return jsonify({'success': False, 'error': 'unauthorized'}), 401
 
     data = request.get_json(silent=True) or {}

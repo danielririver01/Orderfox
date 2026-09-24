@@ -12,6 +12,32 @@ Todas las fechas en UTC.
 
 ### Añadido
 
+#### Clientes / Fiados con frontend (módulo cerrado)
+- Deuda como CUENTA por cliente con abonos parciales: saldo derivado
+  (fiados − abonos), jamás almacenado. Tablas `verduras_clientes` +
+  `verduras_abonos` + `client_id` nullable en ventas (migración aplicada).
+- El cliente nace desde la venta; duplicado de nombre reutiliza.
+- Cobrar con libreta EXIGE cliente en el POS (buscador + crear al vuelo
+  con teléfono opcional); sin cliente se bloquea con toast.
+- Pantalla `/pos/<slug>/clientes`: lista buscable con saldos, fecha de
+  compromiso editable, abonar por fila (nunca mayor al saldo), detalle
+  expandible (tickets + abonos). Sección desbloqueada en las 4 pantallas.
+- Copy en idioma de mostrador, vacíos honestos.
+
+#### Ventas del Día + Cierre de caja + libro mínimo (módulo cerrado)
+- Pantalla `/pos/<slug>/ventas`: KPIs reales del día Bogotá (total,
+  tickets+promedio, kilos, efectivo), tabla Historial con filtros por
+  texto/método + paginación, Exportar CSV real, modal de ticket con
+  reimprimir, curva horaria en CSS puro, Top 5 por kilos, desglose por
+  método. Copy en idioma de mostrador (sin Z/firmar/sistema/arqueo).
+- Cierre del día (`verduras_cierres`, único por día): esperado = ventas
+  en efectivo + ingresos − retiros (fuente única `caja.py`, lo que se ve
+  es lo que se firma); conteo con diferencia en vivo; duplicado → 400.
+- Libro de caja mínimo (`verduras_movimientos_caja`): ingresos/retiros
+  del día con motivo; sin turnos (v1).
+- Historial de últimos 7 cierres en la página, solo lectura.
+- Ingreso/Retiro habilitado; turnos siguen diferidos.
+
 #### Delivery fuera del core (decisión de producto 2026-09-22)
 - La tarjeta de Delivery se elimina del selector de mundos: Delivery NO es
   mundo del core Velzia (su destino se definirá después). Solo Farmacia

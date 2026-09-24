@@ -250,6 +250,30 @@ class TestPosSell:
             'payment_method': 'trueque'})
         assert res.status_code == 400
 
+    def test_sell_cash_with_tender_in_ticket(self, client, db, biz,
+                                            catalog_row):
+        self._login_client(client, biz)
+        res = client.post(f'/pos/{biz.slug}/sell', json={
+            'items': [{'product_id': catalog_row.tomate.id,
+                       'quantity': '1'}],
+            'payment_method': 'efectivo',
+            'amount_received': '5000'})
+        assert res.status_code == 200
+        data = res.get_json()['data']
+        # Tomate 3200, recibe 5000 → vueltas 1800.
+        assert data['change_due'] is not None
+        assert '1.800' in data['change_due']
+
+    def test_sell_cash_short_400(self, client, db, biz, catalog_row):
+        self._login_client(client, biz)
+        res = client.post(f'/pos/{biz.slug}/sell', json={
+            'items': [{'product_id': catalog_row.tomate.id,
+                       'quantity': '1'}],
+            'payment_method': 'efectivo',
+            'amount_received': '1000'})
+        assert res.status_code == 400
+        assert 'Faltan' in res.get_json()['error']
+
 
 # ═════════════════ Pantalla del POS ═════════════════
 
