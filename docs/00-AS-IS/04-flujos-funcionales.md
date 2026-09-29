@@ -6,6 +6,13 @@
 > el sistema. **Describe qué ocurre, no por qué.** Las intenciones de negocio
 > detrás de cada regla siguen sin confirmar: todo lo que aparece aquí como regla
 > está en estado `[CÓDIGO]` o `[INFERIDO]`, **nunca** `[CONFIRMADO]`.
+>
+> 🧪 **Diez de estas reglas se sometieron después a prueba ejecutando el
+> sistema**, con un restaurante sembrado y peticiones HTTP reales. El resultado
+> está en [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md).
+> Ninguna resultó falsa, pero **RN-02 está inerte con el frontend actual**
+> ([R-17](08-verificacion-en-ejecucion.md#r-17)) y la verificación destapó tres
+> defectos más que no se veían leyendo el código.
 
 ---
 
@@ -167,14 +174,14 @@
 
 | # | Regla | Evidencia | Clasif. |
 |---|---|---|---|
-| RN-01 | Un campo oculto `user_secondary_email` relleno ⇒ es un bot | `app/routes/public.py:109` | `[CÓDIGO]` |
-| RN-02 | Deben pasar **≥ 3 segundos** entre abrir el checkout y enviarlo | `app/routes/public.py` (`time.time() - start_time < 3.0`) | `[CÓDIGO]` |
-| RN-03 | Máx. **3 pedidos/minuto** por IP y restaurante; ban de **10 min** | `app/utils/rate_limiter.py:14-15` | `[CÓDIGO]` |
-| RN-04 | Un restaurante **cerrado** (`is_open=False`) no recibe pedidos | `app/routes/public.py` | `[CÓDIGO]` |
-| RN-05 | Una suscripción no vigente **desactiva los pedidos públicos** | `PublicMenuService.is_ordering_enabled` | `[CÓDIGO]` |
+| RN-01 | Un campo oculto `user_secondary_email` relleno ⇒ es un bot | `app/routes/public.py:109` · 🧪 **403 verificado** | **`[EJECUTADO]`** |
+| RN-02 | Deben pasar **≥ 3 segundos** entre abrir el checkout y enviarlo | `app/routes/public.py` (`time.time() - start_time < 3.0`) · 🧪 **429 verificado, pero solo si se llamó a `init-checkout`** | **`[EJECUTADO]`** ⚠️ inerte — [R-17](08-verificacion-en-ejecucion.md#r-17) |
+| RN-03 | Máx. **3 pedidos/minuto** por IP y restaurante; ban de **10 min** | `app/utils/rate_limiter.py:14-15` · 🧪 **4.º pedido → 429** | **`[EJECUTADO]`** |
+| RN-04 | Un restaurante **cerrado** (`is_open=False`) no recibe pedidos | `app/routes/public.py` · 🧪 **403 verificado** | **`[EJECUTADO]`** |
+| RN-05 | Una suscripción no vigente **desactiva los pedidos públicos** | `PublicMenuService.is_ordering_enabled` · 🧪 **403 verificado** | **`[EJECUTADO]`** |
 | RN-06 | Los pedidos pendientes de más de 30 min se expiran al llegar uno nuevo | `expire_old_pending_orders(..., minutes=30)` | `[CÓDIGO]` |
-| RN-07 | Reenviar el mismo `idempotency_key` devuelve el pedido original | `order_service.py:295` + `UNIQUE(restaurant_id, idempotency_key)` | `[CÓDIGO]` |
-| RN-08 | El pedido guarda **copia** del nombre y precio del producto | `app/models/orders.py:56-57` | `[CÓDIGO]` |
+| RN-07 | Reenviar el mismo `idempotency_key` devuelve el pedido original | `order_service.py:295` + `UNIQUE(restaurant_id, idempotency_key)` · 🧪 **mismo `ORD-001`, una sola traza** | **`[EJECUTADO]`** |
+| RN-08 | El pedido guarda **copia** del nombre y precio del producto | `app/models/orders.py:56-57` · 🧪 **`total = 92000` verificado** | **`[EJECUTADO]`** |
 | RN-09 | El pedido nace `pending` y caduca según `pending_expiry_hours` (def. 24 h) | `order_service.py:267-290` | `[CÓDIGO]` |
 
 `[INFERIDO]` RN-06 y RN-09 conviven con dos ventanas distintas (30 min al crear,

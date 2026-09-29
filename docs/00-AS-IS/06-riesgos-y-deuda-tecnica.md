@@ -16,9 +16,23 @@
 
 | Severidad | Defectos (R) | Descripción corta |
 |---|---|---|
-| 🔴 Alta | R-01, R-02, R-03 | Errores reproducidos en ejecución y riesgo de migración destructiva |
-| 🟠 Media | R-04, R-05, R-06, R-07, R-08 | Comportamiento incorrecto o degradación en producción |
-| 🟡 Baja | R-09 … R-14 | Higiene, mantenibilidad, portabilidad |
+| 🔴 Alta | R-01, R-02, R-03, **R-17**, **R-18** | Errores reproducidos en ejecución y riesgo de migración destructiva |
+| 🟠 Media | R-04, R-05, R-06, R-07, R-08, R-16 | Comportamiento incorrecto o degradación en producción |
+| 🟡 Baja | R-09 … R-15, **R-19**, **R-20** | Higiene, mantenibilidad, portabilidad |
+
+> 🧪 **R-17 … R-20 no están en este documento.** Salieron de someter las reglas
+> de negocio a prueba ejecutando el sistema, y viven con su evidencia completa
+> en [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md):
+>
+> | # | Hallazgo | Severidad |
+> |---|---|---|
+> | [R-17](08-verificacion-en-ejecucion.md#r-17) | La protección anti-bot de 3 segundos **está inerte**: el frontend Astro nunca llama a `init-checkout` | 🔴 |
+> | [R-18](08-verificacion-en-ejecucion.md#r-18) | `/menu/<slug>` redirige a una URL con `None`; los valores por defecto de 14 llamadas `config.get(...)` son **código muerto** | 🔴 |
+> | [R-19](08-verificacion-en-ejecucion.md#r-19) | El contador diario de pedidos gasta un número en cada reintento idempotente | 🟡 |
+> | [R-20](08-verificacion-en-ejecucion.md#r-20) | Un carrito con formato incorrecto devuelve **500** en lugar de 400 | 🟡 |
+>
+> **R-16** (deuda de pruebas) está documentada en
+> [05-compilacion-y-despliegue.md §4](05-compilacion-y-despliegue.md#4-pruebas).
 
 | Contradicciones documentales | C-01 … C-07 |
 |---|---|

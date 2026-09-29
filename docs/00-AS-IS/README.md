@@ -71,8 +71,9 @@ como requisitos aprobados.**
 | [03-modelo-de-datos.md](03-modelo-de-datos.md) | 27 tablas, relaciones, estados, restricciones y *drift* entre modelos y migraciones |
 | [04-flujos-funcionales.md](04-flujos-funcionales.md) | Tabla Función / Usuario / Entrada / Resultado / Evidencia + reglas de negocio extraídas |
 | [05-compilacion-y-despliegue.md](05-compilacion-y-despliegue.md) | Instalación reproducible verificada, pruebas, build, despliegue |
-| [06-riesgos-y-deuda-tecnica.md](06-riesgos-y-deuda-tecnica.md) | Hallazgos priorizados, 2 bugs reproducidos, contradicciones documentales |
+| [06-riesgos-y-deuda-tecnica.md](06-riesgos-y-deuda-tecnica.md) | Hallazgos priorizados, bugs reproducidos, contradicciones documentales |
 | [07-preguntas-pendientes.md](07-preguntas-pendientes.md) | Decisiones cortas que necesita responder el propietario |
+| [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md) | **Las reglas del documento 04 sometidas a prueba ejecutando el sistema.** Confirma 10 reglas y descubre 4 hallazgos nuevos (R-17 … R-20) |
 | [adr/](adr/) | Registros de decisiones de arquitectura de este ejercicio |
 
 ---
@@ -155,6 +156,9 @@ en dos de ellos**. La decisión y su justificación están en
 | R-09 + R-11 + R-14 Higiene del repositorio | `VLZ-18` |
 | R-13 Herramientas solo-Windows | `VLZ-19` |
 | Documento 07 (11 decisiones) | `VLZ-20` |
+| **R-17** Anti-bot de 3 s inerte (doc 08) | `VLZ-21` |
+| **R-18** Redirección con `None` / defaults muertos (doc 08) | `VLZ-22` |
+| **R-19 + R-20** Huecos de numeración y 500 por carrito malformado (doc 08) | `VLZ-23` |
 
 ---
 
