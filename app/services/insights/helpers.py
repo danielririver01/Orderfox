@@ -4,9 +4,10 @@ Helpers para el blueprint insights — funciones reutilizables de request/respon
 
 import json
 import re
-from flask import jsonify, session, g, request
+from flask import current_app as _current_app, jsonify, session, g, request
 from app.models import User
 from app.services.insights import conversation_service as cs, chart_service, data_service
+from app.services.token_service import TokenService
 
 
 # ── Constantes ──────────────────────────────────────────────────────────────
@@ -33,6 +34,36 @@ FOREIGN_RESTAURANT_MSG = (
     "Pero lo que **sí** puedo hacer es analizar **tus** datos a fondo. "
     "¿Quieres que te muestre algo de tu negocio? Ventas, productos, lo que prefieras."
 )
+
+
+def compensate_failed_turn(user, cid, token_receipt, follow_up_reserved):
+    """Deshace los cobros de un turno que no llegó a entregar análisis.
+
+    VLZ-6 (decisión (b) del propietario): si DeepSeek o el pipeline técnico
+    falla, el usuario no paga.
+
+    - Si se cobró un crédito, se devuelve al mismo saldo del que salió y
+      queda registrada una transacción `refund` para auditoría.
+    - Si el turno era un seguimiento gratis, se libera su reserva para que
+      el usuario no pierda el seguimiento.
+
+    Nunca lanza: una compensación fallida se registra, pero no puede
+    convertir un 502 del LLM en un 500 opaco.
+    """
+    try:
+        if token_receipt:
+            _, err = TokenService.refund_token(user, token_receipt)
+            if err:
+                _current_app.logger.error(
+                    f"WALLET: no se pudo devolver el crédito del usuario "
+                    f"{getattr(user, 'id', None)}: {err.get('error_code')}"
+                )
+        elif follow_up_reserved:
+            cs.release_follow_up(cid)
+    except Exception:
+        _current_app.logger.error(
+            "Error compensando turno fallido de Copilot", exc_info=True,
+        )
 
 
 # ── Helpers de request ─────────────────────────────────────────────────────

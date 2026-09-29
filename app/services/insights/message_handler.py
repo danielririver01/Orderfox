@@ -29,6 +29,9 @@ from app.services.insights.helpers import (
     CALC_IMPACT_RE as _CALC_IMPACT_RE,
 )
 from app.services.insights.helpers import (
+    compensate_failed_turn as _compensate_failed_turn,
+)
+from app.services.insights.helpers import (
     LEARNING_NOTE as _LEARNING_NOTE,
 )
 from app.services.insights.helpers import (
@@ -282,6 +285,10 @@ def handle_post_message(cid, user, conv, data):
 
     follow_up = conv.analysis_active
     turn_consumed = False
+    # Recibo del cobro y de la reserva de seguimiento: si el análisis no
+    # llega a entregarse, se compensan ambos (VLZ-6).
+    token_receipt = None
+    follow_up_reserved = False
 
     # Elite tiene más follow-ups gratis (8) que el resto (4).
     # Regenerar/editar (replace_tail) tampoco incrementa el contador.
@@ -291,9 +298,12 @@ def handle_post_message(cid, user, conv, data):
             'COPILOT_MAX_FOLLOW_UPS_ELITE' if is_elite_user(user) else 'COPILOT_MAX_FOLLOW_UPS', 4
         )
         follow_up = cs.reserve_follow_up(cid, max_fu)
+        follow_up_reserved = follow_up
 
     if not follow_up and not replace_tail and not general_assist and not catalog_query:
-        ok, err = TokenService.consume_token(user, source='copilot_vz')
+        ok, err = TokenService.consume_token(
+            user, source='copilot_vz', with_receipt=True,
+        )
         if not ok:
             code = (err or {}).get('error_code')
             if code == 'SUBSCRIPTION_REQUIRED':
@@ -314,7 +324,10 @@ def handle_post_message(cid, user, conv, data):
                 'error_code': code,
             })
         turn_consumed = True
-        cs.mark_analysis_active(cid)
+        token_receipt = ok
+        # El bloque de análisis se abre solo cuando hay respuesta válida:
+        # un fallo no debe habilitar seguimientos gratis de un análisis que
+        # nunca existió (VLZ-6).
 
     # ── Cálculo de impacto (seguimiento, sin LLM) ──
     wants_calc = bool(_CALC_IMPACT_RE.search(content)) and not re.search(
@@ -439,20 +452,29 @@ def handle_post_message(cid, user, conv, data):
             'detail': f"Modelo: {current_app.config.get('DEEPSEEK_MODEL') or 'deepseek-v4-flash'}",
         })
     except llm_service.LLMServiceError as e:
+        _compensate_failed_turn(user, cid, token_receipt, follow_up_reserved)
         return jsonify({
             'success': False,
             'type': 'llm_error',
             'message': str(e),
             'message_id': user_msg.id,
+            'credit_refunded': bool(token_receipt),
         }), 502
     except Exception as e:
         current_app.logger.error(f"Copilot analysis error: {e}")
+        _compensate_failed_turn(user, cid, token_receipt, follow_up_reserved)
         return jsonify({
             'success': False,
             'type': 'error',
             'message': 'Ocurrió un error inesperado analizando tu negocio.',
             'message_id': user_msg.id,
+            'credit_refunded': bool(token_receipt),
         }), 500
+
+    # Respuesta válida: recién ahora se abre el bloque de análisis (y con él
+    # el contador de seguimientos gratis) sobre el crédito ya cobrado.
+    if turn_consumed:
+        cs.mark_analysis_active(cid)
 
     parsed = _parse_llm_response(raw)
     parsed['chart'] = chart_service.clean_chart(parsed['chart'])

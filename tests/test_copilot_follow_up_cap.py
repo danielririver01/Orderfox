@@ -150,8 +150,11 @@ class _FakeResp:
 
 
 @pytest.fixture
-def fake_deepseek(monkeypatch):
+def fake_deepseek(app, monkeypatch):
     """Parchea requests.post para simular DeepSeek con telemetría de usage."""
+    # llm_service.chat() aborta antes de la llamada si no hay API key: sin
+    # esto el camino real del LLM nunca se recorre (VLZ-10).
+    monkeypatch.setitem(app.config, 'DEEPSEEK_API_KEY', 'test-key')
     payload = {
         'choices': [{'message': {
             'content': '{"text": "Análisis de prueba", "chart": null}'}}],
@@ -598,3 +601,175 @@ class TestReserveFollowUp:
         conv = CopilotConversation.query.get(conv.id)
         assert conv.analysis_active is False
         assert conv.follow_up_count == 0
+
+
+# ── VLZ-6: devolución del crédito ante fallo técnico ───────────────────────
+
+class TestCreditRefundOnFailure(_Auth):
+    """Si el LLM o el pipeline falla, el usuario no paga el turno.
+
+    Decisión (b) del propietario en VLZ-6: el cargo se mantiene antes de la
+    llamada (conserva el lock pesimista), pero se compensa con una
+    transacción `refund` si el análisis no llega a entregarse.
+    """
+
+    def test_llm_failure_refunds_plan_credit(self, client, db, sample_user,
+                                             sample_restaurant, wallet,
+                                             sale_factory, llm_capture):
+        sale_factory(sample_restaurant)
+        llm_capture.error = llm_capture_error()
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+
+        resp = self._post_message(client, cid, '¿Por qué bajaron mis ventas?')
+        assert resp.status_code == 502
+        body = resp.get_json()
+        assert body['type'] == 'llm_error'
+        assert body['credit_refunded'] is True
+
+        db.session.expire_all()
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 5          # devuelto al saldo mensual
+        assert w.extra_tokens == 0
+        assert w.tokens_used_month == 0    # el turno fallido no cuenta
+
+    def test_refund_goes_back_to_purchased_balance(self, client, db,
+                                                   sample_user, sample_restaurant,
+                                                   sale_factory, llm_capture):
+        """Crédito comprado → vuelve a extra_tokens, no al saldo del plan."""
+        w = AITokenWallet(
+            user_id=sample_user.id, plan_limit=50, plan_tokens=0,
+            extra_tokens=3, tokens_used_month=7,
+        )
+        db.session.add(w)
+        db.session.commit()
+        sale_factory(sample_restaurant)
+        llm_capture.error = llm_capture_error()
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+
+        assert self._post_message(client, cid, '¿Por qué bajaron mis ventas?').status_code == 502
+
+        db.session.expire_all()
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 0
+        assert w.extra_tokens == 3
+        assert w.tokens_used_month == 7
+
+    def test_refund_transaction_is_logged(self, client, db, sample_user,
+                                          sample_restaurant, wallet,
+                                          sale_factory, llm_capture):
+        sale_factory(sample_restaurant)
+        llm_capture.error = llm_capture_error()
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        self._post_message(client, cid, '¿Por qué bajaron mis ventas?')
+
+        txs = AITokenTransaction.query.filter_by(
+            user_id=sample_user.id).order_by(AITokenTransaction.id).all()
+        assert [t.type for t in txs] == ['consume', 'refund']
+        assert txs[0].amount == -1
+        assert txs[1].amount == 1
+        assert txs[1].source == 'copilot_vz'
+
+    def test_failed_analysis_does_not_open_follow_up_block(
+            self, client, db, sample_user, sample_restaurant, wallet,
+            sale_factory, llm_capture):
+        """Un análisis que falló no habilita seguimientos gratis."""
+        sale_factory(sample_restaurant)
+        llm_capture.error = llm_capture_error()
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        self._post_message(client, cid, '¿Por qué bajaron mis ventas?')
+
+        db.session.expire_all()
+        conv = CopilotConversation.query.get(cid)
+        assert conv.analysis_active is False
+        assert conv.follow_up_count == 0
+
+    def test_failed_follow_up_releases_its_reservation(
+            self, client, app, db, sample_user, sample_restaurant, wallet,
+            sale_factory, llm_capture, monkeypatch):
+        """Si falla un seguimiento gratis, el usuario no pierde el turno."""
+        monkeypatch.setitem(app.config, 'COPILOT_MAX_FOLLOW_UPS', 2)
+        sale_factory(sample_restaurant)
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+
+        assert self._post_message(client, cid, '¿Por qué bajaron mis ventas?').status_code == 200
+
+        llm_capture.error = llm_capture_error()
+        failed = self._post_message(client, cid, '¿Y la tendencia semanal?')
+        assert failed.status_code == 502
+        assert failed.get_json()['credit_refunded'] is False
+
+        db.session.expire_all()
+        conv = CopilotConversation.query.get(cid)
+        assert conv.analysis_active is True
+        assert conv.follow_up_count == 0   # reserva liberada
+
+        # Sin cargo extra ni devolución: solo el consumo del primer turno.
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 4
+        assert AITokenTransaction.query.filter_by(
+            user_id=sample_user.id, type='refund').count() == 0
+
+    def test_successful_analysis_is_not_refunded(self, client, db, sample_user,
+                                                 sample_restaurant, wallet,
+                                                 sale_factory, llm_capture):
+        sale_factory(sample_restaurant)
+        self._login(client, sample_user)
+        cid = self._conv_id(client)
+        assert self._post_message(client, cid, '¿Por qué bajaron mis ventas?').status_code == 200
+
+        db.session.expire_all()
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 4
+        assert w.tokens_used_month == 1
+        assert AITokenTransaction.query.filter_by(
+            user_id=sample_user.id, type='refund').count() == 0
+
+
+def llm_capture_error():
+    """Error de DeepSeek equivalente al de producción (timeout/502)."""
+    from app.services.insights import llm_service
+    return llm_service.LLMServiceError('DeepSeek no responde')
+
+
+class TestRefundTokenUnit:
+    """TokenService.refund_token — compensación directa."""
+
+    def test_refund_returns_credit_to_same_bucket(self, db, sample_user, wallet):
+        receipt, err = TokenService.consume_token(
+            sample_user, source='copilot_vz', with_receipt=True)
+        assert err is None
+        assert receipt['bucket'] == 'plan'
+
+        ok, err = TokenService.refund_token(sample_user, receipt)
+        assert ok is True and err is None
+
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 5
+        assert w.tokens_used_month == 0
+
+    def test_refund_is_idempotent(self, db, sample_user, wallet):
+        receipt, _ = TokenService.consume_token(
+            sample_user, source='copilot_vz', with_receipt=True)
+        assert TokenService.refund_token(sample_user, receipt)[0] is True
+        assert TokenService.refund_token(sample_user, receipt)[0] is False
+
+        w = AITokenWallet.query.filter_by(user_id=sample_user.id).first()
+        assert w.plan_tokens == 5
+        assert AITokenTransaction.query.filter_by(
+            user_id=sample_user.id, type='refund').count() == 1
+
+    def test_refund_without_receipt_is_a_noop(self, db, sample_user, wallet):
+        ok, err = TokenService.refund_token(sample_user, None)
+        assert ok is False and err is None
+        assert AITokenTransaction.query.filter_by(
+            user_id=sample_user.id, type='refund').count() == 0
+
+    def test_consume_without_receipt_keeps_boolean_contract(self, db,
+                                                            sample_user, wallet):
+        ok, err = TokenService.consume_token(sample_user, source='copilot_vz')
+        assert ok is True and err is None
