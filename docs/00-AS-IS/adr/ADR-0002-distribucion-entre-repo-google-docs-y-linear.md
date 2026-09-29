@@ -36,7 +36,7 @@ completo en dos lugares**.
 |---|---|---|
 | **Repositorio** `docs/00-AS-IS/` | Inventario, arquitectura, modelo de datos, catálogo de funciones con evidencia, compilación, pruebas, despliegue, ADR | Se versiona con el código que describe; la evidencia son rutas de este mismo repositorio |
 | **Google Docs** | Visión, alcance, reglas de negocio en lenguaje de negocio, contradicciones comerciales y las 11 decisiones | Audiencia no técnica; se comenta y se valida en el propio documento |
-| **Linear** (equipo Velzia, proyecto *Diagnóstico AS-IS*) | 20 incidencias: cada hallazgo con su evidencia, su clasificación de confianza y su criterio de cierre | Un hallazgo sin responsable ni criterio de cierre no se arregla; Linear le da estado |
+| **Linear** (equipo Velzia, proyecto *Diagnóstico AS-IS*) | 23 incidencias: cada hallazgo con su evidencia, su clasificación de confianza y su criterio de cierre | Un hallazgo sin responsable ni criterio de cierre no se arregla; Linear le da estado |
 
 ### Resolución del solapamiento
 
@@ -84,7 +84,7 @@ tabla de correspondencia completa.
   correspondencia del README.
 - Se creó un equipo nuevo en Linear (**Velzia**, clave `VLZ`) porque el único
   equipo existente (`Frubber`) corresponde a otro producto. Si el propietario
-  prefiere otra estructura, hay que mover 20 incidencias.
+  prefiere otra estructura, hay que mover 23 incidencias.
 
 **Qué queda pendiente**
 
@@ -99,6 +99,6 @@ tabla de correspondencia completa.
 - Google Docs: *Velzia — Visión, alcance y reglas de negocio (AS-IS, commit
   cd96aa7)*, documento `1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE`.
 - Linear: equipo `Velzia` (`VLZ`), proyecto *Diagnóstico AS-IS (commit
-  cd96aa7)*, incidencias `VLZ-1` … `VLZ-20`, con las etiquetas
+  cd96aa7)*, incidencias `VLZ-1` … `VLZ-23`, con las etiquetas
   `comprobado-en-ejecucion`, `contradiccion`, `deuda-tecnica` y
   `pendiente-de-validacion`.

@@ -118,8 +118,38 @@ en dos de ellos**. La decisión y su justificación están en
 | Destino | Qué contiene | Enlace |
 |---|---|---|
 | **Este repositorio** (`docs/00-AS-IS/`) | Inventario, arquitectura, modelo de datos, catálogo de funciones **con su evidencia `archivo:línea`**, compilación, pruebas, despliegue y ADR | estás aquí |
-| **Google Docs** | Visión, alcance y reglas de negocio **en lenguaje de negocio**, sin referencias al código | [Velzia — Visión, alcance y reglas de negocio](https://docs.google.com/document/d/1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE/edit) |
-| **Linear** | Los hallazgos convertidos en trabajo accionable: 20 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-20` |
+| **Google Drive** | Todo el diagnóstico convertido a Google Docs, ordenado por carpetas para revisión. **Copia de lectura del commit `cd96aa7`**, no editable como fuente | [Velzia — Diagnóstico AS-IS](https://drive.google.com/drive/folders/1Igf2f-pnt48PitTLLwhQuineAQ4vopRD) |
+| **Google Docs** | Visión, alcance y reglas de negocio **en lenguaje de negocio**, sin referencias al código | [1.1 · Visión, alcance y reglas de negocio](https://docs.google.com/document/d/1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE/edit) |
+| **Linear** | Los hallazgos convertidos en trabajo accionable: 23 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-23` |
+
+### Estructura de la carpeta en Drive
+
+```
+Velzia — Diagnóstico AS-IS (commit cd96aa7)/
+├── 00 · EMPIEZA AQUÍ — Guía de lectura   ← índice con enlaces a todo
+├── 1 · Negocio/
+│   └── 1.1 · Visión, alcance y reglas de negocio
+├── 2 · Diagnóstico técnico/
+│   ├── 2.1 · Inventario técnico
+│   ├── 2.2 · Arquitectura actual
+│   ├── 2.3 · Modelo de datos
+│   ├── 2.4 · Flujos funcionales y reglas de negocio
+│   ├── 2.5 · Compilación y despliegue
+│   └── 2.6 · Verificación en ejecución (4 bugs nuevos)
+├── 3 · Hallazgos y decisiones pendientes/
+│   ├── 3.1 · Riesgos y deuda técnica
+│   └── 3.2 · Preguntas pendientes para el propietario
+└── 4 · Decisiones de arquitectura (ADR)/
+    ├── 4.0 · Índice de decisiones de arquitectura
+    ├── 4.1 · ADR-0001 — Ubicación de la documentación AS-IS
+    └── 4.2 · ADR-0002 — Distribución del diagnóstico
+```
+
+> Los documentos de Drive son una **instantánea del commit `cd96aa7`**, con un
+> aviso al inicio de cada uno. Llevan las mismas tablas y la misma estructura,
+> pero sin los enlaces `archivo:línea` navegables. **Esta carpeta del
+> repositorio sigue siendo la fuente de verdad**; si algo cambia, cambia aquí
+> primero y luego se regenera la copia de Drive.
 
 ### Regla de precedencia
 
