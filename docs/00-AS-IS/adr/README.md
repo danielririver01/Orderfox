@@ -24,6 +24,7 @@ requisito aprobado.
 | ADR | Título | Estado | Fecha |
 |---|---|---|---|
 | [ADR-0001](ADR-0001-ubicacion-de-la-documentacion-as-is.md) | Ubicación de la documentación AS-IS en `docs/00-AS-IS/` | Aceptado | 2026-09-29 |
+| [ADR-0002](ADR-0002-distribucion-entre-repo-google-docs-y-linear.md) | Distribución del diagnóstico entre repositorio, Google Docs y Linear | Aceptado | 2026-09-29 |
 
 ---
 

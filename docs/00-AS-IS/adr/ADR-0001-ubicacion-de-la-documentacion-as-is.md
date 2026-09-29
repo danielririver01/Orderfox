@@ -79,7 +79,7 @@ el código se registran en
 
 - `docs/` queda temporalmente con **dos** conjuntos de documentación de
   arquitectura que se contradicen. Se mitiga con un aviso explícito en
-  [`../README.md §5`](../README.md#5-separación-as-is--to-be), pero **la
+  [`../README.md §6`](../README.md#6-separación-as-is--to-be), pero **la
   duplicación existe** hasta que el propietario decida cuál se retira.
 - Conviven **dos registros de decisiones**: `docs/04-RECORDS/REC-02_Decision_Log.md`
   y esta carpeta `adr/`. Conviene fusionarlos.

@@ -108,7 +108,57 @@ UPDATE`), tipos de fecha y restricciones únicas.
 
 ---
 
-## 5. Separación AS-IS / TO-BE
+## 5. Dónde vive cada cosa
+
+El diagnóstico está repartido en tres sitios, **sin mantener el mismo documento
+en dos de ellos**. La decisión y su justificación están en
+[adr/ADR-0002](adr/ADR-0002-distribucion-entre-repo-google-docs-y-linear.md).
+
+| Destino | Qué contiene | Enlace |
+|---|---|---|
+| **Este repositorio** (`docs/00-AS-IS/`) | Inventario, arquitectura, modelo de datos, catálogo de funciones **con su evidencia `archivo:línea`**, compilación, pruebas, despliegue y ADR | estás aquí |
+| **Google Docs** | Visión, alcance y reglas de negocio **en lenguaje de negocio**, sin referencias al código | [Velzia — Visión, alcance y reglas de negocio](https://docs.google.com/document/d/1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE/edit) |
+| **Linear** | Los hallazgos convertidos en trabajo accionable: 20 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-20` |
+
+### Regla de precedencia
+
+> Las reglas de negocio aparecen en dos formas: **trazable** (documento 04 de
+> este repositorio, con `archivo:línea`) y **legible** (Google Docs, en lenguaje
+> de negocio). No son dos copias del mismo documento, pero **describen el mismo
+> comportamiento**.
+>
+> **El repositorio manda.** Si una regla cambia, se actualiza aquí primero y
+> después en Google Docs. El documento de Google no lleva evidencia
+> precisamente para que nadie lo confunda con la fuente de verdad.
+
+### Correspondencia entre hallazgos e incidencias
+
+| Documento 06 | Linear |
+|---|---|
+| R-01 `NameError` en `require_active` | `VLZ-1` |
+| R-02 `POST /api/dashboard/cancel-account` | `VLZ-2` |
+| R-03 Drift modelos ↔ migraciones | `VLZ-3` |
+| C-01 Motor de base de datos | `VLZ-4` |
+| R-10 `flake8 --exit-zero` | `VLZ-5` |
+| R-05 Crédito de IA no devuelto | `VLZ-6` |
+| R-04 Scheduler múltiple | `VLZ-7` |
+| R-06 Rate limiter con estado inexistente | `VLZ-8` |
+| C-02 Prueba gratuita 10 vs 60 días | `VLZ-9` |
+| Deuda de pruebas (doc 05 §4) | `VLZ-10` |
+| R-07 `SESSION_COOKIE_SECURE` | `VLZ-11` |
+| R-12 `rescues_db.py` | `VLZ-12` |
+| R-15 + despliegue (doc 05 §6-7) | `VLZ-13` |
+| C-04 Versión | `VLZ-14` |
+| C-05 OpenAPI | `VLZ-15` |
+| R-08 Rate limiter global | `VLZ-16` |
+| C-03 + C-07 Contradicciones documentales | `VLZ-17` |
+| R-09 + R-11 + R-14 Higiene del repositorio | `VLZ-18` |
+| R-13 Herramientas solo-Windows | `VLZ-19` |
+| Documento 07 (11 decisiones) | `VLZ-20` |
+
+---
+
+## 6. Separación AS-IS / TO-BE
 
 - **AS-IS** — esta carpeta (`docs/00-AS-IS/`). Solo describe el estado actual.
 - **TO-BE** — no existe todavía. No se ha creado ningún documento de propuesta,
