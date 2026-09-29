@@ -536,12 +536,62 @@ camino de código para una caída de la API**:
 
 ---
 
-## 9. Lo que sigue sin verificarse
+## 9. Cómo se autenticó cada prueba
+
+> Importa para saber cuánto pesa cada resultado. **No todas las pruebas usaron
+> el mismo tipo de sesión, y una de ellas no pasó por un login real.**
+
+| Superficie | Cómo se entró | ¿Login real? |
+|---|---|---|
+| Menú público, pedidos, reservas (`/menu/api/*`, `/api/public/*`) | Sin sesión, `curl` con tarro de cookies como un comensal cualquiera | — no requiere |
+| Protección de rutas privadas (`/dashboard/`, `/insights/`, `/cash-register/`) | Sin sesión, para comprobar que **redirigen a `/login`** | — no requiere |
+| **Portal de empleados** (cajero y mesero) | **`POST /empleado/<slug>` con el PIN real y token CSRF**, exactamente como lo haría el empleado | ✅ **sí, login real** |
+| **Panel del dueño** (`/dashboard/`, `/cash-register/`, cierre de caja) | ⚠️ **Cookie de sesión firmada a mano** con la `SECRET_KEY` del entorno de prueba | ❌ **no** |
+| Los dos `NameError` (R-01, R-02) | `Flask.test_client` con `session['user_id']` fijado en la propia prueba | ❌ no |
+
+### Por qué el dueño no entró por la puerta
+
+`GET /login` **no renderiza formulario de contraseña**: la plantilla
+`app/template/auth/index.html` solo trae el widget de Clerk (cero apariciones de
+`form.email` y de `csrf_token`). Sin credenciales de Clerk no hay forma de
+completar ese flujo. Así que generé la cookie con
+`SecureCookieSessionInterface`, usando la `SECRET_KEY` que yo mismo fijé al
+arrancar la instancia de prueba.
+
+### Qué tan fiel es esa cookie
+
+Bastante. El login real del dueño fija **exactamente** dos claves
+(`app/routes/auth.py:198-199`):
+
+```python
+session['user_id'] = user.id
+session['username'] = user.username
+```
+
+y eso es literalmente lo que contenía la cookie que firmé. La aplicación no
+puede distinguir una de otra: `require_auth` y `require_role` leen esas mismas
+claves.
+
+### Qué queda fuera aun así
+
+| Lo verificado | Lo NO verificado |
+|---|---|
+| **Autorización**: qué puede hacer cada rol una vez dentro (decoradores, CSRF, 403/302) | **Autenticación**: cómo se llega a estar dentro |
+| Que un cajero autenticado recibe **403** al cerrar caja | Que Clerk emita bien la sesión, que `/api/sync-clerk` cree el usuario correcto, o que el *handshake* funcione |
+
+**Traducción práctica:** los resultados sobre **permisos y roles son sólidos**.
+Los resultados sobre **el proceso de inicio de sesión del dueño no existen** —
+esa parte del sistema no se probó en absoluto.
+
+---
+
+## 10. Lo que sigue sin verificarse
 
 | Flujo | Motivo |
 |---|---|
 | Pago con Mercado Pago de extremo a extremo | Requiere credenciales reales y webhooks entrantes |
-| Alta con Clerk | Requiere credenciales reales |
+| **Todo el flujo de autenticación del dueño** (alta y login con Clerk, `/api/sync-clerk`, *handshake*) | Requiere credenciales reales. La sesión del dueño se **simuló** con una cookie firmada — ver §9 |
+| **Autenticación por JWT** (`Authorization: Bearer`, la vía de la API móvil y del Scanner IA) | No se ejerció ninguna ruta por esta vía; todas las pruebas usaron sesión de cookie |
 | Copilot VZ con respuesta real | Requiere clave de DeepSeek |
 | Notificación ntfy | Requiere un tema configurado y red saliente |
 | Recompensas y cupones de extremo a extremo | Dependen de un pago aprobado de Mercado Pago |
@@ -549,5 +599,10 @@ camino de código para una caída de la API**:
 | Comportamiento con MySQL/PostgreSQL | No hay motor disponible; todo se verificó con SQLite |
 
 **Ya no queda nada verificable sin credenciales externas.** Los flujos de
-pedidos, reservas, caja, roles y el frontend público están comprobados en
-ejecución; el resto depende de terceros.
+pedidos, reservas, caja, **autorización** por roles y el frontend público están
+comprobados en ejecución.
+
+Lo que falta se reparte en dos grupos: lo que depende de un tercero (Mercado
+Pago, Clerk, DeepSeek, ntfy, Unsplash/Gemini) y **lo que depende de una decisión
+tuya**: el comportamiento con el motor de base de datos real, que no se puede
+cerrar hasta responder D-01.
