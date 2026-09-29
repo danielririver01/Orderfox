@@ -1047,10 +1047,18 @@ class TestLegacyWebhookFailClosed:
         assert data['error'] == 'invalid_signature'
 
     def test_valid_signature_processes(self, app, db, monkeypatch):
-        """Firma HMAC correcta → pasa a procesamiento (sanity check)."""
+        """Firma correcta según el manifiesto OFICIAL de MP → procesa.
+
+        VLZ-28: esta prueba usaba antes el esquema inventado
+        `{payment_id}.{ts}.{secreto}`, el mismo que implementaba el código.
+        Al calcular la firma con la misma fórmula equivocada, pasaba siempre
+        y no detectó que ninguna notificación real de Mercado Pago validaba.
+
+        Ahora arma el manifiesto oficial a mano:
+            id:<data.id>;request-id:<x-request-id>;ts:<ts>;
+        """
         import hmac as hmac_mod
         import hashlib
-        from datetime import datetime, timezone
 
         app.config['MP_WEBHOOK_SECRET'] = 'test-webhook-secret'
 
@@ -1064,10 +1072,11 @@ class TestLegacyWebhookFailClosed:
 
         payment_id = '98765'
         ts = '1700000000'
-        message = f"{payment_id}.{ts}.test-webhook-secret"
+        request_id = 'a70c8599-bd35-48e3-b6ea-576ca1c36ba3'
+        manifiesto = f"id:{payment_id};request-id:{request_id};ts:{ts};"
         v1 = hmac_mod.new(
             b'test-webhook-secret',
-            message.encode('utf-8'),
+            manifiesto.encode('utf-8'),
             hashlib.sha256,
         ).hexdigest()
 
@@ -1075,7 +1084,8 @@ class TestLegacyWebhookFailClosed:
         resp = client.post(
             '/webhook',
             json={'type': 'payment', 'data': {'id': payment_id}},
-            headers={'x-signature': f'ts={ts},v1={v1}'},
+            headers={'x-signature': f'ts={ts},v1={v1}',
+                     'x-request-id': request_id},
         )
         assert resp.status_code == 200
         assert resp.get_json()['success'] is True

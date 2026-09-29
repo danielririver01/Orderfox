@@ -4,7 +4,11 @@ from app.forms import LoginForm
 from app.forms.auth import RegisterSetupForm
 from app.models import Restaurant, TrialHistory
 from app.utils.subscription import initialize_or_reset_token_wallet
-from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
+from app.utils.mp_webhook import (
+    extract_mp_request_id,
+    extract_mp_signature,
+    verify_mp_signature,
+)
 from app.services.auth_service import AuthService
 from app.services.subscription_service import SubscriptionService
 from app.utils.restaurant import get_current_restaurant
@@ -535,7 +539,10 @@ def webhook():
 
         if payment_id:
             ts, v1 = extract_mp_signature(request.headers)
-            if not verify_mp_signature(str(payment_id), ts, v1, webhook_secret):
+            request_id = extract_mp_request_id(request.headers)
+            if not verify_mp_signature(
+                str(payment_id), request_id, ts, v1, webhook_secret
+            ):
                 current_app.logger.warning(
                     f"WEBHOOK LEGACY: Firma inválida para payment_id={payment_id}"
                 )
