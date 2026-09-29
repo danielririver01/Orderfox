@@ -32,6 +32,7 @@ class Order(db.Model):
     __table_args__ = (
         db.UniqueConstraint('restaurant_id', 'idempotency_key',
                             name='uq_orders_restaurant_idempotency'),
+        db.Index('ix_orders_restaurant_paid_at', 'restaurant_id', 'paid_at'),
     )
     # Fecha de expiración para pedidos pendientes
     expires_at = db.Column(AwareDateTime, nullable=True)
