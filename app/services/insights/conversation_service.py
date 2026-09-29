@@ -198,6 +198,29 @@ def reserve_follow_up(conversation_id, max_count):
     return result > 0
 
 
+def release_follow_up(conversation_id):
+    """Libera un seguimiento gratis reservado por un turno que falló.
+
+    Contrapartida de reserve_follow_up(): UPDATE condicional
+    (follow_up_count > 0) en una sola sentencia, sin TOCTOU. Si el análisis
+    revienta (caída del LLM o error técnico), el usuario no pierde el turno
+    gratis que había reservado (VLZ-6).
+    """
+    result = (
+        CopilotConversation.query
+        .filter(
+            CopilotConversation.id == conversation_id,
+            CopilotConversation.follow_up_count > 0,
+        )
+        .update(
+            {CopilotConversation.follow_up_count: CopilotConversation.follow_up_count - 1},
+            synchronize_session=False,
+        )
+    )
+    db.session.commit()
+    return result > 0
+
+
 def delete_message(message_id):
     """Elimina un mensaje (rollback de un turno que falló)."""
     msg = CopilotMessage.query.get(message_id)

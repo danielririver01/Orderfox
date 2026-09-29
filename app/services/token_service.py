@@ -106,7 +106,7 @@ class TokenService:
     # ── Token Consumption ──────────────────────────────────────
 
     @staticmethod
-    def consume_token(user, source='scanner_ia'):
+    def consume_token(user, source='scanner_ia', with_receipt=False):
         """
         Consume (deduce) 1 token del wallet del usuario.
         Primero descuenta de plan_tokens, luego de extra_tokens.
@@ -116,9 +116,13 @@ class TokenService:
             user: Usuario ORM object.
             source: origen del consumo ('scanner_ia', 'copilot_vz',
                 'cash_register'). Backward-compatible: default 'scanner_ia'.
+            with_receipt: si es True devuelve un recibo (dict) en lugar de
+                True. El recibo recuerda de qué saldo salió el token
+                ('plan' o 'extra') para poder devolverlo al mismo sitio con
+                TokenService.refund_token() si el análisis falla (VLZ-6).
 
         Returns:
-            (True, None) on success
+            (True, None) / (receipt_dict, None) on success
             (None, error_dict) on failure
         """
         if not user:
@@ -144,8 +148,10 @@ class TokenService:
             # Deduct from plan_tokens first, then extra_tokens
             if wallet.plan_tokens > 0:
                 wallet.plan_tokens -= 1
+                bucket = 'plan'
             else:
                 wallet.extra_tokens -= 1
+                bucket = 'extra'
 
             wallet.tokens_used_month += 1
 
@@ -160,6 +166,9 @@ class TokenService:
             current_app.logger.info(
                 f"WALLET: Token consumido para usuario {user.id}"
             )
+            if with_receipt:
+                return {'user_id': user.id, 'source': source,
+                        'bucket': bucket, 'refunded': False}, None
             return True, None
 
         except Exception as e:
@@ -167,6 +176,81 @@ class TokenService:
             current_app.logger.error(f"Error consuming token: {e}")
             return None, {'error_code': 'CONSUME_ERROR',
                           'message': 'Error al consumir token'}
+
+    # ── Token Refund (compensación por fallo técnico) ──────────
+
+    @staticmethod
+    def refund_token(user, receipt):
+        """
+        Devuelve 1 token cobrado con consume_token(..., with_receipt=True).
+
+        Se usa cuando el análisis no llega a entregarse (caída del LLM o
+        error del pipeline): el cargo ya está confirmado en la DB, así que
+        la compensación es una transacción inversa, no un rollback (VLZ-6,
+        decisión (b) del propietario).
+
+        El token vuelve **al mismo saldo** del que salió: crédito del plan
+        mensual → plan_tokens; crédito comprado → extra_tokens. Así una
+        devolución nunca infla el saldo mensual por encima de su límite ni
+        convierte créditos comprados en créditos que expiran.
+
+        Es idempotente: el recibo se marca como devuelto, de modo que dos
+        llamadas con el mismo recibo solo acreditan una vez.
+
+        Args:
+            user: Usuario ORM object.
+            receipt: dict devuelto por consume_token(with_receipt=True).
+
+        Returns:
+            (True, None) si se devolvió el token
+            (False, None) si no había nada que devolver (recibo vacío o ya
+                compensado) — no es un error
+            (None, error_dict) si la compensación falló
+        """
+        if not user or not receipt:
+            return False, None
+
+        if receipt.get('refunded'):
+            return False, None
+
+        source = receipt.get('source') or 'scanner_ia'
+
+        # Mismo lock pesimista que el cobro: la devolución compite con
+        # otros consumos concurrentes sobre la misma billetera.
+        wallet = AITokenWallet.query.filter_by(user_id=user.id).with_for_update().first()
+        if not wallet:
+            return None, {'error_code': 'NO_WALLET',
+                          'message': 'No se encontró billetera de tokens'}
+
+        try:
+            if receipt.get('bucket') == 'extra':
+                wallet.extra_tokens += 1
+            else:
+                wallet.plan_tokens += 1
+
+            # El turno fallido no cuenta como uso del mes.
+            wallet.tokens_used_month = max(0, (wallet.tokens_used_month or 0) - 1)
+
+            label = _AI_SOURCE_DESCRIPTIONS.get(source, 'Análisis IA')
+            tx = AITokenTransaction(
+                user_id=user.id, type='refund', amount=1,
+                source=source,
+                description=f'Devolución por fallo técnico — {label}',
+            )
+            db.session.add(tx)
+
+            db.session.commit()
+            receipt['refunded'] = True
+            current_app.logger.info(
+                f"WALLET: Token devuelto a usuario {user.id} (fuente={source})"
+            )
+            return True, None
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error refunding token: {e}")
+            return None, {'error_code': 'REFUND_ERROR',
+                          'message': 'Error al devolver el token'}
 
     # ── Top-Up (Purchase Credit) ───────────────────────────────
 

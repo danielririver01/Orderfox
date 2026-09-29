@@ -75,7 +75,7 @@ jobs:
         run: flake8 app/ --max-line-length=120 --exit-zero --statistics
 
       - name: Run tests
-        run: pytest --tb=short -q --no-header -k "not TestLLMCallTelemetry"
+        run: pytest --tb=short -q --no-header
 
   deploy:
     needs: test

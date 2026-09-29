@@ -23,6 +23,7 @@ from flask import current_app, jsonify
 from app.services import cash_register_service
 from app.services.insights import conversation_service as cs
 from app.services.insights import llm_service, prompt_builder
+from app.services.insights.helpers import compensate_failed_turn as _compensate_failed_turn
 from app.services.insights.helpers import parse_llm_response
 from app.services.token_service import TokenService, is_elite_user
 
@@ -186,6 +187,10 @@ def handle_cash_message(restaurant, user, conv, period, content):
     #    se agota el tope de seguimientos gratis (bloque nuevo).
     follow_up = conv.analysis_active
     turn_consumed = False
+    # Recibo del cobro y de la reserva de seguimiento: si el análisis no
+    # llega a entregarse, se compensan ambos (VLZ-6).
+    token_receipt = None
+    follow_up_reserved = False
 
     # Elite tiene más follow-ups gratis (8) que el resto (4).
     if follow_up:
@@ -193,9 +198,12 @@ def handle_cash_message(restaurant, user, conv, period, content):
             'COPILOT_MAX_FOLLOW_UPS_ELITE' if is_elite_user(user) else 'COPILOT_MAX_FOLLOW_UPS', 4
         )
         follow_up = cs.reserve_follow_up(conv.id, max_fu)
+        follow_up_reserved = follow_up
 
     if not follow_up:
-        ok, err = TokenService.consume_token(user, source='cash_register')
+        ok, err = TokenService.consume_token(
+            user, source='cash_register', with_receipt=True,
+        )
         if not ok:
             code = (err or {}).get('error_code')
             cs.delete_message(user_msg.id)
@@ -214,6 +222,7 @@ def handle_cash_message(restaurant, user, conv, period, content):
                 'error_code': code,
             })
         turn_consumed = True
+        token_receipt = ok
         cs.mark_analysis_active(conv.id)
 
     # 4) Armar el contexto (misma fuente que la pantalla del Centro de Caja).
@@ -237,23 +246,27 @@ def handle_cash_message(restaurant, user, conv, period, content):
     except llm_service.LLMServiceError as e:
         if not follow_up:
             cs.clear_analysis_active(conv.id)
+        _compensate_failed_turn(user, conv.id, token_receipt, follow_up_reserved)
         cs.delete_message(user_msg.id)
         return jsonify({
             'success': False,
             'type': 'llm_error',
             'message': str(e),
             'message_id': user_msg.id,
+            'credit_refunded': bool(token_receipt),
         }), 502
     except Exception as e:
         current_app.logger.error(f"Copilot de caja analysis error: {e}")
         if not follow_up:
             cs.clear_analysis_active(conv.id)
+        _compensate_failed_turn(user, conv.id, token_receipt, follow_up_reserved)
         cs.delete_message(user_msg.id)
         return jsonify({
             'success': False,
             'type': 'error',
             'message': 'Ocurrió un error inesperado analizando tu caja.',
             'message_id': user_msg.id,
+            'credit_refunded': bool(token_receipt),
         }), 500
 
     parsed = parse_llm_response(raw)

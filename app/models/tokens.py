@@ -72,7 +72,7 @@ class AITokenTransaction(db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     user_id       = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'),
                               nullable=False)
-    # Tipos: 'consume', 'topup_plan', 'topup_purchase', 'elite_scan'
+    # Tipos: 'consume', 'refund', 'topup_plan', 'topup_purchase', 'elite_scan'
     type          = db.Column(db.String(20), nullable=False)
     amount        = db.Column(db.Integer, nullable=False)  # +recarga / -consumo
     # Fuente: 'scanner_ia', 'plan_renewal', 'mp_purchase', 'migration_seed'

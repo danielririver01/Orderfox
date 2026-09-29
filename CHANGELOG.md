@@ -4,6 +4,40 @@ Todas las fechas en UTC.
 
 ---
 
+## [Sin release] - 2026-09-29
+
+### Corregido
+
+#### VLZ-6 — El crédito de IA se devuelve si falla el análisis
+- `TokenService.consume_token(..., with_receipt=True)` devuelve un recibo con el
+  saldo del que salió el crédito (`plan` o `extra`); el contrato booleano previo
+  se mantiene intacto para el resto de llamadores.
+- Nuevo `TokenService.refund_token(user, receipt)`: acredita el token **al mismo
+  saldo** del que se cobró, descuenta el uso del mes y registra una transacción
+  inmutable `refund` (+1) para auditoría. Es idempotente.
+- Nuevo `conversation_service.release_follow_up()`: contrapartida atómica de
+  `reserve_follow_up()` para turnos gratis que fallan.
+- Copilot VZ (`insights/message_handler.py`) y Copilot de Caja
+  (`cash_register_copilot.py`) compensan el turno cuando DeepSeek o el pipeline
+  fallan (502/500): devuelven el crédito o liberan el seguimiento reservado, y
+  responden con `credit_refunded`.
+- El bloque de análisis (`mark_analysis_active`) en Copilot VZ solo se abre tras
+  una respuesta válida: un fallo ya no habilita follow-ups gratis de un análisis
+  inexistente.
+- El cargo sigue ocurriendo **antes** de la llamada al LLM, conservando el lock
+  pesimista (`SELECT … FOR UPDATE`) sin mantenerlo abierto durante la espera al
+  servicio externo.
+
+### Pruebas / CI
+- `tests/test_copilot_follow_up_cap.py`: clases `TestCreditRefundOnFailure` y
+  `TestRefundTokenUnit` (devolución al saldo correcto, transacción de auditoría,
+  bloque no abierto, reserva liberada, idempotencia).
+- `TestLLMCallTelemetry` reactivada: la fixture `fake_deepseek` ahora configura
+  `DEEPSEEK_API_KEY`, y CI deja de excluirla con `-k "not TestLLMCallTelemetry"`
+  (desbloquea VLZ-10).
+
+---
+
 ## [1.6.0] - 2026-08-22 (sin release / working tree)
 
 > Conjunto de cambios aun **no commiteados** (arbol de trabajo vs `7994803`). Incluye
