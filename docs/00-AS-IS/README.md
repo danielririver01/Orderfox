@@ -88,8 +88,12 @@ como requisitos aprobados.**
 - Se aplicaron las 31 migraciones de Alembic sobre una base limpia.
 - Se compararon los modelos SQLAlchemy contra la cabeza de migraciones (`flask db check`).
 - Se compiló el CSS de producción (Tailwind 4).
-- Se hicieron peticiones HTTP reales contra 13 endpoints.
-- Se reprodujeron dos errores de ejecución con guiones aislados.
+- Se hicieron peticiones HTTP reales contra más de 30 endpoints, en dos pasadas.
+- Se sembró un restaurante con dueño, cajero, mesero, mesas y pedidos pagados, y se
+  recorrieron los flujos de pedidos, reservas, caja y portal de empleados.
+- Se instaló y arrancó el **frontend Astro** contra la API real.
+- Se reprodujeron seis defectos de ejecución (R-17 … R-22) y se **corrigió una regla
+  del propio diagnóstico** que resultó ser falsa (RN-54).
 
 **Lo que NO se hizo (y por qué):**
 
@@ -97,11 +101,11 @@ como requisitos aprobados.**
 |---|---|
 | MySQL / MariaDB / PostgreSQL reales | No hay motor de base de datos en el entorno de revisión. Se usó SQLite. |
 | Docker / `docker compose up` | Docker no está instalado en el entorno de revisión. |
-| Frontend Astro en ejecución | No se instalaron sus dependencias; se documenta por lectura de código. |
 | Clerk, Mercado Pago, Cloudinary, DeepSeek, Tavily, ntfy.sh, Unsplash, Gemini | Servicios externos: requieren credenciales reales. |
 | Scanner IA (`Receipt-Scanner-AI`) | Repositorio **externo**, no incluido en este checkout. |
 | Pruebas de carga k6 y auditoría ZAP/Trivy | Requieren binarios y scripts PowerShell no disponibles aquí. |
-| Interfaz de usuario real (recorrido pantalla por pantalla) | Requiere datos sembrados y sesión autenticada con Clerk. |
+| Recompensas y cupones de extremo a extremo | Dependen de un pago aprobado de Mercado Pago. |
+| Fotos automáticas de productos | Requieren claves de Unsplash y Gemini. |
 
 **Consecuencia:** el comportamiento en producción con MySQL/PostgreSQL puede
 diferir del verificado con SQLite, especialmente en bloqueos (`SELECT ... FOR
@@ -135,7 +139,7 @@ Velzia — Diagnóstico AS-IS (commit cd96aa7)/
 │   ├── 2.3 · Modelo de datos
 │   ├── 2.4 · Flujos funcionales y reglas de negocio
 │   ├── 2.5 · Compilación y despliegue
-│   └── 2.6 · Verificación en ejecución (4 bugs nuevos)
+│   └── 2.6 · Verificación en ejecución (6 bugs nuevos)
 ├── 3 · Hallazgos y decisiones pendientes/
 │   ├── 3.1 · Riesgos y deuda técnica
 │   └── 3.2 · Preguntas pendientes para el propietario
@@ -185,7 +189,7 @@ Velzia — Diagnóstico AS-IS (commit cd96aa7)/
 | C-03 + C-07 Contradicciones documentales | `VLZ-17` |
 | R-09 + R-11 + R-14 Higiene del repositorio | `VLZ-18` |
 | R-13 Herramientas solo-Windows | `VLZ-19` |
-| Documento 07 (11 decisiones) | `VLZ-20` |
+| Documento 07 (12 decisiones) | `VLZ-20` |
 | **R-17** Anti-bot de 3 s inerte (doc 08) | `VLZ-21` |
 | **R-18** Redirección con `None` / defaults muertos (doc 08) | `VLZ-22` |
 | **R-19 + R-20** Huecos de numeración y 500 por carrito malformado (doc 08) | `VLZ-23` |

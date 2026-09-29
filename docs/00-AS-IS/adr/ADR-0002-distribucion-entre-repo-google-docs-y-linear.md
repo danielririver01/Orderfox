@@ -35,7 +35,7 @@ completo en dos lugares**.
 | Destino | Contenido | Por qué ahí |
 |---|---|---|
 | **Repositorio** `docs/00-AS-IS/` | Inventario, arquitectura, modelo de datos, catálogo de funciones con evidencia, compilación, pruebas, despliegue, ADR | Se versiona con el código que describe; la evidencia son rutas de este mismo repositorio |
-| **Google Docs** | Visión, alcance, reglas de negocio en lenguaje de negocio, contradicciones comerciales y las 11 decisiones | Audiencia no técnica; se comenta y se valida en el propio documento |
+| **Google Docs** | Visión, alcance, reglas de negocio en lenguaje de negocio, contradicciones comerciales y las 12 decisiones | Audiencia no técnica; se comenta y se valida en el propio documento |
 | **Linear** (equipo Velzia, proyecto *Diagnóstico AS-IS*) | 26 incidencias: cada hallazgo con su evidencia, su clasificación de confianza y su criterio de cierre | Un hallazgo sin responsable ni criterio de cierre no se arregla; Linear le da estado |
 
 ### Resolución del solapamiento
@@ -89,13 +89,13 @@ tabla de correspondencia completa.
 **Qué queda pendiente**
 
 - Ratificación del propietario, en particular la creación del equipo `VLZ`.
-- Decidir si el documento de Google Docs se congela cuando se cierren las 11
+- Decidir si el documento de Google Docs se congela cuando se cierren las 12
   decisiones o si pasa a ser el documento vivo de producto.
 
 ## Evidencia
 
-- Repositorio: `docs/00-AS-IS/` — 11 archivos, 163 referencias `archivo:línea`
-  verificadas contra el código, 70 enlaces internos validados.
+- Repositorio: `docs/00-AS-IS/` — 13 archivos, 180 referencias `archivo:línea`
+  verificadas contra el código, 95 enlaces internos validados.
 - Google Docs: *Velzia — Visión, alcance y reglas de negocio (AS-IS, commit
   cd96aa7)*, documento `1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE`.
 - Linear: equipo `Velzia` (`VLZ`), proyecto *Diagnóstico AS-IS (commit
