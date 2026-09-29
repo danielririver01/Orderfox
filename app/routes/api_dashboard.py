@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, current_app
-from app.models import Restaurant, User
+from app.models import Restaurant, User, db
 from app.utils.auth import require_auth, require_active, require_feature
 from app.utils.jwt_auth import get_current_restaurant_jwt, get_current_user_jwt
 from app.utils.subscription import get_plan_limits, AI_TOKEN_LIMITS, get_subscription_status

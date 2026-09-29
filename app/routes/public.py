@@ -37,7 +37,14 @@ def menu(slug=None):
             abort(404)
         slug = restaurant.slug
 
-    base_url = current_app.config.get('ASTRO_BASE_URL', current_app.config.get('BASE_URL', request.url_root.rstrip('/')))
+    # `config.get(clave, defecto)` NO sirve aquí: las claves existen con valor
+    # None cuando falta su variable de entorno, así que el defecto nunca se
+    # aplicaría. Con `or` sí encadena. Mismo patrón que tables.py y dashboard.py.
+    base_url = (
+        current_app.config.get('ASTRO_BASE_URL')
+        or current_app.config.get('BASE_URL')
+        or request.url_root.rstrip('/')
+    )
     target = f"{base_url}/{slug}/"
     if request.query_string:
         target += '?' + request.query_string.decode('utf-8')
