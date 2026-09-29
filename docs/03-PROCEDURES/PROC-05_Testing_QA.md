@@ -71,7 +71,25 @@ pytest --cov=app tests/
 
 ---
 
-## 5. Fixtures Disponibles
+## 5. Configuración reproducible de la suite
+
+La suite no llama a Clerk ni a servicios externos. `tests/conftest.py` define
+credenciales ficticias para atravesar los caminos que verifican la configuración:
+
+```bash
+SECRET_KEY=test-secret-key-for-testing-only
+JWT_SECRET_KEY=test-secret-key-for-testing-only
+CLERK_SECRET_KEY=sk_test_dummy
+CLERK_PUBLISHABLE_KEY=pk_test_dummy
+DATABASE_URL=sqlite:///:memory:
+```
+
+`CLERK_SECRET_KEY` es obligatoria para las pruebas de eliminación de cuenta,
+pero su valor es únicamente un dummy y nunca debe ser una credencial real.
+Los tests de telemetría de Copilot simulan DeepSeek y desactivan la búsqueda web
+para no depender de `TAVILY_API_KEY`, internet ni un proveedor externo.
+
+## 6. Fixtures Disponibles
 
 Definidos en `tests/conftest.py`:
 
@@ -88,7 +106,7 @@ Definidos en `tests/conftest.py`:
 
 ---
 
-## 6. Convenciones para Escribir Tests
+## 7. Convenciones para Escribir Tests
 
 ### Nomenclatura
 ```python
@@ -122,7 +140,7 @@ def test_calcula_descuento_correctamente(self):
 
 ---
 
-## 7. Checklist de QA Manual
+## 8. Checklist de QA Manual
 
 Antes de cada release:
 
@@ -143,7 +161,7 @@ Antes de cada release:
 
 ---
 
-## 8. Plan de Mejora
+## 9. Plan de Mejora
 
 | Corto Plazo (1-2 semanas) | Mediano Plazo (1 mes) | Largo Plazo (3 meses) |
 |--------------------------|----------------------|----------------------|
@@ -153,7 +171,7 @@ Antes de cada release:
 
 ---
 
-## 9. Historial de Cambios
+## 10. Historial de Cambios
 
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|

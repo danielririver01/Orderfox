@@ -158,7 +158,7 @@ blueprints**.
 
 ## 4. Pruebas
 
-### 4.1 El detalle que no está documentado en ningún sitio
+### 4.1 Hallazgo histórico: variable requerida para pruebas
 
 `[EJECUTADO]` Ejecutando la suite **tal cual**, sin variables adicionales:
 
@@ -178,8 +178,9 @@ Cobertura total: 58.38 %   (umbral exigido: 35 %)
 devuelve `(False, 'Clerk no está configurado…')` cuando falta
 `CLERK_SECRET_KEY` (`app/services/auth_service.py:403-405`), y 12 pruebas de
 `tests/test_account_deletion.py` dependen de esa ruta. El CI lo resuelve fijando
-`CLERK_SECRET_KEY: sk_test_dummy` (`.github/workflows/ci.yml:31`), pero **ningún
-documento del repositorio menciona este requisito**.
+`CLERK_SECRET_KEY: sk_test_dummy` (`.github/workflows/ci.yml:31`), pero **en el commit de referencia ningún documento del repositorio
+mencionaba este requisito**. La guía vigente y `tests/conftest.py` ya lo
+documentan/configuran; ver la actualización al final de esta sección.
 
 > **Comando reproducible verificado:**
 > ```bash
@@ -188,7 +189,7 @@ documento del repositorio menciona este requisito**.
 >   .venv/bin/python -m pytest -q
 > ```
 
-### 4.2 Los 2 fallos que quedan
+### 4.2 Hallazgo histórico: los 2 fallos de telemetría
 
 `[EJECUTADO]` Ambos en `tests/test_copilot_follow_up_cap.py::TestLLMCallTelemetry`:
 
@@ -198,15 +199,15 @@ WARNING app:message_handler.py:407 Web search failed: TAVILY_API_KEY no está co
 INFO    app:token_service.py:160 WALLET: Token consumido para usuario 1
 ```
 
-`[CÓDIGO]` El CI los excluye de forma permanente con
-`-k "not TestLLMCallTelemetry"` (`.github/workflows/ci.yml:67`), en lugar de
-marcarlos con `@pytest.mark.skip(reason=...)`.
+`[CÓDIGO]` En el commit de referencia el CI los excluía de forma permanente
+con `-k "not TestLLMCallTelemetry"` (`.github/workflows/ci.yml:67`). Este
+comportamiento ya no existe en el workflow vigente: actualmente se ejecuta
+`pytest --tb=short -q --no-header` sin ese filtro.
 
-`[INFERIDO]` Estas dos pruebas **dependen de una llamada real al LLM**. Su
-exclusión deja sin cobertura la telemetría de coste de IA (`ai_llm_calls`), y de
-paso oculta el comportamiento descrito en
-[R-05](06-riesgos-y-deuda-tecnica.md#r-05) (el token se cobra aunque el LLM
-falle).
+`[INFERIDO]` En el commit de referencia estas dos pruebas dependían de una
+llamada real al LLM. La implementación vigente simula DeepSeek y desactiva la
+búsqueda web en el fixture `fake_deepseek`, por lo que no requiere
+`TAVILY_API_KEY`, internet ni un proveedor externo.
 
 ### 4.3 Configuración de pruebas
 
@@ -360,13 +361,15 @@ despliegue han sido un problema recurrente.
 | Aplicar migraciones | ✅ `[EJECUTADO]` (SQLite) |
 | Arrancar la aplicación | ✅ `[EJECUTADO]` |
 | Responder peticiones HTTP | ✅ `[EJECUTADO]` (13 endpoints) |
-| Suite de pruebas | ⚠️ `[EJECUTADO]` 620/622 — requiere `CLERK_SECRET_KEY` no documentada |
+| Suite de pruebas | ⚠️ `[EJECUTADO]` en el commit de referencia: 620/622; el estado vigente se ejecuta con variables dummy y sin excluir telemetría |
 | Lint | ⚠️ `[EJECUTADO]` 5 errores `F821` reales, ocultos por `--exit-zero` |
 | Modelos ↔ migraciones | ❌ `[EJECUTADO]` desincronizados ([R-03](06-riesgos-y-deuda-tecnica.md#r-03)) |
 | Docker | ❓ no verificable aquí; configuración incompleta por lectura |
 | Despliegue | ❓ no verificable aquí |
 
-**Conclusión:** el proyecto **compila y ejecuta correctamente en un entorno
-limpio**, con dos salvedades que un desarrollador nuevo descubriría a golpes:
-la variable `CLERK_SECRET_KEY` necesaria para las pruebas, y la ausencia de
-instrucciones para Linux/macOS.
+**Conclusión del snapshot:** el proyecto **compilaba y ejecutaba correctamente
+en un entorno limpio**, con dos salvedades históricas: la variable
+`CLERK_SECRET_KEY` necesaria para las pruebas y la ausencia de instrucciones
+para Linux/macOS. La variable ya está documentada en la guía vigente y fijada
+con un valor dummy en `tests/conftest.py`; la telemetría tampoco se excluye del
+CI vigente.

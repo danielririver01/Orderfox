@@ -368,7 +368,9 @@ que **la suite nunca se ejecuta contra el motor de producción**.
 ## 10. CI/CD y despliegue
 
 `[CÓDIGO]` Un solo workflow: `.github/workflows/ci.yml`, disparado en `push` y
-`pull_request` contra `main`.
+`pull_request` contra `main`. La descripción de los pasos 1–7 conserva el
+snapshot del commit de referencia; el workflow vigente ya no excluye
+`TestLLMCallTelemetry`.
 
 **Job `test`:**
 1. `postgres:14` como servicio — `DATABASE_URL: postgresql://...`
@@ -377,7 +379,8 @@ que **la suite nunca se ejecuta contra el motor de producción**.
 4. `npm ci` → `npm run build:css`
 5. `flask db upgrade`
 6. `flake8 app/ --max-line-length=120 **--exit-zero**`
-7. `pytest --tb=short -q --no-header **-k "not TestLLMCallTelemetry"**`
+7. En el commit de referencia: `pytest --tb=short -q --no-header **-k "not TestLLMCallTelemetry"**`
+   **Estado vigente:** `pytest --tb=short -q --no-header` (sin exclusión).
 
 **Job `deploy`:** solo en `push` a `main`; SSH a Oracle Cloud y ejecuta
 `deploy/update_server.sh`.
@@ -387,8 +390,9 @@ que **la suite nunca se ejecuta contra el motor de producción**.
   errores `F821` (nombre indefinido) documentados en
   [06-riesgos-y-deuda-tecnica.md](06-riesgos-y-deuda-tecnica.md) pasan
   desapercibidos.
-- **`-k "not TestLLMCallTelemetry"`**: dos pruebas están excluidas de forma
-  permanente en lugar de marcarse con `@pytest.mark.skip` y una razón.
+- **`-k "not TestLLMCallTelemetry"`**: fue una exclusión del commit de
+  referencia. El workflow vigente no usa ese filtro; los tests se mantienen en
+  la suite mediante mocks deterministas.
 
 `[CÓDIGO]` El CI **no ejecuta** bandit ni safety, aunque están en
 `requirements-dev.txt`.

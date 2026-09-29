@@ -6,6 +6,10 @@ from werkzeug.security import generate_password_hash
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SECRET_KEY'] = 'test-secret-key-for-testing-only'
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only'
+# Clerk is not contacted in tests; the dummy secret enables the code paths
+# that require the integration to be configured.
+os.environ['CLERK_SECRET_KEY'] = 'sk_test_dummy'
+os.environ['CLERK_PUBLISHABLE_KEY'] = 'pk_test_dummy'
 
 from app import create_app
 from app.models import db as _db

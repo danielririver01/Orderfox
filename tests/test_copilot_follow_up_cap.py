@@ -165,6 +165,12 @@ def fake_deepseek(app, monkeypatch):
         return _FakeResp(payload)
 
     monkeypatch.setattr('app.services.insights.llm_service.requests.post', _post)
+    # Keep these tests deterministic: web search is outside their telemetry
+    # scope and must not require a Tavily credential or network access.
+    monkeypatch.setattr(
+        'app.services.insights.web_search.search',
+        lambda query, max_results=3: [],
+    )
 
 
 @pytest.fixture
