@@ -142,6 +142,7 @@ Velzia — Diagnóstico AS-IS (commit cd96aa7)/
 │   ├── 2.5 · Compilación y despliegue
 │   └── 2.6 · Verificación en ejecución (6 bugs nuevos)
 ├── 3 · Hallazgos y decisiones pendientes/
+│   ├── 3.0 · Seguridad: alcance y límites de la revisión   ← léelo antes que el 3.1
 │   ├── 3.1 · Riesgos y deuda técnica
 │   └── 3.2 · Preguntas pendientes para el propietario
 └── 4 · Decisiones de arquitectura (ADR)/
