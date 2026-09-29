@@ -60,8 +60,18 @@ jobs:
           export FLASK_APP=app
           flask db upgrade
 
-      - name: Lint
-        run: flake8 app/ --max-line-length=120 --exit-zero
+      # Errores fatales en tiempo de ejecucion. Este paso SI rompe la build.
+      #   F821  nombre indefinido  -> NameError garantizado (VLZ-1, VLZ-2)
+      #   E999  error de sintaxis
+      # Hoy estan a cero. La puerta se puede ir estrechando conforme se
+      # limpien los demas: quedan 5 F811 (importaciones repetidas) y 2 F601
+      # (clave de diccionario duplicada en data_service.py) -> ver VLZ-5.
+      - name: Lint (errores que rompen en ejecucion)
+        run: flake8 app/ --select=F821,E999 --max-line-length=120
+
+      # Estilo y avisos: informativo, no bloquea.
+      - name: Lint (estilo, informativo)
+        run: flake8 app/ --max-line-length=120 --exit-zero --statistics
 
       - name: Run tests
         run: pytest --tb=short -q --no-header -k "not TestLLMCallTelemetry"

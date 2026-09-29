@@ -15,7 +15,11 @@ from app.services.subscription_service import SubscriptionService
 from app.services.token_service import TokenService
 from app import db
 from app.models import AITokenTransaction, User, Restaurant
-from app.utils.mp_webhook import extract_mp_signature, verify_mp_signature
+from app.utils.mp_webhook import (
+    extract_mp_request_id,
+    extract_mp_signature,
+    verify_mp_signature,
+)
 from app.utils.subscription import TOP_UP_PACKS
 
 api_webhooks_bp = Blueprint('api_webhooks', __name__, url_prefix='/api/v1/webhooks')
@@ -144,22 +148,30 @@ def mercadopago_webhook():
         body = request.get_json(silent=True) or {}
         headers = request.headers
 
-        # Extraer data.id del body
+        # data.id llega en el cuerpo y también como query param: MP lo envía
+        # en ambos sitios y el manifiesto de firma se calcula sobre él.
         data_id = None
         if body.get('data') and body['data'].get('id'):
             data_id = str(body['data']['id'])
         if not data_id:
-            data_id = str(body.get('id') or '')
+            data_id = str(
+                request.args.get('data.id')
+                or request.args.get('id')
+                or body.get('id')
+                or ''
+            )
 
-        # Extraer y verificar firma
+        # Extraer y verificar firma. `x-request-id` forma parte del manifiesto
+        # oficial de MP: sin él, ninguna notificación real valida.
         ts, v1 = extract_mp_signature(headers)
+        request_id = extract_mp_request_id(headers)
         webhook_secret = current_app.config.get('MP_WEBHOOK_SECRET')
 
         if webhook_secret:
             if not data_id:
                 logger.warning("WEBHOOK MP: Falta data.id en el payload")
                 return jsonify({'success': False, 'error': 'missing_data_id'}), 400
-            if not verify_mp_signature(data_id, ts, v1, webhook_secret):
+            if not verify_mp_signature(data_id, request_id, ts, v1, webhook_secret):
                 logger.warning(f"WEBHOOK MP: Firma inválida para data_id={data_id}")
                 return jsonify({'success': False, 'error': 'invalid_signature'}), 401
         else:

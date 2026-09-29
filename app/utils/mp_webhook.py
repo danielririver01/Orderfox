@@ -1,9 +1,23 @@
 """
 mp_webhook.py — Utilidades compartidas para webhooks de Mercado Pago.
 
-Centraliza la verificación de firma HMAC-SHA256 y el parseo del
-header `x-signature` para que cualquier endpoint de webhook (nuevo o
+Centraliza la verificación de firma HMAC-SHA256 y el parseo de las cabeceras
+`x-signature` y `x-request-id`, para que cualquier endpoint de webhook (nuevo o
 existente) pueda validar que la notificación viene realmente de MP.
+
+El esquema implementado es el **oficial de Mercado Pago**:
+
+    manifiesto = "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
+    v1_esperado = HMAC-SHA256(clave_secreta, manifiesto).hexdigest()
+
+Notas de la especificación que conviene no perder de vista:
+
+- Los pares cuyo valor no llegue en la notificación **se omiten** del
+  manifiesto (no se escriben vacíos).
+- `data.id` va en **minúsculas**. Para los pagos es numérico y da igual, pero
+  otros recursos usan identificadores alfanuméricos.
+- `data.id` puede venir en el cuerpo o en el *query param*; quien llame a
+  `verify_mp_signature` debe resolverlo antes.
 """
 
 import hmac
@@ -25,26 +39,56 @@ def extract_mp_signature(headers) -> tuple:
     for part in sig_header.split(','):
         part = part.strip()
         if part.startswith('ts='):
-            ts = part[3:]
+            ts = part[3:].strip()
         elif part.startswith('v1='):
-            v1 = part[3:]
+            v1 = part[3:].strip()
     return ts, v1
 
 
-def verify_mp_signature(data_id: str, ts: str, v1: str, secret: str) -> bool:
-    """Verifica HMAC-SHA256 de la firma `x-signature` de MP Webhooks API.
+def extract_mp_request_id(headers) -> str:
+    """Devuelve el header `x-request-id`, que forma parte del manifiesto.
 
-    Construcción del mensaje: `data_id + '.' + ts + '.' + secret`.
-    Compara el HMAC con `v1` (hex digest) usando `hmac.compare_digest`
-    (resistente a timing attacks).
+    Sin este valor la firma de una notificación real nunca cuadra, porque MP
+    lo incluye al calcularla.
     """
-    if not all([data_id, ts, v1, secret]):
+    return headers.get('x-request-id') or headers.get('X-Request-Id') or None
+
+
+def build_mp_manifest(data_id, request_id, ts) -> str:
+    """Construye el manifiesto que Mercado Pago firma.
+
+    Formato oficial: `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
+    Los pares sin valor se omiten, tal y como especifica MP.
+    """
+    partes = []
+    if data_id:
+        partes.append(f"id:{str(data_id).lower()};")
+    if request_id:
+        partes.append(f"request-id:{request_id};")
+    if ts:
+        partes.append(f"ts:{ts};")
+    return ''.join(partes)
+
+
+def verify_mp_signature(data_id, request_id, ts, v1, secret) -> bool:
+    """Verifica la firma `x-signature` de una notificación de Mercado Pago.
+
+    Compara el HMAC-SHA256 del manifiesto oficial contra `v1` usando
+    `hmac.compare_digest` (resistente a timing attacks).
+
+    Devuelve False ante cualquier dato ausente: sin firma, sin secreto o sin
+    ningún componente del manifiesto no hay nada que validar.
+    """
+    if not v1 or not secret:
         return False
 
-    message = f"{data_id}.{ts}.{secret}"
-    expected = hmac.new(
+    manifiesto = build_mp_manifest(data_id, request_id, ts)
+    if not manifiesto:
+        return False
+
+    esperado = hmac.new(
         secret.encode('utf-8'),
-        message.encode('utf-8'),
+        manifiesto.encode('utf-8'),
         hashlib.sha256,
     ).hexdigest()
-    return hmac.compare_digest(expected, v1)
+    return hmac.compare_digest(esperado, v1.strip().lower())
