@@ -117,10 +117,10 @@ Esta es la parte importante del documento.
 | Área | Estado | Por qué |
 |---|---|---|
 | **Autenticación** (Clerk, alta, login, `/api/sync-clerk`) | ❌ **sin probar** | Requiere credenciales reales. La sesión del dueño se **simuló** con una cookie firmada — ver [2.6 §9](08-verificacion-en-ejecucion.md) |
-| **JWT Bearer** (API móvil y Scanner IA) | ❌ **sin probar** | Ninguna prueba usó esa vía; todas fueron por cookie |
+| ~~JWT Bearer~~ | ✅ **probado** | Ver §2.8: funciona, resiste firma manipulada y `alg=none`. Falta la emisión real vía Clerk |
 | **Inyección SQL** | ❌ sin probar | No se hicieron pruebas de inyección. El ORM parametriza por defecto, pero eso es una expectativa, no una comprobación |
 | **XSS** (reflejado, almacenado, DOM) | ❌ sin probar | La CSP con `unsafe-inline` reduce la mitigación disponible |
-| **Falsificación de firma de webhooks** | ❌ sin probar | El código verifica HMAC con `compare_digest` (`app/utils/mp_webhook.py:34-50`), pero **no se intentó falsificar ninguna firma** |
+| ~~Falsificación de firma de webhooks~~ | ✅ **probado** | Ver [R-24](#r-24): la firma de Mercado Pago **no sigue la especificación oficial**. El webhook de Clerk (Svix) sigue sin probar |
 | **Subida de archivos** | ❌ sin probar | Cloudinary, `image_handler`, límite de 16 MB: sin pruebas de tipo, tamaño ni contenido malicioso |
 | **Inyección de prompts en el Copilot** | ❌ sin probar | Hay tres capas documentadas en el código; **ninguna se puso a prueba** |
 | **Escaneo de secretos** | ❌ **no ejecutado** | `.gitleaks.toml` existe, pero gitleaks no está instalado en el entorno de revisión |
@@ -132,7 +132,132 @@ Esta es la parte importante del documento.
 
 ---
 
-## 4. Hallazgo nuevo
+### 2.7 Verificación de firma de webhooks — `[EJECUTADO]` ❌ ver R-24
+
+Se pueden probar **sin ninguna credencial**: ambos webhooks validan contra un
+secreto compartido que uno mismo puede fijar. El resultado es
+[R-24](#r-24), el hallazgo más grave de todo el diagnóstico.
+
+### 2.8 Autenticación por JWT — `[EJECUTADO]` ✅
+
+También verificable sin credenciales: el token lo firma la propia aplicación con
+`JWT_SECRET_KEY`. Se emitió uno con `create_access_token` y se atacó la vía:
+
+| Prueba | Resultado |
+|---|---|
+| Token válido → `GET /api/products` | **200** ✅ la vía JWT funciona |
+| Firma manipulada | **401** ✅ |
+| **Ataque `alg=none`** (confusión de algoritmo) | **401** ✅ *«The specified alg value is not allowed»* |
+| Sin token | **302** ⚠️ redirige al login en vez de devolver 401 |
+
+**Veredicto:** la autenticación por JWT resiste lo básico, incluido el ataque
+clásico de `alg=none`. El **302 sin token** no es un agujero, pero para un
+cliente de API es un mal comportamiento: debería ser `401`.
+
+`[EJECUTADO]` Observado de paso: con una `JWT_SECRET_KEY` corta, PyJWT avisa
+`InsecureKeyLengthWarning: The HMAC key is 6 bytes long, below the minimum
+recommended 32 bytes`. En la prueba la clave la puse yo; **queda por confirmar
+la longitud de la clave real en producción**.
+
+---
+
+## 4. Hallazgos nuevos
+
+<a id="r-24"></a>
+### 🔴 R-24 — La verificación de firma de Mercado Pago no sigue la especificación oficial: **rechaza todos los webhooks reales**
+
+**Estado:** `[EJECUTADO]` — reproducido contra ambos endpoints.
+
+#### La especificación oficial
+
+La documentación de Mercado Pago define el manifiesto así:
+
+```
+id:{data.id};request-id:{x-request-id};ts:{ts};
+```
+
+y sobre él calcula `HMAC-SHA256(clave_secreta, manifiesto)` en hexadecimal, que
+compara contra `v1` del header `x-signature`.
+
+#### Lo que implementa Orderfox
+
+`app/utils/mp_webhook.py:44-50`:
+
+```python
+message = f"{data_id}.{ts}.{secret}"
+expected = hmac.new(secret.encode('utf-8'), message.encode('utf-8'),
+                    hashlib.sha256).hexdigest()
+return hmac.compare_digest(expected, v1)
+```
+
+Tres diferencias con la especificación:
+
+1. El separador y el formato no coinciden (`.` en vez de la plantilla `id:…;request-id:…;ts:…;`).
+2. **No usa `x-request-id`.** `[EJECUTADO]` `grep -rn "x-request-id" app/` →
+   **cero coincidencias en todo el repositorio**: el dato que MP exige para
+   construir el manifiesto no se lee nunca.
+3. Mete el secreto *dentro* del mensaje firmado, además de usarlo como clave
+   del HMAC.
+
+#### Prueba en ejecución
+
+Con `MP_WEBHOOK_SECRET` configurado, enviando el cuerpo y las cabeceras que
+envía Mercado Pago:
+
+```
+Manifiesto oficial : id:132646402927;request-id:5e278faa-…;ts:1790653594;
+Mensaje de Orderfox: 132646402927.1790653594.<secreto>
+
+POST /api/v1/webhooks/mercadopago
+  firma REAL de Mercado Pago (manifiesto oficial) ->  401  invalid_signature   ❌
+  firma con el formato propio de Orderfox         ->  500  server_config
+        (la firma SE ACEPTA; el 500 es por falta de MP_ACCESS_TOKEN)
+  firma inventada (control)                       ->  401  invalid_signature   ✅
+
+POST /webhook  (legacy)
+  firma REAL de Mercado Pago                      ->  401  invalid_signature   ❌
+```
+
+**El verificador funciona; lo que no coincide es el esquema.** Una notificación
+legítima de Mercado Pago se rechaza igual que una falsificada.
+
+#### Impacto
+
+Ambos caminos del webhook son **fail-closed**, así que no hay riesgo de aceptar
+un pago falso. El problema es el contrario:
+
+| Configuración | Comportamiento con un webhook real de MP |
+|---|---|
+| `MP_WEBHOOK_SECRET` **configurado** | **401** — la firma nunca cuadra |
+| `MP_WEBHOOK_SECRET` **sin configurar** | **503** `webhook_not_configured` |
+
+**En las dos, el pago no se confirma nunca por webhook.** La única vía que
+acredita una suscripción es `/payment-callback`, la redirección del navegador al
+volver del checkout — que depende de que el cliente **regrese al sitio**. Si
+cierra el navegador tras pagar, queda pagado y sin acceso.
+
+`[INFERIDO]` Eso encajaría con incidencias del tipo «pagué y no se me activó».
+**Conviene contrastarlo con los casos de soporte reales antes de dar por cierta
+la consecuencia.**
+
+#### Límite de esta evidencia
+
+No se contrastó contra tráfico real de Mercado Pago. La base son: (a) la
+especificación oficial y los SDK de MP, corroborados por varias fuentes
+independientes, y (b) la comprobación en ejecución de que una firma construida
+según esa especificación se rechaza. **La prueba definitiva es enviar una
+notificación de prueba desde el panel de Mercado Pago.**
+
+#### Criterio de cierre
+
+- [ ] Reescribir `verify_mp_signature` con el manifiesto oficial
+- [ ] Leer y propagar `x-request-id` hasta la verificación
+- [ ] Tomar `data.id` del *query param* además del cuerpo (MP lo envía en ambos)
+- [ ] Prueba con firmas calculadas **fuera** de la implementación, para no validarla contra sí misma
+- [ ] Notificación de prueba desde el panel de MP contra un entorno de pruebas
+- [ ] Revisar si hay pagos históricos cobrados y no acreditados
+
+---
 
 <a id="r-23"></a>
 ### 🟠 R-23 — Dependencias con CVE conocidas, y el CI no ejecuta las herramientas que ya están instaladas
@@ -194,9 +319,21 @@ infraestructura. El punto 8 requiere al propietario.
 
 ## 6. Resumen en una línea
 
-**Lo que se sabe:** el aislamiento entre restaurantes y la separación de roles
-funcionan en lo probado; las cabeceras están bien puestas; bandit está limpio.
+**Lo que funciona:** el aislamiento entre restaurantes, la separación de roles,
+las cabeceras de seguridad, la autenticación por JWT (incluido `alg=none`) y
+bandit limpio.
 
-**Lo que no se sabe:** si la autenticación es sólida, si hay inyecciones, si los
-webhooks se pueden falsificar, y si hay secretos en el historial. **Nada de eso
-se probó.**
+**Lo que está roto:** la verificación de firma de Mercado Pago rechaza los
+webhooks legítimos ([R-24](#r-24)), y hay dependencias con CVE conocidas
+([R-23](#r-23)).
+
+**Lo que sigue sin saberse:** si la autenticación con Clerk es sólida, si hay
+inyecciones (SQL, XSS, prompts), si el webhook de Clerk se puede falsificar, y
+si hay secretos en el historial de Git. **Nada de eso se probó.**
+
+> 🔎 **Una lección de este documento.** R-24 y la verificación del JWT salieron
+> de una pregunta del propietario: *«¿esto fue auditoría con seguridad
+> incluida?»*. Ninguna de las dos necesitaba credenciales —ambas se validan
+> contra secretos que uno mismo fija— y sin embargo no estaban hechas. **El
+> diagnóstico había confundido «requiere un tercero» con «requiere sus
+> credenciales».**

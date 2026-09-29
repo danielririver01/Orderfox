@@ -125,7 +125,7 @@ en dos de ellos**. La decisión y su justificación están en
 | **Este repositorio** (`docs/00-AS-IS/`) | Inventario, arquitectura, modelo de datos, catálogo de funciones **con su evidencia `archivo:línea`**, compilación, pruebas, despliegue y ADR | estás aquí |
 | **Google Drive** | Todo el diagnóstico convertido a Google Docs, ordenado por carpetas para revisión. **Copia de lectura del commit `cd96aa7`**, no editable como fuente | [Velzia — Diagnóstico AS-IS](https://drive.google.com/drive/folders/1Igf2f-pnt48PitTLLwhQuineAQ4vopRD) |
 | **Google Docs** | Visión, alcance y reglas de negocio **en lenguaje de negocio**, sin referencias al código | [1.1 · Visión, alcance y reglas de negocio](https://docs.google.com/document/d/1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE/edit) |
-| **Linear** | Los hallazgos convertidos en trabajo accionable: 27 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-27` |
+| **Linear** | Los hallazgos convertidos en trabajo accionable: 28 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-28` |
 
 ### Estructura de la carpeta en Drive
 
@@ -199,6 +199,7 @@ Velzia — Diagnóstico AS-IS (commit cd96aa7)/
 | **R-22** Astro devuelve 200 en error de API (doc 08) | `VLZ-25` |
 | **C-08** Docstring de caja contradice al decorador (doc 08) | `VLZ-26` |
 | **R-23** CVEs en dependencias y CI sin bandit/safety (doc 09) | `VLZ-27` |
+| **R-24** Firma de webhooks de Mercado Pago fuera de especificación (doc 09) | `VLZ-28` |
 
 ---
 
