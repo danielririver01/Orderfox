@@ -1,6 +1,6 @@
 # Orderfox / Velzia — AI Agent Guide
 
-**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + MariaDB (XAMPP, local) / MySQL 8 (CI, prod)
+**Stack:** Flask 3.x (Python) + Astro (menu público) + Vanilla JS + Tailwind CSS 4 + PostgreSQL (CI, prod y local)
 **Version:** v1.4.0
 
 ## Skills & MCP

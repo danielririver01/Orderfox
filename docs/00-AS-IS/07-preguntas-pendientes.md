@@ -2,6 +2,18 @@
 
 **Commit de referencia:** `cd96aa763c086dea93e4aede46191b9add9067fa` · **Fecha:** 2026-09-29
 
+> ## ✅ Cuatro decisiones confirmadas — 2026-09-29, por Daniel (propietario)
+>
+> | # | Decisión | Estado |
+> |---|---|---|
+> | **D-01** | **PostgreSQL** es el motor oficial | `[CONFIRMADO]` |
+> | **D-02** | El benchmark anónimo **sigue siendo opt-out** | `[CONFIRMADO]` |
+> | **D-09** | Si el LLM falla, **el crédito se devuelve** | `[CONFIRMADO]` |
+> | **D-10** | La prueba gratuita es de **60 días** | `[CONFIRMADO]` |
+>
+> Son las primeras afirmaciones de todo el diagnóstico que dejan de ser
+> inferencias. El resto sigue en `[PENDIENTE]`.
+
 > **Doce preguntas.** Ninguna se puede responder leyendo el código: todas
 > requieren una decisión de negocio o el conocimiento de cómo se comporta el
 > sistema en producción.
@@ -13,7 +25,12 @@
 
 ## Las tres primeras (bloquean al resto)
 
-### D-01 — ¿Cuál es **el** motor de base de datos?
+### ✅ D-01 — ¿Cuál es **el** motor de base de datos?
+
+> **RESUELTA (2026-09-29, Daniel): PostgreSQL.** Alineados `README.md`,
+> `AGENTS.md`, `.env.example` y `Dockerfile.dev`. Ver ADR-0003.
+> Pendiente: retirar `PyMySQL` de `requirements.txt` y revisar las
+> herramientas MCP de MySQL descritas en `AGENTS.md`.
 
 **Por qué se pregunta:** siete fuentes del repositorio dan tres respuestas
 distintas. Hoy conviven **SQLite** (pruebas), **PostgreSQL** (CI y scripts de
@@ -35,7 +52,10 @@ real; las diferencias de dialecto (bloqueos `FOR UPDATE`, tipos de fecha,
 
 ---
 
-### D-02 — ¿El benchmark anónimo debe ser opt-out o opt-in?
+### ✅ D-02 — ¿El benchmark anónimo debe ser opt-out o opt-in?
+
+> **RESUELTA (2026-09-29, Daniel): se mantiene opt-out.** El comportamiento
+> actual es el deseado; no hay cambio de código. RN-42 pasa a `[CONFIRMADO]`.
 
 **Por qué se pregunta:** `restaurants.allow_benchmark` viene en `True`. Todo
 restaurante nuevo **comparte sus métricas por defecto** (solo medianas, con
@@ -170,7 +190,10 @@ el dueño valida después
 
 ---
 
-### D-09 — Si el LLM falla, ¿el crédito se devuelve?
+### ✅ D-09 — Si el LLM falla, ¿el crédito se devuelve?
+
+> **RESUELTA (2026-09-29, Daniel): sí, se devuelve.** Hay que implementar la
+> compensación cuando la llamada al LLM termina en error → VLZ-6.
 
 Hoy **no**. El token se descuenta y se confirma con `commit()` antes de llamar a
 DeepSeek; si la llamada falla, la API responde 502 sin compensación.
@@ -183,7 +206,10 @@ después de una respuesta válida
 
 ---
 
-### D-10 — ¿La prueba gratuita es de 10 días o de 60?
+### ✅ D-10 — ¿La prueba gratuita es de 10 días o de 60?
+
+> **RESUELTA (2026-09-29, Daniel): 60 días.** El código ya era correcto;
+> se corrigió `README.md`. Queda alinear la landing pública.
 
 El `README.md` anuncia **10 días**. El código concede **60**
 (`'duration_days': 60`, `'Prueba Premium · 60 días'`).

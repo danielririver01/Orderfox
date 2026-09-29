@@ -25,6 +25,7 @@ requisito aprobado.
 |---|---|---|---|
 | [ADR-0001](ADR-0001-ubicacion-de-la-documentacion-as-is.md) | Ubicación de la documentación AS-IS en `docs/00-AS-IS/` | Aceptado | 2026-09-29 |
 | [ADR-0002](ADR-0002-distribucion-entre-repo-google-docs-y-linear.md) | Distribución del diagnóstico entre repositorio, Google Docs y Linear | Aceptado | 2026-09-29 |
+| [ADR-0003](ADR-0003-postgresql-como-motor-oficial.md) | **PostgreSQL es el motor de base de datos oficial** | Aceptado · **`[CONFIRMADO]` por el propietario** | 2026-09-29 |
 
 ---
 
@@ -45,7 +46,7 @@ y se convertirán en ADR cuando el propietario indique cuáles fueron deliberada
 | A-06 | Todo en UTC salvo las reservas, en hora local de Colombia | — |
 | A-07 | Las cuentas nunca se borran: pasan a `dormant` | — |
 | A-08 | Scheduler integrado en el proceso web | [D-04](../07-preguntas-pendientes.md#d-04--llegan-duplicados-los-correos-y-las-notificaciones-automáticas) |
-| A-09 | Base de datos compartida con el Scanner IA externo | [D-01](../07-preguntas-pendientes.md#d-01--cuál-es-el-motor-de-base-de-datos) |
+| A-09 | Base de datos compartida con el Scanner IA externo | ✅ desbloqueada por ADR-0003 |
 | A-10 | CSRF manual por incompatibilidad de Flask-WTF 1.2.2 | — |
 
 ---

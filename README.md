@@ -14,11 +14,11 @@ Plataforma SaaS de gestión de pedidos para restaurantes colombianos. Crea tu me
 - **Notificaciones en tiempo real** — Cuando llega un pedido, el dueño recibe una notificación al instante.
 - **Pagos en línea** — Integración con Mercado Pago (la pasarela de pagos más usada en Colombia).
 - **Escáner de facturas con IA** — Toma fotos de tus facturas y el sistema las clasifica automáticamente.
-- **Planes flexibles** — Desde $30.000 COP/mes. Prueba gratuita de 10 días sin tarjeta de crédito.
+- **Planes flexibles** — Desde $30.000 COP/mes. Prueba gratuita de 60 días sin tarjeta de crédito.
 
 ## Tecnología
 
-- **Backend:** Python (Flask), SQLAlchemy, MySQL
+- **Backend:** Python (Flask), SQLAlchemy, PostgreSQL
 - **Frontend:** Tailwind CSS, JavaScript vanilla, Jinja2
 - **Infraestructura:** Docker, Gunicorn
 - **Servicios externos:** Clerk (autenticación), Mercado Pago (pagos), Cloudinary (imágenes), ntfy.sh (notificaciones)
