@@ -60,15 +60,18 @@ el CI y los scripts de `deploy/`. La documentación era la que iba por detrás.
 - `AGENTS.md` → stack actualizado
 - `.env.example` → `postgresql+psycopg2://…`
 - `Dockerfile.dev` → `libpq-dev` en vez de `default-libmysqlclient-dev`
+- **`requirements.txt` → retirado `PyMySQL==1.1.2`.** Confirmado por el
+  propietario el 2026-09-29. Comprobado antes de quitarlo: ningún módulo de
+  `app/` ni de `tests/` importa `pymysql` ni `MySQLdb`; las menciones que
+  quedan son comentarios que explican decisiones de portabilidad, y las 31
+  migraciones usan construcciones portables (`batch_alter_table`, patrón
+  inspector) sin SQL específico de ningún motor.
 
-**Pendientes, porque afectan a la máquina del propietario**
+**Pendientes**
 
-- Retirar `PyMySQL==1.1.2` de `requirements.txt`. Ningún módulo de `app/` lo
-  importa —solo se menciona en un comentario de
-  `app/services/insights/benchmark_service.py:42`— pero si el entorno local
-  sigue en MariaDB/XAMPP, quitarlo lo rompe.
 - Revisar la sección de `AGENTS.md` que describe la herramienta MCP
-  `Conexion_MYSQL` apuntando a XAMPP en el puerto 3306.
+  `Conexion_MYSQL` apuntando a XAMPP en el puerto 3306. Es tooling local del
+  propietario, no código del producto.
 - Decidir si la suite de pruebas deja de forzar SQLite
   (`tests/conftest.py:6`) o si al menos una suite de integración corre contra
   PostgreSQL real. **Sin esto, la decisión no cambia lo que se prueba.**
