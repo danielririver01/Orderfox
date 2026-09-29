@@ -17,7 +17,7 @@
 | Severidad | Defectos (R) | Descripción corta |
 |---|---|---|
 | 🔴 Alta | R-01, R-02, R-03, **R-17**, **R-18**, **R-21** | Errores reproducidos en ejecución, riesgo de migración destructiva e interrupción del portal de empleados |
-| 🟠 Media | R-04, R-05, R-06, R-07, R-08, R-16, **R-22** | Comportamiento incorrecto o degradación en producción |
+| 🟠 Media | R-04, R-05, R-06, R-07, R-08, R-16, **R-22**, **R-23** | Comportamiento incorrecto o degradación en producción |
 | 🟡 Baja | R-09 … R-15, **R-19**, **R-20** | Higiene, mantenibilidad, portabilidad |
 
 > 🧪 **R-17 … R-22 no están en este documento.** Salieron de someter las reglas
@@ -32,9 +32,15 @@
 > | [R-20](08-verificacion-en-ejecucion.md#r-20) | Un carrito con formato incorrecto devuelve **500** en lugar de 400 | 🟡 |
 > | [R-21](08-verificacion-en-ejecucion.md#r-21) | **5 PIN erróneos bloquean a toda la plantilla 30 min**, desde una URL pública | 🔴 |
 > | [R-22](08-verificacion-en-ejecucion.md#r-22) | Astro responde **HTTP 200** cuando el menú no existe o la API está caída: una caída total es invisible al monitoreo | 🟠 |
+> | [R-23](09-seguridad-alcance-y-limites.md#r-23) | `cryptography`, `idna` y `pyasn1` con CVE conocidas; el CI no ejecuta bandit ni safety pese a tenerlos instalados | 🟠 |
 >
 > **R-16** (deuda de pruebas) está documentada en
 > [05-compilacion-y-despliegue.md §4](05-compilacion-y-despliegue.md#4-pruebas).
+>
+> 🔒 **Sobre seguridad:** este documento recoge hallazgos de seguridad, pero
+> **este trabajo no fue una auditoría de seguridad**. El alcance real —qué se
+> comprobó y, sobre todo, qué no— está en
+> [09-seguridad-alcance-y-limites.md](09-seguridad-alcance-y-limites.md).
 
 <a id="c-08"></a>
 > ❗ **C-08 — Un docstring obsoleto me hizo documentar una regla falsa.**
