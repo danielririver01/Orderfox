@@ -308,8 +308,8 @@ Faltan N días:
 
 | # | Regla | Evidencia | Clasif. |
 |---|---|---|---|
-| RN-44 | Ocupación = `hora + service_duration_min + cleanup_buffer_min` (90 + 15 por defecto) | `app/models/reservations.py:62-66` | `[CÓDIGO]` |
-| RN-45 | Antelación mínima 2 h; máxima 30 días | `reservation_settings` | `[CÓDIGO]` |
+| RN-44 | Ocupación = `hora + service_duration_min + cleanup_buffer_min` (90 + 15 por defecto) | `app/models/reservations.py:62-66` · 🧪 **verificado al minuto: reserva 19:00 → mesa libre exactamente a las 20:45** | **`[EJECUTADO]`** |
+| RN-45 | Antelación mínima 2 h; máxima 30 días; máximo **100** personas | `reservation_settings`, `rs.MAX_PARTY_SIZE` · 🧪 **400 verificado en los tres casos** | **`[EJECUTADO]`** |
 | RN-46 | Una mesa sin `capacity` se trata como **4 personas** | `app/models/core.py:227` | `[CÓDIGO]` |
 | RN-47 | Las reservas se guardan en **hora local de Colombia**, no en UTC | `app/models/reservations.py:4-12` | `[CÓDIGO]` |
 | RN-48 | Mismo anti-spam que los pedidos: honeypot + 3/min por IP | `app/routes/public.py:104-118` | `[CÓDIGO]` |
@@ -320,15 +320,20 @@ Faltan N días:
 
 | # | Regla | Evidencia | Clasif. |
 |---|---|---|---|
-| RN-51 | Un cierre **no puede solaparse** con otro del mismo restaurante | Docstring `app/models/cash.py:11-12` + `CashRegisterService` | `[CÓDIGO]` |
+| RN-51 | Un cierre **no puede solaparse** con otro del mismo restaurante | `CashRegisterService._find_overlapping` · 🧪 **409 verificado** | **`[EJECUTADO]`** |
 | RN-52 | `UNIQUE(restaurant_id, period_start)` como red de seguridad en BD | `app/models/cash.py:51-53` | `[CÓDIGO]` |
 | RN-53 | Las ventas se agregan por **`paid_at`**, no por `created_at` | `app/models/cash.py:5` | `[CÓDIGO]` |
-| RN-54 | **Cualquier usuario del restaurante puede cerrar caja** (sin filtro por rol) | Docstring `app/models/cash.py:11-13` | `[CÓDIGO]` ⚠️ |
+| RN-54 | **Solo el dueño puede cerrar la caja.** El cajero alcanza la portada del Centro de Caja pero no el cierre; el mesero no entra | `app/routes/cash_register.py:143-146` (`@require_role('owner')`) · 🧪 **dueño 200 · cajero 403** | **`[EJECUTADO]`** ✅ corregida |
 | RN-55 | Métodos soportados: `cash`, `nequi`, `bancolombia`, `card` | `app/models/cash.py:36-45` | `[CÓDIGO]` |
 
-`[PENDIENTE]` RN-54 es un hueco de control interno: un mesero podría cerrar la
-caja. El propio código lo reconoce como pendiente. Ver
-[07-preguntas-pendientes.md](07-preguntas-pendientes.md) (D-08).
+> ❗ **RN-54 estaba mal en la primera versión de este documento.** Decía que
+> «cualquier usuario del restaurante puede cerrar caja, incluido un mesero»,
+> porque me apoyé en un **docstring obsoleto** del modelo
+> (`app/models/cash.py:11-13`) en lugar de en el decorador de la ruta. La
+> verificación en ejecución lo desmintió: el cierre es `@require_role('owner')`.
+> El detalle y la lección están en
+> [08-verificacion-en-ejecucion.md §7](08-verificacion-en-ejecucion.md#correccion-rn-54);
+> la contradicción docstring ↔ decorador se registra como **C-08**.
 
 ### 3.9 Recompensas ("Sorpresa Velzia")
 
@@ -354,7 +359,7 @@ caja. El propio código lo reconoce como pendiente. Ver
 |---|---|---|---|
 | RN-61 | Solo el `owner` administra empleados | `@require_role('owner')` en `employees.py` | `[CÓDIGO]` |
 | RN-62 | Máximo de empleados según plan: 1 / 5 / ∞ | `max_employees` en `PLAN_LIMITS` | `[CÓDIGO]` |
-| RN-63 | **5** PIN fallidos ⇒ bloqueo de **30 minutos** | `employee_service.py:44-45` | `[CÓDIGO]` |
+| RN-63 | **5** PIN fallidos ⇒ bloqueo de **30 minutos**, y el bloqueo es **de toda la plantilla**, no del empleado que falló | `employee_service.py:44-45` y `:203-209` · 🧪 **verificado: ambos empleados bloqueados, incluido el que nunca falló** | **`[EJECUTADO]`** ⚠️ ver [R-21](08-verificacion-en-ejecucion.md#r-21) |
 | RN-64 | Un PIN correcto reinicia el contador de fallos | `employee_service.py:199` | `[CÓDIGO]` |
 | RN-65 | Los empleados se **desactivan**, no se borran | `users.is_active` | `[CÓDIGO]` |
 | RN-66 | El dueño nunca tiene PIN (`pin_hash` NULL) | `app/models/core.py:124` | `[CÓDIGO]` |
@@ -390,7 +395,7 @@ del pedido (CASCADE).
 |---|---|---|---|
 | O-01 | El código permite pasar un pedido de **`delivered` a `cancelled`**: un pedido ya entregado se puede cancelar. | `order_service.py:211` | `[CÓDIGO]`, `[PENDIENTE]` |
 | O-02 | El código permite **reabrir** un pedido cancelado (`cancelled → pending`). | `order_service.py:212` | `[CÓDIGO]`, `[PENDIENTE]` |
-| O-03 | El código permite que **cualquier usuario del restaurante cierre la caja**, incluido un mesero. | `app/models/cash.py:11-13` | `[CÓDIGO]`, `[PENDIENTE]` |
+| O-03 | ~~Cualquier usuario puede cerrar la caja~~ → **descartada**: solo el dueño puede. Lo que queda por decidir es si el **cajero** debería poder. | `app/routes/cash_register.py:143-146` · 🧪 cajero **403** | **`[EJECUTADO]`**, `[PENDIENTE]` |
 | O-04 | El código permite **varios usuarios con rol `owner`** en el mismo restaurante, y toma el primero que encuentra. | `app/utils/auth.py:106-107` | `[CÓDIGO]`, `[PENDIENTE]` |
 | O-05 | El código **exime del rate limiting global a todo usuario con sesión iniciada**. | `app/__init__.py:22-24` | `[CÓDIGO]`, `[PENDIENTE]` |
 | O-06 | El código **cobra el token de IA antes de llamar al LLM y no lo devuelve si falla**. | `message_handler.py:296` + `:441-447` | `[EJECUTADO]`, `[PENDIENTE]` |

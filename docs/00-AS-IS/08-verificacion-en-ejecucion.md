@@ -287,7 +287,256 @@ la activa**.
 
 ---
 
-## 5. Lo que sigue sin verificarse
+---
+
+# Segunda pasada — portal de empleados, caja, reservas y frontend Astro
+
+**Fecha:** 2026-09-29 · Mismo commit. Banco de pruebas ampliado: restaurante
+plan Élite, dueño, **cajero (PIN 4739)**, **mesero (PIN 8261)**, 2 mesas
+(capacidad 4 y 2), 3 pedidos pagados (efectivo, Nequi, tarjeta) y reservas
+habilitadas.
+
+> Esta pasada **corrige un error del documento 04**. Conviene leer primero
+> la sección 7.
+
+## 6. Resultados de la segunda pasada
+
+### 6.1 Roles y portal de empleados
+
+| Prueba | Resultado | Veredicto |
+|---|---|---|
+| Login del cajero con PIN correcto | **302** → `/empleado/<slug>/caja` | ✅ |
+| Login del mesero con PIN correcto | **302** → `/empleado/<slug>/pedidos` | ✅ |
+| Cajero → `/empleado/<slug>/caja` | **200** | ✅ |
+| Cajero → `/empleado/<slug>/pedidos` | **302** (bloqueado) | ✅ |
+| Cajero → `/dashboard/` y `/dashboard/equipo` | **302** (bloqueado) | ✅ **RN-61 confirmada** |
+| Mesero → `/empleado/<slug>/pedidos` | **200** | ✅ |
+| Mesero → `/empleado/<slug>/caja` y `/cash-register/` | **302** (bloqueado) | ✅ |
+| PIN débil al crear empleado (`1111`) | Rechazado: *«Este PIN es demasiado fácil de adivinar»* | ✅ regla no documentada antes |
+
+`[EJECUTADO]` **Regla nueva encontrada:** el PIN debe ser exactamente 4 dígitos
+y no estar en una lista negra de PIN triviales
+(`app/services/employee_service.py:57-63`).
+
+### 6.2 Centro de caja
+
+| Prueba | Resultado | Veredicto |
+|---|---|---|
+| **Dueño** cierra caja del día | **200**, cierre creado | ✅ |
+| **Cajero** intenta cerrar caja | **403 forbidden** | ⚠️ **contradice RN-54** — ver §7 |
+| **Mesero** intenta cerrar caja | Bloqueado (no alcanza ni la pantalla) | ⚠️ ídem |
+| Segundo cierre del **mismo rango** | **409** *«Ya cerraste caja para el periodo 28/09/2026. Este periodo no se puede cerrar dos veces.»* | ✅ **RN-51 y RN-52 confirmadas** |
+
+### 6.3 Reservas de extremo a extremo
+
+| Prueba | Resultado | Veredicto |
+|---|---|---|
+| `GET /menu/api/reservations/config` | `enabled: true`, `min_notice_hours: 2`, `max_advance_days: 30`, **`max_party_size: 100`** | ✅ |
+| Disponibilidad antes de reservar (19:00, 4 pers.) | `available: true` | ✅ |
+| Crear reserva | **201**, estado `pending`, mesa 1 asignada | ✅ |
+| Antelación < 2 h | **400** *«Las reservas requieren al menos 2 horas de anticipación»* | ✅ **RN-45** |
+| Antelación > 30 días | **400** *«Solo se puede reservar con máximo 30 días de anticipación»* | ✅ **RN-45** |
+| 200 personas | **400** *«El número de personas debe estar entre 1 y 100»* | ✅ |
+| Honeypot relleno | **403** *«Actividad sospechosa detectada.»* | ✅ **RN-48** |
+
+**Fórmula de ocupación (RN-44) verificada al minuto.** Con una reserva a las
+19:00 y `service_duration_min = 90` + `cleanup_buffer_min = 15`, la mesa debe
+liberarse exactamente a las **20:45**:
+
+| Hora consultada | ¿Disponible? |
+|---|---|
+| 19:30 | ❌ no |
+| 20:30 | ❌ no |
+| **20:45** | ✅ **sí** |
+| 21:00 | ✅ sí |
+
+`[EJECUTADO]` **Matiz no documentado antes:** una reserva en estado `pending`
+—es decir, **sin que el restaurante la haya confirmado**— ya tiene mesa
+asignada y **bloquea la disponibilidad**. Una solicitud sin aprobar ocupa la
+mesa igual que una confirmada.
+
+### 6.4 Frontend Astro en ejecución
+
+`[EJECUTADO]` `npm install` (275 paquetes, 12 s) y `astro dev` arrancaron sin
+errores: **Astro v7.0.7 listo en 1,76 s**.
+
+| Prueba | Resultado |
+|---|---|
+| `GET /` (landing) | **200** |
+| `GET /aji-brasa/` (menú) | **200**, 81 KB de HTML |
+| Datos reales de Flask en el HTML | ✅ nombre del restaurante, categoría «Platos», producto «Bandeja paisa», precio `32.000` |
+| `GET /no-existe/` | **200** ⚠️ — ver [R-22](#r-22) |
+
+**El contrato Astro ↔ Flask funciona de extremo a extremo.** El menú público se
+renderiza en el servidor con datos que vienen de `GET /api/public/menu/<slug>`.
+
+---
+
+## 7. Corrección a un error del documento 04
+
+<a id="correccion-rn-54"></a>
+### ❗ RN-54 era incorrecta: **solo el dueño puede cerrar la caja**
+
+**Qué documenté (mal).** En [04-flujos-funcionales.md](04-flujos-funcionales.md)
+escribí, como RN-54 y como observación O-03, que *«cualquier usuario del
+restaurante puede cerrar caja, incluido un mesero»*, y lo elevé a decisión
+pendiente **D-08**.
+
+**De dónde salió el error.** Me apoyé en el docstring del modelo
+(`app/models/cash.py:11-13`):
+
+> *«`closed_by` queda registrado para soportar roles (cajero/admin) en el
+> futuro; hoy todos los usuarios del restaurante pueden cerrar caja.»*
+
+**Qué dice el código que se ejecuta.** `app/routes/cash_register.py:143-146`:
+
+```python
+@cash_register_bp.route('/close', methods=['POST'])
+@require_auth
+@require_active
+@require_role('owner')
+def close():
+```
+
+**Comprobación en ejecución:**
+
+```
+DUEÑO   POST /cash-register/close -> HTTP 200  (cierre creado)
+CAJERO  POST /cash-register/close -> HTTP 403  forbidden
+MESERO  POST /cash-register/close -> bloqueado antes de llegar
+```
+
+`/cash-register/api/summary` también es `@require_role('owner')`. El cajero solo
+alcanza la portada `/cash-register/` (`@require_role('owner', 'cashier')`).
+
+**Lecciones que deja este error:**
+
+1. Un docstring **no es evidencia de comportamiento**. Debí clasificar RN-54
+   como `[INFERIDO]`, no como `[CÓDIGO]`.
+2. La contradicción real no es de negocio sino documental: el docstring del
+   modelo está obsoleto respecto al decorador de la ruta. Se registra como
+   **C-08**.
+3. **D-08 cambia de sentido**: ya no es «quién puede cerrar la caja» (la
+   respuesta es: solo el dueño), sino «¿debería poder también el cajero?».
+
+---
+
+## 8. Hallazgos nuevos de la segunda pasada
+
+<a id="r-21"></a>
+### 🔴 R-21 — Cinco PIN erróneos bloquean a **toda la plantilla** durante 30 minutos
+
+**Estado:** `[EJECUTADO]` — reproducido.
+
+**Qué documenté antes (RN-63):** *«5 PIN fallidos ⇒ bloqueo de 30 minutos»*,
+dando a entender que el bloqueo es **del empleado**. No lo es.
+
+**Qué ocurre en realidad.** `EmployeeService.authenticate_employee`
+(`app/services/employee_service.py:203-209`) incrementa
+`failed_pin_attempts` de **todos los empleados activos** en cada intento
+fallido, porque no sabe a quién iba dirigido el PIN:
+
+```python
+for candidate in participants:
+    candidate.failed_pin_attempts = (candidate.failed_pin_attempts or 0) + 1
+    if candidate.failed_pin_attempts >= MAX_PIN_ATTEMPTS:
+        candidate.locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
+```
+
+**Prueba en ejecución.** Tras **dos** intentos con un PIN inexistente, ambos
+empleados subieron a la vez:
+
+```
+Marta Cajera   cashier  intentos=2
+Luis Mesero    waiter   intentos=2
+```
+
+Llevando el contador a 4 y lanzando el quinto fallo:
+
+```
+Marta Cajera   cashier  intentos=5  bloqueado_hasta=2026-09-29 03:36:22
+Luis Mesero    waiter   intentos=5  bloqueado_hasta=2026-09-29 03:36:22
+
+Cajero con su PIN CORRECTO (4739) -> HTTP 401
+   «Cuenta bloqueada por intentos fallidos. Espera 30 min…»
+Mesero con su PIN CORRECTO (8261) -> HTTP 401
+   «Cuenta bloqueada por intentos fallidos. Espera 30 min…»
+```
+
+**El mesero nunca falló un PIN y queda igualmente fuera.**
+
+**Impacto.** `/empleado/<slug>` es una URL **pública** y el `slug` es el mismo
+que aparece en el menú y en los QR de las mesas. Cualquiera que lo conozca
+puede dejar sin acceso al portal a todo el personal durante 30 minutos. En hora
+punta eso es una interrupción de servicio, no una molestia.
+
+**Atenuantes reales:**
+- La ruta tiene su propio límite: `@limiter.limit("5 per minute; 20 per hour")`
+  (`app/routes/employees.py:258`).
+- El dueño puede desbloquear desde *Equipo* (`POST /dashboard/equipo/<id>/desbloquear`).
+
+**Por qué los atenuantes no cierran el hueco:**
+- El límite es **por IP** y el almacén es `memory://`
+  ([R-08](06-riesgos-y-deuda-tecnica.md#r-08)): se reinicia con cada despliegue
+  y no se comparte entre los 3 workers de gunicorn.
+- 20 intentos por hora siguen bastando: solo hacen falta **5**.
+- El dueño puede desbloquear, pero necesita entrar al panel desde otro
+  dispositivo mientras el local está en servicio.
+
+**El diseño es deliberado** —el docstring explica que se castiga a todos porque
+«el atacante no sabe a qué empleado ataca»— pero **la consecuencia operativa no
+parece haberse evaluado**. Es una decisión de negocio a validar, no
+necesariamente un bug.
+
+`[EJECUTADO]` **Efecto secundario de usabilidad:** el límite de 5/minuto cuenta
+**GET y POST del mismo endpoint**. Cargar la página ya consume cuota, así que un
+empleado que se equivoque dos veces puede recibir un **429** antes de agotar sus
+intentos de PIN.
+
+---
+
+<a id="r-22"></a>
+### 🟠 R-22 — Astro responde HTTP 200 cuando el menú no existe o la API está caída
+
+**Estado:** `[EJECUTADO]` — reproducido.
+
+```
+GET http://localhost:4321/no-existe/   ->  HTTP 200   (61 KB)
+<title>Error al cargar el menú</title>
+```
+
+Mientras tanto, Flask sí responde correctamente:
+
+```
+GET /api/public/menu/no-existe  ->  HTTP 404
+```
+
+**Causa.** `astro/src/pages/[slug]/index.astro:33-42` captura el error de
+`fetchMenu` y renderiza una página de error, pero **no fija el código de
+estado**:
+
+```javascript
+try {
+  const response = await fetchMenu(slug);
+  ...
+} catch (e) {
+  console.error('fetchMenu error:', e);
+}
+```
+
+**Impacto.** El problema no es el slug inexistente, sino que **es el mismo
+camino de código para una caída de la API**:
+
+- Si Flask deja de responder, **todos** los menús devuelven `200 OK` con el
+  texto «Error al cargar el menú».
+- Cualquier monitor que compruebe el estado HTTP **verá el sistema sano
+  durante una caída total del menú público**. Y no hay endpoint de salud
+  ([R-15](06-riesgos-y-deuda-tecnica.md#r-15)) que sirva de alternativa.
+- Los buscadores indexan páginas de error de restaurantes que no existen.
+
+---
+
+## 9. Lo que sigue sin verificarse
 
 | Flujo | Motivo |
 |---|---|
@@ -295,6 +544,10 @@ la activa**.
 | Alta con Clerk | Requiere credenciales reales |
 | Copilot VZ con respuesta real | Requiere clave de DeepSeek |
 | Notificación ntfy | Requiere un tema configurado y red saliente |
-| Frontend Astro en ejecución | No se instalaron sus dependencias; el contrato se verificó por contraste de rutas |
-| Portal de empleados y caja | Requieren sesión autenticada; verificables en una segunda pasada |
-| Reservas de extremo a extremo | Ídem; las reglas están documentadas por lectura en el documento 04 |
+| Recompensas y cupones de extremo a extremo | Dependen de un pago aprobado de Mercado Pago |
+| Fotos automáticas de productos | Requieren claves de Unsplash y Gemini |
+| Comportamiento con MySQL/PostgreSQL | No hay motor disponible; todo se verificó con SQLite |
+
+**Ya no queda nada verificable sin credenciales externas.** Los flujos de
+pedidos, reservas, caja, roles y el frontend público están comprobados en
+ejecución; el resto depende de terceros.

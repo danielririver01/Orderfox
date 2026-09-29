@@ -73,7 +73,7 @@ como requisitos aprobados.**
 | [05-compilacion-y-despliegue.md](05-compilacion-y-despliegue.md) | Instalación reproducible verificada, pruebas, build, despliegue |
 | [06-riesgos-y-deuda-tecnica.md](06-riesgos-y-deuda-tecnica.md) | Hallazgos priorizados, bugs reproducidos, contradicciones documentales |
 | [07-preguntas-pendientes.md](07-preguntas-pendientes.md) | Decisiones cortas que necesita responder el propietario |
-| [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md) | **Las reglas del documento 04 sometidas a prueba ejecutando el sistema.** Confirma 10 reglas y descubre 4 hallazgos nuevos (R-17 … R-20) |
+| [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md) | **Las reglas sometidas a prueba ejecutando el sistema, en dos pasadas.** Confirma 24 reglas, descubre 6 hallazgos nuevos (R-17 … R-22) y **corrige una regla que estaba mal** (RN-54) |
 | [adr/](adr/) | Registros de decisiones de arquitectura de este ejercicio |
 
 ---
@@ -120,7 +120,7 @@ en dos de ellos**. La decisión y su justificación están en
 | **Este repositorio** (`docs/00-AS-IS/`) | Inventario, arquitectura, modelo de datos, catálogo de funciones **con su evidencia `archivo:línea`**, compilación, pruebas, despliegue y ADR | estás aquí |
 | **Google Drive** | Todo el diagnóstico convertido a Google Docs, ordenado por carpetas para revisión. **Copia de lectura del commit `cd96aa7`**, no editable como fuente | [Velzia — Diagnóstico AS-IS](https://drive.google.com/drive/folders/1Igf2f-pnt48PitTLLwhQuineAQ4vopRD) |
 | **Google Docs** | Visión, alcance y reglas de negocio **en lenguaje de negocio**, sin referencias al código | [1.1 · Visión, alcance y reglas de negocio](https://docs.google.com/document/d/1yDKcLooFkk72JCBDiMWJq8_qXV43IfyvC7nZmmXDUsE/edit) |
-| **Linear** | Los hallazgos convertidos en trabajo accionable: 23 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-23` |
+| **Linear** | Los hallazgos convertidos en trabajo accionable: 26 incidencias con evidencia y criterio de cierre | equipo **Velzia**, proyecto *Diagnóstico AS-IS (commit cd96aa7)* — `VLZ-1` … `VLZ-26` |
 
 ### Estructura de la carpeta en Drive
 
@@ -189,6 +189,9 @@ Velzia — Diagnóstico AS-IS (commit cd96aa7)/
 | **R-17** Anti-bot de 3 s inerte (doc 08) | `VLZ-21` |
 | **R-18** Redirección con `None` / defaults muertos (doc 08) | `VLZ-22` |
 | **R-19 + R-20** Huecos de numeración y 500 por carrito malformado (doc 08) | `VLZ-23` |
+| **R-21** Bloqueo de PIN colectivo (doc 08) | `VLZ-24` |
+| **R-22** Astro devuelve 200 en error de API (doc 08) | `VLZ-25` |
+| **C-08** Docstring de caja contradice al decorador (doc 08) | `VLZ-26` |
 
 ---
 

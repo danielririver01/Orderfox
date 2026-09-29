@@ -16,11 +16,11 @@
 
 | Severidad | Defectos (R) | Descripción corta |
 |---|---|---|
-| 🔴 Alta | R-01, R-02, R-03, **R-17**, **R-18** | Errores reproducidos en ejecución y riesgo de migración destructiva |
-| 🟠 Media | R-04, R-05, R-06, R-07, R-08, R-16 | Comportamiento incorrecto o degradación en producción |
+| 🔴 Alta | R-01, R-02, R-03, **R-17**, **R-18**, **R-21** | Errores reproducidos en ejecución, riesgo de migración destructiva e interrupción del portal de empleados |
+| 🟠 Media | R-04, R-05, R-06, R-07, R-08, R-16, **R-22** | Comportamiento incorrecto o degradación en producción |
 | 🟡 Baja | R-09 … R-15, **R-19**, **R-20** | Higiene, mantenibilidad, portabilidad |
 
-> 🧪 **R-17 … R-20 no están en este documento.** Salieron de someter las reglas
+> 🧪 **R-17 … R-22 no están en este documento.** Salieron de someter las reglas
 > de negocio a prueba ejecutando el sistema, y viven con su evidencia completa
 > en [08-verificacion-en-ejecucion.md](08-verificacion-en-ejecucion.md):
 >
@@ -30,11 +30,22 @@
 > | [R-18](08-verificacion-en-ejecucion.md#r-18) | `/menu/<slug>` redirige a una URL con `None`; los valores por defecto de 14 llamadas `config.get(...)` son **código muerto** | 🔴 |
 > | [R-19](08-verificacion-en-ejecucion.md#r-19) | El contador diario de pedidos gasta un número en cada reintento idempotente | 🟡 |
 > | [R-20](08-verificacion-en-ejecucion.md#r-20) | Un carrito con formato incorrecto devuelve **500** en lugar de 400 | 🟡 |
+> | [R-21](08-verificacion-en-ejecucion.md#r-21) | **5 PIN erróneos bloquean a toda la plantilla 30 min**, desde una URL pública | 🔴 |
+> | [R-22](08-verificacion-en-ejecucion.md#r-22) | Astro responde **HTTP 200** cuando el menú no existe o la API está caída: una caída total es invisible al monitoreo | 🟠 |
 >
 > **R-16** (deuda de pruebas) está documentada en
 > [05-compilacion-y-despliegue.md §4](05-compilacion-y-despliegue.md#4-pruebas).
 
-| Contradicciones documentales | C-01 … C-07 |
+<a id="c-08"></a>
+> ❗ **C-08 — Un docstring obsoleto me hizo documentar una regla falsa.**
+> `app/models/cash.py:11-13` afirma que *«hoy todos los usuarios del restaurante
+> pueden cerrar caja»*, pero `app/routes/cash_register.py:143-146` exige
+> `@require_role('owner')`. Verificado: dueño **200**, cajero **403**.
+> Documenté la versión del docstring como RN-54 y la elevé a decisión D-08;
+> ambas quedan corregidas. Detalle en
+> [08-verificacion-en-ejecucion.md §7](08-verificacion-en-ejecucion.md#correccion-rn-54).
+
+| Contradicciones documentales | C-01 … C-08 |
 |---|---|
 
 ---

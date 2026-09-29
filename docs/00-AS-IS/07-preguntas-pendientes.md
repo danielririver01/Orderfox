@@ -2,7 +2,7 @@
 
 **Commit de referencia:** `cd96aa763c086dea93e4aede46191b9add9067fa` · **Fecha:** 2026-09-29
 
-> **Once preguntas.** Ninguna se puede responder leyendo el código: todas
+> **Doce preguntas.** Ninguna se puede responder leyendo el código: todas
 > requieren una decisión de negocio o el conocimiento de cómo se comporta el
 > sistema en producción.
 >
@@ -68,7 +68,15 @@ y auditar; no está claro cuál es la de verdad.
 **(b)** el login propio es el plan B si Clerk cae → documentarlo como tal ·
 **(c)** el login propio es solo para empleados/administración
 
-**Evidencia:** [02 §4.1](02-arquitectura-actual.md#41-tres-mecanismos-coexistentes)
+> 🧪 **Evidencia nueva de la verificación en ejecución:** la página de login
+> **ya no renderiza el formulario de contraseña**. `app/template/auth/index.html`
+> contiene solo el widget de Clerk: cero apariciones de `form.email` y cero de
+> `csrf_token`. Es decir, el login propio existe en la ruta
+> (`AuthService.authenticate`) pero **la interfaz no lo expone**. Eso inclina la
+> respuesta hacia (a) o (b), pero sigue siendo una decisión de producto: hay que
+> decidir si se retira del código o se conserva como plan de contingencia.
+
+**Evidencia:** [02 §4.1](02-arquitectura-actual.md#41-tres-mecanismos-coexistentes) · [08 §6.1](08-verificacion-en-ejecucion.md)
 
 ---
 
@@ -138,16 +146,27 @@ si no llega ninguno.
 
 ---
 
-### D-08 — ¿Quién debería poder cerrar la caja?
+### D-08 — ¿Debería el **cajero** poder cerrar la caja?
 
-Hoy **cualquier usuario del restaurante** puede hacerlo, incluido un mesero. El
-propio código lo reconoce: la columna `cash_registers.closed_by` existe
-*"para soportar roles más adelante"* (`app/models/cash.py:11-13`).
+> ⚠️ **Esta pregunta cambió de sentido al verificarla en ejecución.**
+> Originalmente decía *«hoy cualquier usuario puede cerrar la caja, incluido un
+> mesero»*, apoyándome en un docstring obsoleto. **Es falso.**
 
-**Opciones:** **(a)** solo `owner` · **(b)** `owner` y `cashier` ·
-**(c)** está bien como está
+**Lo que ocurre hoy, comprobado:** el cierre es `@require_role('owner')`.
+Dueño → **200**; cajero → **403**; mesero → bloqueado antes de llegar.
 
-**Evidencia:** [RN-54](04-flujos-funcionales.md#38-caja)
+**Lo que queda por decidir** es si el perfil que de hecho cuadra la caja en el
+local —el cajero— debería poder cerrarla, o si el cierre es deliberadamente una
+atribución exclusiva del dueño.
+
+**Opciones:** **(a)** seguir solo `owner` · **(b)** permitir también `cashier`
+(la columna `closed_by` ya distingue quién cerró) · **(c)** el cajero cierra y
+el dueño valida después
+
+**Tarea asociada en cualquier caso:** corregir el docstring de
+`app/models/cash.py:11-13`, que contradice al código (**C-08**).
+
+**Evidencia:** [08-verificacion-en-ejecucion.md §7](08-verificacion-en-ejecucion.md#correccion-rn-54)
 
 ---
 
@@ -173,6 +192,31 @@ Es una discrepancia comercial: seis veces más producto gratis del anunciado.
 Hay que decidir cuál gana y alinear la otra fuente.
 
 **Evidencia:** [C-02](06-riesgos-y-deuda-tecnica.md#c-02)
+
+---
+
+### D-12 — ¿El bloqueo por PIN debe seguir afectando a toda la plantilla?
+
+> Decisión **nueva**, surgida de la verificación en ejecución.
+
+Cinco PIN erróneos bloquean **30 minutos a todos los empleados**, incluido quien
+nunca falló. Comprobado: tras el quinto fallo, cajero y mesero quedaron ambos
+bloqueados y ninguno pudo entrar con su PIN correcto.
+
+`/empleado/<slug>` es una URL pública y el `slug` es el mismo del menú y de los
+QR de las mesas. Cualquiera que lo conozca puede dejar sin portal al personal
+durante media hora, en plena hora punta.
+
+El diseño es deliberado (el código lo explica: «el atacante no sabe a qué
+empleado ataca»), pero la consecuencia operativa no parece haberse sopesado.
+
+**Opciones:** **(a)** mantenerlo y asumir el riesgo · **(b)** bloquear solo al
+empleado cuyo PIN coincide parcialmente, o por dispositivo/IP en vez de por
+cuenta · **(c)** mantener el bloqueo global pero reducirlo mucho (p. ej. 2 min)
+y escalar progresivamente · **(d)** añadir un desbloqueo que no dependa de que
+el dueño entre al panel
+
+**Evidencia:** [R-21](08-verificacion-en-ejecucion.md#r-21)
 
 ---
 
