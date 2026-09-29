@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+{# Configuración v1 (Opción A): solo ajustes honestos con backend real.
+   Carcasa v2 del módulo (parciales + fiados.css, iconos Outlined).
+   CONTRATO con config.js — IDs INTACTOS: cfg-whatsapp, cfg-open,
+   cfg-save-biz, cfg-pin-now/new/new2, cfg-save-pin, cfg-scale-test,
+   cfg-scale-out, toast, CFG_URLS (biz/pin/scale), csrf-token.
+   Sin impresoras/turnos/límites/plantillas/respaldos (no existen). #}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración · {{ business.name }} · Velzia Verduras</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/fiados.css') }}">
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+
+  {% with active = 'config' %}{% include '_pos_sidebar.html' %}{% endwith %}
+
+  <div class="lg:pl-64">
+    <header class="sticky top-0 h-16 bg-surface-lowest/90 backdrop-blur z-40 flex items-center justify-between px-space-md lg:px-space-lg shadow-sm">
+      <div class="flex items-center gap-space-md min-w-0">
+        <span class="material-symbols-outlined text-[24px] text-primary shrink-0" aria-hidden="true">settings</span>
+        <span class="font-headline-md text-headline-md text-on-surface font-bold truncate">Configuración</span>
+      </div>
+      <div class="flex items-center gap-space-md">
+        <form method="post" action="{{ url_for('dashboard.pos_logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-high text-on-surface hover:bg-error-container hover:text-on-error-container text-label-md font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span><span class="hidden sm:inline">Salir</span>
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <main class="w-full min-h-screen pb-24 lg:pb-8">
+      <div class="px-space-md lg:px-space-lg py-space-md flex flex-col gap-space-md" style="max-width:1200px;">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+
+          <section class="p-space-md rounded-2xl bg-surface-lowest shadow-sm flex flex-col gap-space-sm">
+            <div class="flex items-center gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[22px]" aria-hidden="true">storefront</span>
+              <h2 class="font-title-md text-title-md text-on-surface font-bold">El negocio</h2>
+            </div>
+            <p class="font-body-md text-body-md text-secondary">{{ business.name }}</p>
+            <label class="flex flex-col gap-1 font-label-md text-label-md font-semibold" for="cfg-whatsapp">WhatsApp
+              <input id="cfg-whatsapp" class="w-full px-space-md py-2.5 rounded-xl bg-surface-low text-body-md focus:outline-none focus:ring-2 focus:ring-primary" inputmode="tel" autocomplete="tel" value="{{ whatsapp_phone }}" placeholder="Ej. +573001112233">
+            </label>
+            <label class="flex items-center gap-space-sm font-label-md text-label-md font-semibold" for="cfg-open">
+              <input type="checkbox" id="cfg-open" {% if is_open %}checked{% endif %} style="width:1.2rem;height:1.2rem;accent-color:#137547;">
+              Abierto para vender
+            </label>
+            <div>
+              <button type="button" class="px-space-lg py-space-sm rounded-xl bg-primary-container text-on-primary hover:bg-primary font-label-lg font-bold transition-all" id="cfg-save-biz">Guardar</button>
+            </div>
+          </section>
+
+          <section class="p-space-md rounded-2xl bg-surface-lowest shadow-sm flex flex-col gap-space-sm">
+            <div class="flex items-center gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[22px]" aria-hidden="true">lock</span>
+              <h2 class="font-title-md text-title-md text-on-surface font-bold">PIN del mostrador</h2>
+            </div>
+            <label class="flex flex-col gap-1 font-label-md text-label-md font-semibold" for="cfg-pin-now">PIN actual
+              <input id="cfg-pin-now" class="w-full px-space-md py-2.5 rounded-xl bg-surface-low text-body-md focus:outline-none focus:ring-2 focus:ring-primary" type="password" inputmode="numeric" autocomplete="off">
+            </label>
+            <label class="flex flex-col gap-1 font-label-md text-label-md font-semibold" for="cfg-pin-new">PIN nuevo (4 a 6 dígitos)
+              <input id="cfg-pin-new" class="w-full px-space-md py-2.5 rounded-xl bg-surface-low text-body-md focus:outline-none focus:ring-2 focus:ring-primary" type="password" inputmode="numeric" autocomplete="new-password">
+            </label>
+            <label class="flex flex-col gap-1 font-label-md text-label-md font-semibold" for="cfg-pin-new2">Repite el PIN nuevo
+              <input id="cfg-pin-new2" class="w-full px-space-md py-2.5 rounded-xl bg-surface-low text-body-md focus:outline-none focus:ring-2 focus:ring-primary" type="password" inputmode="numeric" autocomplete="new-password">
+            </label>
+            <div>
+              <button type="button" class="px-space-lg py-space-sm rounded-xl bg-primary-container text-on-primary hover:bg-primary font-label-lg font-bold transition-all" id="cfg-save-pin">Cambiar PIN</button>
+            </div>
+          </section>
+
+          <section class="p-space-md rounded-2xl bg-surface-lowest shadow-sm flex flex-col gap-space-sm">
+            <div class="flex items-center gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[22px]" aria-hidden="true">scale</span>
+              <h2 class="font-title-md text-title-md text-on-surface font-bold">Balanza</h2>
+            </div>
+            {% if scale.enabled %}
+            <p class="font-body-md text-body-md text-secondary">Activada ({{ scale.protocol }} · {{ scale.port }}).</p>
+            <div>
+              <button type="button" class="px-space-md py-space-sm rounded-xl bg-surface-high text-on-surface hover:bg-surface-container-high font-label-md font-semibold transition-colors" id="cfg-scale-test">Probar lectura</button>
+            </div>
+            <p class="font-body-md text-body-md text-secondary" id="cfg-scale-out" hidden></p>
+            {% else %}
+            <p class="font-body-md text-body-md text-secondary">Sin báscula: todo se pesa a mano. Se activa con el técnico.</p>
+            {% endif %}
+          </section>
+
+          <section class="p-space-md rounded-2xl bg-surface-lowest shadow-sm flex flex-col gap-space-sm">
+            <div class="flex items-center gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[22px]" aria-hidden="true">card_membership</span>
+              <h2 class="font-title-md text-title-md text-on-surface font-bold">Suscripción</h2>
+            </div>
+            {% if sub_can_crud %}
+            <p class="font-body-md text-body-md text-secondary">Activa y al día.</p>
+            {% else %}
+            <p class="font-body-md text-body-md text-secondary">{{ sub_message or 'Revisa tu suscripción para seguir vendiendo.' }}</p>
+            {% endif %}
+            <div>
+              <a class="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-xl bg-surface-high text-on-surface hover:bg-surface-container-high font-label-md font-semibold transition-colors" href="{{ core_manage_url }}">Gestionar en panel</a>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+
+    {% with active = 'config' %}{% include '_pos_bottomnav.html' %}{% endwith %}
+  </div>
+
+  <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+  <script>window.CFG_URLS = {
+    biz: "{{ url_for('dashboard.pos_config_negocio', slug=business.slug) }}",
+    pin: "{{ url_for('dashboard.pos_config_pin', slug=business.slug) }}",
+    scale: "{{ url_for('dashboard.pos_scale_weight', slug=business.slug) }}",
+  };</script>
+  <script src="{{ url_for('static', filename='JS/config.js') }}"></script>
+</body>
+</html>

@@ -14,11 +14,14 @@ const { restaurantId, whatsappPhone } = Astro.props;
   class="fixed right-0 top-0 z-40 flex h-full w-full max-w-sm translate-x-full transform flex-col bg-card shadow-2xl transition-transform duration-300"
   data-restaurant-id={restaurantId}
   data-whatsapp={whatsappPhone}
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cart-title"
 >
   <div class="flex items-center justify-between border-b border-border-subtle p-4">
-    <h2 class="font-display text-lg font-semibold text-ink">Tu pedido</h2>
+    <h2 id="cart-title" class="font-display text-lg font-semibold text-ink">Tu pedido</h2>
     <button id="cart-close" class="rounded-full p-2 text-ink-muted transition hover:bg-card-hover" aria-label="Cerrar carrito">
-      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
@@ -29,7 +32,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
   <div id="cart-footer" class="hidden border-t border-border-subtle p-4">
     <div class="mb-3 flex items-center justify-between text-sm">
       <span class="text-ink-muted">Total</span>
-      <span id="cart-total" class="text-lg font-bold text-price">$0</span>
+      <span id="cart-total" class="text-lg font-bold text-price" aria-live="polite">$0</span>
     </div>
     <button
       id="clear-cart-btn"
@@ -41,7 +44,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
       id="checkout-btn"
       class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg"
     >
-      Comprar ahora
+      Revisar y confirmar pedido
     </button>
   </div>
 </div>
@@ -76,6 +79,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
     document.getElementById('cart-overlay')?.classList.remove('hidden');
     if (detail) detail.classList.add('translate-x-full');
     renderCart();
+    document.getElementById('cart-close')?.focus();
   }
 
   function closeCart(): void {
@@ -114,18 +118,18 @@ const { restaurantId, whatsappPhone } = Astro.props;
               ${item.selectedModifiers?.length ? `<p class="mt-1 text-xs text-ink-muted">${item.selectedModifiers.map((m: any) => m.name).join(', ')}</p>` : ''}
               <p class="mt-1 text-xs font-bold text-price">$${unit.toLocaleString('es-CO')} c/u</p>
             </div>
-            <button class="remove-item flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-faint transition hover:bg-red-500/20 hover:text-red-400" data-index="${i}" title="Eliminar">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            <button class="remove-item flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-faint transition hover:bg-red-500/20 hover:text-red-400" data-index="${i}" aria-label="Eliminar ${item.product.name} del pedido">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
             </button>
           </div>
           <div class="mt-3 flex items-center justify-between">
             <div class="flex items-center gap-3 rounded-full border border-border-subtle px-2 py-1">
-              <button class="qty-minus flex h-6 w-6 items-center justify-center text-ink transition hover:text-accent" data-index="${i}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <button class="qty-minus flex h-6 w-6 items-center justify-center text-ink transition hover:text-accent" data-index="${i}" aria-label="Quitar una unidad de ${item.product.name}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
               <span class="min-w-5 text-center text-sm font-semibold text-ink">${item.quantity}</span>
-              <button class="qty-plus flex h-6 w-6 items-center justify-center text-ink transition hover:text-accent" data-index="${i}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <button class="qty-plus flex h-6 w-6 items-center justify-center text-ink transition hover:text-accent" data-index="${i}" aria-label="Agregar una unidad de ${item.product.name}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
             <span class="text-sm font-bold text-price">$${(unit * item.quantity).toLocaleString('es-CO')}</span>

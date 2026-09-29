@@ -25,6 +25,28 @@
     return Math.round(n * 1000) / 1000;
   }
 
+  // ── Impresión térmica (rollo 80mm) ──────────────────────────
+  // El diálogo de impresión no sabe que es un ticket: por defecto saldría
+  // una hoja carta con márgenes. data-print-target marca el nodo a
+  // imprimir; aquí lo clonamos a un wrapper .print-buffer (pos.css lo
+  // deja a 80mm con @page margin:0) y el resto de la página se oculta.
+  function printNode(node) {
+    if (!node) return;
+    const buffer = document.createElement('div');
+    buffer.className = 'print-buffer';
+    buffer.appendChild(node.cloneNode(true));
+    document.body.appendChild(buffer);
+    document.body.classList.add('print-data');
+    window.print();
+    // El diálogo de impresión bloquea; al volver, se desmonta el buffer.
+    document.body.classList.remove('print-data');
+    buffer.remove();
+  }
+
+  function printTicketModal() {
+    printNode(document.querySelector('[data-print-target]'));
+  }
+
   // ── Estado del carrito ──────────────────────────────────────
   const cart = new Map(); // product_id → {id, name, unit, price, qty, ...}
 
@@ -421,6 +443,9 @@
     updateChange();
     // Al salir de libreta se suelta el cliente (no cruzar deudas).
     if (method !== 'libreta') clearPosClient();
+    // Elegir Libreta muestra el formulario de cliente DE UNA (el dueño
+    // fia al vuelo; buscar es el camino alternativo, no un requisito).
+    setNewClientPane(method === 'libreta');
     renderClientPicker();
   }
 
@@ -435,6 +460,18 @@
     const picker = $('#client-picker');
     if (picker) picker.hidden = payMethod !== 'libreta';
     renderClientLabel();
+  }
+
+  // Panel "crear cliente al vuelo" del drawer: visible/oculto. En libreta
+  // nace visible (petición del dueño); al buscar, solo si no hay resultados.
+  function setNewClientPane(show, name) {
+    const pane = $('#client-new');
+    if (!pane) return;
+    pane.hidden = !show;
+    if (show && name) {
+      const input = $('#client-new-name');
+      if (input) input.value = name;
+    }
   }
 
   function renderClientLabel() {
@@ -453,17 +490,10 @@
     const box = $('#client-results');
     if (!box) return;
     box.innerHTML = '';
-    const toggleNew = (show, name) => {
-      const pane = $('#client-new');
-      if (!pane) return;
-      pane.hidden = !show;
-      if (show) {
-        const input = $('#client-new-name');
-        if (input && name) input.value = name;
-      }
-    };
+    const toggleNew = (show, name) => setNewClientPane(show, name);
     if (!query) {
-      toggleNew(false);
+      // Sin query en libreta el formulario vuelve: es el estado base.
+      toggleNew(payMethod === 'libreta');
       return;
     }
     let rows = [];
@@ -479,7 +509,8 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'client-result';
-      btn.textContent = `${c.name} · $${c.saldo}`;
+      // saldo ya llega formateado del backend ($1.234 — _fmt_short).
+      btn.textContent = `${c.name} · ${c.saldo}`;
       btn.addEventListener('click', () => {
         posClient = { id: c.id, name: c.name };
         renderClientLabel();
@@ -734,7 +765,7 @@
     $('#cart-overlay').addEventListener('click', closeCart);
     $('#checkout-btn').addEventListener('click', checkout);
     $('#ticket-close-btn').addEventListener('click', closeTicket);
-    $('#ticket-print-btn').addEventListener('click', () => window.print());
+    $('#ticket-print-btn').addEventListener('click', printTicketModal);
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { closeCart(); closeTicket(); }

@@ -1,6 +1,6 @@
 # REC-02: Registro de Decisiones Técnicas (ADR)
 
-**Versión:** 1.0 | **Fecha:** 2026-06-16 | **Propietario:** Equipo Técnico
+**Versión:** 1.1 | **Fecha:** 2026-09-24 | **Propietario:** Equipo Técnico
 
 ---
 
@@ -145,8 +145,41 @@
 
 ---
 
+## ADR-010: Sin Banner de Cookies — Solo Cookies Estrictamente Necesarias
+
+**Fecha:** 2026-09-24  
+**Contexto:** Auditoría de cumplimiento legal (LEG-01). La plataforma no usa analítica de terceros ni cookies publicitarias; solo cookies de sesión propias y localStorage del carrito. En Colombia no se exige banner de consentimiento para cookies estrictamente necesarias.
+
+**Decisión:** No implementar banner de cookies. El aviso informativo vive en `/legal#privacidad` y `/legal#datos`. Gate: cualquier futuro script de analítica/publicidad exige PRIMERO banner con opt-in y actualización de políticas, DESPUÉS activación.
+
+**Consecuencias:**
+- ✅ Cero fricción en el menú público
+- ✅ Cumplimiento vigente sin código adicional
+- ❌ El gate depende de disciplina del equipo (documentado en LEG-01 §3)
+
+---
+
+## ADR-011: Consentimiento de Datos — Checkbox Solo en el Registro, Aviso Informativo en Formularios Públicos
+
+**Fecha:** 2026-09-24 (revisada el mismo día tras prueba de UX)  
+**Contexto:** Los formularios públicos (checkout y reservas) recolectan datos personales de clientes del restaurante. Una primera implementación agregó checkbox obligatorio de autorización en cada formulario + validación en backend, pero mataba la conversión: en un checkout de 3 toques, un checkbox adicional con texto legal es fricción injustificada para un pedido de $15.000 (decisión explícita del titular: "no vamos al extremo").
+
+**Decisión:**
+- **Registro (`accept_terms`):** mantiene el checkbox obligatorio validado en servidor (aquí sí hay contrato de suscripción y aceptación de términos).
+- **Checkout y reservas públicas:** SIN checkbox. En su lugar, una línea informativa discreta bajo el botón: "Tus datos se usan solo para procesar y entregar tu pedido" / "Usamos tu nombre y WhatsApp solo para gestionar esta reserva". Finalidad informada, cero fricción.
+- **Backend:** sin gate de `consent_data` (se implementó y se revirtió el mismo día; `app/routes/public.py` queda como estaba).
+
+**Consecuencias:**
+- ✅ Checkout limpio: nombre + teléfono + confirmar, nada más
+- ✅ Deber de información cumplido (finalidad visible en el formulario y en `/legal#privacidad`)
+- ❌ No hay autorización expresa clic a clic en el menú público; si asesoría legal o la SIC la exigiera, reactivar el gate (el diseño completo quedó documentado en el historial de este ADR y en LEG-01)
+- ❌ La autorización del registro no alcanza a los comensales (quienes aceptan son los restaurantes, como responsables del tratamiento de SUS clientes)
+
+---
+
 ## Historial de Cambios
 
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|
 | 2026-06-16 | 1.0 | Versión inicial (9 ADRs) | Auditoría Documental |
+| 2026-09-24 | 1.1 | ADR-010 y ADR-011 (cumplimiento legal LEG-01) | Buffy (agente) |

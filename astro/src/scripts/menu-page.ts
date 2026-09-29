@@ -232,12 +232,12 @@ export function initMenuPage(data: PageData): void {
       addBtn.classList.remove('btn-primary');
       addBtn.classList.add('bg-veg');
       addBtn.style.color = '#1A120A';
-      addBtn.textContent = '✓ Agregado';
+      addBtn.textContent = 'Agregado';
       window.setTimeout(() => {
         addBtn.classList.add('btn-primary');
         addBtn.classList.remove('bg-veg');
         addBtn.style.color = '';
-        addBtn.textContent = originalText;
+        addBtn.textContent = originalText || 'Agregar al pedido';
       }, 1500);
     }
   });

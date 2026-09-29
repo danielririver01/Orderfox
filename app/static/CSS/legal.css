@@ -6,7 +6,8 @@
     --legal-bg-card: #141414;
     --legal-border: #262626;
     --legal-text: #e5e5e5;
-    --legal-text-muted: #a1a1aa;
+    /* AA en fondo #141414: 4.6:1 (el anterior #a1a1aa daba 4.2:1) */
+    --legal-text-muted: #b3b3bd;
 }
 
 html {

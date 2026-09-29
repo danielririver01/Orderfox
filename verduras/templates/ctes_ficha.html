@@ -1,0 +1,120 @@
+{# Ficha de la libreta (v2, diseño Stitch): detalle + abono rápido.
+   Llenada por clientes.js desde GET /pos/<slug>/clientes/<id>.
+   IDs que el JS consume: ctes-m-*, ctes-ab-*. #}
+<div class="ficha-shell" id="ctes-modal" role="dialog" aria-modal="true" aria-label="Ficha de la libreta">
+  <div class="ficha-inner bg-surface-lowest rounded-2xl shadow-md p-space-lg flex flex-col gap-space-md">
+    <div class="flex items-start justify-between gap-space-sm">
+      <div class="flex items-center gap-space-sm min-w-0">
+        <div class="ctes-initials w-14 h-14 rounded-2xl bg-primary-container text-on-primary font-extrabold text-headline-md flex items-center justify-center shrink-0" data-name=""></div>
+        <div class="min-w-0">
+          <h3 class="text-headline-md text-on-surface font-extrabold truncate" id="ctes-m-name">—</h3>
+          <span class="text-body-sm text-secondary block truncate" id="ctes-m-phone"></span>
+        </div>
+      </div>
+      <button type="button" class="w-9 h-9 rounded-xl bg-surface-low text-on-surface flex items-center justify-center shrink-0" id="ctes-m-close" aria-label="Cerrar ficha">
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
+    </div>
+
+    <!-- Saldo / cupo -->
+    <div class="p-space-md rounded-xl bg-surface-low flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="text-label-md uppercase tracking-wider text-secondary font-semibold">Saldo Pendiente</span>
+          <span class="text-headline-lg font-black text-tertiary-container" id="ctes-m-saldo">$0</span>
+        </div>
+        <div class="text-right">
+          <span class="text-label-md text-secondary">Cupo autorizado</span>
+          <div class="text-title-md font-bold text-on-surface" id="ctes-m-cupo">Sin límite</div>
+        </div>
+      </div>
+      <div class="w-full h-2.5 rounded-full bg-surface-highest overflow-hidden" id="ctes-m-gauge-wrap" hidden>
+        <div class="h-full bg-primary-container rounded-full transition-all duration-300" id="ctes-m-gauge" style="width: 0%"></div>
+      </div>
+      <div class="flex items-center justify-between text-label-md text-secondary">
+        <span>Disponible: <strong class="text-primary font-bold" id="ctes-m-disponible">—</strong></span>
+        <span class="font-bold text-tertiary" id="ctes-m-uso"></span>
+      </div>
+      <div class="flex items-center justify-between text-label-md pt-1">
+        <span class="text-secondary">Compromiso:</span>
+        <input type="date" id="ctes-m-fecha" class="px-2 py-1 rounded-lg bg-surface-lowest text-on-surface font-semibold" aria-label="Fecha de compromiso">
+      </div>
+    </div>
+
+    <!-- Abono rápido -->
+    <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-space-sm">
+      <span class="text-title-md font-bold text-on-surface flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">payments</span>
+        Registrar Abono Inmediato
+      </span>
+      <div class="grid grid-cols-4 gap-space-xs" id="ctes-ab-presets">
+        <button type="button" class="ctes-preset py-2 px-space-xs rounded-lg bg-surface-lowest hover:bg-secondary-container text-label-lg font-bold text-on-surface text-center shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-lowest" data-pct="25">
+          <span class="block text-[10px] font-semibold uppercase text-secondary leading-none">25%</span>
+          <span class="ctes-preset-amt block leading-tight">—</span>
+        </button>
+        <button type="button" class="ctes-preset py-2 px-space-xs rounded-lg bg-surface-lowest hover:bg-secondary-container text-label-lg font-bold text-on-surface text-center shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-lowest" data-pct="50">
+          <span class="block text-[10px] font-semibold uppercase text-secondary leading-none">50%</span>
+          <span class="ctes-preset-amt block leading-tight">—</span>
+        </button>
+        <button type="button" class="ctes-preset py-2 px-space-xs rounded-lg bg-surface-lowest hover:bg-secondary-container text-label-lg font-bold text-on-surface text-center shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-lowest" data-pct="75">
+          <span class="block text-[10px] font-semibold uppercase text-secondary leading-none">75%</span>
+          <span class="ctes-preset-amt block leading-tight">—</span>
+        </button>
+        <button type="button" class="ctes-preset py-2 px-space-xs rounded-lg bg-primary-fixed hover:bg-primary-container text-label-lg font-black text-on-primary-fixed-variant text-center shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed" data-pct="total">
+          <span class="block text-[10px] font-bold uppercase leading-none">Total</span>
+          <span class="ctes-preset-amt block leading-tight">—</span>
+        </button>
+      </div>
+      <div class="relative">
+        <span class="absolute left-space-md top-1/2 -translate-y-1/2 text-headline-md font-extrabold text-primary">$</span>
+        <input class="w-full pl-9 pr-space-md py-2.5 rounded-xl bg-surface-lowest text-on-surface text-headline-md font-extrabold focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" id="ctes-ab-monto" placeholder="0" type="number" min="0" step="100" inputmode="decimal" aria-label="Monto a abonar">
+      </div>
+      <div class="grid grid-cols-3 gap-space-xs pt-1" role="radiogroup" aria-label="Método de pago del abono">
+        <label class="flex flex-col items-center justify-center p-2 rounded-xl bg-surface-lowest cursor-pointer has-[:checked]:bg-secondary-container has-[:checked]:text-on-secondary-container transition-all">
+          <input checked class="hidden" name="ctes-ab-method" type="radio" value="efectivo">
+          <span class="material-symbols-outlined text-[20px] mb-0.5" aria-hidden="true">local_atm</span>
+          <span class="text-label-md font-bold">Efectivo</span>
+        </label>
+        <label class="flex flex-col items-center justify-center p-2 rounded-xl bg-surface-lowest cursor-pointer has-[:checked]:bg-secondary-container has-[:checked]:text-on-secondary-container transition-all">
+          <input class="hidden" name="ctes-ab-method" type="radio" value="transferencia">
+          <span class="material-symbols-outlined text-[20px] mb-0.5" aria-hidden="true">account_balance</span>
+          <span class="text-label-md font-bold">Transferencia</span>
+        </label>
+        <label class="flex flex-col items-center justify-center p-2 rounded-xl bg-surface-lowest cursor-pointer has-[:checked]:bg-secondary-container has-[:checked]:text-on-secondary-container transition-all">
+          <input class="hidden" name="ctes-ab-method" type="radio" value="tarjeta">
+          <span class="material-symbols-outlined text-[20px] mb-0.5" aria-hidden="true">credit_card</span>
+          <span class="text-label-md font-bold">Tarjeta</span>
+        </label>
+      </div>
+      <button type="button" id="ctes-ab-submit" class="w-full mt-1 py-3 px-space-md rounded-xl bg-primary-container text-on-primary hover:bg-primary text-label-lg font-bold flex items-center justify-center gap-space-xs shadow-md active:scale-[0.98] transition-all">
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">receipt_long</span>
+        <span>Registrar Abono</span>
+      </button>
+    </div>
+
+    <!-- Historial de libreta -->
+    <div class="flex flex-col gap-space-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-title-md font-bold text-on-surface">Historial de Libreta</span>
+        <span class="text-label-md text-secondary" id="ctes-m-count"></span>
+      </div>
+      <div class="flex flex-col gap-space-xs" id="ctes-m-timeline">
+        <p class="text-body-sm text-secondary">Sin movimientos aún.</p>
+      </div>
+    </div>
+
+    <!-- Nota del tendero -->
+    <div class="p-space-sm rounded-xl bg-surface-container flex items-start gap-space-sm">
+      <span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5" aria-hidden="true">sticky_note_2</span>
+      <div class="flex flex-col min-w-0 flex-1">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-label-md font-bold text-on-surface">Nota interna del tendero</span>
+          <button type="button" id="ctes-m-note-edit" class="text-label-md text-primary font-semibold hover:underline">Editar</button>
+        </div>
+        <p class="text-body-sm text-on-surface-variant italic" id="ctes-m-note-text">—</p>
+        <textarea id="ctes-m-note-input" maxlength="500" rows="3" class="hidden mt-1 w-full rounded-lg bg-surface-lowest p-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Editar nota interna"></textarea>
+        <button type="button" id="ctes-m-note-save" class="hidden mt-1 self-end px-space-md py-1 rounded-lg bg-primary-container text-on-primary text-label-md font-bold">Guardar nota</button>
+      </div>
+    </div>
+  </div>
+</div>

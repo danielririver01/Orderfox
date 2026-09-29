@@ -9,6 +9,9 @@ const { ordering } = Astro.props;
 <div
   id="product-detail"
   class="fixed right-0 top-0 z-40 h-full w-full max-w-md translate-x-full transform bg-card shadow-2xl transition-transform duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="detail-name"
 >
   <div class="flex h-full flex-col">
     <!-- Imagen -->
@@ -21,9 +24,9 @@ const { ordering } = Astro.props;
       <button
         id="close-detail"
         class="absolute right-3 top-3 rounded-full bg-base/70 p-2 shadow-lg backdrop-blur transition hover:bg-base"
-        aria-label="Cerrar"
+        aria-label="Cerrar detalle del producto"
       >
-        <svg class="h-5 w-5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-5 w-5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -44,11 +47,13 @@ const { ordering } = Astro.props;
         <button
           id="qty-minus"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle text-lg text-ink transition hover:bg-card-hover"
+          aria-label="Quitar una unidad"
         >−</button>
         <span id="qty-display" class="w-8 text-center text-lg font-semibold text-ink">1</span>
         <button
           id="qty-plus"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle text-lg text-ink transition hover:bg-card-hover"
+          aria-label="Agregar una unidad"
         >+</button>
       </div>
     </div>

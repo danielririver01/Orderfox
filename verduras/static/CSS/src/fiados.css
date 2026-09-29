@@ -1,0 +1,1112 @@
+/*
+ * Velzia Verduras — CSS del módulo v2 (diseño Stitch portado).
+ * Sirve a TODO el vertical: Clientes/Fiados, POS (Vender), Ventas e
+ * Inventario. Compilado con Tailwind 4 a `../fiados.css`. Regenerar
+ * desde la raíz: npm run build:css:verduras
+ * Tokens: paleta verde M3 del diseño, tipografía Plus Jakarta Sans y las
+ * escalas text/label/title/headline del archivo original de Stitch.
+ * NADA de CDN: pre-build obligatorio en prod (convención del repo).
+ */
+@import "tailwindcss";
+
+@source "../../../templates/*.html";
+@source "../../../static/JS/clientes.js";
+@source "../../../static/JS/pos.js"; /* tarjetas/rows que pinta pos.js */
+
+/* ── Paleta (tailwind.config de Stitch → @theme v4) ─────────── */
+@theme {
+  --color-background: #f7f9ff;
+  --color-surface: #f7f9ff;
+  --color-surface-bright: #f7f9ff;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f1f4f9;
+  --color-surface-container: #ebeef3;
+  --color-surface-high: #e5e8ee;
+  --color-surface-highest: #e0e3e8;
+  --color-surface-variant: #e0e3e8;
+  --color-surface-dim: #d7dadf;
+  --color-on-surface: #181c20;
+  --color-on-surface-variant: #3f4941;
+  --color-outline: #6f7a70;
+  --color-outline-variant: #bec9bf;
+
+  --color-primary: #005b34;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #137547;
+  --color-on-primary-container: #9ef8be;
+  --color-primary-fixed: #9cf6bc;
+  --color-primary-fixed-dim: #80d9a1;
+  --color-on-primary-fixed: #002110;
+  --color-on-primary-fixed-variant: #00522f;
+
+  --color-secondary: #4c6452;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #cce6d0;
+  --color-on-secondary-container: #506856;
+  --color-secondary-fixed: #cee9d3;
+  --color-secondary-fixed-dim: #b3cdb7;
+  --color-on-secondary-fixed: #092012;
+  --color-on-secondary-fixed-variant: #354c3b;
+
+  --color-tertiary: #8d2d15;
+  --color-tertiary-container: #ae442a;
+  --color-on-tertiary-container: #ffded6;
+  --color-tertiary-fixed: #ffdad2;
+  --color-tertiary-fixed-dim: #ffb4a2;
+  --color-on-tertiary-fixed: #3c0700;
+  --color-on-tertiary-fixed-variant: #83260e;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  --color-inverse-surface: #2d3135;
+  --color-inverse-on-surface: #eef1f6;
+  --color-inverse-primary: #80d9a1;
+
+  /* Familia tipográfica (aliases del diseño: font-body-md, font-label-lg…) */
+  --font-body-sm: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body-lg: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-label-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-label-lg: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-title-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-lg: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-xl: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-numeric-total: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Escalas de texto con peso/interlineado del diseño */
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 600;
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 20px;
+  --text-label-lg--letter-spacing: 0.01em;
+  --text-label-lg--font-weight: 600;
+  --text-title-md: 16px;
+  --text-title-md--line-height: 24px;
+  --text-title-md--font-weight: 600;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: 36px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-xl: 36px;
+  --text-headline-xl--line-height: 44px;
+  --text-headline-xl--letter-spacing: -0.02em;
+  --text-headline-xl--font-weight: 700;
+  --text-numeric-total: 32px;
+  --text-numeric-total--line-height: 36px;
+  --text-numeric-total--letter-spacing: -0.03em;
+  --text-numeric-total--font-weight: 800;
+
+  /* Espaciado nombrado del diseño */
+  --spacing-gutter: 1rem;
+  --spacing-gutter-lg: 1.5rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+  --spacing-margin: 1.5rem;
+  --spacing-margin-mobile: 1rem;
+}
+
+/* ── Comportamiento propio del panel (lo que Tailwind no cubre) ── */
+
+/* La ficha/detalle: tarjeta centrada en desktop, bottom-sheet en móvil.
+   Se abre con .open desde clientes.js (Ver / Abonar). */
+.ficha-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  background: rgba(20, 35, 26, 0.55);
+}
+.ficha-shell.open { display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.ficha-inner {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+@media (max-width: 1023px) {
+  .ficha-shell.open { padding: 0; align-items: flex-end; }
+  .ficha-shell.open .ficha-inner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    max-height: 92vh;
+    border-radius: 1rem 1rem 0 0;
+  }
+}
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Toast reutiliza el patrón del módulo (mismas clases que pos.css usa),
+   pero este panel no carga pos.css: versión mínima local. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--color-on-surface);
+  color: #ffffff;
+  padding: 0.7rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 90;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+body.modal-open { overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════════════
+   POS (Vender) — mismo sistema v2. Lo que no cubren utilidades:
+   tarjetas/rows que pinta pos.js, drawer/ticket con clases .show
+   (JS toggles), báscula, editor de peso e impresión térmica.
+   Material Symbols Rounded (el POS los genera en el JS).
+   Extra: parcial _pos_sidebar.html (navegación original con iconos,
+   compartida por las 4 pantallas; clases psb-*). ICONOS del parcial:
+   SIEMPRE material-symbols-outlined — Clientes no carga Rounded y se
+   veían como texto crudo (point_of_sale, inventory_2…).
+   ═══════════════════════════════════════════════════════════ */
+
+/* [hidden] siempre gana: pos.js alterna visibilidad con el atributo
+   (bar/drawer/client-picker/cash-box/ticket) y el display:flex de los
+   componentes no debe vencerlo. */
+[hidden] { display: none !important; }
+
+/* La fuente Rounded solo se declara en templates que la cargan (pos.html
+   y los legacy pos_*); con la regla genérica, si un template no carga el
+   @font-face el ligadura no resuelve y se ve el texto crudo. */
+
+/* ── Grid de productos: 1 col móvil, 3 en ≥lg (contrato dueño) ── */
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 1024px) {
+  .product-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Tarjeta de producto (la construye pos.js con estas clases) */
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-surface-lowest);
+  border: 1px solid var(--color-surface-variant);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(24, 28, 32, 0.05);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.05s;
+}
+.product-card:hover { border-color: var(--color-outline-variant); box-shadow: 0 4px 12px rgba(24, 28, 32, 0.08); }
+.product-card:active { transform: scale(0.99); }
+.product-card.expanded { border-color: var(--color-primary); }
+.product-card.in-cart {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-secondary-container);
+}
+
+.product-main {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+.product-top { display: flex; justify-content: flex-end; }
+.unit-chip {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-low);
+  border-radius: 0.45rem;
+  padding: 0.15rem 0.45rem;
+}
+.product-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  border-radius: 0.75rem;
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+}
+.product-photo .material-symbols-rounded { font-size: 2.2rem; }
+.product-card .product-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-card .product-meta { display: flex; align-items: baseline; gap: 0.25rem; }
+.product-card .product-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.product-card .product-unit { font-size: 0.78rem; color: var(--color-on-surface-variant); }
+.product-foot { display: flex; align-items: center; justify-content: flex-end; }
+.product-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.product-add .material-symbols-rounded { font-size: 1.1rem; }
+
+/* Badges de alerta: SIEMPRE icono + texto (nunca solo color) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.badge .material-symbols-rounded { font-size: 15px; }
+.badge-warn { background: #fef3c7; color: #92400e; }
+.badge-danger { background: var(--color-error-container); color: var(--color-on-error-container); }
+.product-alert { align-self: flex-start; margin-top: 0.1rem; }
+
+/* Editor de peso inline dentro de la tarjeta */
+.weigh-editor {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  background: var(--color-surface-low);
+  border-radius: 0.6rem;
+  padding: 0.4rem;
+  margin-top: 0.1rem;
+}
+.weigh-editor input {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 0.5rem;
+  color: var(--color-on-surface);
+  background: var(--color-surface-lowest);
+  min-height: 3rem;
+}
+.weigh-editor button {
+  flex-shrink: 0;
+  min-height: 3rem;
+  min-width: 2.8rem;
+  border-radius: 0.55rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.weigh-editor .weigh-scale { background: var(--color-secondary-container); color: var(--color-on-secondary-container); }
+.weigh-editor .weigh-scale:disabled { opacity: 0.5; }
+.weigh-editor .weigh-add {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 0 0.9rem;
+}
+.weigh-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* Báscula (chip y botones de lectura) */
+.scale-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--color-primary);
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.scale-btn:disabled { opacity: 0.6; cursor: wait; }
+.scale-btn .material-symbols-rounded { font-size: 22px; }
+.scale-btn.reading .material-symbols-rounded { animation: scale-spin 0.9s linear infinite; }
+@keyframes scale-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Catálogo vacío (distinto de "sin resultados de búsqueda") */
+.empty-catalog {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--color-surface-lowest);
+  border: 1px dashed var(--color-outline-variant);
+  border-radius: 1rem;
+  color: var(--color-on-surface-variant);
+}
+.empty-catalog .material-symbols-rounded { font-size: 2.4rem; color: var(--color-outline); }
+.empty-catalog p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.empty-catalog p strong { color: var(--color-on-surface); }
+.empty-catalog .btn[disabled] { opacity: 0.6; cursor: default; }
+
+/* Pills de categoría (template): .active lo alterna pos.js */
+.cat-pill {
+  white-space: nowrap;
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-surface-variant);
+  background: var(--color-surface-lowest);
+  color: var(--color-on-surface-variant);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cat-pill:hover { background: var(--color-surface-low); }
+.cat-pill.active {
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  border-color: transparent;
+}
+/* CTA que pos.js genera dentro de empty-catalog (clases legacy .btn) */
+.empty-catalog .btn {
+  min-height: 3rem;
+  padding: 0 1.1rem;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ── Botones base del POS (los usa el JS en empty-catalog) ── */
+.posv-btn {
+  min-height: 3rem;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s, transform 0.05s;
+}
+.posv-btn:active { transform: scale(0.98); }
+.posv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.posv-btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.posv-btn-primary:hover:not(:disabled) { background: var(--color-primary-container); }
+.posv-btn-ghost {
+  background: var(--color-surface-lowest);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-surface-variant);
+}
+.posv-btn-ghost:hover:not(:disabled) { background: var(--color-surface-low); }
+.posv-btn-block { width: 100%; }
+
+/* ── Barra del carrito (fija sobre bottom-nav móvil) ── */
+.cart-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 64px;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--color-surface-lowest);
+  border-top: 1px solid var(--color-surface-variant);
+  box-shadow: 0 -4px 16px rgba(24, 28, 32, 0.08);
+}
+.cart-bar-info { display: flex; flex-direction: column; }
+.cart-bar-count { font-size: 0.8rem; font-weight: 600; color: var(--color-on-surface-variant); }
+.cart-bar-total { font-size: 1.5rem; font-weight: 800; color: var(--color-on-surface); line-height: 1.1; }
+.cart-bar .posv-btn { min-width: 150px; }
+@media (min-width: 1024px) { .cart-bar { bottom: 0; left: 256px; } }
+
+@keyframes cart-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.cart-pulse { animation: cart-pulse 0.4s ease-out; }
+
+/* ── Drawer del carrito / ticket actual ──
+   Móvil: bottom-sheet con overlay (.show lo abre pos.js).
+   ≥1200px: columna fija siempre visible (sin overlay). */
+.cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 35, 26, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 50;
+}
+.cart-overlay.show { opacity: 1; pointer-events: auto; }
+
+.cart-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85vh;
+  background: var(--color-surface-lowest);
+  border-radius: 1rem 1rem 0 0;
+  box-shadow: 0 8px 24px rgba(24, 28, 32, 0.14);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+}
+.cart-drawer.show { transform: translateY(0); }
+@media (min-width: 700px) {
+  .cart-drawer {
+    left: auto;
+    width: 440px;
+    top: 0;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+/* 1280px = breakpoint xl de Tailwind: aquí el wrapper del template pasa a
+   flex row y el drawer se vuelve columna fija (siempre visible). */
+@media (min-width: 1280px) {
+  .cart-drawer {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    max-height: 100vh;
+    width: 380px;
+    flex-shrink: 0;
+    border-radius: 0;
+    border-left: 1px solid var(--color-surface-variant);
+    box-shadow: none;
+    transform: none;
+  }
+  .cart-overlay { display: none; }
+  #cart-close-btn { display: none; }
+  .cart-bar { display: none; }
+}
+
+.cart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--color-surface-variant);
+}
+.cart-head h2 { margin: 0; font-size: 1.05rem; display: flex; align-items: center; }
+.ticket-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  margin-right: 0.4rem;
+}
+
+.customer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 1.2rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--color-surface-low);
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.customer-row .material-symbols-rounded { color: var(--color-on-surface-variant); }
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 4rem;
+}
+.cart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  background: var(--color-surface-low);
+  border: 1px solid var(--color-surface-variant);
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.8rem;
+}
+.cart-item-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.cart-item-name { font-weight: 700; font-size: 0.95rem; }
+.cart-item-sub { font-size: 0.8rem; color: var(--color-on-surface-variant); }
+.cart-item-total { font-weight: 800; white-space: nowrap; }
+
+.qty-stepper { display: flex; align-items: center; gap: 0.3rem; }
+.qty-stepper button {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--color-surface-variant);
+  background: var(--color-surface-lowest);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  cursor: pointer;
+}
+.qty-stepper button:hover { background: var(--color-surface-low); }
+.qty-stepper input {
+  width: 84px;
+  height: 44px;
+  text-align: center;
+  border: 1.5px solid var(--color-surface-variant);
+  border-radius: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.ticket-totals { padding: 0.2rem 1.2rem 0; }
+.cart-foot-row { display: flex; align-items: baseline; justify-content: space-between; }
+.cart-foot-label { color: var(--color-on-surface-variant); font-weight: 600; }
+.cart-foot-total {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  font-family: var(--font-numeric-total);
+  letter-spacing: -0.03em;
+}
+.cart-foot {
+  padding: 1rem 1.2rem 1.3rem;
+  border-top: 1px solid var(--color-surface-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.cart-hint { margin: 0; font-size: 0.8rem; color: var(--color-outline); }
+
+/* Métodos de pago */
+.pay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem 0;
+}
+.pay-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-surface-variant);
+  background: var(--color-surface-lowest);
+  color: var(--color-on-surface);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+.pay-btn .material-symbols-rounded { color: var(--color-primary); font-size: 1.2rem; }
+.pay-btn.active { border-color: var(--color-primary); background: var(--color-secondary-container); }
+
+/* Caja de recibido (solo efectivo) */
+.cash-box { padding: 0.8rem 1.2rem 0; }
+.cash-box[hidden] { display: none; }
+.cash-box .inv-field { margin-bottom: 0.4rem; }
+.cash-change { margin: 0; font-size: 0.9rem; color: var(--color-on-surface-variant); }
+.cash-change strong { color: var(--color-primary); font-size: 1.1rem; }
+
+/* Selector de cliente de libreta dentro del drawer */
+.client-picker { padding: 0.6rem 1.2rem 0; }
+.client-picker[hidden] { display: none; }
+.client-search-row input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid var(--color-surface-variant);
+  border-radius: 0.6rem;
+  color: var(--color-on-surface);
+  background: var(--color-surface-lowest);
+}
+.client-results { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
+.client-result {
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-surface-variant);
+  background: var(--color-surface-lowest);
+  color: var(--color-on-surface);
+  cursor: pointer;
+}
+.client-result:hover { border-color: var(--color-primary); }
+.client-new { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+.client-new input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--color-surface-variant);
+  border-radius: 0.6rem;
+  color: var(--color-on-surface);
+  background: var(--color-surface-lowest);
+}
+
+/* Campo con etiqueta (caja de efectivo) — nombre legacy inv-field */
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: left;
+}
+.inv-field input {
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 0.6rem 0.7rem;
+  border: 1.5px solid var(--color-surface-variant);
+  border-radius: 0.6rem;
+  color: var(--color-on-surface);
+  background: var(--color-surface-lowest);
+  min-height: 3rem;
+}
+
+/* ── Ticket modal (resumen tras cobrar) ── */
+.ticket-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 35, 26, 0.62);
+  padding: 1rem;
+}
+.ticket-modal.show { display: flex; }
+.ticket {
+  background: #ffffff;
+  color: #000000;
+  width: 100%;
+  max-width: 340px;
+  border-radius: 1rem;
+  padding: 1.2rem 1.1rem;
+}
+.ticket h3 { margin: 0 0 0.2rem; font-size: 1rem; text-align: center; }
+.ticket .ticket-number { text-align: center; font-size: 0.85rem; margin-bottom: 0.8rem; }
+.ticket table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.ticket td { padding: 0.2rem 0; vertical-align: top; }
+.ticket td:last-child { text-align: right; white-space: nowrap; }
+.ticket .ticket-total-row td {
+  padding-top: 0.5rem;
+  border-top: 1px dashed #999999;
+  font-weight: 800;
+  font-size: 1rem;
+}
+.ticket-actions { display: flex; gap: 0.6rem; margin-top: 1rem; }
+.ticket .ticket-method {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #444444;
+  margin: 0 0 0.6rem;
+}
+
+/* ── Impresión térmica (rollo 80mm) — portado de pos.css v1.
+   print-buffer: pos.js clona [data-print-target] a .print-buffer,
+   agrega body.print-data y window.print(). */
+@media print {
+  @page { margin: 0; }
+  body { background: #ffffff; }
+  body.print-data > :not(.print-buffer) { display: none !important; }
+  .print-buffer {
+    width: 80mm;
+    max-width: 80mm;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #000000;
+  }
+  .print-buffer * {
+    background: transparent !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  .print-buffer .ticket-modal {
+    position: static;
+    display: block;
+    inset: auto;
+    z-index: auto;
+    background: none;
+    padding: 0;
+  }
+  .print-buffer .ticket {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 2mm 0;
+  }
+  .print-buffer .ticket-actions { display: none; }
+  .print-buffer .ticket h3 { font-size: 15px; }
+  .print-buffer .ticket table { font-size: 12px; }
+  .print-buffer .ticket .ticket-number,
+  .print-buffer .ticket .ticket-method { font-size: 12px; }
+
+  /* Modo legado (sin body.print-data): modal del ticket en pantalla.
+     :not(.print-data) es CRÍTICO: al imprimir térmico con modal abierto
+     quedan ambas clases y esto ocultaba el buffer → hoja en blanco. */
+  body.print-ticket:not(.print-data) * { visibility: hidden; }
+  body.print-ticket:not(.print-data) .ticket-modal.show,
+  body.print-ticket:not(.print-data) .ticket-modal.show * { visibility: visible; }
+  body.print-ticket .ticket-modal.show {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    padding: 0;
+  }
+  body.print-ticket .ticket { box-shadow: none; border-radius: 0; max-width: 100%; }
+  body.print-ticket .ticket-actions { display: none; }
+  /* Navegación v2 fuera del papel en el print legado (Inventario/Ventas
+   no tienen regla equivalente en pos.css para los parciales). */
+  body:not(.print-ticket) .psb,
+  body:not(.print-ticket) .pbn { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card, .posv-btn, .cart-drawer { transition: none !important; }
+  .cart-pulse, .scale-btn.reading .material-symbols-rounded { animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Sidebar del módulo (parcial _pos_sidebar.html): la navegación
+   ORIGINAL del vertical (iconos + Configuración · Próximamente) en
+   tokens v2. Compartida por Vender / Inventario / Ventas / Clientes.
+   El display lo manda el parcial (hidden lg:flex): aquí solo layout
+   interno, sin definir display en .psb.
+   ═══════════════════════════════════════════════════════════ */
+.psb {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 256px; /* w-64 de Tailwind */
+  z-index: 50;
+  flex-direction: column;
+  background: var(--color-surface-lowest);
+  box-shadow: 0 1px 2px rgba(24, 28, 32, 0.06);
+}
+.psb-brand {
+  margin: 0;
+  padding: 1rem 0.75rem 0.5rem;
+}
+.psb-logo {
+  height: 2.4rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.psb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+}
+.psb-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 52px;
+  padding: 0 0.85rem;
+  border-radius: 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+  transition: background-color 0.15s, color 0.15s;
+}
+.psb-item:hover {
+  background: var(--color-surface-low);
+  color: var(--color-on-surface);
+}
+.psb-active {
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  font-weight: 700;
+}
+.psb-icon { font-size: 24px; }
+.psb .material-symbols-outlined { line-height: 1; }
+.psb-disabled {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 52px;
+  padding: 0 0.85rem;
+  border-radius: 0.7rem;
+  color: var(--color-outline);
+  opacity: 0.85;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: default;
+  min-width: 0;
+}
+.psb-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+}
+.psb-soon {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-on-tertiary-fixed-variant); /* naranja cálida del tema */
+  background: var(--color-tertiary-fixed);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+}
+.psb-biz {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--color-surface-low);
+  border-radius: 0.7rem;
+  min-width: 0;
+}
+.psb-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.psb-avatar .material-symbols-outlined { font-size: 1.2rem; }
+.psb-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Bottom-nav v2 (parcial _pos_bottomnav.html): el layout lo ponen las
+   utilidades del parcial; aquí solo la tipografía. */
+.pbn { font-family: var(--font-body-md); }
+
+/* Tipografía AUTOCONTENIDA de los parciales: Inventario y Ventas aún
+   cargan pos.css (Inter) para su contenido; sin esto, el sidebar/nav v2
+   heredaría Inter y se vería distinto al de Vender/Clientes.
+   :not() EXCLUYE los iconos Material Symbols A PROPÓSITO: si una regla
+   les pisa la font-family, la ligadura no resuelve y se ve el texto
+   crudo (point_of_sale, inventory_2…) — bug ya visto dos veces. */
+.psb :not(.material-symbols-outlined),
+.pbn :not(.material-symbols-outlined) { font-family: var(--font-body-md); }
+
+/* Badges que Inventario/Ventas pintan y pos.css NO define (caían sin
+   estilo). Colores legacy exactos para no cambiar lo que ya funcionaba. */
+.badge-ok { background: #dcfce7; color: #15803d; }
+.badge-info { background: #dbeafe; color: #2563eb; }
+
+/* Guardia: el drawer del POS pisa el margen de .inv-field (pos.css lo
+   define con margen); en Inventario/Ventas debe conservarlo. La regla
+   de abajo solo aplica dentro del POS (body.fiados-root). */
+.fiados-root .inv-field { margin-bottom: 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   NAVEGACIÓN v1 restaurada (dueño 2026-09-25): el diseño ORIGINAL del
+   módulo — blanco, Inter, verde #15803D, tarjeta del negocio ABAJO en
+   el footer. Clases v1s-* (sidebar) y v1pbn-* (bottom-nav): CSS plano,
+   fuera del sistema Tailwind, para que ningún rebuild las toque.
+   Activo en desktop ≥1024px (sidebar) / móvil (bottom-nav), igual que
+   el layout lg: de las páginas (lg:pl-64).
+   ══════════════════════════════════════════════════════════════ */
+.v1s-side {
+  display: none;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+.v1pbn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #FFFFFF;
+  border-top: 1px solid #DDE5DF;
+  display: flex;
+  z-index: 40;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+.v1pbn a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  color: #7B8A80;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.v1pbn .material-symbols-outlined { font-size: 24px; }
+.v1pbn a.v1pbn-active {
+  color: #15803D;
+  background: #DCFCE7;
+}
+@media (min-width: 1024px) {
+  .v1pbn { display: none; }
+  .v1s-side {
+    display: flex;
+    flex-direction: column;
+    width: 232px;
+    min-height: 100vh;
+    background: #FFFFFF;
+    border-right: 1px solid #DDE5DF;
+    padding: 1.1rem 0.75rem;
+    gap: 0.25rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+  .v1s-brand {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0.35rem 0.6rem 1rem;
+  }
+  .v1s-logo {
+    height: 2.4rem;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .v1s-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .v1s-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 52px;
+    padding: 0 0.85rem;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #5C6B62;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .v1s-item:hover { background: #F4F8F5; color: #1A2E22; }
+  .v1s-item.v1s-active {
+    background: #DCFCE7;
+    color: #15803D;
+  }
+  .v1s-item .material-symbols-outlined { font-size: 24px; }
+  .v1s-biz {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #F4F8F5;
+    border-radius: 10px;
+    padding: 0.6rem 0.7rem;
+    min-width: 0;
+  }
+  .v1s-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 0.6rem;
+    background: #15803D;
+    color: #fff;
+  }
+  .v1s-avatar .material-symbols-outlined { font-size: 1.2rem; }
+  .v1s-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1A2E22;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+}

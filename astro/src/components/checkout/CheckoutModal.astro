@@ -18,11 +18,14 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   data-restaurant-slug={restaurantSlug}
   data-table-id={tableId ?? ''}
   data-api-base="https://velzia.shop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="checkout-title"
 >
   <div class="mb-6 flex items-center justify-between">
-    <h2 class="font-display text-lg font-semibold text-ink">Confirmar pedido</h2>
+    <h2 id="checkout-title" class="font-display text-lg font-semibold text-ink">Confirmar pedido</h2>
     <button id="checkout-close" class="rounded-full p-2 text-ink-muted transition hover:bg-card-hover" aria-label="Cerrar">
-      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
@@ -32,20 +35,20 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
     {!tableId ? (
       <>
     <div>
-      <label class="mb-1 block text-sm font-medium text-ink-muted">Tu nombre</label>
-      <input type="text" name="customer_name" required
+      <label for="checkout-name" class="mb-1 block text-sm font-medium text-ink-muted">Tu nombre</label>
+      <input type="text" id="checkout-name" name="customer_name" required autocomplete="name"
         class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
       />
     </div>
     <div>
-      <label class="mb-1 block text-sm font-medium text-ink-muted">WhatsApp / Teléfono</label>
-      <input type="tel" name="customer_phone" required
+      <label for="checkout-phone" class="mb-1 block text-sm font-medium text-ink-muted">WhatsApp / Teléfono</label>
+      <input type="tel" id="checkout-phone" name="customer_phone" required autocomplete="tel" inputmode="tel"
         class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
       />
     </div>
     <div>
-      <label class="mb-1 block text-sm font-medium text-ink-muted">Dirección de entrega</label>
-      <input type="text" name="address"
+      <label for="checkout-address" class="mb-1 block text-sm font-medium text-ink-muted">Dirección de entrega</label>
+      <input type="text" id="checkout-address" name="address" autocomplete="street-address"
         class="w-full rounded-xl border border-border-subtle bg-card-hover px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/15"
       />
     </div>
@@ -53,14 +56,17 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
     ) : (
       <p class="text-center text-sm text-ink-muted">Pedido de mesa — solo confirma para enviar</p>
     )}
-    <input type="text" name="user_secondary_email" class="absolute -left-[9999px]" tabindex="-1" autocomplete="off" />
+    <input type="text" name="user_secondary_email" class="absolute -left-[9999px]" tabindex="-1" autocomplete="off" aria-hidden="true" />
     <button type="submit"
       class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg disabled:opacity-50"
     >
-      Confirmar y pedir
+      Confirmar y enviar pedido
     </button>
+    <p class="text-center text-[11px] leading-relaxed text-ink-faint">
+      Tus datos se usan solo para procesar y entregar tu pedido.
+    </p>
   </form>
-  <div id="checkout-error" class="mt-3 hidden text-center text-sm text-red-400"></div>
+  <div id="checkout-error" class="mt-3 hidden text-center text-sm text-red-400" role="alert"></div>
 </div>
 
 <script>
@@ -74,6 +80,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   document.addEventListener('open-checkout', () => {
     document.getElementById('checkout-modal')?.classList.remove('hidden', 'translate-y-8');
     document.getElementById('checkout-overlay')?.classList.remove('hidden');
+    document.getElementById('checkout-name')?.focus();
     resetSubmitState();
   });
 
@@ -129,7 +136,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
       delete form.dataset.submitting;
       if (btn) {
         btn.disabled = false;
-        btn.textContent = btn.dataset.label || 'Confirmar y pedir';
+        btn.textContent = btn.dataset.label || 'Confirmar y enviar pedido';
       }
     }
   }

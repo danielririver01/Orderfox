@@ -373,6 +373,15 @@ def create_sale(business_id: int, items_data: list, *, sale_type: str = 'walk_in
     if total <= 0:
         raise VerdurasValidationError('El total de la venta debe ser mayor a 0')
 
+    # Cupo de crédito (fiados v2): la compra a libreta solo cabe dentro
+    # del cupo disponible de la cuenta. Sin cupo (NULL) queda como siempre.
+    if payment_method == 'libreta':
+        from verduras.services import clientes as clientes_svc
+        try:
+            clientes_svc.check_credit_limit(business_id, client_row_id, total)
+        except clientes_svc.ClientesValidationError as e:
+            raise VerdurasValidationError(str(e))
+
     sale.total = total
     # Control de caja (solo efectivo): lo recibido debe cubrir el total y
     # las vueltas se calculan, nunca se inventan. Otros métodos lo ignoran.

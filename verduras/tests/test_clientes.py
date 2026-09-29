@@ -123,6 +123,10 @@ class TestLibretaExigeCliente:
 
 class TestClientesRutas:
     def test_buscar_y_detalle(self, client, db, biz, catalog_row, carmen):
+        create_sale(biz.id,
+                    [{'product_id': catalog_row.tomate.id,
+                      'quantity': '1'}],
+                    payment_method='libreta', client_id=carmen.id)
         _login_client(client, biz)
         res = client.get(f'/pos/{biz.slug}/clientes/buscar?q=carmen')
         assert res.status_code == 200
@@ -130,7 +134,12 @@ class TestClientesRutas:
         cid = carmen.id
         res = client.get(f'/pos/{biz.slug}/clientes/{cid}')
         assert res.status_code == 200
-        assert res.get_json()['data']['saldo'] == '$0'
+        data = res.get_json()['data']
+        # Dinero formateado es-CO y timeline unificado (v2): el detalle
+        # ya no separa tickets/abonos, los mezcla como en la libreta.
+        assert data['saldo'] == '$3.200,00'
+        assert data['timeline'][0]['kind'] == 'cargo'
+        assert data['timeline'][0]['amount'] == '$3.200,00'
 
     def test_abonar_y_compromiso_por_ruta(self, client, db, biz,
                                           catalog_row, carmen):
@@ -143,7 +152,9 @@ class TestClientesRutas:
         res = client.post(f'/pos/{biz.slug}/clientes/{cid}/abonar',
                           json={'monto': '1200'})
         assert res.status_code == 201
-        assert res.get_json()['data']['saldo'] == '2000.00'
+        data = res.get_json()['data']
+        assert data['saldo'] == '$2.000,00'
+        assert data['monto'] == '$1.200,00'
         res = client.post(f'/pos/{biz.slug}/clientes/{cid}/compromiso',
                           json={'fecha_compromiso': '2026-11-01'})
         assert res.status_code == 200
@@ -154,6 +165,113 @@ class TestClientesRutas:
         assert client.post(
             f'/pos/{biz.slug}/clientes/{carmen.id}/abonar',
             json={'monto': '100'}).status_code == 401
+
+
+class TestFiadosV2:
+    """Fiados v2 (rediseño del panel): cupo de crédito, nota interna y
+    método del abono. El cupo es dinero: frenar la venta que no cabe es
+    la regla que paga arriendo."""
+
+    def test_abono_con_metodo_y_metodo_invalido(self, db, biz,
+                                                catalog_row, carmen):
+        create_sale(biz.id,
+                    [{'product_id': catalog_row.tomate.id,
+                      'quantity': '1'}],
+                    payment_method='libreta', client_id=carmen.id)
+        clientes_svc.registrar_abono(biz.id, carmen.id, '1000',
+                                     method='efectivo')
+        abono = clientes_svc.VerdurasAbono.query.filter_by(
+            client_id=carmen.id).first()
+        assert abono.method == 'efectivo'
+        with pytest.raises(clientes_svc.ClientesValidationError,
+                           match='Método inválido'):
+            clientes_svc.registrar_abono(biz.id, carmen.id, '1000',
+                                         method='libreta')
+
+    def test_cupo_frena_venta_que_no_cabe(self, db, biz, catalog_row,
+                                          carmen):
+        clientes_svc.set_credit_limit(biz.id, carmen.id, '5000')
+        with pytest.raises(VerdurasValidationError, match='cupo'):
+            create_sale(biz.id,
+                        [{'product_id': catalog_row.tomate.id,
+                          'quantity': '2'}],
+                        payment_method='libreta', client_id=carmen.id)
+        # Dentro del cupo sí pasa.
+        venta = create_sale(biz.id,
+                            [{'product_id': catalog_row.tomate.id,
+                              'quantity': '1'}],
+                            payment_method='libreta',
+                            client_id=carmen.id)[0]
+        assert str(venta.total) == '3200.00'
+
+    def test_cupo_considera_saldo_vivo(self, db, biz, catalog_row, carmen):
+        clientes_svc.set_credit_limit(biz.id, carmen.id, '5000')
+        create_sale(biz.id,
+                    [{'product_id': catalog_row.tomate.id,
+                      'quantity': '1'}],
+                    payment_method='libreta', client_id=carmen.id)
+        # Disponible: 5000 − 3200 = 1800. Otros 3200 NO caben.
+        with pytest.raises(VerdurasValidationError, match='cupo'):
+            create_sale(biz.id,
+                        [{'product_id': catalog_row.tomate.id,
+                          'quantity': '1'}],
+                        payment_method='libreta', client_id=carmen.id)
+
+    def test_sin_cupo_es_sin_techo(self, db, biz, catalog_row, carmen):
+        for _ in range(3):  # 3 × 3200 sin límite definido: pasa
+            create_sale(biz.id,
+                        [{'product_id': catalog_row.tomate.id,
+                          'quantity': '1'}],
+                        payment_method='libreta', client_id=carmen.id)
+
+    def test_ficha_guarda_cupo_y_nota(self, client, db, biz, carmen):
+        _login_client(client, biz)
+        res = client.post(
+            f'/pos/{biz.slug}/clientes/{carmen.id}/ficha',
+            json={'credit_limit': '60000',
+                  'internal_note': 'Paga quincenal'})
+        assert res.status_code == 200
+        data = res.get_json()['data']
+        assert data['credit_limit'] == '60000.00'
+        assert data['internal_note'] == 'Paga quincenal'
+        res = client.post(
+            f'/pos/{biz.slug}/clientes/{carmen.id}/ficha',
+            json={'internal_note': 'x' * 501})
+        assert res.status_code == 400
+
+    def test_detalle_con_cupo_y_timeline(self, client, db, biz,
+                                         catalog_row, carmen):
+        clientes_svc.set_credit_limit(biz.id, carmen.id, '10000')
+        create_sale(biz.id,
+                    [{'product_id': catalog_row.tomate.id,
+                      'quantity': '1'}],
+                    payment_method='libreta', client_id=carmen.id)
+        clientes_svc.registrar_abono(biz.id, carmen.id, '1000',
+                                     method='efectivo')
+        _login_client(client, biz)
+        res = client.get(f'/pos/{biz.slug}/clientes/{carmen.id}')
+        data = res.get_json()['data']
+        assert data['saldo'] == '$2.200,00'
+        assert data['credit_limit'] == '$10.000,00'
+        assert data['disponible'] == '$7.800,00'
+        assert data['uso_pct'] == 22.0
+        kinds = {m['kind'] for m in data['timeline']}
+        assert {'cargo', 'abono'} <= kinds
+        abono = next(m for m in data['timeline'] if m['kind'] == 'abono')
+        assert abono['method'] == 'efectivo'
+        assert abono['amount'] == '$1.000,00'
+
+    def test_pagina_kpis_y_estado_vencida(self, client, db, biz,
+                                          catalog_row, carmen):
+        create_sale(biz.id,
+                    [{'product_id': catalog_row.tomate.id,
+                      'quantity': '1'}],
+                    payment_method='libreta', client_id=carmen.id)
+        clientes_svc.set_compromiso(biz.id, carmen.id, '2020-01-01')
+        _login_client(client, biz)
+        html = client.get(f'/pos/{biz.slug}/clientes').get_data(as_text=True)
+        assert '$3.200' in html
+        assert 'Vencida' in html
 
 
 class TestClientesPantalla:

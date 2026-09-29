@@ -1,0 +1,50 @@
+{# Sidebar del módulo verduras (desktop ≥900px): el diseño ORIGINAL v1
+   (blanco, Inter, verde #15803D, tarjeta del negocio ABAJO en el footer).
+   Compartido por las 5 pantallas vía include con active ∈ {'pos',
+   'inventory', 'ventas', 'clientes', 'config'}.
+   Uso: {% with active = 'pos' %}{% include '_pos_sidebar.html' %}{% endwith %}
+   Clases v1s-*: CSS propio al final de CSS/src/fiados.css (NO Tailwind,
+   para que ningún rebuild las toque). #}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+<aside class="v1s-side" aria-label="Navegación principal">
+  <p class="v1s-brand">
+    <img src="{{ url_for('static', filename='img/velzia-verduras-logo.png') }}"
+         alt="Velzia Verduras" class="v1s-logo">
+  </p>
+  <nav class="v1s-nav">
+    <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}"
+       class="v1s-item {{ 'v1s-active' if active == 'pos' }}"
+       {{ 'aria-current="page"' if active == 'pos' }}>
+      <span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>
+      Vender
+    </a>
+    <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"
+       class="v1s-item {{ 'v1s-active' if active == 'inventory' }}"
+       {{ 'aria-current="page"' if active == 'inventory' }}>
+      <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+      Inventario y Precios
+    </a>
+    <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}"
+       class="v1s-item {{ 'v1s-active' if active == 'ventas' }}"
+       {{ 'aria-current="page"' if active == 'ventas' }}>
+      <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+      Ventas del Día
+    </a>
+    <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}"
+       class="v1s-item {{ 'v1s-active' if active == 'clientes' }}"
+       {{ 'aria-current="page"' if active == 'clientes' }}>
+      <span class="material-symbols-outlined" aria-hidden="true">group</span>
+      Clientes / Fiados
+    </a>
+    <a href="{{ url_for('dashboard.pos_config', slug=business.slug) }}"
+       class="v1s-item {{ 'v1s-active' if active == 'config' }}"
+       {{ 'aria-current="page"' if active == 'config' }}>
+      <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+      Configuración
+    </a>
+  </nav>
+  <div class="v1s-biz">
+    <span class="v1s-avatar" aria-hidden="true"><span class="material-symbols-outlined">storefront</span></span>
+    <span class="v1s-name">{{ business.name }}</span>
+  </div>
+</aside>

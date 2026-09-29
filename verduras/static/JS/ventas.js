@@ -132,6 +132,52 @@
     }, 500);
   }
 
+  // ── Impresión térmica (rollo 80mm) ────────────────────────
+  // Igual que pos.js: clona [data-print-target] a un buffer de rollo
+  // (pos.css: @page margin 0 + 80mm) y oculta el resto de la página.
+  function printTicketModal() {
+    const target = document.querySelector('#vtas-modal[data-print-target]');
+    if (!target) return;
+    const buffer = document.createElement('div');
+    buffer.className = 'print-buffer';
+    buffer.appendChild(target.cloneNode(true));
+    document.body.appendChild(buffer);
+    document.body.classList.add('print-data');
+    window.print();
+    // El diálogo de impresión bloquea; al volver, se desmonta el buffer.
+    document.body.classList.remove('print-data');
+    buffer.remove();
+  }
+
+  // El resumen se construye del mismo JSON servido (nunca inventa).
+  function printDaySummary() {
+    const buffer = document.createElement('div');
+    buffer.className = 'print-buffer';
+    const head = document.createElement('h3');
+    head.textContent = 'Ventas del día';
+    buffer.appendChild(head);
+    SALES.forEach((s) => {
+      const line = document.createElement('p');
+      line.className = 'ticket-method';
+      line.textContent = '#' + s.number + ' ' + s.time + ' — '
+        + (s.customer || 'Cliente General') + ' — '
+        + (s.method || 'Sin registro') + ' — ' + s.total;
+      buffer.appendChild(line);
+      (s.items || []).forEach((it) => {
+        const item = document.createElement('p');
+        item.className = 'ticket-number';
+        item.textContent = '  ' + it.name + ' — ' + it.qty + ' '
+          + it.unit + ' — ' + it.total;
+        buffer.appendChild(item);
+      });
+    });
+    document.body.appendChild(buffer);
+    document.body.classList.add('print-data');
+    window.print();
+    document.body.classList.remove('print-data');
+    buffer.remove();
+  }
+
   // ── Wire-up ───────────────────────────────────────────────
 
   function wireUp() {
@@ -168,7 +214,7 @@
       });
     }
     const printBtn = $('#vtas-m-print');
-    if (printBtn) printBtn.addEventListener('click', () => window.print());
+    if (printBtn) printBtn.addEventListener('click', printTicketModal);
 
     const toolbarPrint = $('#vtas-print');
     if (toolbarPrint) {
@@ -178,7 +224,7 @@
           showToast('No hay ventas hoy para imprimir');
           return;
         }
-        window.print();
+        printDaySummary();
       });
     }
 

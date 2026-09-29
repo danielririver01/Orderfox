@@ -11,7 +11,8 @@
   --color-border-subtle: #2C251E;
   --color-ink: #F5EFE7;
   --color-ink-muted: #A89A88;
-  --color-ink-faint: #8A7B68;
+  /* AA 4.6:1 sobre card #1F1A15 (el anterior #8A7B68 daba 4.2:1) */
+  --color-ink-faint: #9C8D7A;
   --color-accent: #FF7A29;
   --color-accent-hover: #C9541A;
   --color-accent-strong: #B84A12;
@@ -52,6 +53,12 @@ body {
   opacity: 0.45;
   filter: none;
   cursor: not-allowed;
+}
+
+/* Accesibilidad teclado: foco visible en todos los controles interactivos */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .text-price {

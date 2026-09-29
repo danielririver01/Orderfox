@@ -9,12 +9,14 @@
         mobileDrawer.classList.add('open');
         menuOverlay.classList.add('open');
         document.body.style.overflow = 'hidden';
+        if (menuToggle) menuToggle.setAttribute('aria-expanded', 'true');
     }
 
     function closeDrawer() {
         mobileDrawer.classList.remove('open');
         menuOverlay.classList.remove('open');
         document.body.style.overflow = '';
+        if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
     }
 
     if (menuToggle) menuToggle.addEventListener('click', openDrawer);

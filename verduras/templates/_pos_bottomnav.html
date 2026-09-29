@@ -1,0 +1,26 @@
+{# Bottom-nav del módulo verduras (móvil): diseño ORIGINAL v1 (blanco,
+   Inter, verde #15803D, 5 items). Compartido por las 5 pantallas.
+   active ∈ {'pos', 'inventory', 'ventas', 'clientes', 'config'}.
+   Clases v1pbn-*: CSS propio al final de CSS/src/fiados.css. #}
+<nav class="v1pbn" aria-label="Navegación principal">
+  <a href="{{ url_for('dashboard.pos_view', slug=business.slug) }}"
+     class="{{ 'v1pbn-active' if active == 'pos' }}" {{ 'aria-current="page"' if active == 'pos' }}>
+    <span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>Vender
+  </a>
+  <a href="{{ url_for('dashboard.pos_inventory', slug=business.slug) }}"
+     class="{{ 'v1pbn-active' if active == 'inventory' }}" {{ 'aria-current="page"' if active == 'inventory' }}>
+    <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>Inventario
+  </a>
+  <a href="{{ url_for('dashboard.pos_ventas', slug=business.slug) }}"
+     class="{{ 'v1pbn-active' if active == 'ventas' }}" {{ 'aria-current="page"' if active == 'ventas' }}>
+    <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>Ventas
+  </a>
+  <a href="{{ url_for('dashboard.pos_clientes_page', slug=business.slug) }}"
+     class="{{ 'v1pbn-active' if active == 'clientes' }}" {{ 'aria-current="page"' if active == 'clientes' }}>
+    <span class="material-symbols-outlined" aria-hidden="true">group</span>Clientes
+  </a>
+  <a href="{{ url_for('dashboard.pos_config', slug=business.slug) }}"
+     class="{{ 'v1pbn-active' if active == 'config' }}" {{ 'aria-current="page"' if active == 'config' }}>
+    <span class="material-symbols-outlined" aria-hidden="true">settings</span>Ajustes
+  </a>
+</nav>

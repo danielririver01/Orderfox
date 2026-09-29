@@ -30,37 +30,41 @@
                 <p class="legal-sidebar-subtitle">Velzia · 2026</p>
             </div>
 
-            <nav>
+            <nav aria-label="Secciones legales">
                 <a href="#privacidad" class="legal-nav-link active" data-section="privacidad">
-                    <span class="material-symbols-outlined">verified_user</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
                     Privacidad
                 </a>
                 <a href="#terminos" class="legal-nav-link" data-section="terminos">
-                    <span class="material-symbols-outlined">gavel</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">gavel</span>
                     Términos
                 </a>
                 <a href="#pagos" class="legal-nav-link" data-section="pagos">
-                    <span class="material-symbols-outlined">payments</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">payments</span>
                     Pagos
                 </a>
                 <a href="#suscripciones" class="legal-nav-link" data-section="suscripciones">
-                    <span class="material-symbols-outlined">unsubscribe</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">unsubscribe</span>
                     Suscripciones
                 </a>
+                <a href="#reembolsos" class="legal-nav-link" data-section="reembolsos">
+                    <span class="material-symbols-outlined" aria-hidden="true">assignment_return</span>
+                    Reembolsos
+                </a>
                 <a href="#datos" class="legal-nav-link" data-section="datos">
-                    <span class="material-symbols-outlined">database</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">database</span>
                     Política de Datos
                 </a>
                 <a href="#faq" class="legal-nav-link" data-section="faq">
-                    <span class="material-symbols-outlined">quiz</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
                     Preguntas Frecuentes
                 </a>
                 <a href="#red-velzia" class="legal-nav-link" data-section="red-velzia">
-                    <span class="material-symbols-outlined">hub</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">hub</span>
                     Red de Velzia
                 </a>
                 <a href="#copilot" class="legal-nav-link" data-section="copilot">
-                    <span class="material-symbols-outlined">insights</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">insights</span>
                     Copilot VZ
                 </a>
             </nav>
@@ -68,55 +72,59 @@
 
         <!-- ===== Header Móvil con Hamburguesa ===== -->
         <div class="legal-mobile-header">
-            <button class="legal-hamburger" id="menuToggle" aria-label="Abrir menú">
-                <span class="material-symbols-outlined">menu</span>
+            <button class="legal-hamburger" id="menuToggle" aria-label="Abrir menú de secciones" aria-controls="mobileDrawer" aria-expanded="false">
+                <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             </button>
             <h1 class="text-white font-black text-lg tracking-tight">LEGAL</h1>
-            <a href="{{ url_for('auth.login') }}" class="legal-hamburger" aria-label="Volver">
-                <span class="material-symbols-outlined">close</span>
+            <a href="{{ url_for('auth.login') }}" class="legal-hamburger" aria-label="Volver al inicio de sesión">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </a>
         </div>
 
         <!-- ===== Overlay Móvil ===== -->
-        <div class="legal-mobile-overlay" id="menuOverlay"></div>
+        <div class="legal-mobile-overlay" id="menuOverlay" aria-hidden="true"></div>
 
         <!-- ===== Drawer Móvil ===== -->
-        <aside class="legal-mobile-drawer" id="mobileDrawer">
+        <aside class="legal-mobile-drawer" id="mobileDrawer" aria-label="Menú de secciones legales">
             <button class="legal-drawer-close" id="drawerClose" aria-label="Cerrar menú">
-                <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">close</span>
             </button>
 
-            <nav style="margin-top: 3rem;">
+            <nav style="margin-top: 3rem;" aria-label="Secciones legales">
                 <a href="#privacidad" class="legal-nav-link active" data-section="privacidad">
-                    <span class="material-symbols-outlined">verified_user</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
                     Privacidad
                 </a>
                 <a href="#terminos" class="legal-nav-link" data-section="terminos">
-                    <span class="material-symbols-outlined">gavel</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">gavel</span>
                     Términos
                 </a>
                 <a href="#pagos" class="legal-nav-link" data-section="pagos">
-                    <span class="material-symbols-outlined">payments</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">payments</span>
                     Pagos
                 </a>
                 <a href="#suscripciones" class="legal-nav-link" data-section="suscripciones">
-                    <span class="material-symbols-outlined">unsubscribe</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">unsubscribe</span>
                     Suscripciones
                 </a>
+                <a href="#reembolsos" class="legal-nav-link" data-section="reembolsos">
+                    <span class="material-symbols-outlined" aria-hidden="true">assignment_return</span>
+                    Reembolsos
+                </a>
                 <a href="#datos" class="legal-nav-link" data-section="datos">
-                    <span class="material-symbols-outlined">database</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">database</span>
                     Política de Datos
                 </a>
                 <a href="#faq" class="legal-nav-link" data-section="faq">
-                    <span class="material-symbols-outlined">quiz</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
                     Preguntas Frecuentes
                 </a>
                 <a href="#red-velzia" class="legal-nav-link" data-section="red-velzia">
-                    <span class="material-symbols-outlined">hub</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">hub</span>
                     Red de Velzia
                 </a>
                 <a href="#copilot" class="legal-nav-link" data-section="copilot">
-                    <span class="material-symbols-outlined">insights</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">insights</span>
                     Copilot VZ
                 </a>
             </nav>
@@ -133,7 +141,7 @@
         <main class="legal-content">
 
             <!-- Indicador de sección activa (móvil) -->
-            <div class="legal-active-section md:hidden" id="activeIndicator">
+            <div class="legal-active-section md:hidden" id="activeIndicator" aria-hidden="true">
                 <span class="material-symbols-outlined">verified_user</span>
                 <span id="activeSectionTitle">Privacidad</span>
             </div>
@@ -154,6 +162,8 @@
 
             {% include 'dashboard/legal/sections/suscripciones.html' %}
 
+            {% include 'dashboard/legal/sections/reembolsos.html' %}
+
             {% include 'dashboard/legal/sections/datos.html' %}
 
             {% include 'dashboard/legal/sections/red-velzia.html' %}
@@ -163,8 +173,9 @@
             {% include 'dashboard/legal/sections/copilot.html' %}
             <!-- ===== Footer ===== -->
             <footer class="legal-footer">
-                <p>© 2026 Velzia. Todos los derechos reservados.</p>
-                <p style="margin-top: 0.5rem;">Documento legal unificado · Versión 1.1</p>
+                <p>© 2026 Velzia — Operado por Jhoan Rivera · NIT 100.275.521-5 · Riosucio, Caldas, Colombia. Todos los derechos reservados.</p>
+                <p>Contacto: velziaoficial@gmail.com · WhatsApp +57 312 300 0887</p>
+                <p style="margin-top: 0.5rem;">Documento legal unificado · Versión 1.2</p>
             </footer>
 
         </main>
@@ -173,7 +184,7 @@
 
     <!-- ===== Botón Volver Arriba ===== -->
     <button id="backToTop" class="legal-back-to-top" aria-label="Volver arriba" title="Volver arriba">
-        <span class="material-symbols-outlined">arrow_upward</span>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
     </button>
 
     <script src="{{ url_for('static', filename='js/legal.js') }}"></script>

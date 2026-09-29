@@ -247,6 +247,11 @@ class VerdurasCliente(db.Model):
     phone = db.Column(db.String(20))
     # Fecha de compromiso de pago (una por cuenta, v1). Nullable = sin fecha.
     fecha_compromiso = db.Column(Date)
+    # Cupo de crédito autorizado (fiados v2). NULL = sin límite definido:
+    # las cuentas viejas (y los que no quieren techo) quedan como están.
+    credit_limit = db.Column(Numeric(12, 2), nullable=True)
+    # Nota interna del tendero sobre el cliente (v2). Nunca sale del POS.
+    internal_note = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True, nullable=False,
                           server_default='1')
     created_at = db.Column(AwareDateTime,
@@ -275,6 +280,9 @@ class VerdurasAbono(db.Model):
     )
     monto = db.Column(Numeric(12, 2), nullable=False)
     note = db.Column(db.String(255))
+    # Método con que entró el dinero: efectivo | transferencia | tarjeta.
+    # NULL = abonos viejos (v1) registrados sin método.
+    method = db.Column(db.String(20), nullable=True)
     registered_at = db.Column(AwareDateTime, nullable=False,
                               default=lambda: datetime.now(timezone.utc))
 

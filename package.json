@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --minify",
+    "build:css:verduras": "tailwindcss -i ./verduras/static/CSS/src/fiados.css -o ./verduras/static/CSS/fiados.css --minify",
     "watch:css": "tailwindcss -i ./app/static/CSS/src/input.css -o ./app/static/CSS/output.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
     "k6": "C:\\PROGRA~1\\k6\\k6.exe",

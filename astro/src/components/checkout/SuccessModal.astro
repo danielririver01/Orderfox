@@ -14,28 +14,28 @@ const { whatsappPhone } = Astro.props;
 >
   <div class="bg-accent px-6 py-10 text-center text-cta-ink">
     <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-cta-ink/15">
-      <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
       </svg>
     </div>
     <h2 class="font-display text-xl font-bold">Pedido confirmado</h2>
     <p class="mt-1 text-sm text-cta-ink/80">Tu pedido ha sido recibido</p>
   </div>
-  <div class="p-6 text-center">
+  <div class="p-6 text-center" role="status">
     <p class="text-sm text-ink-muted">Número de pedido</p>
     <p id="success-order-number" class="mt-1 text-2xl font-bold text-ink">ORD-000</p>
     <p id="success-total" class="mt-2 text-lg font-bold text-price"></p>
     <p id="success-table" class="mt-1 hidden text-sm font-medium text-ink-muted"></p>
     <div class="mt-6 flex flex-col gap-3">
-      <button id="whatsapp-confirm"
+      <button id="whatsapp-confirm" type="button"
         class="w-full rounded-xl bg-veg py-3 text-sm font-semibold text-cta-ink transition hover:brightness-90"
       >
-        Confirmar por WhatsApp
+        Confirmar pedido por WhatsApp
       </button>
-      <button id="success-close"
+      <button id="success-close" type="button"
         class="w-full rounded-xl border border-border-subtle py-3 text-sm font-semibold text-ink-muted transition hover:bg-card-hover"
       >
-        Seguir viendo el menú
+        Volver al menú
       </button>
     </div>
   </div>

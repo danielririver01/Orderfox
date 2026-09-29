@@ -79,6 +79,25 @@ def setup_pos_pin(business_id: int, pin) -> None:
     db.session.commit()
 
 
+def change_pos_pin(business_id: int, current_pin, new_pin) -> None:
+    """Cambia el PIN del mostrador verificando el actual (Config v1).
+
+    Sin el PIN vigente no hay cambio (el tendero lo sabe; un extraño no).
+    Reutiliza la validación de formato y el hash de setup_pos_pin. Los
+    intentos fallidos aquí NO tocan el lockout de login (ese protege la
+    puerta; esto es un cambio autenticado en sesión).
+    """
+    business = get_business(business_id)
+    if business is None or business.vertical != 'verduras':
+        raise PosAuthError('Negocio no encontrado')
+    row = _settings_row(business_id)
+    if not row or not row.pos_pin_hash:
+        raise PosAuthError('Este negocio aún no configura su PIN de POS')
+    if not check_password_hash(row.pos_pin_hash, str(current_pin or '')):
+        raise PosAuthError('El PIN actual no coincide')
+    setup_pos_pin(business_id, new_pin)
+
+
 def get_setup_target(slug, token):
     """Business con token de setup VÁLIDO, o PosAuthError (enlace muerto)."""
     business = get_business_by_slug(str(slug or '').strip())

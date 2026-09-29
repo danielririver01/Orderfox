@@ -21,6 +21,9 @@ const { id = 'toast-container' } = Astro.props;
     const toast = document.createElement('div');
     toast.className = `rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ${colors[type]}`;
     toast.textContent = message;
+    // Accesibilidad: los avisos deben anunciarse sin robar el foco.
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';

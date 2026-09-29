@@ -711,11 +711,61 @@ button { font-family: inherit; }
 }
 
 @media print {
-  /* Solo-ticket (POS): se activa con body.print-ticket al abrir el modal.
-     Sin esa clase (Ventas/Inventario) se imprime el contenido visible. */
-  body.print-ticket * { visibility: hidden; }
-  body.print-ticket .ticket-modal.show,
-  body.print-ticket .ticket-modal.show * { visibility: visible; }
+  /* Papel térmico de rollo (patrón del core: app/static/CSS/receipt.css).
+     Márgenes 0 y ancho del rollo: la impresora no agrega hoja carta. */
+  @page { margin: 0; }
+
+  body {
+    /* body.print-data → imprime SOLO el nodo apuntado por data-print-target
+       (técnica print-buffer). Inyecta un wrapper clónico con ancho térmico;
+       después del diálogo window.print() lo remueve (ver pos.js). */
+    background: #FFFFFF;
+  }
+  body.print-data > :not(.print-buffer) { display: none !important; }
+  .print-buffer {
+    width: 80mm;
+    max-width: 80mm;
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
+    color: #000000;
+  }
+  .print-buffer * {
+    background: transparent !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  /* El clon viene del modal (fixed, oscuro, centrado): en papel es un
+     contenedor plano. display:block vence a .ticket-modal (regla posterior). */
+  .print-buffer .ticket-modal {
+    position: static;
+    display: block;
+    inset: auto;
+    z-index: auto;
+    background: none;
+    padding: 0;
+  }
+  /* Rollo: sin botones, sin sombras, sin redondeos, a lo ancho. */
+  .print-buffer .ticket {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 2mm 0;
+  }
+  .print-buffer .ticket-actions { display: none; }
+  .print-buffer .ticket h3 { font-size: 15px; }
+  .print-buffer .ticket table { font-size: 12px; }
+  .print-buffer .ticket .ticket-number,
+  .print-buffer .ticket .ticket-method { font-size: 12px; }
+
+  /* Modo legado (sin body.print-data): modal de ticket en pantalla.
+     :not(.print-data) es CRÍTICO: al imprimir el térmico con el modal
+     abierto quedan ambas clases, y 'print-ticket *' ocultaba también el
+     buffer → hoja en blanco. */
+  body.print-ticket:not(.print-data) * { visibility: hidden; }
+  body.print-ticket:not(.print-data) .ticket-modal.show,
+  body.print-ticket:not(.print-data) .ticket-modal.show * { visibility: visible; }
   body.print-ticket .ticket-modal.show {
     position: absolute;
     inset: 0;
