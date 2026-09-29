@@ -15,12 +15,23 @@ and has weak Python/Node support. For Velzia (Python + Node stack) we use the fa
 
 ```powershell
 # Python
-.venv\Scripts\pip-audit.exe -r requirements-dev.txt --desc on
+.venv\Scripts\pip-audit.exe --strict -r requirements-dev.txt --desc on
 
 # Node
 npm audit
 npm audit fix        # applies non-breaking fixes (bumps astro, etc.)
 ```
+
+## CI gate (VLZ-27)
+
+The workflow installs the pinned development requirements and blocks on:
+
+```bash
+pip-audit --strict -r requirements-dev.txt --desc on
+```
+
+Bandit runs separately as an informative scan; the Windows-only security
+suite remains outside this CI workflow and is tracked in VLZ-19.
 
 ## Latest Scan (2026-07-20)
 
@@ -30,7 +41,7 @@ npm audit fix        # applies non-breaking fixes (bumps astro, etc.)
 |---------|-----------|-------|------|
 | pyjwt | 2.12.1 | 2.13.0 | JWT — relevante a auditoría |
 | authlib | 1.6.11 | 1.6.12 | OAuth/OIDC |
-| cryptography | 46.0.6 | 48.0.1 | OpenSSL estático |
+| cryptography | 48.0.1 | 50.0.1 | OpenSSL estático |
 | click | 8.3.1 | 8.3.3 | command injection |
 | pillow | 12.1.1 | 12.3.0 | múltiples (8 CVEs) |
 | urllib3 | 2.6.3 | 2.7.0 | SSRF / CORS |
@@ -58,7 +69,8 @@ Tras `npm install` + `npm audit` en raíz → **found 0 vulnerabilities**.
 # Node (non-breaking)
 npm audit fix
 
-# Python (bump in requirements-dev.txt / requirements.txt, then reinstall)
-pip install --upgrade pyjwt==2.13.0 authlib==1.6.12 cryptography urllib3 pillow idna soupsieve filelock click mako
-pip freeze > requirements-dev.txt
+# Python: update the pinned requirements, then reinstall
+pip install -r requirements-dev.txt
+# The CI gate is the canonical check:
+pip-audit --strict -r requirements-dev.txt --desc on
 ```

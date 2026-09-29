@@ -256,8 +256,8 @@ sobrescribe `DATABASE_URL` a SQLite antes de importar la app: las pruebas
 > construcción**, ni siquiera con los 5 `F821`. Ver
 > [R-01](06-riesgos-y-deuda-tecnica.md#r-01) y [R-02](06-riesgos-y-deuda-tecnica.md#r-02).
 
-`[CÓDIGO]` `bandit` y `safety` están en `requirements-dev.txt` pero **el CI no
-los ejecuta**.
+`[CÓDIGO]` El CI ejecuta `pip-audit --strict` como puerta bloqueante y Bandit
+como chequeo informativo (`--exit-zero`).
 
 ---
 

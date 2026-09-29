@@ -80,8 +80,10 @@ capa, el tiempo mínimo de 3 segundos, **está inerte**
 
 ### 2.5 Análisis estático con bandit — `[EJECUTADO]`
 
-`bandit` está en `requirements-dev.txt` pero **el CI nunca lo ejecuta**. Se
-ejecutó aquí por primera vez:
+`bandit` está en `requirements-dev.txt` y ahora se ejecuta en el CI como
+chequeo informativo (`--exit-zero`). La ejecución sigue siendo útil para
+visibilizar hallazgos, pero no bloquea la construcción mientras se triagean:
+
 
 ```
 líneas analizadas: 17.298
@@ -103,10 +105,12 @@ pasar `usedforsecurity=False`.
 **Resultado honesto: bandit no encontró ningún problema real.** Es una señal
 buena, pero bandit solo detecta patrones conocidos; no prueba lógica.
 
-### 2.6 Vulnerabilidades en dependencias — `[EJECUTADO]` ❌ ver R-23
+### 2.6 Vulnerabilidades en dependencias — `[ACTUALIZADO]` ver R-23
 
-Primera ejecución de `pip-audit` sobre el entorno instalado. **Encontró CVEs**,
-detalladas en [R-23](#r-23).
+La primera ejecución de `pip-audit` sobre el entorno instalado **encontró CVEs**,
+detalladas en [R-23](#r-23). VLZ-27 actualiza las versiones fijadas y añade una
+puerta bloqueante de `pip-audit --strict` al CI; la suite de seguridad
+solo-Windows permanece fuera de este alcance y se conserva como VLZ-19.
 
 ---
 
@@ -260,36 +264,39 @@ notificación de prueba desde el panel de Mercado Pago.**
 ---
 
 <a id="r-23"></a>
-### 🟠 R-23 — Dependencias con CVE conocidas, y el CI no ejecuta las herramientas que ya están instaladas
+### 🟠 R-23 — Dependencias con CVE conocidas y controles de seguridad del CI
 
-**Estado:** `[EJECUTADO]` — `pip-audit` sobre el entorno real.
+**Estado:** `[ACTUALIZADO]` — las versiones corregidas están fijadas y el CI ejecuta el gate bloqueante.
 
-**Paquetes fijados en `requirements.txt` con vulnerabilidades conocidas:**
+**Paquetes fijados en `requirements.txt` que el snapshot de referencia reportó
+con vulnerabilidades conocidas:**
 
 | Paquete | Versión fijada | CVE | Corregido en | Lo arrastra |
 |---|---|---|---|---|
-| `cryptography` | **48.0.1** | PYSEC-2026-3552, -3553, -3554 | 49.0.0 / 50.0.0 | Authlib |
-| `idna` | **3.11** | PYSEC-2026-215 | 3.15 | requests, httpx, email-validator |
-| `pyasn1` | **0.6.3** | PYSEC-2026-3455, -3456, -3457 | 0.6.4 | — |
+| `cryptography` | **50.0.1** | PYSEC-2026-3552, -3553, -3554 | 49.0.0 / 50.0.0 | Authlib |
+| `idna` | **3.15** | PYSEC-2026-215 | 3.15 | requests, httpx, email-validator |
+| `pyasn1` | **0.6.4** | PYSEC-2026-3455, -3456, -3457 | 0.6.4 | — |
 
 `cryptography` es el más relevante: lo usa **Authlib**, que está en el camino de
-autenticación.
+autenticación. Las tres versiones fijadas quedaron alineadas con las versiones indicadas como corregidas en el hallazgo. `pytest` también se actualizó de
+8.3.4 a 9.0.3 en la dependencia de desarrollo.
 
-**También vulnerables, pero transitivas o solo de desarrollo:** `setuptools`
-66.1.1 (3 CVE), `filelock` 3.16.1, `nltk` 3.10.3, `pytest` 8.3.4.
+El snapshot también reportó vulnerabilidades transitivas o solo de desarrollo
+(`setuptools`, `filelock` y `nltk`). El gate vigente audita el archivo de
+requisitos completo; si un paquete transitorio reaparece con una vulnerabilidad
+sin solución disponible, el CI lo hará visible y requerirá una decisión
+explícita en lugar de ocultarlo.
 
-**Lo que agrava el hallazgo:** `bandit==1.8.3` y `safety==3.3.1` están en
-`requirements-dev.txt`, pero **`.github/workflows/ci.yml` no los menciona ni una
-vez**. Las herramientas están compradas y sin estrenar. Es el mismo patrón que
-[R-10](06-riesgos-y-deuda-tecnica.md#r-10) (flake8 con `--exit-zero`): la
-comprobación existe pero no puede fallar el build.
+**Corrección aplicada:** `pip-audit==2.10.1` y `bandit==1.9.4` están fijados en
+`requirements-dev.txt`; el CI ejecuta `pip-audit --strict` como paso bloqueante y
+Bandit como paso informativo.
 
 **Criterio de cierre:**
 
-- [ ] Subir `cryptography`, `idna` y `pyasn1` a versiones sin CVE
-- [ ] Añadir `pip-audit` (o `safety`) al CI, **sin** `--exit-zero`
-- [ ] Añadir `bandit`, aunque sea informativo al principio
-- [ ] Decidir qué hacer con la suite de seguridad solo-Windows: portarla o retirarla
+- [x] Subir `cryptography`, `idna` y `pyasn1` a versiones corregidas
+- [x] Añadir `pip-audit` al CI, **sin** `--exit-zero`
+- [x] Añadir `bandit` como paso informativo
+- [ ] Decidir qué hacer con la suite de seguridad solo-Windows: portarla o retirarla (VLZ-19)
 
 ---
 
@@ -324,8 +331,8 @@ las cabeceras de seguridad, la autenticación por JWT (incluido `alg=none`) y
 bandit limpio.
 
 **Lo que está roto:** la verificación de firma de Mercado Pago rechaza los
-webhooks legítimos ([R-24](#r-24)), y hay dependencias con CVE conocidas
-([R-23](#r-23)).
+webhooks legítimos ([R-24](#r-24)). El hallazgo de dependencias con CVE de R-23
+se corrigió en las versiones fijadas y quedó protegido por el gate del CI.
 
 **Lo que sigue sin saberse:** si la autenticación con Clerk es sólida, si hay
 inyecciones (SQL, XSS, prompts), si el webhook de Clerk se puede falsificar, y

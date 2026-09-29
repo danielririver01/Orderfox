@@ -74,6 +74,16 @@ jobs:
       - name: Lint (estilo, informativo)
         run: flake8 app/ --max-line-length=120 --exit-zero --statistics
 
+      # Dependency vulnerabilities must fail CI; the security suite below is
+      # separate because it requires external tools and infrastructure.
+      - name: Audit Python dependencies
+        run: pip-audit --strict -r requirements-dev.txt --desc on
+
+      # Bandit is intentionally informational while the existing findings are
+      # triaged; pip-audit above remains the blocking dependency gate.
+      - name: Static security scan (informative)
+        run: bandit -r app/ --severity-level medium --confidence-level medium --exit-zero
+
       - name: Run tests
         run: pytest --tb=short -q --no-header
 

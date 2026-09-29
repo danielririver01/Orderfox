@@ -192,7 +192,9 @@ archivo más grande del proyecto) · `llm_service.py` (DeepSeek) · `prompt_buil
 | Observabilidad | `sentry-sdk==2.28.0` |
 | Documentación API | `apispec[marshmallow]==6.10.0`, `marshmallow==4.3.0` |
 
-`[CÓDIGO]` `requirements-dev.txt` añade `pytest 8.3.4`, `pytest-flask`, `pytest-cov 6.1.1`, `flake8 7.2.0`, `bandit 1.8.3`, `safety 3.3.1`.
+`[CÓDIGO]` `requirements-dev.txt` añade `pytest 9.0.3`, `pytest-flask`,
+`pytest-cov 6.1.1`, `flake8 7.2.0`, `bandit 1.9.4` y
+`pip-audit 2.10.1`.
 
 `[CONTRADICCIÓN]` Se instalan los dos drivers de base de datos a la vez
 (`PyMySQL` y `psycopg2-binary`) porque el repositorio no tiene un único motor
@@ -394,8 +396,9 @@ snapshot del commit de referencia; el workflow vigente ya no excluye
   referencia. El workflow vigente no usa ese filtro; los tests se mantienen en
   la suite mediante mocks deterministas.
 
-`[CÓDIGO]` El CI **no ejecuta** bandit ni safety, aunque están en
-`requirements-dev.txt`.
+`[CÓDIGO]` El CI vigente ejecuta `pip-audit --strict` como puerta bloqueante y
+Bandit como chequeo informativo. La suite de seguridad externa no forma parte
+de este workflow.
 
 **Artefactos de despliegue:** `deploy/nginx/orderfox.conf` y `orderfox_ssl.conf`,
 `deploy/systemd/orderfox.service`, `deploy/setup_server.sh`,

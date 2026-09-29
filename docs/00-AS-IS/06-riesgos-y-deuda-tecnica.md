@@ -32,7 +32,7 @@
 > | [R-20](08-verificacion-en-ejecucion.md#r-20) | Un carrito con formato incorrecto devuelve **500** en lugar de 400 | 🟡 |
 > | [R-21](08-verificacion-en-ejecucion.md#r-21) | **5 PIN erróneos bloquean a toda la plantilla 30 min**, desde una URL pública | 🔴 |
 > | [R-22](08-verificacion-en-ejecucion.md#r-22) | Astro responde **HTTP 200** cuando el menú no existe o la API está caída: una caída total es invisible al monitoreo | 🟠 |
-> | [R-23](09-seguridad-alcance-y-limites.md#r-23) | `cryptography`, `idna` y `pyasn1` con CVE conocidas; el CI no ejecuta bandit ni safety pese a tenerlos instalados | 🟠 |
+> | [R-23](09-seguridad-alcance-y-limites.md#r-23) | `cryptography`, `idna` y `pyasn1` con CVE conocidas en el snapshot; VLZ-27 actualizó versiones y activó el escaneo de dependencias en CI | 🟠 |
 > | [R-24](09-seguridad-alcance-y-limites.md#r-24) | **La firma de los webhooks de Mercado Pago no sigue la especificación oficial: rechaza TODAS las notificaciones reales.** Ningún pago se confirma por webhook | 🔴 |
 >
 > **R-16** (deuda de pruebas) está documentada en
