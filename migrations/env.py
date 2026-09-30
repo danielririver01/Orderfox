@@ -51,6 +51,19 @@ def get_metadata():
     return target_db.metadata
 
 
+# Prefijo de las tablas del Scanner IA (Prisma), un servicio externo que
+# comparte esta misma base de datos. Alembic no debe gestionarlas: una
+# migración autogenerada las detectaría como "removed tables" y las borraría.
+EXTERNAL_TABLE_PREFIXES = ('velzia_',)
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    if type_ == 'table' and reflected and name:
+        if name.startswith(EXTERNAL_TABLE_PREFIXES):
+            return False
+    return True
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -65,7 +78,8 @@ def run_migrations_offline():
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, target_metadata=get_metadata(), literal_binds=True
+        url=url, target_metadata=get_metadata(), literal_binds=True,
+        include_object=include_object
     )
 
     with context.begin_transaction():
@@ -93,6 +107,8 @@ def run_migrations_online():
     conf_args = current_app.extensions['migrate'].configure_args
     if conf_args.get("process_revision_directives") is None:
         conf_args["process_revision_directives"] = process_revision_directives
+    if conf_args.get("include_object") is None:
+        conf_args["include_object"] = include_object
 
     connectable = get_engine()
 

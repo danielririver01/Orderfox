@@ -29,9 +29,13 @@ class Order(db.Model):
     # del mismo pedido (doble tap, respuesta perdida en red) no cree duplicados.
     # Única por restaurante; NULL = flujo viejo sin clave (backward compatible).
     idempotency_key = db.Column(db.String(64), nullable=True)
+    # Índice para las consultas del Centro de Caja (restaurant_id + paid_at).
+    # Existe en la base desde la migración b5c0d1e2f3a4; se declara aquí con
+    # el mismo nombre para que autogenerate no lo detecte como sobrante y lo borre.
     __table_args__ = (
         db.UniqueConstraint('restaurant_id', 'idempotency_key',
                             name='uq_orders_restaurant_idempotency'),
+        db.Index('ix_orders_restaurant_paid_at', 'restaurant_id', 'paid_at'),
     )
     # Fecha de expiración para pedidos pendientes
     expires_at = db.Column(AwareDateTime, nullable=True)

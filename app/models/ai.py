@@ -18,7 +18,10 @@ class CopilotConversation(db.Model):
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     # Origen de la conversación: 'insights' (Copilot VZ) o 'cash_register' (Centro de Caja).
-    source = db.Column(db.String(30), default='insights', nullable=False, index=True)
+    # El índice se declara explícito con el nombre que ya existe en la base
+    # (creado por la migración c6d7e8f9a0b1) para que autogenerate no genere
+    # un drop/create con el nombre por defecto ix_copilot_conversations_source.
+    source = db.Column(db.String(30), default='insights', nullable=False)
     title = db.Column(db.String(200), nullable=True)
     prompt_version = db.Column(db.String(10), default='v1.0')
     model = db.Column(db.String(50), default='deepseek-v4-flash')
@@ -32,6 +35,9 @@ class CopilotConversation(db.Model):
     created_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(AwareDateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
+    __table_args__ = (
+        db.Index('ix_copilot_conv_source', 'source'),
+    )
 
     restaurant = db.relationship('Restaurant', backref=db.backref('copilot_conversations', lazy=True, cascade='all, delete-orphan'))
     user = db.relationship('User', backref=db.backref('copilot_conversations', lazy=True, cascade='all, delete-orphan'))
