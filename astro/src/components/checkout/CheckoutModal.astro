@@ -71,10 +71,31 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   const tableId = tIdRaw ? (isNaN(parseInt(tIdRaw, 10)) ? tIdRaw : parseInt(tIdRaw, 10)) : null;
   const apiBase = checkoutModal?.getAttribute('data-api-base') || 'https://velzia.shop';
 
+  // ── Anti-bot RN-02: token de checkout (3 s mínimo) ──────────
+  // El token lo firma Flask en init-checkout y NO depende de la cookie de
+  // sesión: el menú se sirve desde otro origen (menu.velzia.shop), así que la
+  // sesión no puede llevar esta marca de tiempo. Ver app/utils/checkout_token.py.
+  let checkoutToken = '';
+  async function requestCheckoutToken(): Promise<void> {
+    try {
+      const res = await fetch(`${apiBase}/menu/api/init-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: rId }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      checkoutToken = data.checkout_token || '';
+    } catch {
+      // Sin token el envío devolverá 429 con aviso de recargar; no bloqueamos el modal.
+    }
+  }
+
   document.addEventListener('open-checkout', () => {
     document.getElementById('checkout-modal')?.classList.remove('hidden', 'translate-y-8');
     document.getElementById('checkout-overlay')?.classList.remove('hidden');
     resetSubmitState();
+    void requestCheckoutToken();
   });
 
   // ── Idempotencia (v1.5) ─────────────────────────────────────
@@ -102,6 +123,8 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
   document.addEventListener('order-success', () => {
     // Pedido confirmado: la clave se consumió.
     invalidateIdempotencyKey();
+    // El token se consumió con el pedido; el próximo checkout pide otro.
+    checkoutToken = '';
   });
 
   document.getElementById('checkout-close')?.addEventListener('click', closeCheckout);
@@ -187,6 +210,8 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
       // Idempotencia v1.5: en el body, no en header custom (evita preflight
       // CORS entre menu.velzia.shop y la API en velzia.shop).
       idempotency_key: getCurrentIdempotencyKey(),
+      // Anti-bot RN-02: firmado por Flask al abrir el checkout.
+      checkout_token: checkoutToken,
     };
 
     // Validación y armado del body completos: recién ahora bloqueamos.

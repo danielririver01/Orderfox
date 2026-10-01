@@ -161,7 +161,7 @@ def public_open_restaurant(db, sample_restaurant):
 
 class TestPublicOrderRouteIdempotent:
 
-    def _post(self, client, restaurant, product, key, cart_payload=None):
+    def _post(self, client, restaurant, product, key, cart_payload=None, token=None):
         cart = cart_payload or {
             str(product.id): {'quantity': 1, 'extras': []}
         }
@@ -171,19 +171,20 @@ class TestPublicOrderRouteIdempotent:
             'customer_name': 'Cliente Web',
             'customer_phone': '+573001234567',
             'idempotency_key': key,
+            'checkout_token': token,
         })
 
     def test_repeated_post_with_same_key_creates_one_order(
-            self, client, db, public_open_restaurant, sample_product):
-        import time as _time
-        with client.session_transaction() as sess:
-            sess['checkout_start_time'] = _time.time() - 5
-
+            self, client, db, public_open_restaurant, sample_product,
+            checkout_ready):
         key = str(uuid.uuid4())
 
-        r1 = self._post(client, public_open_restaurant, sample_product, key)
-        assert r1.status_code == 200, r1.get_data(as_text=True)
-        r2 = self._post(client, public_open_restaurant, sample_product, key)
+        with checkout_ready() as token:
+            r1 = self._post(client, public_open_restaurant, sample_product, key,
+                            token=token)
+            assert r1.status_code == 200, r1.get_data(as_text=True)
+            r2 = self._post(client, public_open_restaurant, sample_product, key,
+                            token=token)
 
         assert r2.status_code == 200
         body = r2.get_json()

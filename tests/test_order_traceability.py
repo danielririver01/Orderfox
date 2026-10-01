@@ -15,7 +15,6 @@ Cubre los casos aprobados:
 """
 import json
 import re
-import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -195,16 +194,16 @@ class TestCashierPayment:
 class TestWebMenuOrder:
 
     def test_web_menu_order_logs_customer(self, client, db, sample_restaurant,
-                                          sample_category, sample_product):
-        with client.session_transaction() as sess:
-            sess['checkout_start_time'] = time.time() - 5
-
-        resp = client.post('/menu/api/order', json={
-            'restaurant_id': sample_restaurant.id,
-            'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
-            'customer_name': 'Cliente Web',
-            'customer_phone': '+573001234567',
-        })
+                                          sample_category, sample_product,
+                                          checkout_ready):
+        with checkout_ready() as token:
+            resp = client.post('/menu/api/order', json={
+                'restaurant_id': sample_restaurant.id,
+                'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
+                'customer_name': 'Cliente Web',
+                'customer_phone': '+573001234567',
+                'checkout_token': token,
+            })
         assert resp.status_code == 200, resp.get_data(as_text=True)
 
         order = Order.query.filter_by(restaurant_id=sample_restaurant.id).first()

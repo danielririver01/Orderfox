@@ -7,7 +7,6 @@ Tests del rediseño del menú digital público (v1.5):
 - Restaurante cerrado → 200 con is_open=false (menú visible, pedidos bloqueados)
 - Categorías vacías excluidas del payload
 """
-import time
 from datetime import datetime, timedelta, timezone
 
 from app.models import Category, Restaurant
@@ -158,31 +157,29 @@ class TestMenuApi:
 
 
 class TestOrderBlockedWhenClosed:
-    def test_order_rejected_when_closed(self, client, db, sample_restaurant, sample_category, sample_product):
+    def test_order_rejected_when_closed(self, client, db, sample_restaurant, sample_category, sample_product, checkout_ready):
         sample_restaurant.is_open = False
         db.session.commit()
 
-        with client.session_transaction() as sess:
-            sess['checkout_start_time'] = time.time() - 5
-
-        res = client.post('/menu/api/order', json={
-            'restaurant_id': sample_restaurant.id,
-            'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
-            'customer_name': 'Cliente Test',
-            'customer_phone': '+573001234567',
-        })
+        with checkout_ready() as token:
+            res = client.post('/menu/api/order', json={
+                'restaurant_id': sample_restaurant.id,
+                'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
+                'customer_name': 'Cliente Test',
+                'customer_phone': '+573001234567',
+                'checkout_token': token,
+            })
         assert res.status_code == 403
         assert 'cerrados' in res.get_json()['error']
 
-    def test_order_ok_when_open(self, client, db, sample_restaurant, sample_category, sample_product):
-        with client.session_transaction() as sess:
-            sess['checkout_start_time'] = time.time() - 5
-
-        res = client.post('/menu/api/order', json={
-            'restaurant_id': sample_restaurant.id,
-            'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
-            'customer_name': 'Cliente Test',
-            'customer_phone': '+573001234567',
-        })
+    def test_order_ok_when_open(self, client, sample_restaurant, sample_category, sample_product, checkout_ready):
+        with checkout_ready() as token:
+            res = client.post('/menu/api/order', json={
+                'restaurant_id': sample_restaurant.id,
+                'cart': {sample_product.id: {'quantity': 1, 'extras': []}},
+                'customer_name': 'Cliente Test',
+                'customer_phone': '+573001234567',
+                'checkout_token': token,
+            })
         assert res.status_code == 200
         assert res.get_json()['success'] is True

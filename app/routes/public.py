@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, request, session
@@ -9,6 +8,11 @@ from app.services.notification_service import notify_new_order
 from app.services.order_service import OrderService, log_event
 from app.services.public_menu_service import PublicMenuService
 from app.services.reservation_service import ReservationServiceError
+from app.utils.checkout_token import (
+    MIN_SECONDS,
+    elapsed_seconds,
+    issue_checkout_token,
+)
 from app.utils.rate_limiter import OrderRateLimiter, ReservationRateLimiter
 
 public_bp = Blueprint('public', __name__)
@@ -19,9 +23,13 @@ def inject_now():
 
 @public_bp.route('/menu/api/init-checkout', methods=['POST'])
 def init_checkout():
-    """Registra el inicio del proceso de checkout en la sesión del usuario para anti-bots."""
-    session['checkout_start_time'] = time.time()
-    return jsonify({'success': True})
+    """Emite el token de checkout para el anti-bot de 3 s (RN-02).
+
+    El token va firmado y autocontenido a propósito: el menú público lo sirve
+    Astro desde otro origen, así que la sesión de Flask no es fiable para
+    llevar esta marca de tiempo. Ver `app/utils/checkout_token.py`.
+    """
+    return jsonify({'success': True, 'checkout_token': issue_checkout_token()})
 
 @public_bp.route('/menu/<string:slug>')
 @public_bp.route('/menu')
@@ -194,9 +202,16 @@ def create_order():
     if data.get('user_secondary_email'):
         return jsonify({'success': False, 'error': 'Actividad sospechosa detectada.'}), 403
 
-    # 2. Validación de Tiempo (Time-to-Submit)
-    start_time = session.get('checkout_start_time', 0)
-    if time.time() - start_time < 3.0:
+    # 2. Validación de Tiempo (Time-to-Submit) — token firmado, sin sesión (RN-02)
+    elapsed = elapsed_seconds(data.get('checkout_token', ''))
+    if elapsed is None:
+        # Sin token válido: o el cliente no llamó a init-checkout, o está
+        # vencido. Sin este rechazo la comprobación sería inerte de nuevo.
+        return jsonify({
+            'success': False,
+            'error': 'Tu sesión de checkout expiró. Recarga la página e inténtalo de nuevo.'
+        }), 429
+    if elapsed < MIN_SECONDS:
         return jsonify({
             'success': False,
             'error': '¡Uy, vas muy rápido! Tómate un segundo para revisar tus datos.'

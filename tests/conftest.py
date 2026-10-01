@@ -1,6 +1,9 @@
 import pytest
 import os
+from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
+from unittest import mock
+
 from werkzeug.security import generate_password_hash
 
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
@@ -14,6 +17,7 @@ from app.models import (
     Modifier, Table, TrialHistory, AITokenWallet, AITokenTransaction,
     DiscountCoupon
 )
+from app.utils import checkout_token
 
 
 @pytest.fixture(scope='session')
@@ -200,3 +204,52 @@ def trial_restaurant(db):
     db.session.add(r)
     db.session.commit()
     return r
+
+
+@pytest.fixture
+def checkout_clock():
+    """Envejece el reloj del verificador de checkout para probar la regla de 3 s.
+
+    La regla anti-bot (RN-02) compara la hora actual contra la marca de tiempo
+    que Flask firmó en el token. Sin ``freezegun`` (no es dependencia del
+    proyecto) desplazamos solo el reloj de ``app.utils.checkout_token``::
+
+        with checkout_clock(5):   # el verificador ve que pasaron 5 s → permitido
+        with checkout_clock(0):   # token recién emitido → 429
+
+    Los tests siguen siendo deterministas: 0 s reales de espera.
+    """
+    @contextmanager
+    def _aged(seconds: float):
+        real = checkout_token.datetime
+
+        class _ShiftedDatetime(real):
+            @classmethod
+            def now(cls, tz=None):
+                return real.now(tz) + timedelta(seconds=seconds)
+
+        with mock.patch.object(checkout_token, 'datetime', _ShiftedDatetime):
+            yield
+
+    return _aged
+
+
+@pytest.fixture
+def checkout_ready(client, checkout_clock):
+    """Token de checkout con la regla de 3 s ya satisfecha (flujo real).
+
+    Reproduce lo que hace el navegador: ``POST /menu/api/init-checkout`` para
+    obtener el token firmado y, ``seconds`` después, el pedido::
+
+        with checkout_ready() as token:      # 5 s de antigüedad → permitido
+            res = client.post('/menu/api/order', json={..., 'checkout_token': token})
+
+        with checkout_ready(0) as token:     # recién emitido → 429
+    """
+    @contextmanager
+    def _ready(seconds: float = 5):
+        token = client.post('/menu/api/init-checkout').get_json()['checkout_token']
+        with checkout_clock(seconds):
+            yield token
+
+    return _ready
