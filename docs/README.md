@@ -1,6 +1,10 @@
 # Documentación de Orderfox
 
-**Versión del proyecto:** 1.3.0 | **Última actualización:** 2026-07-15
+**Versión del proyecto:** 1.6.0 | **Última actualización:** 2026-10-01
+
+> **Fuente única de versionado:** el último **tag de Git** (`v1.6.0` hoy).
+> `settings.APP_VERSION`, la spec OpenAPI, `docs/README.md` y ambos
+> `package.json` se alinean a ese tag al publicar una versión — nunca al revés.
 
 Mapa de navegación de toda la documentación técnica del proyecto.
 

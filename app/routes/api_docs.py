@@ -9,6 +9,7 @@ from app.schemas import (
     OrderItemSchema, TableSchema, AITokenWalletSchema,
     LoginRequest, SyncClerkRequest,
 )
+from settings import APP_VERSION
 
 api_docs_bp = Blueprint('api_docs', __name__, url_prefix='/api/docs')
 
@@ -28,7 +29,9 @@ def _build_spec():
 
     _spec = APISpec(
         title='Orderfox API',
-        version='1.3.0',
+        # Fuente única de versionado: el último tag de Git, que vive en
+        # settings.APP_VERSION (ver AGENTS.md). Nunca hardcodear aquí (VLZ-14).
+        version=APP_VERSION,
         openapi_version='3.0.3',
         info=dict(
             description='API REST para la plataforma de pedidos de restaurantes Orderfox.',

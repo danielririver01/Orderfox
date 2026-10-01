@@ -1,6 +1,6 @@
 {
   "name": "orderfox",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "description": "Velzia — SaaS de gestión de pedidos para restaurantes colombianos",
   "main": "index.js",
   "directories": {
