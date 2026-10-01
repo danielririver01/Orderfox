@@ -24,6 +24,8 @@ def app():
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False,
         'MAIL_SUPPRESS_SEND': True,
+        # La suite corre sobre http:// (VLZ-11): sin la marca Secure.
+        'SESSION_COOKIE_SECURE': False,
     })
     with app.app_context():
         _db.create_all()

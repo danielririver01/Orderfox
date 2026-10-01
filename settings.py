@@ -5,6 +5,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _env_flag(name, default=False):
+    """Bandera booleana de entorno: '1'/'true'/'yes'/'on' = True.
+
+    Si la variable no existe o viene vacía, devuelve `default`. Única fuente
+    de verdad para flags derivados del entorno (cookies seguras, etc.).
+    """
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    return raw.strip().lower() in ('1', 'true', 'yes', 'on')
+
 # App Version
 APP_VERSION = '1.6.0'
 APP_RELEASE_DATE = '2026-09-20'
@@ -105,8 +117,19 @@ class Config:
 
     # Session cookies
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = False  # True en producción con HTTPS
+    # SECURE por entorno (VLZ-11): por defecto = not FLASK_DEBUG — el mismo
+    # criterio que HSTS en app/__init__.py. Producción (FLASK_DEBUG=False,
+    # Dockerfile) => True; local (.env con FLASK_DEBUG=True) => False, porque
+    # el navegador ignoraría una cookie Secure sobre http://. Anulable en
+    # cualquier entorno con SESSION_COOKIE_SECURE=true|false.
+    SESSION_COOKIE_SECURE = _env_flag(
+        'SESSION_COOKIE_SECURE', not _env_flag('FLASK_DEBUG', False))
+    # SAMESITE por entorno (VLZ-11): Lax es la revisión — Strict rompe los
+    # retornos de pago (Mercado Pago navega de vuelta top-level) y los enlaces
+    # de correo/WhatsApp al panel: llegarían sin sesión. Lax ya bloquea el CSRF
+    # cross-site en métodos mutantes. Valores válidos: Lax | Strict | None.
+    _samesite = (os.environ.get('SESSION_COOKIE_SAMESITE') or 'Lax').strip().capitalize()
+    SESSION_COOKIE_SAMESITE = _samesite if _samesite in ('Lax', 'Strict', 'None') else 'Lax'
 
     # Correo (Gmail SMTP) — reemplaza el envío que hacía n8n
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'

@@ -55,6 +55,8 @@
 |----------|-------------|---------|-------|
 | `BASE_URL` | URL base del dominio | — | Usar ngrok URL en dev, dominio real en prod. Necesario para QRs |
 | `FLASK_DEBUG` | Modo debug de Flask | `False` | `True` solo en desarrollo |
+| `SESSION_COOKIE_SECURE` | Cookie de sesión con marca `Secure` (solo HTTPS) | `not FLASK_DEBUG` | `True` en producción; anulable `true`/`false` en cualquier entorno (VLZ-11) |
+| `SESSION_COOKIE_SAMESITE` | Atributo SameSite de la cookie de sesión | `Lax` | `Lax` · `Strict` · `None`. No usar `Strict`: rompe retornos de pago y enlaces de correo/WhatsApp (VLZ-11) |
 | `SUPPORT_EMAIL` | Correo de soporte al cliente | `soporte@velzia.com` | Se muestra en páginas de error |
 | `SUPPORT_PHONE` | Teléfono de soporte | `+573000000000` | Se muestra en páginas de error |
 
@@ -87,6 +89,9 @@
 # Flask
 SECRET_KEY=tu-clave-secreta-aqui
 FLASK_DEBUG=False
+# Cookies de sesión (defaults: SECURE = not FLASK_DEBUG, SAMESITE = Lax)
+SESSION_COOKIE_SECURE=True
+SESSION_COOKIE_SAMESITE=Lax
 BASE_URL=https://tudominio.com
 
 # Base de Datos
@@ -144,4 +149,5 @@ for var in required:
 
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|
+| 2026-10-01 | 1.1 | `SESSION_COOKIE_SECURE`/`SESSION_COOKIE_SAMESITE` configurables por entorno (VLZ-11) | Agente IA |
 | 2026-06-16 | 1.0 | Versión inicial | Auditoría Documental |
