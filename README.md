@@ -25,19 +25,39 @@ Plataforma SaaS de gestión de pedidos para restaurantes colombianos. Crea tu me
 
 ## Inicio rápido
 
+> **Producción (Oracle Cloud):** systemd + gunicorn con `-c gunicorn_config.py`
+> tras nginx. El despliegue automático y su verificación de salud están en
+> `deploy/AUTO_DEPLOY.md`. Docker es solo para desarrollo local.
+
+### Con Docker (desarrollo local)
+
+`docker compose up -d` levanta la app (`:5000`) y el scheduler. Requisitos:
+
+1. **Base de datos propia** — el compose no incluye ninguna: apunta
+   `DATABASE_URL` en `.env` a tu PostgreSQL (desde el contenedor usa
+   `host.docker.internal` en vez de `localhost`).
+2. **Variables de entorno** — `cp .env.example .env` y configúralas.
+
 ```bash
-# Clonar el repositorio
 git clone https://github.com/danielririver01/Orderfox.git
 cd Orderfox
-
-# Copiar y configurar variables de entorno
-cp .env.example .env
-
-# Iniciar con Docker
-docker compose up -d
+cp .env.example .env        # configura DATABASE_URL y demás
+docker compose up -d        # app + scheduler
+curl http://localhost:5000/health   # 200 = app viva y BD conectada
 ```
 
-La aplicación estará disponible en `http://localhost:5000`.
+El servicio `receipt-scanner` requiere el repo hermano privado
+`../Receipt-Scanner-AI` y vive tras un profile para no romper el arranque
+en un clon limpio:
+
+```bash
+docker compose --profile scanner up -d
+```
+
+### Sin Docker
+
+Ver `AGENTS.md` → Quick Start (venv, `flask db upgrade`, `npm run build:css`,
+`python run.py`).
 
 ## Licencia
 

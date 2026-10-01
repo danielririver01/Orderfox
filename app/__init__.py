@@ -232,6 +232,7 @@ def create_app():
     from .routes.api_webhooks import api_webhooks_bp
     from .routes.rewards import rewards_bp
     from .routes.employees import employees_bp, employee_portal_bp
+    from .routes.health import health_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(categories_bp)
@@ -257,6 +258,7 @@ def create_app():
     app.register_blueprint(rewards_bp)
     app.register_blueprint(employees_bp)
     app.register_blueprint(employee_portal_bp)
+    app.register_blueprint(health_bp)
     csrf.exempt(api_email_bp)
     csrf.exempt(rewards_bp)
     @app.before_request

@@ -12,7 +12,8 @@ server {
     }
 
     # Redirect /<slug>/ → menu.velzia.shop/<slug>/ (URLs compartidas / QR legacy)
-    location ~ ^/(?!dashboard|menu|api|insights|reclamar|empleado|orders|products|categories|cash-register|static|register|setup-account|privacy|terms|legal|planes|renew|payment|payment-callback|webhook|logout)([a-z0-9][a-z0-9\-]+)/?$ {
+    # 'health' está excluido: /health es el endpoint de salud de Flask (VLZ-13).
+    location ~ ^/(?!dashboard|menu|api|insights|reclamar|empleado|orders|products|categories|cash-register|static|register|setup-account|privacy|terms|legal|planes|renew|payment|payment-callback|webhook|logout|health)([a-z0-9][a-z0-9\-]+)/?$ {
         return 301 https://menu.velzia.shop/$1/;
     }
 

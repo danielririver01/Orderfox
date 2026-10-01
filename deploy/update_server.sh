@@ -24,7 +24,7 @@ LOG_DIR="/var/log/orderfox"
 LOG="$LOG_DIR/deploy.log"
 BACKUP_DIR="$LOG_DIR/backups"
 BACKUP_RETENTION_DAYS=14
-HEALTH_URL="http://127.0.0.1:8000/"
+HEALTH_URL="http://127.0.0.1:8000/health"
 HEALTH_MAX_ATTEMPTS=30   # 30 x 2s = ~60s de espera
 
 log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
@@ -118,11 +118,13 @@ log "[5/6] Reiniciando servicio $SERVICE..."
 sudo systemctl restart "$SERVICE" || fail "systemctl restart $SERVICE falló"
 
 # ── 6. Health check ───────────────────────────────────────────
+# /health verifica la conexión a la BD (no basta con que el proceso
+# responda): 200 estricto — un redirect ya sería mala señal.
 log "[6/6] Health check en $HEALTH_URL..."
 ok=0
 for i in $(seq 1 "$HEALTH_MAX_ATTEMPTS"); do
     CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HEALTH_URL" || true)
-    if [ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ]; then
+    if [ "$CODE" = "200" ]; then
         ok=1
         break
     fi
@@ -131,7 +133,7 @@ done
 if [ "$ok" = "1" ]; then
     log "✅ Deploy completado — HTTP $CODE en $HEALTH_URL"
 else
-    log "⚠️  El servicio no respondió HTTP 2xx/3xx. Último código: ${CODE:-sin respuesta}"
+    log "⚠️  El servicio no respondió HTTP 200. Último código: ${CODE:-sin respuesta}"
     sudo systemctl is-active "$SERVICE" || true
     fail "Health check falló — revisa: sudo journalctl -u $SERVICE -n 50"
 fi

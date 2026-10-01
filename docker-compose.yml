@@ -33,10 +33,15 @@ services:
     networks:
       - orderfox-net
 
+  # Requiere el repo hermano ../Receipt-Scanner-AI (privado). Por eso vive
+  # tras el profile "scanner": en un clon limpio, `docker compose up -d`
+  # levanta app + scheduler sin romperse; con el hermano presente:
+  #   docker compose --profile scanner up -d
   receipt-scanner:
     build:
       context: ../Receipt-Scanner-AI
       dockerfile: Dockerfile
+    profiles: ["scanner"]
     container_name: receipt-scanner
     restart: unless-stopped
     depends_on:

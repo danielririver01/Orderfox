@@ -75,7 +75,7 @@ Repo → **Settings → Secrets and variables → Actions** → New repository s
    ssh ubuntu@TU_IP
    tail -30 /var/log/orderfox/deploy.log        # registro del deploy
    systemctl status orderfox                     # servicio activo
-   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/   # 200/302
+   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/health   # 200 (verifica la BD)
    ```
 
 ## 5. Si algo falla
