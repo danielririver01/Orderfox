@@ -34,7 +34,13 @@ def _build_spec():
         version=APP_VERSION,
         openapi_version='3.0.3',
         info=dict(
-            description='API REST para la plataforma de pedidos de restaurantes Orderfox.',
+            description=(
+                'API REST para la plataforma de pedidos de restaurantes Orderfox. '
+                'Alcance: API para integradores (app móvil, Scanner IA) — autenticación, '
+                'productos, categorías, pedidos, mesas, tokens de IA y menú público. '
+                'Las APIs internas (/insights/api, /menu/api, /api/dashboard, webhooks) '
+                'se consumen desde los propios frontends y quedan fuera de esta spec.'
+            ),
         ),
         plugins=[MarshmallowPlugin()],
     )
@@ -107,7 +113,8 @@ def _register_paths(spec):
     )
 
     spec.path(
-        path='/api/auth/sync-clerk',
+        # Ruta REAL: vive en auth_bp sin prefijo /api/auth (C-05 / VLZ-15).
+        path='/api/sync-clerk',
         operations=dict(
             post=dict(
                 tags=['Autenticación'],
@@ -122,6 +129,66 @@ def _register_paths(spec):
                     '201': {'description': 'Nuevo usuario creado con trial'},
                     '409': {'description': 'Trial ya usado', 'content': {'application/json': {'schema': 'ErrorResponse'}}},
                 },
+            ),
+        ),
+    )
+    spec.path(
+        path='/api/auth/refresh',
+        operations=dict(
+            post=dict(
+                tags=['Autenticación'],
+                summary='Renovar token de sesión',
+                description='Renueva el JWT de sesión del usuario autenticado.',
+                responses={'200': {'description': 'Token renovado', 'content': {'application/json': {'schema': 'SuccessResponse'}}}},
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/auth/logout',
+        operations=dict(
+            post=dict(
+                tags=['Autenticación'],
+                summary='Cerrar sesión',
+                responses={'200': {'description': 'Sesión cerrada'}},
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/auth/plans',
+        operations=dict(
+            get=dict(
+                tags=['Autenticación'],
+                summary='Planes y precios disponibles',
+                responses={'200': {'description': 'Catálogo de planes'}},
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/auth/payment/initiate',
+        operations=dict(
+            post=dict(
+                tags=['Autenticación'],
+                summary='Iniciar pago de suscripción',
+                description='Crea una preferencia de pago en Mercado Pago.',
+                security=[{'bearer_jwt': []}],
+                responses={
+                    '200': {'description': 'URL de checkout generada', 'content': {'application/json': {'schema': 'SuccessResponse'}}},
+                },
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/auth/mobile-sync',
+        operations=dict(
+            post=dict(
+                tags=['Autenticación'],
+                summary='Sincronización inicial de la app móvil',
+                description='Devuelve restaurante, menú y configuración inicial para la app.',
+                responses={'200': {'description': 'Datos de sincronización', 'content': {'application/json': {'schema': 'SuccessResponse'}}}},
             ),
         ),
     )
@@ -279,20 +346,116 @@ def _register_paths(spec):
                 ],
                 responses={'200': {'description': 'Lista de pedidos'}},
             ),
+            # Ruta REAL (C-05 / VLZ-15): la creación autenticada vive en
+            # POST /api/orders — antes la spec apuntaba a /api/orders/create,
+            # que devuelve 404. El pedido público del menú es /menu/api/order
+            # (interno de Astro, fuera del alcance de esta spec).
+            post=dict(
+                tags=['Pedidos'],
+                summary='Crear pedido (integradores)',
+                description='Crea un pedido autenticado (JWT o API key) con suscripción activa.',
+                security=[{'bearer_jwt': []}, {'api_key': []}],
+                requestBody=dict(required=True, content={'application/json': {'schema': 'OrderCreate'}}),
+                responses={
+                    '201': {'description': 'Pedido creado'},
+                    '403': {'description': 'Suscripción inactiva', 'content': {'application/json': {'schema': 'ErrorResponse'}}},
+                    '429': {'description': 'Rate limit excedido', 'content': {'application/json': {'schema': 'ErrorResponse'}}},
+                },
+            ),
         ),
     )
 
     spec.path(
-        path='/api/orders/create',
+        path='/api/orders/{id}/status',
+        operations=dict(
+            patch=dict(
+                tags=['Pedidos'],
+                summary='Actualizar estado del pedido',
+                description='Transición de estado válida según la máquina: pending→confirmed→delivered (ver OrderService).',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
+                requestBody=dict(
+                    required=True,
+                    content={'application/json': {'schema': {'type': 'object', 'properties': {'status': {'type': 'string'}}}}},
+                ),
+                responses={
+                    '200': {'description': 'Estado actualizado'},
+                    '400': {'description': 'Transición inválida'},
+                    '404': {'description': 'No encontrado'},
+                },
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/orders/{id}',
+        operations=dict(
+            get=dict(
+                tags=['Pedidos'],
+                summary='Obtener pedido',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
+                responses={
+                    '200': {'description': 'Pedido con sus items'},
+                    '404': {'description': 'No encontrado'},
+                },
+            ),
+            delete=dict(
+                tags=['Pedidos'],
+                summary='Eliminar pedido',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
+                responses={
+                    '200': {'description': 'Pedido eliminado'},
+                    '404': {'description': 'No encontrado'},
+                },
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/orders/{id}/cancel',
         operations=dict(
             post=dict(
                 tags=['Pedidos'],
-                summary='Crear pedido (público)',
-                description='Crea un pedido desde el menú público. Sin autenticación, pero con rate limiting.',
-                requestBody=dict(required=True, content={'application/json': {'schema': 'OrderCreate'}}),
+                summary='Cancelar pedido',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
                 responses={
-                    '201': {'description': 'Pedido creado'},
-                    '429': {'description': 'Rate limit excedido', 'content': {'application/json': {'schema': 'ErrorResponse'}}},
+                    '200': {'description': 'Pedido cancelado'},
+                    '404': {'description': 'No encontrado'},
+                },
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/orders/{id}/payment',
+        operations=dict(
+            post=dict(
+                tags=['Pedidos'],
+                summary='Registrar pago del pedido',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
+                responses={
+                    '200': {'description': 'Pago registrado'},
+                    '404': {'description': 'No encontrado'},
+                },
+            ),
+        ),
+    )
+
+    spec.path(
+        path='/api/orders/{id}/receipt',
+        operations=dict(
+            get=dict(
+                tags=['Pedidos'],
+                summary='Recibo del pedido',
+                security=[{'bearer_jwt': []}],
+                parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
+                responses={
+                    '200': {'description': 'Datos del recibo'},
+                    '404': {'description': 'No encontrado'},
                 },
             ),
         ),
@@ -319,15 +482,21 @@ def _register_paths(spec):
     )
 
     spec.path(
-        path='/api/tables/{id}',
+        path='/api/tables/{id}/capacity',
         operations=dict(
-            put=dict(
+            patch=dict(
                 tags=['Mesas'],
-                summary='Actualizar mesa',
+                summary='Actualizar capacidad de la mesa',
                 security=[{'bearer_jwt': []}],
                 parameters=[{'name': 'id', 'in': 'path', 'required': True, 'schema': {'type': 'integer'}}],
                 responses={'200': {'description': 'Mesa actualizada'}},
             ),
+        ),
+    )
+
+    spec.path(
+        path='/api/tables/{id}',
+        operations=dict(
             delete=dict(
                 tags=['Mesas'],
                 summary='Eliminar mesa',
