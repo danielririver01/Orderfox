@@ -16,13 +16,22 @@ class OrderRateLimiter:
     
     @staticmethod
     def get_recent_orders_count(restaurant_id, client_ip, minutes=1):
-        """Cuenta pedidos exitosos o pendientes de esta IP en el rango de tiempo."""
+        """Cuenta pedidos de esta IP en el rango de tiempo.
+
+        Sin filtro de estado a propósito: el límite es sobre *creaciones* de
+        pedidos y cualquier orden en la ventana fue una creación, esté
+        pendiente, confirmada, entregada o cancelada. Si el restaurante
+        cancela el spam de un bot, esas órdenes siguen contando — excluirlas
+        convertiría la cancelación en una vía para evadir el baneo.
+
+        (Antes filtraba por ``['pending', 'completed']``, pero ``completed``
+        no existe en la máquina de estados — R-06 / VLZ-8.)
+        """
         since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
         return Order.query.filter(
             Order.restaurant_id == restaurant_id,
             Order.ip_address == client_ip,
             Order.created_at >= since,
-            Order.status.in_(['pending', 'completed'])
         ).count()
 
     @staticmethod

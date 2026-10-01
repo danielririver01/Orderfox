@@ -1,5 +1,23 @@
-from datetime import datetime, timezone, timedelta
+import pytest
+
+from app.models import Order
 from app.utils.rate_limiter import OrderRateLimiter
+
+# Máquina de estados completa de pedidos (order_service.validate_status_transition).
+ORDER_STATUSES = ['pending', 'confirmed', 'delivered', 'cancelled', 'expired']
+
+
+def _order(restaurant_id, ip, status):
+    # order_number es String(20): numeramos en vez de meter ip+status.
+    _order.seq = getattr(_order, 'seq', 0) + 1
+    return Order(
+        restaurant_id=restaurant_id,
+        order_number=f'ORD-RL{_order.seq:03d}',
+        customer_name='Rate Limit Test',
+        total=1000,
+        status=status,
+        ip_address=ip,
+    )
 
 
 class TestOrderRateLimiter:
@@ -63,9 +81,6 @@ class TestOrderRateLimiter:
 
     def test_ip_address_detects_rate_limited_ips(self, db, sample_restaurant):
         """Verifica que órdenes con distintas IPs se cuentan correctamente."""
-        from app.models import Order
-        import time as _time
-
         # Create orders from two different IPs
         o1 = Order(
             restaurant_id=sample_restaurant.id,
@@ -94,3 +109,39 @@ class TestOrderRateLimiter:
         )
         assert count_ip1 == 1
         assert count_ip2 == 1
+
+
+# ── R-06 / VLZ-8: 'completed' no existe y los estados de avanzar no contaban ─
+
+class TestEveryStatusCounts:
+
+    @pytest.mark.parametrize('status', ORDER_STATUSES)
+    def test_order_in_any_status_counts(self, db, sample_restaurant, status):
+        """Regresión de R-06: un pedido confirmado (o entregado, o cancelado)
+        dentro de la ventana SÍ cuenta para el límite de 3/min."""
+        db.session.add(_order(sample_restaurant.id, '10.0.0.9', status))
+        db.session.commit()
+
+        assert OrderRateLimiter.get_recent_orders_count(
+            sample_restaurant.id, '10.0.0.9', minutes=1) == 1
+
+    def test_confirmed_orders_trigger_the_burst_block(self, db, sample_restaurant):
+        """El escenario exacto de R-06: el atacante cuyos pedidos se confirman
+        rápido debe quedar bloqueado por el límite de ráfaga (3/min)."""
+        for i in range(3):
+            db.session.add(_order(sample_restaurant.id, '10.0.0.10', 'confirmed'))
+        db.session.commit()
+
+        should_block, _msg, wait = OrderRateLimiter.should_block_request(
+            sample_restaurant.id, '10.0.0.10')
+        assert should_block is True
+        assert wait == 600
+
+    def test_cancelling_spam_does_not_lift_the_ban(self, db, sample_restaurant):
+        """Si el restaurante cancela el spam, las órdenes siguen contando:
+        cancelar no puede convertirse en una vía para evadir el baneo."""
+        for _ in range(3):
+            db.session.add(_order(sample_restaurant.id, '10.0.0.11', 'cancelled'))
+        db.session.commit()
+
+        assert OrderRateLimiter.is_ip_banned(sample_restaurant.id, '10.0.0.11')
