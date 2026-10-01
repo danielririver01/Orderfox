@@ -141,7 +141,6 @@ flask db upgrade                               # Aplicar migración
 
 # Debug
 python test_db.py                              # Verificar BD
-python rescues_db.py                           # Rescatar datos
 python test_subscription_utc.py                # Probar timezone
 
 # Producción
