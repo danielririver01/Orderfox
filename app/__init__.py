@@ -18,10 +18,10 @@ from .routes.api_docs import api_docs_bp
 from app.utils.restaurant import get_current_restaurant
 from app.utils.subscription import can_perform_crud, get_subscription_status, PLAN_LIMITS
 
-# 2. El "Pase VIP" (Sustituto de exempt_when)
-@limiter.request_filter
-def exempt_admins():
-    return 'user_id' in session
+# 2. El "Pase VIP" vive en app/extensions.py como `default_limits_exempt`:
+# exime de los DEFAULTS a las sesiones iniciadas, pero ya NO de los
+# @limiter.limit por-ruta (antes era un request_filter que eximía de TODO —
+# ver R-08 / VLZ-16).
 
 
 def create_app():
@@ -33,6 +33,17 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+
+    # R-08 / VLZ-16: memory:// no se comparte entre workers ni sobrevive a un
+    # reinicio. Cuando Redis exista en el stack, basta definir
+    # RATELIMIT_STORAGE_URL; mientras tanto que el log lo diga claro.
+    if (os.getenv('RATELIMIT_STORAGE_URL') or 'memory://').startswith('memory://') \
+            and not app.config.get('DEBUG'):
+        app.logger.warning(
+            'Flask-Limiter con storage en memoria: con N workers el limite '
+            'efectivo es N-veces el configurado y se pierde al reiniciar. '
+            'Define RATELIMIT_STORAGE_URL (Redis) cuando exista en el stack.'
+        )
     jwt = JWTManager(app)
 
     # Logging configuration
