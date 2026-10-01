@@ -2,12 +2,25 @@ import type { MenuResponse, Category, Product } from './types';
 
 /**
  * API pública del menú (Flask).
- * - Prod (default): https://velzia.shop/api/public — igual que siempre.
+ * - Prod (default): https://velzia.shop/api/public — es el default porque el
+ *   despliegue SSR de Vercel puede depender de él si no define la variable.
  * - Dev local: define PUBLIC_MENU_API_URL=http://localhost:5000/api/public
  *   en astro/.env para que el menú cargue de TU Flask (slugs locales).
  */
 const API_BASE = import.meta.env.PUBLIC_MENU_API_URL || 'https://velzia.shop/api/public';
 const API_KEY = import.meta.env.SERVICE_API_KEY || '';
+
+/** Error de acceso al API del menú, con el HTTP status de la respuesta.
+ * status 0 = la API no respondió (red caída o servicio inaccesible). */
+export class MenuApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'MenuApiError';
+    this.status = status;
+  }
+}
 
 function headers(): Record<string, string> {
   const h: Record<string, string> = {};
@@ -16,9 +29,17 @@ function headers(): Record<string, string> {
 }
 
 export async function fetchMenu(slug: string): Promise<MenuResponse> {
-  const res = await fetch(`${API_BASE}/menu/${slug}`, { headers: headers() });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/menu/${slug}`, { headers: headers() });
+  } catch (e) {
+    throw new MenuApiError(
+      `API no accesible: ${e instanceof Error ? e.message : String(e)}`,
+      0
+    );
+  }
   if (!res.ok) {
-    throw new Error(`Failed to fetch menu: ${res.status}`);
+    throw new MenuApiError(`Failed to fetch menu: ${res.status}`, res.status);
   }
   return res.json();
 }

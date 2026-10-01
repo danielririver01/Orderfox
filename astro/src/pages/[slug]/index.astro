@@ -12,7 +12,7 @@ import CheckoutModal from '../../components/checkout/CheckoutModal.astro';
 import SuccessModal from '../../components/checkout/SuccessModal.astro';
 import Toast from '../../components/ui/Toast.astro';
 import Footer from '../../components/ui/Footer.astro';
-import { fetchMenu } from '../../lib/api';
+import { fetchMenu, MenuApiError } from '../../lib/api';
 import { menuCover, productImage } from '../../lib/brand';
 import type { Restaurant, Category, Product } from '../../lib/types';
 
@@ -28,19 +28,35 @@ const tableId = tableParam ? (isNaN(parseInt(tableParam)) ? tableParam : parseIn
 let restaurant: Restaurant | null = null;
 let categories: Category[] = [];
 let error: string | null = null;
+let errorStatus = 200;
 
 try {
   const response = await fetchMenu(slug);
-  if (response.success) {
+  if (response.success && response.data?.restaurant) {
     restaurant = response.data.restaurant;
     categories = response.data.categories;
     categories = categories.filter((cat) => cat.products && cat.products.length > 0);
   } else {
+    // Respondió 200 pero con un cuerpo que no cumple el contrato
     error = 'No se pudo cargar el menú';
+    errorStatus = 502;
   }
 } catch (e) {
   console.error('fetchMenu error:', e);
-  error = 'Error al cargar el menú';
+  const apiStatus = e instanceof MenuApiError ? e.status : 0;
+  if (apiStatus === 404) {
+    // Restaurante no existe → 404 real (error queda null)
+    errorStatus = 404;
+  } else {
+    // API caída/inaccesible o 5xx → 502, para que el monitoreo lo detecte
+    error = 'Error al cargar el menú';
+    errorStatus = 502;
+  }
+}
+
+if (errorStatus !== 200) {
+  Astro.response.status = errorStatus;
+  Astro.response.statusText = errorStatus === 404 ? 'Not Found' : 'Bad Gateway';
 }
 
 const isNotFound = !restaurant || !!error;
@@ -78,9 +94,12 @@ if (!isNotFound && restaurant) {
 {
   isNotFound ? (
     <PublicLayout title={errorTitle}>
+      <slot name="head">
+        <meta name="robots" content="noindex" />
+      </slot>
       <main class="flex flex-1 flex-col items-center justify-center px-4 text-center">
         <h1 class="font-display text-2xl font-bold text-ink">{errorTitle}</h1>
-        <p class="mt-2 text-ink-muted">{error}</p>
+        {error && <p class="mt-2 text-ink-muted">{error}</p>}
         <a href="/" class="mt-6 text-sm text-accent hover:text-accent-hover">Volver al inicio</a>
       </main>
     </PublicLayout>
