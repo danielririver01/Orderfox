@@ -9,6 +9,9 @@ from werkzeug.security import generate_password_hash
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['SECRET_KEY'] = 'test-secret-key-for-testing-only'
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only'
+# La suite NO depende de Redis (CI no lo tiene): storage en memoria,
+# determinista, aunque el .env del dev apunte a uno real.
+os.environ['RATELIMIT_STORAGE_URL'] = 'memory://'
 
 from app import create_app
 from app.models import db as _db

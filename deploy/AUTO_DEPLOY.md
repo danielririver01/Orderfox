@@ -32,10 +32,21 @@ ssh ubuntu@TU_IP
 # Dependencias que el deploy necesita
 sudo apt install -y nodejs npm postgresql-client
 
+# Redis: storage compartido del rate limiter (VLZ-16). Nativo, vía apt,
+# igual que el resto del stack. Escucha solo en 127.0.0.1:6379.
+sudo apt install -y redis-server
+redis-cli ping   # debe responder PONG
+
 # Verificar que ubuntu puede reiniciar el servicio sin contraseña
 sudo -n true && echo "sudo sin password OK"
 # (por defecto en Oracle Cloud Ubuntu ya es así; si no, agregar NOPASSWD en sudoers)
 ```
+
+> **Redis y el `.env`:** para activarlo añade a `/var/www/orderfox/.env`:
+> `RATELIMIT_STORAGE_URL=redis://localhost:6379/0`
+> Con eso el límite de Flask-Limiter es el mismo para todos los workers y
+> sobrevive reinicios; `/health` lo vigila (503 si Redis cae) y si se cae a
+> mitad de operación la app degrada a memoria en vez de dar 500s.
 
 > El script usa `pg_dump` para el backup si tu `DATABASE_URL` es PostgreSQL, o
 > `mysqldump` si es MySQL. Si tu base es Supabase/managed, `pg_dump` debe poder
@@ -75,7 +86,7 @@ Repo → **Settings → Secrets and variables → Actions** → New repository s
    ssh ubuntu@TU_IP
    tail -30 /var/log/orderfox/deploy.log        # registro del deploy
    systemctl status orderfox                     # servicio activo
-   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/health   # 200 (verifica la BD)
+   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/health   # 200 (verifica la BD y Redis)
    ```
 
 ## 5. Si algo falla

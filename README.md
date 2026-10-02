@@ -31,7 +31,9 @@ Plataforma SaaS de gestión de pedidos para restaurantes colombianos. Crea tu me
 
 ### Con Docker (desarrollo local)
 
-`docker compose up -d` levanta la app (`:5000`) y el scheduler. Requisitos:
+`docker compose up -d` levanta la app (`:5000`), el scheduler y **Redis** (el
+storage compartido del rate limiter — solo escucha en `127.0.0.1:6379`).
+Requisitos:
 
 1. **Base de datos propia** — el compose no incluye ninguna: apunta
    `DATABASE_URL` en `.env` a tu PostgreSQL (desde el contenedor usa
@@ -42,8 +44,16 @@ Plataforma SaaS de gestión de pedidos para restaurantes colombianos. Crea tu me
 git clone https://github.com/danielririver01/Orderfox.git
 cd Orderfox
 cp .env.example .env        # configura DATABASE_URL y demás
-docker compose up -d        # app + scheduler
-curl http://localhost:5000/health   # 200 = app viva y BD conectada
+docker compose up -d        # app + scheduler + redis
+curl http://localhost:5000/health   # 200 = app viva, BD y Redis conectados
+```
+
+¿Solo trabajas con `python run.py` (Flask fuera de Docker)? Levanta únicamente
+Redis y la app lo usará vía `RATELIMIT_STORAGE_URL`:
+
+```bash
+docker compose up -d redis
+python run.py
 ```
 
 El servicio `receipt-scanner` requiere el repo hermano privado

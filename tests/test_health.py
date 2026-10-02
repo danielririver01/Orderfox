@@ -2,11 +2,16 @@
 
 La app puede responder con la BD caída y eso no es "estar sana": el endpoint
 verifica la conexión de verdad. Lo consumen systemd, update_server.sh (paso 6)
-y monitores externos.
+y monitores externos. Con Redis configurado (VLZ-16) también le hace PING:
+con el fallback de memoria activado, un Redis caído es una degradación
+silenciosa que este endpoint debe delatar.
 """
 from unittest import mock
 
+import redis
 from sqlalchemy.exc import SQLAlchemyError
+
+REDIS_URL = 'redis://localhost:6379/0'
 
 
 class TestHealth:
@@ -37,3 +42,36 @@ class TestHealth:
         ruta dejara de existir, /health caería al redirect del menú público."""
         rules = [r.rule for r in client.application.url_map.iter_rules()]
         assert '/health' in rules
+
+
+class TestHealthWithRedis:
+
+    def test_ok_when_redis_configured_and_alive(self, client, monkeypatch):
+        monkeypatch.setenv('RATELIMIT_STORAGE_URL', REDIS_URL)
+        with mock.patch('redis.Redis.from_url') as fake_from_url:
+            fake_from_url.return_value.ping.return_value = True
+            res = client.get('/health')
+        assert res.status_code == 200
+        assert res.get_json() == {'status': 'ok', 'db': 'ok', 'redis': 'ok'}
+        # Timeout corto: el smoke test del deploy no puede quedarse colgado.
+        _, kwargs = fake_from_url.call_args
+        assert kwargs['socket_timeout'] <= 2
+
+    def test_503_when_redis_configured_but_down(self, client, monkeypatch):
+        """Redis caído no puede ser invisible: el deploy debe verlo y no
+        dejar que el fallback de memoria lo tape."""
+        monkeypatch.setenv('RATELIMIT_STORAGE_URL', REDIS_URL)
+        with mock.patch('redis.Redis.from_url') as fake_from_url:
+            fake_from_url.return_value.ping.side_effect = redis.ConnectionError(
+                'redis caido')
+            res = client.get('/health')
+        assert res.status_code == 503
+        assert res.get_json() == {'status': 'error', 'db': 'ok', 'redis': 'down'}
+
+    def test_503_when_redis_answers_no(self, client, monkeypatch):
+        monkeypatch.setenv('RATELIMIT_STORAGE_URL', REDIS_URL)
+        with mock.patch('redis.Redis.from_url') as fake_from_url:
+            fake_from_url.return_value.ping.return_value = False
+            res = client.get('/health')
+        assert res.status_code == 503
+        assert res.get_json()['redis'] == 'down'

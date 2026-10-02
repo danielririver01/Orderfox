@@ -46,7 +46,7 @@
 |----------|-------------|-------------------|
 | `SCANNER_IA_URL` | URL del servicio Scanner IA | `http://localhost:3000` |
 | `SERVICE_API_KEY` | API Key para comunicación server-to-server | Generar aleatoriamente |
-| `RATELIMIT_STORAGE_URL` | Storage compartido de Flask-Limiter (Redis). Vacío = `memory://`: con N workers el límite efectivo es N× y se pierde al reiniciar (R-08/VLZ-16; el log lo advierte en prod) | `memory://` |
+| `RATELIMIT_STORAGE_URL` | Storage compartido de Flask-Limiter. **Redis**: mismo límite con N workers y sobrevive reinicios; `/health` lo vigila. Local: `docker compose up -d redis` → `redis://localhost:6379/0`. Prod (Oracle): `apt install redis-server` (VLZ-16) | `memory://` |
 | `RATELIMIT_DEFAULT` | Límites globales por IP para tráfico anónimo | `200 per day;50 per hour` |
 
 ---
@@ -151,6 +151,7 @@ for var in required:
 
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|
+| 2026-10-02 | 1.3 | `RATELIMIT_STORAGE_URL` con Redis activo (local Docker / prod apt), `/health` lo vigila | Agente IA |
 | 2026-10-01 | 1.2 | `RATELIMIT_STORAGE_URL` y `RATELIMIT_DEFAULT` documentados; VIP exime solo de defaults (VLZ-16) | Agente IA |
 | 2026-10-01 | 1.1 | `SESSION_COOKIE_SECURE`/`SESSION_COOKIE_SAMESITE` configurables por entorno (VLZ-11) | Agente IA |
 | 2026-06-16 | 1.0 | Versión inicial | Auditoría Documental |

@@ -15,6 +15,17 @@ echo "[1/7] Installing system packages..."
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y python3 python3-pip python3-venv nginx certbot python3-certbot-nginx git
 
+# Redis: storage compartido de Flask-Limiter (VLZ-16). Nativo con apt,
+# consistente con el resto del stack (systemd, sin Docker). Ubuntu lo deja
+# escuchando en 127.0.0.1:6379 — solo alcanzable desde la propia máquina.
+sudo apt install -y redis-server
+sudo systemctl enable --now redis-server
+if redis-cli ping 2>/dev/null | grep -q PONG; then
+    echo "      Redis OK (127.0.0.1:6379)"
+else
+    echo "      ADVERTENCIA: Redis no responde a PING — revisa: systemctl status redis-server"
+fi
+
 # 2. Create directories
 echo "[2/7] Creating directories..."
 sudo mkdir -p $APP_DIR $LOG_DIR
@@ -63,6 +74,9 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 # Other
 SCANNER_IA_URL=http://localhost:5000
+
+# Rate limiting (VLZ-16): Redis nativo del propio servidor
+RATELIMIT_STORAGE_URL=redis://localhost:6379/0
 EOF
     echo "  ⚠️  Edit $APP_DIR/.env with your real values!"
 else

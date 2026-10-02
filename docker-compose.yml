@@ -1,4 +1,22 @@
 services:
+  # Cache/rate-limit compartido de Flask-Limiter (R-08 / VLZ-16).
+  # Solo escucha en el loopback del host; sin persistencia: los contadores
+  # son efímeros y no vale la pena guardarlos.
+  redis:
+    image: redis:7-alpine
+    container_name: orderfox-redis
+    restart: unless-stopped
+    command: ["redis-server", "--bind", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - orderfox-net
+
   orderfox:
     build:
       context: .
@@ -10,6 +28,8 @@ services:
       FLASK_APP: run.py
       SCANNER_IA_URL: http://receipt-scanner:3000
       RATELIMIT_DEFAULT: ${RATELIMIT_DEFAULT:-100000 per day;50000 per hour}
+      # Dentro del compose Redis se alcanza por nombre de servicio, no localhost.
+      RATELIMIT_STORAGE_URL: redis://redis:6379/0
     env_file:
       - .env
     networks:

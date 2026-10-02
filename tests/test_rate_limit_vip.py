@@ -95,3 +95,29 @@ class TestVipDoesNotBypassRouteGuards:
         assert 429 in codes, (
             f'El login PIN no aplicó el límite ni con 6 intentos: {codes}'
         )
+
+
+class TestStorageFallback:
+
+    def test_unreachable_redis_degrades_to_memory_not_500(self):
+        """Redis caído no tumba la app (VLZ-16): con el fallback activo los
+        requests siguen respondiendo y el límite sigue aplicando, ahora con
+        contadores en memoria. Puerto 1: nunca hay nadie escuchando ahí."""
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        mini = Limiter(
+            key_func=get_remote_address,
+            default_limits=['3 per day'],
+            storage_uri='redis://localhost:1/0',
+            in_memory_fallback_enabled=True,
+        )
+        mini.init_app(app)
+
+        @app.route('/libre')
+        def libre():
+            return 'ok'
+
+        client = app.test_client()
+        for _ in range(3):
+            assert client.get('/libre').status_code == 200
+        assert client.get('/libre').status_code == 429

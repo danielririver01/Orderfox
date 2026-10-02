@@ -198,7 +198,7 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 - Conexión local = **MariaDB XAMPP**: `mysql+pymysql://root:@localhost:3306/orderfox` (root sin password; encender **MySQL** en el XAMPP Control Panel). CI usa MySQL 8 en contenedor. Driver: `mysql+pymysql://user:pass@host/db`
 - CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
 - `settings.APP_VERSION` debe ir sincronizado con el último tag git (actualmente `v1.6.0`)
-- Rate limiter es in-memory (se pierde al reiniciar)
+- Rate limiter global (Flask-Limiter) usa **Redis** si `RATELIMIT_STORAGE_URL` está definido (local: `docker compose up -d redis`; prod: `apt install redis-server`). Sin Redis: `memory://` (límite N× con N workers, se pierde al reiniciar; fallback automático si Redis se cae). `/health` vigila Redis cuando está configurado.
 - Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
 - Gmail requiere app-specific password, TLS por defecto
 - APScheduler se inicia en `create_app()` — tareas: `scan_business_events` (hora), `manage_subscription_lifecycle` (3 AM, marca cuentas inactivas como `dormant` SIN borrar datos), `expire_pending_orders` (hora)

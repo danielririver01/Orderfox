@@ -38,4 +38,8 @@ limiter = Limiter(
     default_limits=os.getenv("RATELIMIT_DEFAULT", "200 per day;50 per hour").split(";"),
     storage_uri=os.getenv("RATELIMIT_STORAGE_URL", "memory://"),
     default_limits_exempt_when=default_limits_exempt,
+    # Si Redis (o el storage configurado) se cae, degradar al viejo
+    # comportamiento en memoria en vez de tumbar la app con 500s. El precio
+    # es el límite N× por worker hasta que vuelva — mejor que la caída.
+    in_memory_fallback_enabled=True,
 )
