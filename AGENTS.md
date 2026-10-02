@@ -199,6 +199,7 @@ Si tocas el menú público, editas `astro/src/`, no `app/template/`.
 - CSS: Tailwind 4 vía `@tailwindcss/cli`, no hay `tailwind.config.js`. Pre-build obligatorio en prod.
 - `settings.APP_VERSION` debe ir sincronizado con el último tag git (actualmente `v1.6.0`)
 - Rate limiter global (Flask-Limiter) usa **Redis** si `RATELIMIT_STORAGE_URL` está definido (local: `docker compose up -d redis`; prod: `apt install redis-server`). Sin Redis: `memory://` (límite N× con N workers, se pierde al reiniciar; fallback automático si Redis se cae). `/health` vigila Redis cuando está configurado.
+- **⏳ PENDIENTE EN PROD (VLZ-30):** Redis ya está integrado pero **el VM de Oracle Cloud aún no lo tiene**. Paso único cuando se toque el server: `sudo apt install -y redis-server` + añadir `RATELIMIT_STORAGE_URL=redis://localhost:6379/0` a `/var/www/orderfox/.env` → próximo deploy. El smoke test (paso 6 de `update_server.sh`) lo vigila solo vía `/health` (503 si Redis cae). Quitar esta línea cuando esté hecho. Ver `deploy/AUTO_DEPLOY.md` § 1.
 - Upload max 16MB a Cloudinary; `app/static/uploads/` es caché local (no auto-limpieza)
 - Gmail requiere app-specific password, TLS por defecto
 - APScheduler se inicia en `create_app()` — tareas: `scan_business_events` (hora), `manage_subscription_lifecycle` (3 AM, marca cuentas inactivas como `dormant` SIN borrar datos), `expire_pending_orders` (hora)
