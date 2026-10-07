@@ -52,8 +52,8 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 0.75rem;
-    background: rgba(242, 70, 13, 0.15);
-    color: #f2460d;
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -127,7 +127,7 @@
     height: 20px;
     border-radius: 50%;
     border: 2px solid #262626;
-    border-top-color: #f2460d;
+    border-top-color: #f97316;
     animation: crc-spin 0.8s linear infinite;
 }
 @keyframes crc-spin {
@@ -154,8 +154,8 @@
 }
 .crc-list-new {
     margin-top: 0.25rem;
-    background: #f2460d;
-    color: #fff;
+    background: #f97316;
+    color: #0a0a0a;
     border: none;
     border-radius: 0.75rem;
     padding: 0.55rem 1rem;
@@ -205,9 +205,9 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #f2460d;
+    background: #f97316;
     flex-shrink: 0;
-    box-shadow: 0 0 0 3px rgba(242, 70, 13, 0.2);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
 }
 
 .crc-messages {
@@ -229,8 +229,8 @@
 }
 .crc-msg-user {
     align-self: flex-end;
-    background: #f2460d;
-    color: #fff;
+    background: #f97316;
+    color: #0a0a0a;
     border-bottom-right-radius: 0.25rem;
 }
 .crc-msg-assistant {
@@ -296,7 +296,7 @@
 }
 .crc-welcome .material-symbols-outlined {
     font-size: 34px;
-    color: #f2460d;
+    color: #f97316;
 }
 .crc-welcome h4 {
     color: #fff;
@@ -320,8 +320,8 @@
     margin-top: 0.75rem;
 }
 .crc-chip {
-    background: rgba(242, 70, 13, 0.1);
-    border: 1px solid rgba(242, 70, 13, 0.3);
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.3);
     color: #fdba74;
     font-size: 10px;
     font-weight: 800;
@@ -331,7 +331,7 @@
     transition: background 0.15s ease;
 }
 .crc-chip:hover {
-    background: rgba(242, 70, 13, 0.2);
+    background: rgba(249, 115, 22, 0.2);
 }
 
 .crc-chart {
@@ -376,7 +376,7 @@
 }
 .crc-chart-bar {
     height: 100%;
-    background: linear-gradient(90deg, #f2460d, #f97316);
+    background: linear-gradient(90deg, #f97316, #f97316);
     border-radius: 999px;
     min-width: 2px;
 }
@@ -411,7 +411,7 @@
     transition: border-color 0.15s ease;
 }
 .crc-input:focus {
-    border-color: #f2460d;
+    border-color: #f97316;
 }
 .crc-input::placeholder {
     color: #52525b;
@@ -420,8 +420,8 @@
     width: 2.6rem;
     height: 2.6rem;
     border-radius: 0.9rem;
-    background: #f2460d;
-    color: #fff;
+    background: #f97316;
+    color: #0a0a0a;
     border: none;
     display: flex;
     align-items: center;

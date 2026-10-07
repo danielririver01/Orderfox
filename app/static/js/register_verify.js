@@ -63,7 +63,7 @@ if (!window.__registerVerifyLoaded) {
                         headerTitle: "hidden",
                         headerSubtitle: "hidden",
                         socialButtonsBlockButton: "rounded-xl h-11 border-[rgba(249,115,22,0.2)] bg-[rgba(40,34,28,0.8)] hover:bg-[rgba(55,47,38,0.9)] hover:border-[rgba(249,115,22,0.4)] transition-all font-semibold text-[#f5f0eb]",
-                        formButtonPrimary: "bg-[#f97316] hover:bg-[#ea6c0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
+                        formButtonPrimary: "bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
                         footer: "hidden",
                         dividerRow: "my-5",
                         dividerText: "text-[10px] font-black text-gray-600 uppercase tracking-widest",

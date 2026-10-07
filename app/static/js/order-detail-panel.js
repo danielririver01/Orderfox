@@ -57,11 +57,11 @@ function openOrderDetail(orderId) {
             content.classList.add('flex');
 
             document.querySelectorAll('[data-order-id]').forEach(card => {
-                card.classList.remove('ring-2', 'ring-[#f2460d]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
+                card.classList.remove('ring-2', 'ring-[#f97316]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
             });
             const selectedCard = document.querySelector(`[data-order-id="${orderId}"]`);
             if (selectedCard) {
-                selectedCard.classList.add('ring-2', 'ring-[#f2460d]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
+                selectedCard.classList.add('ring-2', 'ring-[#f97316]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
             }
         })
         .catch(err => {
@@ -108,7 +108,7 @@ function closeOrderDetail() {
     }
 
     document.querySelectorAll('[data-order-id]').forEach(card => {
-        card.classList.remove('ring-2', 'ring-[#f2460d]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
+        card.classList.remove('ring-2', 'ring-[#f97316]', 'ring-offset-2', 'ring-offset-[#0a0a0a]');
     });
 
     currentOrderId = null;

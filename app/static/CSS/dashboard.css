@@ -214,17 +214,17 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     min-width: 5.5rem;
     min-height: 4.25rem;          /* 68px: se toca con el dedo sin apuntar */
     border-radius: 1.15rem;
-    background: #d63a0a;          /* blanco encima = 4.7:1 (AA) */
-    color: #ffffff;
+    background: #f97316;          /* texto oscuro encima = 7.06:1 (AAA) */
+    color: #0a0a0a;
     font-weight: 900;
     line-height: 1;
     text-align: center;
-    box-shadow: 0 14px 32px -10px rgba(242, 70, 13, 0.7);
+    box-shadow: 0 14px 32px -10px rgba(249, 115, 22, 0.7);
     transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .vz-fab:hover {
-    background: #c2410c;
+    background: #fb923c;
     transform: translateY(-1px);
 }
 

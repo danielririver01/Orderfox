@@ -9,9 +9,9 @@
     <div class="flex items-center gap-2">
       <form method="GET" action="{{ url_for('reservations.calendar') }}" class="flex items-center gap-2">
         <input type="date" name="fecha" value="{{ fecha }}"
-               class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-2 px-3 text-sm text-gray-800 dark:text-white focus:border-[#f2460d] focus:outline-none">
+               class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-2 px-3 text-sm text-gray-800 dark:text-white focus:border-[#f97316] focus:outline-none">
         <button type="submit"
-                class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-2 px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
+                class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f97316] text-gray-800 dark:text-white font-black py-2 px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
           Ver
         </button>
       </form>
@@ -70,7 +70,7 @@
         <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[64px] mb-6">calendar_month</span>
         <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Sin mesas configuradas</h3>
         <p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">Crea mesas en la gestión de Mesas para ver la ocupación del calendario.</p>
-        <a href="{{ url_for('tables.index') }}" class="inline-block bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all">
+        <a href="{{ url_for('tables.index') }}" class="inline-block bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all">
           IR A MESAS
         </a>
       </div>
@@ -85,13 +85,13 @@
     <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
       <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
         <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <span class="material-symbols-outlined text-[#f2460d] text-[32px]">calendar_month</span>
+          <span class="material-symbols-outlined text-[#f97316] text-[32px]">calendar_month</span>
         </div>
         <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Calendario de ocupación</h3>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
           Visualiza qué mesas están libres y cuáles están reservadas, en tiempo real.
         </p>
-        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
+        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
           MEJORAR MI PLAN
         </a>
       </div>

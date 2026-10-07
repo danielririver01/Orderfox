@@ -4,7 +4,7 @@
 
 // ===== Vista: Cajones / Todos =====
 const VIEW_MODE_KEY = 'velziaProductsView';
-const VIEW_MODE_ACTIVE = 'bg-[#f2460d]/10 text-[#f2460d]';
+const VIEW_MODE_ACTIVE = 'bg-[#f97316]/10 text-[#f97316]';
 const VIEW_MODE_INACTIVE = 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#262626]';
 
 let currentViewMode = localStorage.getItem(VIEW_MODE_KEY) === 'all' ? 'all' : 'boxes';

@@ -8,12 +8,12 @@
     </div>
     <div class="flex items-center gap-1.5 sm:gap-2">
       <a href="{{ url_for('reservations.calendar') }}"
-         class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-2.5 px-2.5 sm:px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+         class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f97316] text-gray-800 dark:text-white font-black py-2.5 px-2.5 sm:px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
         <span class="material-symbols-outlined text-[18px]">calendar_month</span>
         <span class="hidden sm:inline">Calendario</span>
       </a>
       <a href="{{ url_for('reservations.settings') }}"
-         class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f2460d] text-gray-800 dark:text-white font-black py-2.5 px-2.5 sm:px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+         class="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] hover:border-[#f97316] text-gray-800 dark:text-white font-black py-2.5 px-2.5 sm:px-4 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
         <span class="material-symbols-outlined text-[18px]">settings</span>
         <span class="hidden sm:inline">Configurar</span>
       </a>
@@ -31,23 +31,23 @@
       <!-- Tabs por estado -->
       <div class="flex gap-2 mb-6 overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide" data-reservations-tabs>
         <a href="{{ url_for('reservations.index') }}"
-           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f2460d] border-orange-200 dark:border-orange-500/20' if not estado else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
+           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f97316] border-orange-200 dark:border-orange-500/20' if not estado else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
           Todas ({{ counts.get('all', 0) }})
         </a>
         <a href="{{ url_for('reservations.index', estado='pending') }}"
-           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f2460d] border-orange-200 dark:border-orange-500/20' if estado == 'pending' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
+           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f97316] border-orange-200 dark:border-orange-500/20' if estado == 'pending' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
           Pendientes ({{ counts.get('pending', 0) }})
         </a>
         <a href="{{ url_for('reservations.index', estado='confirmed') }}"
-           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f2460d] border-orange-200 dark:border-orange-500/20' if estado == 'confirmed' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
+           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f97316] border-orange-200 dark:border-orange-500/20' if estado == 'confirmed' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
           Confirmadas ({{ counts.get('confirmed', 0) }})
         </a>
         <a href="{{ url_for('reservations.index', estado='completed') }}"
-           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f2460d] border-orange-200 dark:border-orange-500/20' if estado == 'completed' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
+           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f97316] border-orange-200 dark:border-orange-500/20' if estado == 'completed' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
           Completadas ({{ counts.get('completed', 0) }})
         </a>
         <a href="{{ url_for('reservations.index', estado='rejected') }}"
-           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f2460d] border-orange-200 dark:border-orange-500/20' if estado == 'rejected' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
+           class="shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border {{ 'bg-orange-500/10 text-[#f97316] border-orange-200 dark:border-orange-500/20' if estado == 'rejected' else 'bg-white dark:bg-[#141414] text-gray-500 border-gray-100 dark:border-[#262626] hover:border-gray-300' }}">
           Rechazadas ({{ counts.get('rejected', 0) }})
         </a>
       </div>
@@ -128,13 +128,13 @@
     <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-center px-4">
       <div class="bg-white/80 dark:bg-[#141414]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 dark:border-[#262626] shadow-2xl max-w-sm text-center">
         <div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <span class="material-symbols-outlined text-[#f2460d] text-[32px]">event_available</span>
+          <span class="material-symbols-outlined text-[#f97316] text-[32px]">event_available</span>
         </div>
         <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Reservas digitales</h3>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
           Recibe reservas desde tu menú digital con confirmación, calendario de mesas y recordatorios automáticos.
         </p>
-        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
+        <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-widest text-xs">
           MEJORAR MI PLAN
         </a>
       </div>

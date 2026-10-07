@@ -8,11 +8,11 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <div class="flex flex-col items-center">
-        <div class="w-24 h-24 bg-[#f2460d] text-white rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-2xl shadow-orange-500/20 mb-6 transition-transform hover:scale-105 active:scale-95 cursor-default">
+        <div class="w-24 h-24 bg-[#f97316] text-[#0a0a0a] rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-2xl shadow-orange-500/20 mb-6 transition-transform hover:scale-105 active:scale-95 cursor-default">
             {{ restaurant.name[:1] | upper }}
         </div>
         <div class="px-4 py-1.5 bg-orange-50 dark:bg-orange-500/10 rounded-full border border-orange-100 dark:border-orange-500/20">
-            <span class="text-[9px] font-black text-[#f2460d] uppercase tracking-[0.25em]">ID DE CLIENTE: #{{ restaurant.id + 1000 }}</span>
+            <span class="text-[9px] font-black text-[#f97316] uppercase tracking-[0.25em]">ID DE CLIENTE: #{{ restaurant.id + 1000 }}</span>
         </div>
     </div>
 
@@ -20,14 +20,14 @@
         <!-- Nombre del Negocio -->
         <div>
             <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DEL ESTABLECIMIENTO</label>
-            <input type="text" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <input type="text" name="restaurant_name" value="{{ restaurant.name }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
             <p class="text-[11px] text-gray-500 dark:text-gray-600 mt-2 ml-1 leading-relaxed">Cambiar el nombre <strong class="font-bold">no afecta tu enlace ni tus códigos QR</strong>: la URL de tu menú se creó al registrarte y se mantiene igual para que los QR impresos sigan funcionando.</p>
         </div>
 
         <!-- WhatsApp -->
         <div>
             <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">WHATSAPP DE PEDIDOS</label>
-            <input type="text" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <input type="text" name="whatsapp_phone" value="{{ restaurant.whatsapp_phone }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
         </div>
 
         <div class="py-2">
@@ -41,7 +41,7 @@
                 <div class="relative group">
                     <input type="file" name="cover_image" id="cover_image" class="hidden" accept="image/*">
                     <div id="cover_preview_container" onclick="document.getElementById('cover_image').click()"
-                        class="relative w-full h-32 rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not restaurant.cover_image else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f2460d] transition-all flex flex-col items-center justify-center text-gray-400">
+                        class="relative w-full h-32 rounded-2xl bg-gray-50 dark:bg-[#0a0a0a] border-2 {{ 'border-dashed' if not restaurant.cover_image else '' }} border-gray-200 dark:border-[#262626] overflow-hidden cursor-pointer hover:border-[#f97316] transition-all flex flex-col items-center justify-center text-gray-400">
                         {% if restaurant.cover_image %}
                         <img id="cover_original" src="{{ restaurant.cover_image }}" class="w-full h-full object-cover">
                         {% else %}
@@ -68,7 +68,7 @@
                 <div>
                     <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">TIEMPO ESTIMADO (MIN)</label>
                     <input type="number" name="estimated_time" value="{{ restaurant.estimated_time if restaurant.estimated_time is not none else '' }}" min="1" max="600" placeholder="Ej: 25"
-                        class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white">
+                        class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white">
                 </div>
 
                 <div>
@@ -84,14 +84,14 @@
                             {% set locked = not branding.themes_allowed and not active %}
                             <button type="button" data-theme-key="{{ theme.key }}" data-theme-hex="{{ theme.hex }}"
                                 {% if locked %}disabled{% endif %}
-                                class="theme-circle group relative h-10 w-10 rounded-full transition-all active:scale-95 {{ 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0a0a0a] ring-[#f2460d] scale-110' if active else 'hover:scale-110' }} {{ 'opacity-40 cursor-not-allowed' if locked else 'cursor-pointer' }}"
+                                class="theme-circle group relative h-10 w-10 rounded-full transition-all active:scale-95 {{ 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0a0a0a] ring-[#f97316] scale-110' if active else 'hover:scale-110' }} {{ 'opacity-40 cursor-not-allowed' if locked else 'cursor-pointer' }}"
                                 style="background-color: {{ theme.hex }};" aria-label="{{ theme.name }}">
                                 {% if locked %}
                                 <span class="absolute inset-0 flex items-center justify-center text-white/90">
                                     <span class="material-symbols-outlined text-sm drop-shadow">lock</span>
                                 </span>
                                 <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-black px-2.5 py-1.5 text-[10px] font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
-                                    {{ theme.name }} — Disponible en plan Crecimiento <span class="text-[#f2460d]">→</span> <a href="{{ url_for('auth.plans') }}" class="text-[#f2460d] underline">Ver planes</a>
+                                    {{ theme.name }} — Disponible en plan Crecimiento <span class="text-[#f97316]">→</span> <a href="{{ url_for('auth.plans') }}" class="text-[#f97316] underline">Ver planes</a>
                                 </span>
                                 {% else %}
                                 <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 dark:bg-black px-2.5 py-1.5 text-[10px] font-bold text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
@@ -115,11 +115,11 @@
                                 {% if branding.custom_allowed %}
                                 <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-0.5">Elige cualquier color con el selector.</p>
                                 {% else %}
-                                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-0.5">Disponible en plan Élite — <a href="{{ url_for('auth.plans') }}" class="text-[#f2460d] underline font-bold">Ver planes</a></p>
+                                <p class="text-[9px] text-gray-400 dark:text-gray-500 font-medium italic mt-0.5">Disponible en plan Élite — <a href="{{ url_for('auth.plans') }}" class="text-[#f97316] underline font-bold">Ver planes</a></p>
                                 {% endif %}
                             </div>
                             <button type="button" id="reset_brand_btn"
-                                class="ml-auto text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest px-3 py-1.5 rounded-full border border-gray-200 dark:border-[#262626] hover:text-[#f2460d] hover:border-[#f2460d]/40 transition-all">
+                                class="ml-auto text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest px-3 py-1.5 rounded-full border border-gray-200 dark:border-[#262626] hover:text-[#f97316] hover:border-[#f97316]/40 transition-all">
                                 Restablecer
                             </button>
                         </div>
@@ -130,7 +130,7 @@
             <div>
                 <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">TIPO DE COCINA</label>
                 <select name="cuisine_type"
-                    class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white">
+                    class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white">
                     {% for ct in cuisine_types %}
                     <option value="{{ ct }}" {% if (restaurant.cuisine_type or 'general') == ct %}selected{% endif %}>{{ ct | title }}</option>
                     {% endfor %}
@@ -144,7 +144,7 @@
         <!-- Usuario -->
         <div>
             <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NOMBRE DE USUARIO</label>
-            <input type="text" name="username" value="{{ user.username }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
+            <input type="text" name="username" value="{{ user.username }}" class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
         </div>
 
         <!-- Email -->
@@ -164,7 +164,7 @@
     </div>
 
     <div class="pt-6">
-        <button type="submit" class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-4 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">
+        <button type="submit" class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">
             Actualizar Perfil
         </button>
     </div>
@@ -230,7 +230,7 @@
             btn.classList.toggle('ring-2', isActive);
             btn.classList.toggle('ring-offset-2', isActive);
             btn.classList.toggle('ring-offset-white', isActive);
-            btn.classList.toggle('ring-[#f2460d]', isActive);
+            btn.classList.toggle('ring-[#f97316]', isActive);
             btn.classList.toggle('scale-110', isActive);
         });
         if (brandColorHidden) brandColorHidden.value = hex;

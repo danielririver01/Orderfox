@@ -13,7 +13,7 @@
                 </p>
             </div>
             <button type="button" onclick="openTpvGuide()"
-                class="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-[#f2460d] transition-colors px-3 py-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10">
+                class="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-[#f97316] transition-colors px-3 py-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10">
                 <span class="material-symbols-outlined text-[18px]">help</span>
                 ¿Cómo funciona?
             </button>
@@ -31,7 +31,7 @@
                 <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm p-5 space-y-5 transition-colors">
                     <div class="flex items-center justify-between gap-4">
                         <h2 class="flex items-center gap-2 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] whitespace-nowrap">
-                            <span class="w-5 h-5 rounded-full bg-[#f2460d] text-white flex items-center justify-center text-[11px]">1</span>
+                            <span class="w-5 h-5 rounded-full bg-[#f97316] text-[#0a0a0a] flex items-center justify-center text-[11px]">1</span>
                             Elige los productos
                         </h2>
                         <div class="relative flex-1">
@@ -41,7 +41,7 @@
                             <input type="text" 
                                    name="search" 
                                    id="product-search"
-                                   class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400" 
+                                   class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400" 
                                    placeholder="Escribe el nombre del producto…">
                         </div>
                     </div>
@@ -51,7 +51,7 @@
                         <div class="product-item flex items-center justify-between py-3 border-b border-gray-50 dark:border-[#262626] last:border-0">
                             <div class="flex-1 min-w-0 pr-4">
                                 <h3 class="product-name font-bold text-gray-900 dark:text-white tracking-tight truncate">{{ product.name }}</h3>
-                                <p class="text-sm font-black text-[#f2460d]">${{ '{:,}'.format(product.price) }}</p>
+                                <p class="text-sm font-black text-[#f97316]">${{ '{:,}'.format(product.price) }}</p>
                             </div>
                             <div class="flex items-center gap-4">
                                 <button type="button" onclick="updateQty('{{ product.id }}', -1)" class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all active:scale-90">
@@ -74,7 +74,7 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-4">
                                 Para vender, primero crea lo que ofreces. Solo necesitas el nombre y el precio.
                             </p>
-                            <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-br from-[#f2460d] to-[#d63a0a] hover:from-[#d63a0a] hover:to-[#f2460d] text-black dark:text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 active:scale-95">
+                            <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-br from-[#f97316] to-[#d63a0a] hover:from-[#fb923c] hover:to-[#f97316] text-black dark:text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 active:scale-95">
                                 <span class="material-symbols-outlined text-[16px]">add</span>
                                 Crear Producto
                             </a>
@@ -90,7 +90,7 @@
                                 Revisa cómo se escribe o revisa en Productos si está apagado.
                             </p>
                             <a href="{{ url_for('products.index') }}"
-                                class="inline-block mt-3 text-[11px] font-black text-[#f2460d] underline decoration-dotted underline-offset-4">
+                                class="inline-block mt-3 text-[11px] font-black text-[#f97316] underline decoration-dotted underline-offset-4">
                                 Ver mis productos
                             </a>
                         </div>
@@ -114,17 +114,17 @@
                     
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
-                        <input type="text" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
+                        <input type="text" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
                     </div>
                     
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
-                        <input type="tel" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
+                        <input type="tel" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
                     </div>
                     
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
+                        <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
                     </div>
 
                     <!-- Total y Acción -->
@@ -134,10 +134,10 @@
                                 <span class="w-5 h-5 rounded-full bg-gray-300 dark:bg-[#262626] text-gray-700 dark:text-gray-300 flex items-center justify-center text-[11px]">3</span>
                                 Total a cobrar
                             </p>
-                            <p id="order-total" class="text-2xl font-black text-[#f2460d]">$0</p>
+                            <p id="order-total" class="text-2xl font-black text-[#f97316]">$0</p>
                         </div>
                         <button type="submit" id="order-submit"
-                            class="w-full bg-[#d63a0a] hover:bg-[#c2410c] text-white font-black py-4 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-sm">
+                            class="w-full bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black py-4 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest text-sm">
                             Elige un producto
                         </button>
                         <p class="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-2">
@@ -168,19 +168,19 @@
 
             <ol class="mt-6 space-y-4">
                 <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full bg-[#f2460d] text-white flex items-center justify-center text-sm font-black flex-shrink-0">1</span>
+                    <span class="w-7 h-7 rounded-full bg-[#f97316] text-[#0a0a0a] flex items-center justify-center text-sm font-black flex-shrink-0">1</span>
                     <p class="text-sm text-gray-300 leading-relaxed">
                         <strong class="text-white">Escribe el nombre del producto</strong> en el buscador. La lista se filtra sola.
                     </p>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full bg-[#f2460d] text-white flex items-center justify-center text-sm font-black flex-shrink-0">2</span>
+                    <span class="w-7 h-7 rounded-full bg-[#f97316] text-[#0a0a0a] flex items-center justify-center text-sm font-black flex-shrink-0">2</span>
                     <p class="text-sm text-gray-300 leading-relaxed">
                         <strong class="text-white">Pon la cantidad con el botón +</strong>. El total se calcula solo, no tienes que sumar nada.
                     </p>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full bg-[#f2460d] text-white flex items-center justify-center text-sm font-black flex-shrink-0">3</span>
+                    <span class="w-7 h-7 rounded-full bg-[#f97316] text-[#0a0a0a] flex items-center justify-center text-sm font-black flex-shrink-0">3</span>
                     <p class="text-sm text-gray-300 leading-relaxed">
                         <strong class="text-white">Dale al botón de abajo.</strong> Dice exactamente cuánto vas a cobrar:
                         "Cobrar $45.000".
@@ -189,7 +189,7 @@
             </ol>
 
             <button type="button" onclick="closeTpvGuide()"
-                class="w-full mt-7 bg-[#d63a0a] hover:bg-[#c2410c] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all uppercase tracking-widest text-sm">
+                class="w-full mt-7 bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all uppercase tracking-widest text-sm">
                 ¡Entendido, empecemos!
             </button>
             <p class="text-[11px] text-gray-500 text-center mt-3">

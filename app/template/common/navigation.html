@@ -54,7 +54,7 @@
                     class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                     {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                     <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    Centro de Caja
+                    Caja
                 </a>
                 <a href="{{ url_for('reservations.index') }}" onclick="closeMobileNav()"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
@@ -166,7 +166,7 @@
     {# Footer: Restaurant + Logout #}
     <div class="flex-shrink-0 border-t border-white/[0.06] p-3 space-y-2">
         <div class="flex items-center gap-3 px-3 py-2">
-            <div class="w-7 h-7 rounded-lg bg-[#f2460d] flex items-center justify-center text-white text-[10px] font-black">
+            <div class="w-7 h-7 rounded-lg bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-[10px] font-black">
                 {{ restaurant.name[0] | upper if restaurant else 'R' }}
             </div>
             <div class="flex-1 min-w-0">
@@ -185,14 +185,14 @@
 {# ═══ Bottom Navigation — iOS floating pill ═══ #}
 <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-4 left-4 right-4 z-[997] bg-[#1a1a1a]/80 backdrop-blur-2xl rounded-3xl border border-white/[0.08] shadow-2xl shadow-black/50 pb-[env(safe-area-inset-bottom)]">
     <div class="flex items-center justify-around h-14 px-2">
-        <a href="{{ url_for('dashboard.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'dashboard.index' else '' }}">
+        <a href="{{ url_for('dashboard.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f97316]' if request.endpoint == 'dashboard.index' else '' }}">
             <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'dashboard.index' else 'text-gray-500' }}">home</span>
         </a>
-        <a href="{{ url_for('orders.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'orders.index' else '' }}">
+        <a href="{{ url_for('orders.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f97316]' if request.endpoint == 'orders.index' else '' }}">
             <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'orders.index' else 'text-gray-500' }}">receipt_long</span>
             <span id="mobile-bottom-orders-badge" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)] z-20"></span>
         </a>
-        <a href="{{ url_for('cash_register.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f2460d]' if request.endpoint == 'cash_register.index' else '' }}">
+        <a href="{{ url_for('cash_register.index') }}" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90 {{ 'bg-[#f97316]' if request.endpoint == 'cash_register.index' else '' }}">
             <span class="material-symbols-outlined text-[22px] {{ 'text-white' if request.endpoint == 'cash_register.index' else 'text-gray-500' }}">account_balance_wallet</span>
         </a>
         <button onclick="openMobileNav()" class="relative flex items-center justify-center w-12 h-10 rounded-2xl transition-all active:scale-90" aria-label="Abrir menú">

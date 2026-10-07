@@ -7,7 +7,7 @@
     <div class="max-w-2xl md:max-w-none mx-auto px-4 md:px-10 py-4 flex justify-between items-center">
         <div>
             <a href="{{ url_for('products.index') }}"
-                class="text-[#f2460d] hover:text-orange-600 text-sm font-bold mb-2 inline-flex items-center gap-1">
+                class="text-[#f97316] hover:text-orange-600 text-sm font-bold mb-2 inline-flex items-center gap-1">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 Volver al Dashboard
             </a>
@@ -34,13 +34,13 @@
                 {% set is_blocked = not product.is_active and is_limit_reached %}
 
                 <div
-                    class="product-item flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all {{ 'opacity-50' if is_blocked else '' }}">
+                    class="product-item flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f97316] transition-all {{ 'opacity-50' if is_blocked else '' }}">
                     <!-- Imagen -->
                     <div class="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 relative group/img">
                         {% if product.image_url %}
                         <img id="product-img-{{ product.id }}" src="{{ get_image_url(product.image_url) }}" class="w-full h-full object-cover">
                         {% else %}
-                        <div id="product-placeholder-{{ product.id }}" class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f2460d]">
+                        <div id="product-placeholder-{{ product.id }}" class="w-full h-full flex items-center justify-center font-black text-2xl text-[#f97316]">
                             {{ product.name[0] }}
                         </div>
                         {% endif %}
@@ -49,7 +49,7 @@
                         <span id="auto-badge-{{ product.id }}" class="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 rounded backdrop-blur-xs leading-tight">AI</span>
                         {% if product.suggested_image_pool and product.suggested_image_pool != '[]' %}
                         <button type="button" id="swap-btn-{{ product.id }}" onclick="swapProductPhoto({{ product.id }}, event)" title="Ver otra foto sugerida"
-                            class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-[#f2460d] text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
+                            class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-[#f97316] text-[#0a0a0a] w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
                             🎲
                         </button>
                         {% endif %}
@@ -67,7 +67,7 @@
                             <p class="text-[10px] md:text-xs text-gray-500 truncate mb-1">{{ product.description }}</p>
                             {% endif %}
                             <div class="mt-2">
-                                <span class="text-sm md:text-lg font-black text-[#f2460d] block">${{
+                                <span class="text-sm md:text-lg font-black text-[#f97316] block">${{
                                     "{:,.0f}".format(product.price) }}</span>
                                 <div class="flex mt-1">
                                     <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-all duration-300
@@ -97,7 +97,7 @@
                                 </div>
                             </label>
                             <a href="{{ url_for('products.edit', id=product.id) }}"
-                                class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-500 hover:text-[#f2460d] hover:bg-orange-500/10 rounded-lg transition-all">
+                                class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-500 hover:text-[#f97316] hover:bg-orange-500/10 rounded-lg transition-all">
                                 <span class="material-symbols-outlined text-[18px] md:text-[22px]">edit</span>
                             </a>
                             <button onclick="openModifiersModal({{ product.id }}, '{{ product.name|e }}')"
@@ -131,7 +131,7 @@
                     Agrega
                     tu primer producto para comenzar.</p>
                 <a href="{{ url_for('products.create', category_id=category.id) }}"
-                    class="inline-flex items-center gap-2 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs">
+                    class="inline-flex items-center gap-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3.5 px-8 rounded-xl shadow-xl shadow-orange-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs">
                     <span class="material-symbols-outlined text-[18px]">add</span>
                     Agregar Producto
                 </a>
@@ -156,7 +156,7 @@
                 <!-- Números de página -->
                 {% for page_num in range(1, pagination.pages + 1) %}
                 {% if page_num == pagination.page %}
-                <div class="w-10 h-10 flex items-center justify-center bg-[#f2460d] text-white font-bold rounded-lg">
+                <div class="w-10 h-10 flex items-center justify-center bg-[#f97316] text-[#0a0a0a] font-bold rounded-lg">
                     {{ page_num }}
                 </div>
                 {% else %}
@@ -224,14 +224,14 @@
                     <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
                     <div class="grid grid-cols-1 sm:grid-cols-[1fr_100px] gap-2">
                         <input type="text" id="desktop-modifier-name" placeholder="Ej: Doble carne"
-                            class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                            class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
                             onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
                         <input type="number" id="desktop-modifier-price" placeholder="Precio" min="0"
-                            class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                            class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
                             onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
                     </div>
                     <button id="desktop-modifier-add-btn" onclick="addModifier()"
-                        class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                        class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
                         <span class="material-symbols-outlined text-[18px]">add</span>
                         Agregar Combo
                     </button>
@@ -249,7 +249,7 @@
                         <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con
                             combos y modificadores ilimitados para tus clientes.</p>
                         <a href="{{ url_for('auth.renew', plan='elite') }}"
-                            class="inline-block w-full bg-[#f2460d] text-white font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
+                            class="inline-block w-full bg-[#f97316] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
                             Desbloquear Ahora
                         </a>
                     </div>
@@ -305,7 +305,7 @@
                 <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con extras y
                     modificadores ilimitados para tus clientes.</p>
                 <a href="{{ url_for('auth.renew', plan='elite') }}"
-                    class="inline-block w-full bg-[#f2460d] text-white font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
+                    class="inline-block w-full bg-[#f97316] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 active:scale-95 transition-all">
                     Desbloquear Ahora
                 </a>
             </div>
@@ -317,14 +317,14 @@
             <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Extra</p>
             <div class="flex gap-2">
                 <input type="text" id="modifier-name" placeholder="Ej: Doble carne"
-                    class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
                     onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
                 <input type="number" id="modifier-price" placeholder="Precio" min="0"
-                    class="w-28 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f2460d] transition-colors"
+                    class="w-28 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
                     onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
             </div>
             <button id="modifier-add-btn" onclick="addModifier()"
-                class="w-full bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+                class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 Agregar Extra
             </button>

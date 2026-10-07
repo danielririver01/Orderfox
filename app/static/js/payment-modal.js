@@ -99,7 +99,7 @@ function showError(message) {
 
 function resetMethodPanels() {
     document.querySelectorAll('.pm-method').forEach(btn => {
-        btn.classList.remove('border-[#f2460d]', 'bg-[#f2460d]/10');
+        btn.classList.remove('border-[#f97316]', 'bg-[#f97316]/10');
         btn.classList.add('border-[#262626]', 'bg-white/5');
     });
     ['pm-cash-panel', 'pm-transfer-panel', 'pm-card-panel'].forEach(id => {
@@ -116,7 +116,7 @@ function selectPaymentMethod(method) {
     resetMethodPanels();
     const btn = document.querySelector(`[data-pm-method="${method}"]`);
     if (btn) {
-        btn.classList.add('border-[#f2460d]', 'bg-[#f2460d]/10');
+        btn.classList.add('border-[#f97316]', 'bg-[#f97316]/10');
         btn.classList.remove('border-[#262626]', 'bg-white/5');
     }
 
@@ -135,10 +135,10 @@ function selectTransfer(transfer) {
     paymentModalState.transfer = transfer;
     paymentModalState.method = transfer;
     document.querySelectorAll('.pm-transfer').forEach(btn => {
-        btn.classList.remove('ring-2', 'ring-[#f2460d]', 'ring-offset-2', 'ring-offset-[#141414]');
+        btn.classList.remove('ring-2', 'ring-[#f97316]', 'ring-offset-2', 'ring-offset-[#141414]');
     });
     const current = document.querySelector(`.pm-transfer:nth-child(${transfer === 'nequi' ? 1 : 2})`);
-    if (current) current.classList.add('ring-2', 'ring-[#f2460d]', 'ring-offset-2', 'ring-offset-[#141414]');
+    if (current) current.classList.add('ring-2', 'ring-[#f97316]', 'ring-offset-2', 'ring-offset-[#141414]');
 }
 
 function getCashAmount() {

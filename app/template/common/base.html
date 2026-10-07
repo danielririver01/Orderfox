@@ -117,7 +117,7 @@
                 class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
             <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
             <button onclick="refreshOrderList()"
-                class="ml-2 bg-[#f2460d] hover:bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
+                class="ml-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
                 Ver ahora
             </button>
             <button onclick="dismissNewOrdersToast()"
@@ -178,9 +178,9 @@
                             <a href="{{ url_for('cash_register.index') }}"
                                 class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
                                 <span class="material-symbols-outlined text-[20px] flex-shrink-0">account_balance_wallet</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Centro de Caja</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Caja</span>
                             </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Centro de Caja</span>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Caja</span>
                         </div>
                         <div class="group/tip relative">
                             <a href="{{ url_for('reservations.index') }}"
@@ -299,7 +299,7 @@
                 <!-- Avatar + Dropdown -->
                 <div class="relative px-2 py-3">
                     <button id="sidebar-avatar-btn" class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
-                        <div class="w-9 h-9 rounded-xl bg-[#f2460d] flex items-center justify-center text-white text-sm font-black shadow-lg shadow-orange-500/20 flex-shrink-0">
+                        <div class="w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-black shadow-lg shadow-orange-500/20 flex-shrink-0">
                             {{ session.get('restaurant_name', 'R')[0] | upper }}
                         </div>
                         <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">

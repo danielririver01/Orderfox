@@ -204,12 +204,12 @@ function addCategoryToList(cat) {
     const initial = cat.name ? cat.name[0].toUpperCase() : '?';
 
     const html = `
-    <div class="category-card flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all min-w-0 overflow-hidden"
+    <div class="category-card flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f97316] transition-all min-w-0 overflow-hidden"
         data-category-id="${cat.id}" data-name="${cat.name.toLowerCase()}">
         <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] overflow-hidden flex-shrink-0">
             ${imageUrl
                 ? `<img src="${imageUrl}" class="w-full h-full object-cover">`
-                : `<div class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">${initial}</div>`
+                : `<div class="w-full h-full flex items-center justify-center text-[#f97316] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">${initial}</div>`
             }
         </div>
         <div class="flex-1 min-w-0">
@@ -235,12 +235,12 @@ function addCategoryToList(cat) {
                 </div>
             </label>
             <button onclick="openCategoryForm(${cat.id})"
-                class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f97316] dark:hover:text-[#f97316] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                 title="Editar Categoría">
                 <span class="material-symbols-outlined text-[20px]">edit</span>
             </button>
             <a href="/categories/${cat.id}/edit"
-                class="md:hidden w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                class="md:hidden w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f97316] dark:hover:text-[#f97316] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                 title="Editar Categoría">
                 <span class="material-symbols-outlined text-[20px]">edit</span>
             </a>
@@ -271,7 +271,7 @@ function updateCategoryInList(cat) {
     if (thumb) {
         thumb.innerHTML = imageUrl
             ? `<img src="${imageUrl}" class="w-full h-full object-cover">`
-            : `<div class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">${initial}</div>`;
+            : `<div class="w-full h-full flex items-center justify-center text-[#f97316] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">${initial}</div>`;
     }
 
     const nameEl = card.querySelector('.category-name');
@@ -307,7 +307,7 @@ function removeCategoryFromList(id) {
                 <div class="text-center py-20 bg-white dark:bg-[#141414] rounded-3xl border border-dashed border-gray-200 dark:border-[#262626]">
                     <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
                     <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
-                    <button onclick="openCategoryForm()" class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea tu primera categoría</button>
+                    <button onclick="openCategoryForm()" class="text-[#f97316] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea tu primera categoría</button>
                 </div>`;
             }
         }, 300);

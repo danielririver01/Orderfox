@@ -30,7 +30,7 @@
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-gray-400">search</span>
                     <input type="text" id="search-input" placeholder="Buscar categorías..."
-                        class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] rounded-2xl focus:outline-none focus:border-[#f2460d] transition-colors text-sm">
+                        class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] rounded-2xl focus:outline-none focus:border-[#f97316] transition-colors text-sm">
                 </div>
             </div>
 
@@ -38,7 +38,7 @@
             <div class="space-y-3" id="categories-list">
                 {% if categories %}
                 {% for category in categories %}
-                <div class="category-card flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f2460d] transition-all min-w-0 overflow-hidden"
+                <div class="category-card flex items-center gap-4 p-4 bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-[#262626] hover:border-[#f97316] transition-all min-w-0 overflow-hidden"
                     data-category-id="{{ category.id }}" data-name="{{ category.name|lower }}">
                     <!-- Miniatura -->
                     <div
@@ -47,7 +47,7 @@
                         <img src="{{ get_image_url(category.image_url) }}" class="w-full h-full object-cover">
                         {% else %}
                         <div
-                            class="w-full h-full flex items-center justify-center text-[#f2460d] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
+                            class="w-full h-full flex items-center justify-center text-[#f97316] font-black text-lg bg-orange-50 dark:bg-orange-500/10 uppercase">
                             {{ category.name[0] }}
                         </div>
                         {% endif %}
@@ -87,13 +87,13 @@
 
                         <!-- Desktop: abre panel inline -->
                         <button onclick="openCategoryForm({{ category.id }})"
-                            class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                            class="hidden md:flex w-9 h-9 items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f97316] dark:hover:text-[#f97316] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                             title="Editar Categoría">
                             <span class="material-symbols-outlined text-[20px]">edit</span>
                         </button>
                         <!-- Mobile: navega a página -->
                         <a href="{{ url_for('categories.edit', id=category.id) }}"
-                            class="md:hidden w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f2460d] dark:hover:text-[#f2460d] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                            class="md:hidden w-9 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-[#f97316] dark:hover:text-[#f97316] hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
                             title="Editar Categoría">
                             <span class="material-symbols-outlined text-[20px]">edit</span>
                         </a>
@@ -118,7 +118,7 @@
                         class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-[48px] mb-4">category</span>
                     <p class="text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
                     <button onclick="openCategoryForm()"
-                        class="text-[#f2460d] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea
+                        class="text-[#f97316] font-bold text-sm mt-2 inline-block transition-colors cursor-pointer">Crea
                         tu primera categoría</button>
                 </div>
                 {% endif %}
@@ -164,7 +164,7 @@
                             <label
                                 class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">NOMBRE</label>
                             <input type="text" id="form-name" required
-                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-bold text-gray-900 dark:text-white"
+                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white"
                                 placeholder="Ej: Hamburguesas">
                             <p id="form-name-error"
                                 class="hidden text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">
@@ -177,7 +177,7 @@
                                 class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN
                                 (OPCIONAL)</label>
                             <textarea id="form-description" rows="3"
-                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f2460d]/20 focus:border-[#f2460d] outline-none transition-all font-medium text-gray-700 dark:text-gray-300 resize-none"
+                                class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-medium text-gray-700 dark:text-gray-300 resize-none"
                                 placeholder="Breve detalle de la categoría..."></textarea>
                         </div>
 
@@ -204,7 +204,7 @@
                             Cancelar
                         </button>
                         <button onclick="saveCategory(event)" id="form-save-btn"
-                            class="flex-1 bg-[#f2460d] hover:bg-[#d63a0a] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                            class="flex-1 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
                             Guardar
                         </button>
                     </div>

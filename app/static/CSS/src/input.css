@@ -9,7 +9,7 @@
 @custom-variant sidebar-expanded (&:where(.sidebar-expanded, .sidebar-expanded *));
 
 @theme {
-  --color-primary: #f2460d;
+  --color-primary: #f97316;
   --color-success: #16a34a;
   --color-text-main: #1c110d;
   --color-text-muted: #6b7280;

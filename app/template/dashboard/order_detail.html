@@ -172,7 +172,7 @@
                         <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest">
                             ${{ '{:,}'.format(item.product_price) }} c/u</p>
                     </div>
-                    <p class="font-black text-[#f2460d] text-lg tracking-tighter">${{ '{:,}'.format(item.subtotal) }}</p>
+                    <p class="font-black text-[#f97316] text-lg tracking-tighter">${{ '{:,}'.format(item.subtotal) }}</p>
                 </div>
                 {% if not loop.last %}
                 <div class="h-px bg-gray-50 dark:bg-[#262626] my-2"></div>
@@ -183,7 +183,7 @@
             <div class="mt-6 pt-5 border-t-2 border-gray-50 dark:border-[#262626]">
                 <div class="flex justify-between items-center">
                     <span class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Total Pedido</span>
-                    <span class="text-2xl font-black text-[#f2460d] tracking-tighter">${{ '{:,}'.format(order.total) }}</span>
+                    <span class="text-2xl font-black text-[#f97316] tracking-tighter">${{ '{:,}'.format(order.total) }}</span>
                 </div>
             </div>
 

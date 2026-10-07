@@ -1,7 +1,7 @@
 /* ============ LEGAL PAGE STYLES ============ */
 :root {
-    --legal-primary: #f2460d;
-    --legal-primary-dark: #d63a0a;
+    --legal-primary: #f97316;
+    --legal-primary-dark: #c2410c;
     --legal-bg-dark: #0a0a0a;
     --legal-bg-card: #141414;
     --legal-border: #262626;
@@ -97,7 +97,7 @@ body {
 }
 
 .legal-nav-link.active {
-    background: rgba(242, 70, 13, 0.1);
+    background: rgba(249, 115, 22, 0.1);
     color: var(--legal-primary);
     border-left: 3px solid var(--legal-primary);
     padding-left: calc(1rem - 3px);
@@ -243,7 +243,7 @@ body {
     width: 3rem;
     height: 3rem;
     border-radius: 1rem;
-    background: rgba(242, 70, 13, 0.1);
+    background: rgba(249, 115, 22, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -407,7 +407,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 24px rgba(242, 70, 13, 0.35);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
     z-index: 30;
     opacity: 0;
     visibility: hidden;
@@ -424,7 +424,7 @@ body {
 .legal-back-to-top:hover {
     background: var(--legal-primary-dark);
     transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(242, 70, 13, 0.45);
+    box-shadow: 0 12px 28px rgba(249, 115, 22, 0.45);
 }
 
 .legal-back-to-top:active {

@@ -95,7 +95,7 @@ window.addEventListener('load', async function () {
                     headerTitle: "hidden",
                     headerSubtitle: "hidden",
                     socialButtonsBlockButton: "rounded-xl h-11 border-[rgba(249,115,22,0.2)] bg-[rgba(40,34,28,0.8)] hover:bg-[rgba(55,47,38,0.9)] hover:border-[rgba(249,115,22,0.4)] transition-all font-semibold text-[#f5f0eb]",
-                    formButtonPrimary: "bg-[#f97316] hover:bg-[#ea6c0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
+                    formButtonPrimary: "bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-sm font-bold h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all",
                     footer: "hidden",
                     dividerRow: "my-5",
                     dividerText: "text-[10px] font-black text-gray-600 uppercase tracking-widest",
@@ -198,7 +198,7 @@ async function runSilentSync() {
                         Toma menos de un minuto.
                     </p>
                     <a href="/planes"
-                        class="w-full flex items-center justify-center bg-[#f97316] hover:bg-[#ea6c0a] text-white font-bold text-sm h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all">
+                        class="w-full flex items-center justify-center bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-bold text-sm h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all">
                         Ver planes y crear mi cuenta
                     </a>
                     <button onclick="window.location.reload()"
@@ -231,7 +231,7 @@ async function runSilentSync() {
                 <p class="text-sm text-gray-400 text-center leading-relaxed mb-5">
                     Revisa que tengas internet y vuelve a intentarlo.
                 </p>
-                <button onclick="window.location.reload()" class="px-6 h-11 bg-[#f97316] hover:bg-[#ea6c0a] text-white rounded-xl font-bold text-sm transition-colors shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] active:scale-95">
+                <button onclick="window.location.reload()" class="px-6 h-11 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] rounded-xl font-bold text-sm transition-colors shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] active:scale-95">
                     Intentar de nuevo
                 </button>
             </div>
