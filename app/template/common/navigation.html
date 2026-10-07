@@ -32,7 +32,7 @@
         {# ── OPERACIÓN DIARIA ── #}
         <div class="nav-group" data-group="operacion">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('operacion')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Operación Diaria</p>
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -77,7 +77,7 @@
         {# ── MENÚ E INVENTARIO ── #}
         <div class="nav-group" data-group="menu">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('menu')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú e Inventario</p>
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -97,13 +97,13 @@
                     class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                     {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                     <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                    Stock
+                    Productos
                 </a>
                 <a href="{{ url_for('tables.index') }}" onclick="closeMobileNav()"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors
                     {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-400 hover:text-white hover:bg-white/[0.04]' }}">
                     <span class="material-symbols-outlined text-[20px]">table_restaurant</span>
-                    Gestión de Mesas
+                    Mesas
                 </a>
             </div>
         </div>
@@ -113,7 +113,7 @@
         {# ── INTELIGENCIA ── #}
         <div class="nav-group" data-group="inteligencia">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('inteligencia')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Inteligencia</p>
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -148,7 +148,7 @@
         {# ── CONFIGURACIÓN ── #}
         <div class="nav-group" data-group="configuracion">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('configuracion')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Configuración</p>
+                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">

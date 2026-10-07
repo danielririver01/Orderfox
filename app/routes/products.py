@@ -92,8 +92,8 @@ def create():
         form.category_id.data = category_id_arg
 
     if not categories:
-        flash('Primero crea una categoría para poder agregar productos '
-              'o activa una categoría existente', 'warning')
+        flash('Antes de crear el producto necesitas una categoría. '
+              'Por ejemplo: Entradas, Bebidas o Postres.', 'info')
         return redirect(url_for('categories.index'))
 
     if form.validate_on_submit():
@@ -122,7 +122,7 @@ def create():
                 product.restaurant_id,
             )
 
-        flash('Producto creado exitosamente', 'success')
+        flash(f'Listo: “{product.name}” ya está en tu catálogo.', 'success')
         return redirect(url_for('products.by_category',
                                 category_id=product.category_id))
 
@@ -170,7 +170,7 @@ def edit(id):
             flash(error, 'error')
             return redirect(url_for('products.edit', id=id))
 
-        flash('Producto actualizado exitosamente', 'success')
+        flash('Listo, guardamos los cambios del producto.', 'success')
         return redirect(url_for('products.by_category',
                                 category_id=product.category_id))
 
@@ -302,7 +302,7 @@ def delete(id):
 
     category_id = product.category_id
     ProductService.delete_product(product)
-    flash('Producto eliminado exitosamente', 'success')
+    flash('Borramos el producto. Ya no aparece en tu menú.', 'success')
 
     return redirect(url_for('products.by_category', category_id=category_id))
 

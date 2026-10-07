@@ -2,7 +2,7 @@
 
 @source "../../template/**/*.html";
 @source "../../template/dashboard/_payment_modal.html";
-@source "../../static/JS/**/*.js";
+@source "../../static/js/**/*.js";
 
 /* Forzar dark mode por clase .dark en lugar de prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));

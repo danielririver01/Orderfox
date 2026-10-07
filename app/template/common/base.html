@@ -95,6 +95,7 @@
     <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/help-tips.js') }}"></script>
 
     <!-- Clerk SDK -->
     {% if config.CLERK_PUBLISHABLE_KEY %}
@@ -151,7 +152,7 @@
                 {# ── OPERACIÓN DIARIA ── #}
                 <div class="nav-group" data-group="operacion">
                     <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Operación Diaria</p>
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -207,7 +208,7 @@
                 {# ── MENÚ E INVENTARIO ── #}
                 <div class="nav-group" data-group="menu">
                     <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú e Inventario</p>
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -223,17 +224,17 @@
                             <a href="{{ url_for('products.index') }}"
                                 class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
                                 <span class="material-symbols-outlined text-[20px] flex-shrink-0">inventory_2</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Stock</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Productos</span>
                             </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Stock</span>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Productos</span>
                         </div>
                         <div class="group/tip relative">
                             <a href="{{ url_for('tables.index') }}"
                                 class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
                                 <span class="material-symbols-outlined text-[20px] flex-shrink-0">table_restaurant</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Gestión de Mesas</span>
+                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Mesas</span>
                             </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Gestión de Mesas</span>
+                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Mesas</span>
                         </div>
                     </div>
                 </div>
@@ -243,7 +244,7 @@
                 {# ── INTELIGENCIA ── #}
                 <div class="nav-group" data-group="inteligencia">
                     <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Inteligencia</p>
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -276,7 +277,7 @@
                 {# ── CONFIGURACIÓN ── #}
                 <div class="nav-group" data-group="configuracion">
                     <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Configuración</p>
+                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
                         <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
                     </button>
                     <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">

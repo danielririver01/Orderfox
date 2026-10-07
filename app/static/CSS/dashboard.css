@@ -126,3 +126,74 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
+/* ==========================================================================
+   Ayudas "[?]" — help-tips.js
+   Pensadas para tocarse con el dedo: 32px visuales con área táctil ampliada
+   a 44px, y estado abierto visible (aria-expanded="true").
+   ========================================================================== */
+.vz-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #a1a1aa;
+    font-size: 0.8rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+/* Área táctil real de 44px sin agrandar el botón visualmente */
+.vz-help::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+}
+
+.vz-help:hover,
+.vz-help[aria-expanded="true"] {
+    color: #ffffff;
+    border-color: rgba(249, 115, 22, 0.6);
+    background: rgba(249, 115, 22, 0.12);
+}
+
+.vz-help:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+}
+
+.vz-help-bubble {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-top: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+    background: #17171a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #b4b4bc;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 34rem;
+    animation: vzHelpIn 0.18s ease-out;
+}
+
+.vz-help-bubble .material-symbols-outlined {
+    color: #f97316;
+    font-size: 1.15rem;
+    line-height: 1.3;
+    flex: 0 0 auto;
+}
+
+@keyframes vzHelpIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}

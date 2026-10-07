@@ -36,6 +36,15 @@
 
             document.getElementById('order-total').textContent = '$' + total.toLocaleString('es-CO');
             document.getElementById('items-json').value = JSON.stringify(items);
+
+            // El botón dice exactamente qué va a pasar y cuánto se cobra.
+            // Antes decía "Crear Pedido": el usuario no sabía cuánto iba a cobrar.
+            var submitBtn = document.getElementById('order-submit');
+            if (submitBtn) {
+                submitBtn.textContent = total > 0
+                    ? 'Cobrar $' + total.toLocaleString('es-CO')
+                    : 'Elige un producto';
+            }
         }
 
         /* showToast — defined in toast.js */
@@ -44,7 +53,7 @@
             const items = JSON.parse(document.getElementById('items-json').value || '[]');
             if (items.length === 0) {
                 e.preventDefault();
-                showToast('Por favor selecciona al menos un producto', 'error');
+                showToast('Primero elige al menos un producto para poder cobrar.', 'error');
                 
                 // Efectivo visual: sacudir o resaltar la sección de productos
                 const productSection = document.querySelector('.bg-white.rounded-lg.border.border-gray-200.shadow-sm.p-6:nth-of-type(2)');
