@@ -17,14 +17,43 @@ window.addEventListener('load', async function () {
                     start: {
                         title: 'Velzia',
                         subtitle: 'Tu asistente para gestionar el restaurante',
-                        actionText: '¿No tienes suscripción?',
-                        actionLink: 'Ver planes'
+                        actionText: '¿Primera vez aquí?',
+                        actionLink: 'Crea tu cuenta'
                     }
                 },
-                formFieldLabel__emailAddress: "Correo electrónico",
-                formFieldInputPlaceholder__emailAddress: "ejemplo@velzia.com",
-                formFieldLabel__password: "Contraseña",
-                formButtonPrimary: "INICIAR SESIÓN",
+                formFieldLabel__emailAddress: "Tu correo electrónico",
+                formFieldInputPlaceholder__emailAddress: "tunombre@correo.com",
+                formFieldLabel__password: "Tu contraseña",
+                formFieldInputPlaceholder__password: "Tu contraseña",
+                formButtonPrimary: "Entrar a mi negocio",
+                // Errores en lenguaje humano: qué pasó + cómo solucionarlo.
+                // Si Clerk no reconoce alguna clave, simplemente usa la suya.
+                errors: {
+                    form_identifier_not_found: {
+                        title: 'No encontramos esa cuenta',
+                        message: 'No hay ninguna cuenta con ese correo. Revisa cómo lo escribiste o crea una cuenta nueva.'
+                    },
+                    form_password_incorrect: {
+                        title: 'Esa no es tu contraseña',
+                        message: 'Inténtalo otra vez. Si no la recuerdas, usa "¿Olvidaste tu contraseña?".'
+                    },
+                    form_param_nil: {
+                        title: 'Falta un dato',
+                        message: 'Necesitamos tu correo y tu contraseña para entrar.'
+                    },
+                    form_password_length_too_short: {
+                        title: 'Contraseña muy corta',
+                        message: 'Escríbela completa: tiene más letras de las que pusiste.'
+                    },
+                    too_many_requests: {
+                        title: 'Demasiados intentos',
+                        message: 'Por seguridad, espera un minuto y vuelve a intentarlo.'
+                    },
+                    form_code_incorrect: {
+                        title: 'El código no coincide',
+                        message: 'Revisa el código que te llegó y escríbelo otra vez.'
+                    }
+                }
             }
         });
 
@@ -109,7 +138,8 @@ async function runSilentSync() {
     signInDiv.innerHTML = `
         <div class="flex flex-col items-center justify-center py-12">
             <div class="auth-spinner mb-4"></div>
-            <p class="text-xs font-black text-orange-400/70 uppercase tracking-[0.2em] animate-pulse">Sincronizando sesión...</p>
+            <p class="text-sm font-bold text-orange-400/90 animate-pulse">Estamos entrando a tu negocio…</p>
+            <p class="text-xs text-gray-500 mt-1">Esto toma unos segundos.</p>
         </div>
     `;
 
@@ -152,17 +182,28 @@ async function runSilentSync() {
             }
         } else if (result.error_code === 'USER_NOT_REGISTERED') {
             await window.Clerk.signOut();
-            const message = result.message || 'Debe registrarse en la plataforma para poder acceder.';
+            // Antes esta pantalla ofrecía "Intentar de nuevo": un botón que
+            // NUNCA podía funcionar, porque la cuenta no existe. Se reemplaza
+            // por el camino real (crear cuenta) + salida (usar otro correo).
             signInDiv.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 px-6">
-                    <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-red-500/30">
-                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <div class="flex flex-col items-center justify-center py-10 px-6 text-center">
+                    <div class="w-14 h-14 bg-orange-500/10 rounded-full flex items-center justify-center mb-4 ring-1 ring-orange-500/30">
+                        <svg class="w-7 h-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
                     </div>
-                    <p class="text-sm font-bold text-red-400 text-center mb-4">${message}</p>
-                    <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
-                        Intentar de nuevo
+                    <p class="text-base font-bold text-white mb-2">Todavía no tienes cuenta con ese correo</p>
+                    <p class="text-sm text-gray-400 leading-relaxed mb-6">
+                        Crea tu cuenta y prueba Velzia <strong class="text-white">60 días</strong>.
+                        Toma menos de un minuto.
+                    </p>
+                    <a href="/planes"
+                        class="w-full flex items-center justify-center bg-[#f97316] hover:bg-[#ea6c0a] text-white font-bold text-sm h-12 rounded-xl shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] transition-all">
+                        Ver planes y crear mi cuenta
+                    </a>
+                    <button onclick="window.location.reload()"
+                        class="mt-3 text-sm font-semibold text-gray-500 hover:text-white underline decoration-dotted underline-offset-4 transition-colors">
+                        Usar otro correo
                     </button>
                 </div>
             `;
@@ -186,8 +227,11 @@ async function runSilentSync() {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </div>
-                <p class="text-sm font-bold text-red-400 text-center mb-4">No se pudo sincronizar tu sesión. Verifica tu conexión.</p>
-                <button onclick="window.location.reload()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-orange-500/30">
+                <p class="text-base font-bold text-white text-center mb-2">No pudimos conectarnos</p>
+                <p class="text-sm text-gray-400 text-center leading-relaxed mb-5">
+                    Revisa que tengas internet y vuelve a intentarlo.
+                </p>
+                <button onclick="window.location.reload()" class="px-6 h-11 bg-[#f97316] hover:bg-[#ea6c0a] text-white rounded-xl font-bold text-sm transition-colors shadow-[0_10px_28px_-10px_rgba(249,115,22,0.7)] active:scale-95">
                     Intentar de nuevo
                 </button>
             </div>
