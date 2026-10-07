@@ -197,3 +197,53 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: none; }
 }
+
+/* ==========================================================================
+   Botones flotantes con NOMBRE — un "+" solo no dice nada.
+   Icono arriba, etiqueta abajo, siempre visible (no depende del hover).
+   OJO: estas reglas NO definen `display`. El mostrar/ocultar lo siguen
+   controlando las utilidades de Tailwind (hidden / flex / md:flex) que usan
+   los JS de la app (modifiers-modal.js, categories-dashboard.js, etc.).
+   ========================================================================== */
+.vz-fab {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.5rem 0.9rem;
+    min-width: 5.5rem;
+    min-height: 4.25rem;          /* 68px: se toca con el dedo sin apuntar */
+    border-radius: 1.15rem;
+    background: #d63a0a;          /* blanco encima = 4.7:1 (AA) */
+    color: #ffffff;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    box-shadow: 0 14px 32px -10px rgba(242, 70, 13, 0.7);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.vz-fab:hover {
+    background: #c2410c;
+    transform: translateY(-1px);
+}
+
+.vz-fab:active {
+    transform: scale(0.96);
+}
+
+.vz-fab:focus-visible {
+    outline: 3px solid #f97316;
+    outline-offset: 3px;
+}
+
+.vz-fab .material-symbols-outlined {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.vz-fab__label {
+    font-size: 0.75rem;           /* 12px: legible, no micro-texto */
+    font-weight: 900;
+    letter-spacing: 0.01em;
+}

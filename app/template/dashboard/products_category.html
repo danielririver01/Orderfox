@@ -334,16 +334,18 @@
 
 {% include 'common/navigation.html' %}
 
-<!-- FAB (hidden on desktop) -->
+<!-- Botón flotante con nombre: un "+" mudo nadie sabe qué hace -->
 <a id="mobile-add-product-btn" href="{{ url_for('products.create', category_id=category.id) }}"
-    class="md:hidden fixed bottom-32 right-6 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl z-20">
-    <span class="material-symbols-outlined">add</span>
+    class="vz-fab flex md:hidden fixed bottom-32 right-6 z-20">
+    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+    <span class="vz-fab__label">Crear producto</span>
 </a>
 
-<!-- FAB Desktop -->
+<!-- Botón flotante con nombre (escritorio) -->
 <a id="desktop-add-product-btn" href="{{ url_for('products.create', category_id=category.id) }}"
-    class="hidden md:flex fixed bottom-8 right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 transition-all z-20">
-    <span class="material-symbols-outlined text-[28px]">add</span>
+    class="vz-fab hidden md:flex fixed bottom-8 right-8 z-20">
+    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+    <span class="vz-fab__label">Crear producto</span>
 </a>
 
 <script>

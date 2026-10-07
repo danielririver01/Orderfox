@@ -72,10 +72,11 @@
   </div>
 </div>
 
-<!-- FAB Unificado -->
+<!-- Botón flotante con nombre: dice qué crea, sin adivinar -->
 <a href="{{ url_for('orders.create') }}" id="desktop-fab"
-  class="fixed bottom-32 md:bottom-8 right-6 md:right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all z-20">
-  <span class="material-symbols-outlined text-[28px]">add</span>
+  class="vz-fab flex fixed bottom-32 md:bottom-8 right-6 md:right-8 z-20">
+  <span class="material-symbols-outlined" aria-hidden="true">add</span>
+  <span class="vz-fab__label">Crear pedido</span>
 </a>
 
 <!-- Modal de confirmación (reemplaza confirm() nativo) -->
