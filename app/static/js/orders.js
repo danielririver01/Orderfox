@@ -34,7 +34,7 @@
       icon.textContent = opts.icon || 'warning';
 
       // Botón acción
-      actionBtn.className = 'flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95';
+      actionBtn.className = 'flex-1 min-h-[44px] px-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-white transition-all active:scale-95';
       actionBtn.style.backgroundColor = opts.bgColor || '#ef4444';
       actionBtn.textContent = opts.actionLabel || 'Aceptar';
 
@@ -77,8 +77,9 @@
    * Config de acciones
    * ----------------------------------------------------------------*/
   var CANCEL_CONFIG = {
-    title: 'Cancelar pedido',
-    message: '¿Cancelar este pedido? Esta acción cambiará el pedido a estado cancelado.',
+    title: '¿Cancelar este pedido?',
+    message: 'El cliente no lo recibirá y ya no se podrá cobrar. Si te equivocaste, ' +
+             'puedes devolverlo a la lista desde «Cancelados».',
     icon: 'cancel',
     colors: { bg: 'bg-red-500/10', text: 'text-red-500' },
     actionLabel: 'Sí, cancelar',
@@ -106,12 +107,12 @@
 
       if (!response.ok) {
         var data = await response.json();
-        throw new Error(data.error || 'Error al cambiar estado');
+        throw new Error(data.error || 'No pudimos guardar el cambio. Inténtalo otra vez.');
       }
 
       location.reload();
     } catch (error) {
-      showToast(error.message);
+      showToast(error.message, 'error');
     }
   };
 
