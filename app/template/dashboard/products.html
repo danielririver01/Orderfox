@@ -71,7 +71,7 @@
             {% if product.is_auto_image %}
             <span id="auto-badge-{{ product.id }}" class="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 rounded backdrop-blur-xs leading-tight">AI</span>
             <button type="button" id="swap-btn-{{ product.id }}" onclick="swapProductPhoto({{ product.id }}, event)" title="Ver otra foto sugerida"
-              class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-white/20 text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
+              class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-white/20 text-white w-5 h-5 rounded-md flex items-center justify-center text-[11px] shadow transition-all">
               🎲
             </button>
             {% endif %}
@@ -87,7 +87,7 @@
               <div class="mt-2">
                 <span class="text-lg font-black text-gray-900 dark:text-white block">${{ '{:,}'.format(product.price) }}</span>
                 <div class="flex mt-1">
-                  <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all duration-300 
+                  <div id="status-badge-{{ product.id }}" class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-widest border transition-all duration-300 
                         {% if product.is_active %}
                           bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20
                         {% else %}
@@ -141,7 +141,7 @@
       <!-- Límite del plan (visible en ambos modos) -->
       {% if plan_limits.max_products < 1000000 %}
       <div class="mb-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
-        <div class="flex justify-between text-[10px] uppercase font-black tracking-widest mb-2">
+        <div class="flex justify-between text-[11px] uppercase font-black tracking-widest mb-2">
           <span class="text-blue-800 dark:text-blue-400">Productos activos (plan {{ plan_limits.name }})</span>
           <span class="text-blue-600 dark:text-blue-300">{{ current_active_count }} / {{ plan_limits.max_products
             }} ACTIVOS</span>
@@ -225,7 +225,7 @@
               <span id="auto-badge-{{ product.id }}" class="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 rounded backdrop-blur-xs leading-tight">AI</span>
               {% if product.suggested_image_pool and product.suggested_image_pool != '[]' %}
               <button type="button" id="swap-btn-{{ product.id }}" onclick="swapProductPhoto({{ product.id }}, event)" title="Ver otra foto sugerida"
-                class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-white/20 text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px] shadow transition-all">
+                class="absolute bottom-0.5 right-0.5 bg-black/70 hover:bg-white/20 text-white w-5 h-5 rounded-md flex items-center justify-center text-[11px] shadow transition-all">
                 🎲
               </button>
               {% endif %}
@@ -238,7 +238,7 @@
                 <h3 class="font-bold text-gray-900 dark:text-white truncate text-sm md:text-base">
                   {{ product.name }}</h3>
                 {% if product.description %}
-                <p class="text-[10px] md:text-xs text-gray-500 truncate mb-1">{{ product.description }}
+                <p class="text-[11px] md:text-xs text-gray-500 truncate mb-1">{{ product.description }}
                 </p>
                 {% endif %}
                 <span class="text-sm md:text-base font-black text-gray-900 dark:text-white block">${{
@@ -308,7 +308,7 @@
 
         {% if categories %}
         <a href="{{ url_for('products.create') }}"
-          class="mt-8 w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black text-lg px-8 py-4 md:py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all">
+          class="mt-8 w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black text-lg px-8 py-4 md:py-5 rounded-2xl shadow-lg active:scale-[0.98] transition-all">
           <span class="material-symbols-outlined text-[26px]">add</span>
           Crear mi primer producto
         </a>
@@ -324,7 +324,7 @@
                 Las categorías agrupan tu menú: Entradas, Bebidas, Postres…
               </p>
               <a href="{{ url_for('categories.create') }}"
-                class="mt-3 inline-flex items-center justify-center gap-2 bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black text-sm px-5 py-3 rounded-xl active:scale-[0.98] transition-all">
+                class="mt-3 inline-flex items-center justify-center gap-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black text-sm px-5 py-3 rounded-xl active:scale-[0.98] transition-all">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 Crear categoría
               </a>
@@ -359,7 +359,7 @@
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">
           <div class="flex-1 min-w-0">
-            <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Combos de</p>
+            <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Combos de</p>
             <h2 id="desktop-product-name" class="text-lg font-black text-white truncate">Selecciona un producto</h2>
           </div>
           <button onclick="closeModifiersModal()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all ml-3">
@@ -371,7 +371,7 @@
         <!-- Tip -->
         <div class="flex items-start gap-2.5 px-5 py-3 bg-blue-500/5 border-b border-blue-500/10">
           <span class="material-symbols-outlined text-blue-400 text-[16px] mt-0.5">lightbulb</span>
-          <p class="text-[10px] text-blue-400 font-medium leading-relaxed">Los combos aumentan el ticket promedio. Ej: "Doble Carne +$5.000"</p>
+          <p class="text-[11px] text-blue-400 font-medium leading-relaxed">Los combos aumentan el ticket promedio. Ej: "Doble Carne +$5.000"</p>
         </div>
 
         <!-- Modifiers List -->
@@ -379,13 +379,13 @@
           <div class="text-center py-12">
             <span class="material-symbols-outlined text-gray-600 text-[40px] mb-3">touch_app</span>
             <p class="text-gray-500 text-sm font-medium">Sin producto seleccionado</p>
-            <p class="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-bold">Toca el ícono tune de un producto</p>
+            <p class="text-[11px] text-gray-600 mt-1 uppercase tracking-widest font-bold">Toca el ícono tune de un producto</p>
           </div>
         </div>
 
         <!-- Add Form -->
         <div id="desktop-modifier-add-form" class="hidden border-t border-[#262626] px-5 py-4 space-y-3">
-          <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
+          <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
           <div class="grid grid-cols-1 sm:grid-cols-[1fr_100px] gap-2">
             <input type="text" id="desktop-modifier-name" placeholder="Ej: Doble carne"
               class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
@@ -395,7 +395,7 @@
               onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
           </div>
           <button id="desktop-modifier-add-btn" onclick="addModifier()"
-            class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+            class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[11px]">
             <span class="material-symbols-outlined text-[18px]">add</span>
             Agregar Combo
           </button>
@@ -409,7 +409,7 @@
             </div>
             <h3 class="text-lg font-black text-white mb-2 tracking-tight">Función Plan Élite</h3>
             <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con combos y modificadores ilimitados para tus clientes.</p>
-            <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full bg-[#f97316] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg hover:0/40 active:scale-95 transition-all">
+            <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full border border-[#f97316]/40 text-[#f97316] hover:bg-[#f97316]/10 font-black uppercase tracking-widest text-[11px] py-3.5 rounded-xl shadow-lg hover:0/40 active:scale-95 transition-all">
               Desbloquear Ahora
             </a>
           </div>
@@ -422,6 +422,9 @@
   </div>
 </div>
 
+{# Con el catálogo vacío el CTA del centro ya invita a crear: un FAB extra solo
+   duplicaría el mismo grito. Aparece cuando ya hay productos en la lista. #}
+{% if products %}
 <!-- Botón flotante con nombre: un "+" mudo nadie sabe qué hace -->
 <a id="mobile-add-product-btn" href="{{ url_for('products.create') }}"
   class="vz-fab flex md:hidden fixed bottom-32 right-6 z-20">
@@ -435,6 +438,7 @@
   <span class="material-symbols-outlined" aria-hidden="true">add</span>
   <span class="vz-fab__label">Crear producto</span>
 </a>
+{% endif %}
 
 <!-- Modifiers Modal (Mobile only) -->
 <div id="modifiers-modal" class="fixed inset-0 z-[9999] hidden md:hidden">
@@ -450,7 +454,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-[#262626]">
       <div class="flex-1 min-w-0">
-        <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Combos de</p>
+        <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Combos de</p>
         <h2 id="modifiers-product-name" class="text-lg font-black text-white truncate"></h2>
       </div>
       <button onclick="closeModifiersModal()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all ml-3">
@@ -471,7 +475,7 @@
         </div>
         <h3 class="text-lg font-black text-white mb-2 tracking-tight">Función Plan Élite</h3>
         <p class="text-[11px] text-gray-400 font-medium leading-relaxed mb-6">Personaliza productos con combos y modificadores ilimitados para tus clientes.</p>
-        <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full bg-[#f97316] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] py-3.5 rounded-xl shadow-lg hover:0/40 active:scale-95 transition-all">
+        <a href="{{ url_for('auth.renew', plan='elite') }}" class="inline-block w-full border border-[#f97316]/40 text-[#f97316] hover:bg-[#f97316]/10 font-black uppercase tracking-widest text-[11px] py-3.5 rounded-xl shadow-lg hover:0/40 active:scale-95 transition-all">
           Desbloquear Ahora
         </a>
       </div>
@@ -480,7 +484,7 @@
 
     <!-- Add Form -->
     <div id="modifier-add-form" class="hidden border-t border-[#262626] px-5 py-4 space-y-3">
-      <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
+      <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Agregar Combo</p>
       <div class="flex gap-2">
         <input type="text" id="modifier-name" placeholder="Ej: Doble carne"
           class="flex-1 px-4 py-3 bg-[#0a0a0a] border border-[#262626] rounded-xl text-sm text-white font-bold placeholder-gray-600 focus:outline-none focus:border-[#f97316] transition-colors"
@@ -490,7 +494,7 @@
           onkeydown="if(event.key==='Enter'){event.preventDefault();addModifier()}">
       </div>
       <button id="modifier-add-btn" onclick="addModifier()"
-        class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+        class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest text-[11px]">
         <span class="material-symbols-outlined text-[18px]">add</span>
         Agregar Combo
       </button>

@@ -41,11 +41,11 @@
                 </a>
                 <div class="min-w-0">
                     <p class="font-display text-sm font-black text-white truncate">{{ restaurant.name }}</p>
-                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">Detalle del pedido</p>
+                    <p class="text-[11px] text-gray-500 font-black uppercase tracking-[0.2em]">Detalle del pedido</p>
                 </div>
             </div>
             <a href="{{ url_for('employee_portal.logout') }}"
-                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
                 <span class="material-symbols-outlined text-[15px]">logout</span>
                 Salir
             </a>
@@ -70,18 +70,18 @@
                     </p>
                 </div>
                 <span
-                    class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border flex-shrink-0
+                    class="px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border flex-shrink-0
                     {% if order.status == 'pending' %}bg-yellow-500/10 text-yellow-400 border-yellow-500/20
                     {% else %}bg-blue-500/10 text-blue-400 border-blue-500/20{% endif %}">
                     {{ 'Pendiente' if order.status == 'pending' else 'Confirmado' }}
                 </span>
             </div>
-            <p class="text-[10px] text-gray-600 font-bold uppercase tracking-widest mt-3">{{ order.created_at | local_time }}</p>
+            <p class="text-[11px] text-gray-600 font-bold uppercase tracking-widest mt-3">{{ order.created_at | local_time }}</p>
         </div>
 
         <!-- Productos -->
         <div class="bg-[#141414] rounded-2xl border border-[#262626] p-5">
-            <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Productos</h2>
+            <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Productos</h2>
             <div class="space-y-3">
                 {% for item in order.items %}
                 {% set extras = [] %}
@@ -91,7 +91,7 @@
                 <div>
                     <p class="font-bold text-white text-sm tracking-tight">{{ item.quantity }}x {{ item.product_name }}</p>
                     {% if extras %}
-                    <p class="text-[10px] text-gray-600 mt-1 italic flex items-center gap-1">
+                    <p class="text-[11px] text-gray-600 mt-1 italic flex items-center gap-1">
                         <span class="material-symbols-outlined text-[12px]">subdirectory_arrow_right</span>
                         {{ extras | join(', ') }}
                     </p>
@@ -107,7 +107,7 @@
         <!-- Notas (sanitizadas: sin IP del cliente) -->
         {% if order.notes %}
         <div class="bg-[#141414] rounded-2xl border border-[#262626] p-5">
-            <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+            <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                 <span class="material-symbols-outlined text-[15px] text-gray-600">notes</span>
                 Nota
             </h2>
@@ -117,7 +117,7 @@
 
         <!-- Total -->
         <div class="bg-[#0a0a0a] rounded-2xl border border-[#262626] p-5 flex items-center justify-between">
-            <span class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Total</span>
+            <span class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Total</span>
             <span class="font-display text-2xl font-black text-white">{{ order.total | currency }}</span>
         </div>
 

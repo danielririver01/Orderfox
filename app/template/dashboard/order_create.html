@@ -74,7 +74,7 @@
               <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-4">
                 Para vender, primero crea lo que ofreces. Solo necesitas el nombre y el precio.
               </p>
-              <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-br from-[#f97316] to-[#d63a0a] hover:from-[#fb923c] hover:to-[#f97316] text-black dark:text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
+              <a href="{{ url_for('products.create') }}" class="inline-flex items-center gap-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95">
                 <span class="material-symbols-outlined text-[16px]">add</span>
                 Crear Producto
               </a>
@@ -113,17 +113,17 @@
           </div>
           
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
             <input type="text" name="customer_name" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
           </div>
           
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
             <input type="tel" name="customer_phone" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
           </div>
           
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
             <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc."></textarea>
           </div>
 
@@ -137,7 +137,7 @@
               <p id="order-total" class="text-2xl font-black text-gray-900 dark:text-white">$0</p>
             </div>
             <button type="submit" id="order-submit"
-              class="w-full bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-sm">
+              class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-sm">
               Elige un producto
             </button>
             <p class="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-2">
@@ -189,7 +189,7 @@
       </ol>
 
       <button type="button" onclick="closeTpvGuide()"
-        class="w-full mt-7 bg-[#d63a0a] hover:bg-[#fb923c] text-white font-black py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all uppercase tracking-widest text-sm">
+        class="w-full mt-7 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all uppercase tracking-widest text-sm">
         ¡Entendido, empecemos!
       </button>
       <p class="text-[11px] text-gray-500 text-center mt-3">

@@ -34,9 +34,9 @@
 
       <!-- URL Display -->
       <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors w-full overflow-hidden">
-        <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
+        <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
         <div class="flex items-center gap-2 sm:gap-3 w-full">
-          <code class="text-[10px] sm:text-xs text-primary dark:text-orange-400 font-bold flex-1 min-w-0 break-words" style="word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">{{ menu_url }}</code>
+          <code class="text-[11px] sm:text-xs text-primary dark:text-orange-400 font-bold flex-1 min-w-0 break-words" style="word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">{{ menu_url }}</code>
           <button onclick="copiarURL()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
             <span class="material-symbols-outlined text-[18px]">content_copy</span>
           </button>
@@ -115,7 +115,7 @@
           Obtén tu código profesional y mejora la experiencia de tus clientes.
         {% endif %}
       </p>
-      <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl0/20 hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+      <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl0/20 hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[11px]">
         ACTUALIZAR PLAN
       </a>
     </div>

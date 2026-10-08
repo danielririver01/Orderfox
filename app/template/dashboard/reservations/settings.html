@@ -38,27 +38,27 @@
      </div>
      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-       <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Duración del servicio (min)</label>
+       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Duración del servicio (min)</label>
        <input type="number" name="service_duration_min" value="{{ settings.service_duration_min }}" min="30" max="300" required
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
       <div>
-       <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Buffer de limpieza (min)</label>
+       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Buffer de limpieza (min)</label>
        <input type="number" name="cleanup_buffer_min" value="{{ settings.cleanup_buffer_min }}" min="0" max="60" required
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
       <div>
-       <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Anticipación mínima (horas)</label>
+       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Anticipación mínima (horas)</label>
        <input type="number" name="min_notice_hours" value="{{ settings.min_notice_hours }}" min="0" max="72" required
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
       <div>
-       <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Anticipación máxima (días)</label>
+       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Anticipación máxima (días)</label>
        <input type="number" name="max_advance_days" value="{{ settings.max_advance_days }}" min="1" max="365" required
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
      </div>
-     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+     <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
       Ej: duración {{ settings.service_duration_min }} min + limpieza {{ settings.cleanup_buffer_min }} min = mesa bloqueada {{ settings.service_duration_min + settings.cleanup_buffer_min }} minutos por reserva
      </p>
     </section>
@@ -75,7 +75,7 @@
           class="w-5 h-5 accent-[#f97316] cursor-pointer">
      </label>
      <div>
-      <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Avisar con cuánta anticipación (horas)</label>
+      <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Avisar con cuánta anticipación (horas)</label>
       <input type="number" name="reminder_hours_before" value="{{ settings.reminder_hours_before }}" min="1" max="24" required
           class="w-full sm:w-48 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
      </div>
@@ -93,7 +93,7 @@
       <div class="flex items-center gap-4">
        <div class="flex-1 min-w-0">
         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ t.name }}</p>
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ 'Capacidad actual: ' ~ (t.capacity or 'sin definir') }}</p>
+        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{{ 'Capacidad actual: ' ~ (t.capacity or 'sin definir') }}</p>
        </div>
        <input type="number" name="capacity_{{ t.id }}" value="{{ t.capacity if t.capacity }}" min="1" max="50"
            placeholder="Ej: 4"

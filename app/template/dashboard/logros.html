@@ -18,7 +18,7 @@
         <div class="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style="background: rgba(168,85,247,0.15);">
           <span class="material-symbols-outlined text-4xl" style="color: #c084fc; animation: iconGlow 2s ease-in-out infinite;">{{ new_achievement.icon }}</span>
         </div>
-        <div id="secretLabel" class="text-[10px] font-black uppercase tracking-[0.25em] mb-3" style="color: #a855f7;">???</div>
+        <div id="secretLabel" class="text-[11px] font-black uppercase tracking-[0.25em] mb-3" style="color: #a855f7;">???</div>
         <div id="secretName" class="text-2xl font-black tracking-[-0.03em] text-white mb-2">???</div>
         <div id="secretDesc" class="text-sm mb-6" style="color: rgba(192,132,252,0.6);">???</div>
         {% if new_achievement.reward_tokens %}
@@ -123,7 +123,7 @@
       <div class="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-orange-500/10 animate-bounce">
         <span class="material-symbols-outlined text-4xl text-orange-400">{{ new_achievement.icon }}</span>
       </div>
-      <div class="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400 mb-3">Nuevo logro desbloqueado</div>
+      <div class="text-[11px] font-black uppercase tracking-[0.25em] text-orange-400 mb-3">Nuevo logro desbloqueado</div>
       <div class="text-2xl font-black tracking-[-0.03em] text-white mb-2">{{ new_achievement.name }}</div>
       <div class="text-sm text-zinc-400 mb-6">{{ new_achievement.description }}</div>
       {% if new_achievement.reward_tokens %}
@@ -218,10 +218,10 @@
           <div class="flex items-center gap-2">
             <span class="text-sm font-bold text-white truncate">{{ ach.name }}</span>
             {% if ach.secret and not ach.earned %}
-            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Secreto</span>
+            <span class="text-[11px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Secreto</span>
             {% endif %}
             {% if ach.earned %}
-            <span class="text-[10px] font-black text-orange-400 ml-auto">Obtenido</span>
+            <span class="text-[11px] font-black text-orange-400 ml-auto">Obtenido</span>
             {% endif %}
           </div>
           <div class="text-xs text-zinc-500 mt-0.5">
@@ -232,14 +232,14 @@
             {% endif %}
           </div>
           {% if ach.earned and ach.earned_at %}
-          <div class="text-[10px] text-zinc-600 mt-1">{{ ach.earned_at | local_time('%d/%m/%Y') }}</div>
+          <div class="text-[11px] text-zinc-600 mt-1">{{ ach.earned_at | local_time('%d/%m/%Y') }}</div>
           {% endif %}
         </div>
 
         <!-- Progress / Reward -->
         <div class="text-right flex-shrink-0">
           {% if ach.earned and ach.reward_tokens %}
-          <div class="text-[10px] font-bold text-orange-400">+{{ ach.reward_tokens }} tokens</div>
+          <div class="text-[11px] font-bold text-orange-400">+{{ ach.reward_tokens }} tokens</div>
           {% endif %}
           {% if not ach.earned and ach.current_progress is defined and ach.required_progress> 1 %}
           <div class="text-xs font-bold text-zinc-600">{{ ach.current_progress }}/{{ ach.required_progress }}</div>

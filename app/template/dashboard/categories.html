@@ -60,7 +60,7 @@
               {{ category.name }}</h3>
             <div class="flex mt-1">
               <span id="status-badge-{{ category.id }}"
-                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all duration-300
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-300
                    {{ 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' if category.is_active else 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' }}">
                 <span id="status-dot-{{ category.id }}"
                   class="w-1.5 h-1.5 rounded-full {{ 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' if category.is_active else 'bg-rose-500 opacity-20' }}"></span>
@@ -141,7 +141,7 @@
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-[#262626]">
           <div class="flex-1 min-w-0">
-            <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1"
+            <p class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1"
               id="form-subtitle">Nueva Categoría</p>
             <h2 class="text-lg font-black text-gray-900 dark:text-white truncate" id="form-title">Crear
               Categoría</h2>
@@ -162,19 +162,19 @@
             <!-- Nombre -->
             <div class="mb-5">
               <label
-                class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">NOMBRE</label>
+                class="block text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">NOMBRE</label>
               <input type="text" id="form-name" required
                 class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white"
                 placeholder="Ej: Hamburguesas">
               <p id="form-name-error"
-                class="hidden text-red-500 text-[10px] mt-2 font-bold uppercase tracking-wider ml-1">
+                class="hidden text-red-500 text-[11px] mt-2 font-bold uppercase tracking-wider ml-1">
               </p>
             </div>
 
             <!-- Descripción -->
             <div class="mb-5">
               <label
-                class="block text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN
+                class="block text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2.5 ml-1">DESCRIPCIÓN
                 (OPCIONAL)</label>
               <textarea id="form-description" rows="3"
                 class="w-full px-5 py-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-medium text-gray-700 dark:text-gray-300 resize-none"
@@ -190,7 +190,7 @@
                 </div>
               </label>
               <span
-                class="ml-5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">CATEGORÍA
+                class="ml-5 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">CATEGORÍA
                 VISIBLE</span>
             </div>
           </form>
@@ -200,16 +200,16 @@
         <div class="px-5 py-4 border-t border-gray-100 dark:border-[#262626] space-y-3">
           <div class="flex gap-3">
             <button onclick="closeCategoryForm()"
-              class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
+              class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-[11px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
               Cancelar
             </button>
             <button onclick="saveCategory(event)" id="form-save-btn"
-              class="flex-1 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg active:scale-95 transition-all">
+              class="flex-1 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black uppercase tracking-widest text-[11px] rounded-2xl py-4 shadow-lg active:scale-95 transition-all">
               Guardar
             </button>
           </div>
           <button onclick="confirmDeleteCategory()" id="form-delete-btn"
-            class="hidden w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[10px]">
+            class="hidden w-full bg-white dark:bg-[#141414] hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-black py-4 rounded-2xl border border-gray-100 dark:border-[#262626] transition-all active:scale-95 uppercase tracking-widest text-[11px]">
             Eliminar Categoría
           </button>
         </div>

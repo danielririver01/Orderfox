@@ -32,7 +32,7 @@
      <p class="text-sm font-black text-gray-900 dark:text-white">
       Ocupación del {{ calendar.date }}
      </p>
-     <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+     <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
       Bloqueo: {{ calendar.settings.service_duration_min }} min + {{ calendar.settings.cleanup_buffer_min }} min limpieza
      </p>
     </div>
@@ -41,7 +41,7 @@
      <div class="px-6 py-4 flex items-center gap-4">
       <div class="shrink-0 w-32">
        <p class="text-sm font-black text-gray-900 dark:text-white">{{ row.table_name }}</p>
-       <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Hasta {{ row.capacity }} personas</p>
+       <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Hasta {{ row.capacity }} personas</p>
       </div>
       <div class="flex-1 flex flex-wrap gap-2">
        {% if row.reservations %}
@@ -76,7 +76,7 @@
    </div>
    {% endif %}
 
-   <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+   <p class="text-center text-[11px] font-bold text-gray-400 uppercase tracking-widest">
     🟡 Pendiente de confirmar · 🟢 Confirmada ·    Cada reserva bloquea la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min + buffer de limpieza
    </p>
   </div>

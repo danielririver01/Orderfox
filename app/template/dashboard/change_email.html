@@ -12,7 +12,7 @@
     </div>
     <div>
       <h2 class="text-white font-black tracking-tight">Cambiar Correo Electrónico</h2>
-      <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Actualiza tu email de acceso</p>
+      <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-1">Actualiza tu email de acceso</p>
     </div>
   </div>
 </div>
@@ -22,7 +22,7 @@
   
   <div class="space-y-6">
     <div>
-      <label for="current-email" class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO ACTUAL</label>
+      <label for="current-email" class="block text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CORREO ACTUAL</label>
       <div class="relative group">
         <input type="email" id="current-email" value="{{ user.email }}" class="w-full px-5 py-4 bg-gray-100 dark:bg-[#0a0a0a]/50 text-gray-500 dark:text-gray-600 rounded-2xl border border-gray-200 dark:border-[#262626] cursor-not-allowed font-medium outline-none" readonly>
         <div class="absolute right-5 top-4.5 text-gray-300 dark:text-gray-700">
@@ -36,14 +36,14 @@
     </div>
 
     <div>
-      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NUEVO CORREO</label>
+      <label class="block text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">NUEVO CORREO</label>
       <input type="email" id="new_email" name="new_email" placeholder="ejemplo@correo.com" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
     </div>
 
     <div>
-      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONFIRMAR NUEVO CORREO</label>
+      <label class="block text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONFIRMAR NUEVO CORREO</label>
       <input type="email" id="confirm_email" name="confirm_email" placeholder="Repite el nuevo correo" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white" required>
-      <p class="text-[9px] text-gray-500 dark:text-gray-500 mt-3 ml-1 flex items-center gap-1.5 font-bold uppercase tracking-widest leading-relaxed">
+      <p class="text-[11px] text-gray-500 dark:text-gray-500 mt-3 ml-1 flex items-center gap-1.5 font-bold uppercase tracking-widest leading-relaxed">
         <span class="material-symbols-outlined text-[14px]">info</span>
         Se enviará un enlace de confirmación a este correo
       </p>
@@ -55,7 +55,7 @@
 
     {% if not is_clerk_user %}
     <div>
-      <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONTRASEÑA ACTUAL</label>
+      <label class="block text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest mb-2.5 ml-1">CONTRASEÑA ACTUAL</label>
       <div class="relative flex items-center">
         <input type="password" id="current_password" name="current_password" class="w-full px-5 py-4 bg-[#f8f9fa] dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#262626] focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-gray-900 dark:text-white pr-14" required>
         <button type="button" onclick="togglePass('current_password', this)" class="absolute right-2 w-10 h-10 flex items-center justify-center text-gray-400 dark:text-gray-600 hover:text-[#f97316] transition-all">
@@ -69,7 +69,7 @@
         <span class="material-symbols-outlined text-[20px] text-blue-600 dark:text-blue-400 mt-0.5">info</span>
         <div>
           <p class="text-[11px] font-bold text-blue-700 dark:text-blue-300">Verificación por Clerk</p>
-          <p class="text-[10px] text-blue-600/80 dark:text-blue-400/70 mt-1">Tu identidad ya está verificada por Clerk. Solo necesitas confirmar el nuevo correo.</p>
+          <p class="text-[11px] text-blue-600/80 dark:text-blue-400/70 mt-1">Tu identidad ya está verificada por Clerk. Solo necesitas confirmar el nuevo correo.</p>
         </div>
       </div>
     </div>

@@ -40,11 +40,11 @@
                 </a>
                 <div class="min-w-0">
                     <p class="font-display text-sm font-black text-white truncate">{{ restaurant.name }}</p>
-                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">Nuevo pedido</p>
+                    <p class="text-[11px] text-gray-500 font-black uppercase tracking-[0.2em]">Nuevo pedido</p>
                 </div>
             </div>
             <a href="{{ url_for('employee_portal.logout') }}"
-                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-red-400/80 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/[0.06] border border-white/5 hover:border-red-500/10 transition-colors uppercase tracking-widest flex-shrink-0">
                 <span class="material-symbols-outlined text-[15px]">logout</span>
                 Salir
             </a>
@@ -60,8 +60,8 @@
             <!-- Columna izquierda: menú -->
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Menú</h2>
-                    <span class="text-[10px] font-black text-gray-600 uppercase tracking-widest">{{ products|length }} producto(s)</span>
+                    <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Menú</h2>
+                    <span class="text-[11px] font-black text-gray-600 uppercase tracking-widest">{{ products|length }} producto(s)</span>
                 </div>
 
                 <input type="text" id="product-search" placeholder="Buscar plato..."
@@ -75,7 +75,7 @@
                         <p class="font-display text-sm font-black text-white truncate">{{ product.name }}</p>
                         <p class="text-xs font-black mt-1" style="color: {{ brand }};">${{ '{:,}'.format(product.price) }}</p>
                         <div class="mt-3 flex items-center justify-between">
-                            <span class="text-[9px] font-black uppercase tracking-widest text-gray-600">Toca para agregar</span>
+                            <span class="text-[11px] font-black uppercase tracking-widest text-gray-600">Toca para agregar</span>
                             <span class="w-6 h-6 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[14px] text-gray-400">add</span>
                             </span>
@@ -98,8 +98,8 @@
             <!-- Columna derecha: carrito -->
             <div class="bg-[#141414] rounded-2xl border border-[#262626] p-4 lg:sticky lg:top-20 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Pedido</h2>
-                    <span class="text-[10px] font-black text-gray-600 uppercase tracking-widest" id="cart-count">0 items</span>
+                    <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Pedido</h2>
+                    <span class="text-[11px] font-black text-gray-600 uppercase tracking-widest" id="cart-count">0 items</span>
                 </div>
 
                 <div id="cart-items" class="space-y-2 max-h-[38vh] overflow-y-auto custom-scrollbar">
@@ -110,7 +110,7 @@
 
                 <div class="pt-3 border-t border-[#262626] space-y-2">
                     <div class="flex items-center justify-between">
-                        <p class="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em]">Total</p>
+                        <p class="text-[11px] text-gray-500 uppercase font-black tracking-[0.2em]">Total</p>
                         <p id="pos-total" class="font-display text-2xl font-black text-white">$0</p>
                     </div>
                     <button type="submit"
@@ -122,7 +122,7 @@
                 </div>
 
                 <details class="group">
-                    <summary class="flex items-center justify-between cursor-pointer text-[10px] font-black text-gray-500 uppercase tracking-widest select-none">
+                    <summary class="flex items-center justify-between cursor-pointer text-[11px] font-black text-gray-500 uppercase tracking-widest select-none">
                         Datos del cliente (opcional)
                         <span class="material-symbols-outlined text-[16px] group-open:rotate-180 transition-transform">expand_more</span>
                     </summary>
@@ -193,7 +193,7 @@
                 row.innerHTML = `
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-bold text-white truncate">${item.name}</p>
-                        <p class="text-[10px] text-gray-500 font-bold">${formatMoney(item.price)} c/u</p>
+                        <p class="text-[11px] text-gray-500 font-bold">${formatMoney(item.price)} c/u</p>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <button type="button" onclick="changeQty(${id}, -1)"

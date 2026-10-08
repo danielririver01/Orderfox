@@ -65,7 +65,7 @@
   <div
     class="bg-white dark:bg-[#141414] p-6 md:p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] transition-colors">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan
+      <h2 class="text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em]">Mi Plan
         Actual</h2>
       {% if restaurant.plan_type == 'emprendedor' %}
       <span
@@ -212,7 +212,7 @@
 
 <!-- Estado y Fechas -->
 <section class="mb-8">
-  <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y
+  <h3 class="text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Estado y
     Facturación</h3>
   <div
     class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] overflow-hidden transition-colors">
@@ -220,7 +220,7 @@
     <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
+          <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
             Miembro desde</p>
           <p class="text-sm font-bold text-gray-800 dark:text-white">{{ created_date }}</p>
         </div>
@@ -234,7 +234,7 @@
     <div class="p-5 border-b border-gray-50 dark:border-[#262626]">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
+          <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-1.5">
             Vencimiento</p>
           <p class="text-sm font-bold text-gray-800 dark:text-white">
             {{ sub_status.formatted_expiration if sub_status.formatted_expiration else 'No disponible' }}
@@ -251,7 +251,7 @@
     <div class="p-5 {{ sub_status.badge_class }} dark:bg-opacity-20">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-[10px] font-black uppercase tracking-widest mb-1.5">
+          <p class="text-[11px] font-black uppercase tracking-widest mb-1.5">
             {{ sub_status.badge_text }}
           </p>
           <p class="text-sm font-bold">
@@ -268,7 +268,7 @@
 
 <!-- Cambiar Plan -->
 <section class="mb-10">
-  <h3 class="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un
+  <h3 class="text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Elegir un
     nuevo plan</h3>
   <div
     class="bg-white dark:bg-[#141414] rounded-[2rem] shadow-sm border border-gray-100 dark:border-[#262626] p-6 space-y-4">
@@ -293,7 +293,7 @@
         <div>
           <h4 class="font-black text-{{ plan.color }}-900 dark:text-{{ plan.color }}-400 tracking-tight">{{
             plan.title }}</h4>
-          <p class="text-[10px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{
+          <p class="text-[11px] text-{{ plan.color }}-700/70 dark:text-{{ plan.color }}-400/60 font-medium">{{
             plan.desc }}</p>
           <p class="text-[11px] font-bold text-{{ plan.color }}-700 dark:text-{{ plan.color }}-300 mt-1">{{ plan.credits }}</p>
           <p class="text-[11px] text-gray-500 dark:text-gray-500 font-medium">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</p>
@@ -313,7 +313,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h4 class="font-black text-gray-800 dark:text-white tracking-tight">{{ plan.title }}</h4>
-          <p class="text-[10px] text-gray-600 dark:text-gray-400 font-medium">{{ plan.desc }}</p>
+          <p class="text-[11px] text-gray-600 dark:text-gray-400 font-medium">{{ plan.desc }}</p>
           <p class="text-[11px] font-bold text-orange-600 dark:text-orange-400 mt-1">{{ plan.credits }}</p>
           <p class="text-[11px] text-gray-500 dark:text-gray-500 font-medium">Para Copilot VZ{% if scanner_available %} y Escanear tus compras{% endif %}</p>
         </div>
@@ -387,11 +387,11 @@
 
         <div class="flex flex-col gap-3">
           <button id="confirmAccountCancelBtn" onclick="cancelAccount()" disabled
-            class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[10px]">
+            class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-30 uppercase tracking-widest text-[11px]">
             CANCELAR SUSCRIPCIÓN
           </button>
           <button onclick="closeAccountCancelModal()"
-            class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest">
+            class="w-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all active:scale-95 text-[11px] uppercase tracking-widest">
             VOLVER
           </button>
         </div>

@@ -8,7 +8,7 @@
       </a>
       <div>
         <h1 class="text-xl font-bold dark:text-white">Editar Venta {{ order.order_number }}</h1>
-        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
           Total actual: ${{ '{:,}'.format(order.total) }}
         </p>
       </div>
@@ -43,7 +43,7 @@
       <div class="lg:col-span-8 space-y-5">
         <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm p-5 space-y-5 transition-colors">
           <div class="flex items-center justify-between gap-4">
-            <h2 class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">
+            <h2 class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">
               Menú
             </h2>
             <div class="relative flex-1">
@@ -104,21 +104,21 @@
       <div class="lg:col-span-4 space-y-5">
         <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] shadow-sm p-5 space-y-4 transition-colors lg:sticky lg:top-20">
           <div class="mb-4">
-            <h2 class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Datos del Cliente</h2>
+            <h2 class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Datos del Cliente</h2>
           </div>
 
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Nombre</label>
             <input type="text" name="customer_name" value="{{ order.customer_name or '' }}" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="Ej: Juan Pérez">
           </div>
 
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Teléfono / WhatsApp</label>
             <input type="tel" name="customer_phone" value="{{ order.customer_phone or '' }}" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-bold text-sm text-gray-900 dark:text-white" placeholder="300 123 4567">
           </div>
 
           <div>
-            <label class="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
+            <label class="block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Notas del pedido</label>
             <textarea name="notes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-xl focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] outline-none transition-all font-medium text-sm text-gray-700 dark:text-gray-300" placeholder="Ej: Sin cebolla, etc.">{{ order.notes or '' }}</textarea>
           </div>
 
@@ -131,7 +131,7 @@
               Guardar Cambios
             </button>
             <a href="{{ url_for('orders.detail', id=order.id) }}"
-              class="block text-center text-[10px] text-gray-500 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 font-bold uppercase tracking-widest py-2 mt-2 transition-colors">
+              class="block text-center text-[11px] text-gray-500 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 font-bold uppercase tracking-widest py-2 mt-2 transition-colors">
               Cancelar edición
             </a>
           </div>

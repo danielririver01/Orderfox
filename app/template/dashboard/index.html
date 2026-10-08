@@ -45,7 +45,7 @@
           <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
           <div class="flex flex-col leading-tight">
             <span id="store-state" class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-600 dark:text-emerald-500' if is_open else 'text-red-600 dark:text-red-500' }}">{{ 'Abierto' if is_open else 'Cerrado' }}</span>
-            <span id="store-state-hint" class="text-[10px] font-bold text-gray-500">{% if is_open %}Recibiendo pedidos{% else %}No recibes pedidos{% endif %}</span>
+            <span id="store-state-hint" class="text-[11px] font-bold text-gray-500">{% if is_open %}Recibiendo pedidos{% else %}No recibes pedidos{% endif %}</span>
           </div>
         </label>
       </div>
@@ -190,7 +190,7 @@
         </div>
         <div class="flex-shrink-0 flex flex-col gap-2">
           <button id="event-card-analyze"
-            class="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg">
+            class="px-4 py-2 bg-[#f97316]/10 hover:bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/40 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg">
             Ver qué significa
           </button>
           <button id="event-card-dismiss"
@@ -210,21 +210,21 @@
         style="background: rgba(249,115,22,0.12);">
         <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #f97316;">Por confirmar</span>
         <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ pending_count }}</span>
-        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Toca para verlos</span>
+        <span class="text-[11px] md:text-[11px] font-bold mt-1 text-gray-500">Toca para verlos</span>
       </a>
       <a href="{{ url_for('orders.index') }}#confirmados"
         class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
         style="background: rgba(48,164,108,0.12);">
         <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #30A46C;">Confirmados</span>
         <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ confirmed_count }}</span>
-        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya los aceptaste</span>
+        <span class="text-[11px] md:text-[11px] font-bold mt-1 text-gray-500">Ya los aceptaste</span>
       </a>
       <a href="{{ url_for('orders.index') }}#entregados"
         class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
         style="background: rgba(59,130,246,0.12);">
         <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #3B82F6;">Entregados</span>
         <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ delivered_count }}</span>
-        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya salieron</span>
+        <span class="text-[11px] md:text-[11px] font-bold mt-1 text-gray-500">Ya salieron</span>
       </a>
     </div>
   </section>
@@ -314,7 +314,7 @@
       <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
         <div class="flex items-center justify-between mb-3">
           <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Lo que has vendido cada día</span>
-          <span class="text-[10px] md:text-[11px] font-bold text-gray-500">Últimos 30 días</span>
+          <span class="text-[11px] md:text-[11px] font-bold text-gray-500">Últimos 30 días</span>
         </div>
         <div class="w-full h-[160px] md:h-[200px]">
           <canvas id="revenue-trend-chart"></canvas>
@@ -348,7 +348,7 @@
           </div>
         </div>
         <button
-          class="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg"
+          class="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95"
           onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('Enlace copiado. Ya puedes pegarlo en tus redes o en WhatsApp.', 'success')">
           <span class="material-symbols-outlined text-[16px]">link</span>
           <span class="hidden sm:inline">Copiar enlace</span>

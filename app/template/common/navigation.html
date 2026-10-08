@@ -32,7 +32,7 @@
         {# ── OPERACIÓN DIARIA ── #}
         <div class="nav-group" data-group="operacion">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('operacion')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
+                <p class="text-[11px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -77,7 +77,7 @@
         {# ── MENÚ E INVENTARIO ── #}
         <div class="nav-group" data-group="menu">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('menu')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
+                <p class="text-[11px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -113,7 +113,7 @@
         {# ── INTELIGENCIA ── #}
         <div class="nav-group" data-group="inteligencia">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('inteligencia')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
+                <p class="text-[11px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -123,7 +123,7 @@
                     <span class="material-symbols-outlined text-[20px]">insights</span>
                     <span class="flex flex-col">
                         Copilot Estratégico
-                        <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
+                        <span class="text-[11px] text-gray-500">Ventas, rentabilidad y tendencias</span>
                     </span>
                     <span id="mobile-insights-badge"
                         class="hidden absolute right-3 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
@@ -148,7 +148,7 @@
         {# ── CONFIGURACIÓN ── #}
         <div class="nav-group" data-group="configuracion">
             <button class="nav-group-toggle w-full flex items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleMobileNavGroup('configuracion')">
-                <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
+                <p class="text-[11px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
                 <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
             </button>
             <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
@@ -166,12 +166,12 @@
     {# Footer: Restaurant + Logout #}
     <div class="flex-shrink-0 border-t border-white/[0.06] p-3 space-y-2">
         <div class="flex items-center gap-3 px-3 py-2">
-            <div class="w-7 h-7 rounded-lg bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-[10px] font-black">
+            <div class="w-7 h-7 rounded-lg bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-[11px] font-black">
                 {{ restaurant.name[0] | upper if restaurant else 'R' }}
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else 'Restaurante' }}</p>
-                <p class="text-[10px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else 'emprendedor', restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
+                <p class="text-[11px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else 'emprendedor', restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
             </div>
         </div>
         <a href="{{ url_for('auth.logout') }}" onclick="closeMobileNav()"

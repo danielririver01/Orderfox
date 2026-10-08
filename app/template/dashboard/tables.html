@@ -34,12 +34,12 @@
        <div class="space-y-1">
         <div class="flex items-center gap-2">
          <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">{{ table.name }}</h3>
-         <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
+         <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-[11px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
           Activa
          </span>
         </div>
-        <p class="text-[10px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
+        <p class="text-[11px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
        </div>
       </div>
 
@@ -133,7 +133,7 @@
 
     <!-- URL Menú -->
     <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors">
-      <p class="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
+      <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
       <div class="flex items-center gap-3">
         <input type="text" id="qr-menu-url" readonly class="bg-transparent border-none text-xs text-[#f97316] font-bold flex-1 truncate p-0 focus:ring-0 cursor-default" value="--">
         <button onclick="copiarURLMenu()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-[#f97316] rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90" title="Copiar URL">
@@ -168,7 +168,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <div class="space-y-6">
               <div>
-                <label class="block text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-3 ml-1">NOMBRE DE LA MESA</label>
+                <label class="block text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-3 ml-1">NOMBRE DE LA MESA</label>
                 <input
                   type="text"
                   name="name"
@@ -180,10 +180,10 @@
             </div>
             
             <div class="flex gap-3 mt-10">
-              <button type="button" onclick="document.getElementById('createTableModal').classList.add('hidden')" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-600 dark:text-gray-400 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
+              <button type="button" onclick="document.getElementById('createTableModal').classList.add('hidden')" class="flex-1 px-6 py-4 bg-gray-50 dark:bg-[#0a0a0a] text-gray-600 dark:text-gray-400 font-black uppercase tracking-widest text-[11px] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all">
                 Cancelar
               </button>
-              <button type="submit" class="flex-1 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black uppercase tracking-widest text-[10px] rounded-2xl py-4 shadow-lg transition-all active:scale-95">
+              <button type="submit" class="flex-1 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black uppercase tracking-widest text-[11px] rounded-2xl py-4 shadow-lg transition-all active:scale-95">
                 Guardar
               </button>
             </div>
