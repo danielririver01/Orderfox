@@ -15,7 +15,7 @@
     panel.style.transform = 'translateX(0)';
     overlay.classList.remove('hidden');
     requestAnimationFrame(function () { overlay.style.opacity = '1'; });
-    toggle.style.display = 'none';
+    if (toggle) toggle.style.display = 'none';
     if (bottomNav) bottomNav.style.display = 'none';
     document.querySelectorAll('.crc-fab, #crc-fab, [id*="fab"]').forEach(function (el) { el.style.display = 'none'; });
     document.body.style.overflow = 'hidden';
@@ -26,7 +26,7 @@
     panel.style.transform = 'translateX(-100%)';
     overlay.style.opacity = '0';
     setTimeout(function () { overlay.classList.add('hidden'); }, 300);
-    toggle.style.display = '';
+    if (toggle) toggle.style.display = '';
     if (bottomNav) bottomNav.style.display = '';
     document.querySelectorAll('.crc-fab, #crc-fab, [id*="fab"]').forEach(function (el) { el.style.display = ''; });
     document.body.style.overflow = '';
@@ -35,6 +35,23 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeMobileNav();
   });
+
+  /* El botón de menú (☰) flota arriba a la derecha: al bajar se aparta para no
+     tapar lo que lees, y al subir vuelve. Con el menú abierto no se mueve. */
+  if (toggle) {
+    var ultimoScroll = window.scrollY;
+    var apartar = function (oculto) {
+      toggle.classList.toggle('opacity-0', oculto);
+      toggle.classList.toggle('-translate-y-20', oculto);
+      toggle.classList.toggle('pointer-events-none', oculto);
+    };
+    window.addEventListener('scroll', function () {
+      var y = window.scrollY;
+      if (panel && panel.style.transform === 'translateX(0px)') return;
+      apartar(y > ultimoScroll && y > 120);
+      ultimoScroll = y;
+    }, { passive: true });
+  }
 
   /* Accordion init */
   var state;
