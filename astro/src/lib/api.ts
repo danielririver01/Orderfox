@@ -17,6 +17,12 @@ function headers(): Record<string, string> {
 
 export async function fetchMenu(slug: string): Promise<MenuResponse> {
   const res = await fetch(`${API_BASE}/menu/${slug}`, { headers: headers() });
+  // 404 = ese enlace no corresponde a ningún menú (QR viejo, enlace mal
+  // escrito). Quien lo abra necesita saber eso, no que "revise su internet":
+  // se devuelve success:false y la página muestra el mensaje correcto.
+  if (res.status === 404) {
+    return { success: false, data: null };
+  }
   if (!res.ok) {
     throw new Error(`Failed to fetch menu: ${res.status}`);
   }

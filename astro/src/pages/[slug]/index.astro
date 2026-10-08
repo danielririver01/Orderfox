@@ -27,24 +27,28 @@ const tableId = tableParam ? (isNaN(parseInt(tableParam)) ? tableParam : parseIn
 
 let restaurant: Restaurant | null = null;
 let categories: Category[] = [];
+// Dos casos muy distintos para el cliente que escanea un QR:
+//   error   → el menú existe pero no pudimos cargarlo (red/servidor)
+//   sinMenu → ese enlace no corresponde a ningún menú (mal escrito o inactivo)
+let sinMenu = false;
 let error: string | null = null;
 
 try {
   const response = await fetchMenu(slug);
-  if (response.success) {
+  if (response.success && response.data) {
     restaurant = response.data.restaurant;
     categories = response.data.categories;
     categories = categories.filter((cat) => cat.products && cat.products.length > 0);
   } else {
-    error = 'No se pudo cargar el menú';
+    sinMenu = true;
   }
 } catch (e) {
   console.error('fetchMenu error:', e);
-  error = 'Error al cargar el menú';
+  error = 'No pudimos abrir el menú';
 }
 
-const isNotFound = !restaurant || !!error;
-const errorTitle = error || 'Restaurante no encontrado';
+const isNotFound = !restaurant;
+const errorTitle = error || 'No encontramos este menú';
 
 const restaurantName = restaurant?.name ?? '';
 const whatsappPhone = restaurant?.whatsapp_phone ?? '';
@@ -79,9 +83,21 @@ if (!isNotFound && restaurant) {
   isNotFound ? (
     <PublicLayout title={errorTitle}>
       <main class="flex flex-1 flex-col items-center justify-center px-4 text-center">
-        <h1 class="font-display text-2xl font-bold text-ink">{errorTitle}</h1>
-        <p class="mt-2 text-ink-muted">{error}</p>
-        <a href="/" class="mt-6 text-sm text-accent hover:text-accent-hover">Volver al inicio</a>
+        <h1 class="font-display text-2xl font-bold text-ink">
+          {error ? 'No pudimos abrir el menú' : 'No encontramos este menú'}
+        </h1>
+        <p class="mt-2 max-w-sm text-ink-muted">
+          {error
+            ? 'Puede que el internet esté lento. Vuelve a intentarlo en un momento.'
+            : 'Puede que el enlace esté mal escrito o que el restaurante ya no tenga su menú activo. Pídeselo otra vez a tu restaurante.'}
+        </p>
+        {error ? (
+          <button onclick="location.reload()" class="btn-primary mt-6 rounded-xl px-5 py-2.5 text-sm font-semibold">
+            Reintentar
+          </button>
+        ) : (
+          <a href="/" class="mt-6 text-sm text-accent hover:text-accent-hover">Ver qué es Velzia</a>
+        )}
       </main>
     </PublicLayout>
   ) : (

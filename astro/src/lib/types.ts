@@ -44,7 +44,8 @@ export interface MenuData {
 
 export interface MenuResponse {
   success: boolean;
-  data: MenuData;
+  /** null cuando el menú no existe (enlace equivocado): no es un fallo de red. */
+  data: MenuData | null;
 }
 
 export interface CartItem {
