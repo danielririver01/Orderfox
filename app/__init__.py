@@ -200,9 +200,18 @@ def create_app():
     
     # Servir archivos estáticos en producción con WhiteNoise
     # En desarrollo (debug=True), Flask lo hace automáticamente.
+    #
+    # autorefresh=True es OBLIGATORIO aquí: sin él, WhiteNoise guarda el tamaño
+    # del archivo la primera vez que lo sirve y no lo vuelve a mirar. Como los
+    # archivos se reescriben en el mismo sitio (p. ej. el CSS al recompilar), la
+    # respuesta queda TRUNCADA: el navegador anuncia el tamaño viejo y corta, y
+    # al descartar el CSS la app se ve como HTML pelado. Con autorefresh se
+    # revisa el archivo en cada petición (un stat, coste despreciable) y se
+    # recarga si cambió.
     if not app.debug:
         static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-        app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
+        app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/',
+                                  autorefresh=True)
 
     scheduler.init_app(app)
     scheduler.start()
