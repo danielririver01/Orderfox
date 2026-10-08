@@ -268,6 +268,13 @@ function playNotificationSound() {
 }
 
 // ─── Toggle de sonido y notificaciones ────────────────────────────────────────
+
+/** El botón dice en palabras si los avisos con sonido están encendidos. */
+function setSoundLabel(enabled) {
+    const label = document.getElementById('sound-label');
+    if (label) label.textContent = enabled ? 'Con sonido' : 'Sin sonido';
+}
+
 async function toggleSound() {
     soundEnabled = !soundEnabled;
     localStorage.setItem('velzia_sound_enabled', soundEnabled ? '1' : '0');
@@ -284,20 +291,24 @@ async function toggleSound() {
         if (btn) {
             btn.classList.add('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
             btn.classList.remove('text-gray-400', 'dark:text-gray-500');
+            btn.setAttribute('aria-pressed', 'true');
         }
+        setSoundLabel(true);
 
         playNotificationSound();
         if (typeof showToast === 'function') {
-            showToast(' Alertas y notificaciones activadas', 'success');
+            showToast('Sonido encendido. Te avisamos cuando entre un pedido.', 'success');
         }
     } else {
         if (icon) icon.textContent = 'notifications_off';
         if (btn) {
             btn.classList.remove('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
             btn.classList.add('text-gray-400', 'dark:text-gray-500');
+            btn.setAttribute('aria-pressed', 'false');
         }
+        setSoundLabel(false);
         if (typeof showToast === 'function') {
-            showToast(' Alertas desactivadas', 'default');
+            showToast('Sonido apagado. Los pedidos siguen llegando, pero sin aviso.', 'default');
         }
     }
 }
@@ -312,6 +323,8 @@ function restoreSoundPreference() {
         if (btn) {
             btn.classList.add('bg-orange-100', 'dark:bg-orange-500/10', 'text-orange-500');
             btn.classList.remove('text-gray-400', 'dark:text-gray-500');
+            btn.setAttribute('aria-pressed', 'true');
         }
+        setSoundLabel(true);
     }
 }

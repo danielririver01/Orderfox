@@ -28,6 +28,12 @@
       icon.textContent = sort === 'asc' ? 'arrow_upward' : 'arrow_downward';
     }
 
+    // El botón dice qué orden está aplicado ("Más antiguos" / "Más recientes")
+    var label = document.getElementById('sort-label');
+    if (label) {
+      label.textContent = sort === 'desc' ? 'M\u00E1s recientes' : 'M\u00E1s antiguos';
+    }
+
     if (btn && sort === 'desc') {
       btn.classList.add('bg-blue-100', 'dark:bg-blue-500/10', 'text-blue-500');
     }
