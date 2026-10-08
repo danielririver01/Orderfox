@@ -9,412 +9,412 @@
 
 <div class="px-4 pb-16 pt-6 md:px-10 md:pt-8 md:pb-16 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto overflow-hidden">
 
-    <!-- HERO -->
-    <header class="mb-6 md:mb-8">
-        <div class="flex justify-between items-start gap-3 mb-4 flex-wrap">
-            <div class="flex flex-col">
-                <h1 class="text-xl md:text-2xl lg:text-3xl font-black tracking-[-0.04em] text-white leading-tight">
-                    {{ narrative.saludo }}{% if narrative.nombre %}, {{ narrative.nombre }}{% else %}, Bienvenido{% endif %}
-                </h1>
-                <p id="hero-context" class="text-xs md:text-sm text-gray-500 font-medium mt-1.5">
-                    {% if comparative.verdict == 'comparativa' %}
-                        Ayer vendiste ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }} en {{ comparative.previous_orders }} pedido{{ 's' if comparative.previous_orders != 1 else '' }}
-                    {% elif comparative.verdict == 'primeras_ventas' %}
-                        &#x1F195; &#x00A1;Ya hiciste tus primeras ventas de hoy!
-                    {% elif comparative.verdict == 'sin_ventas_hoy' %}
-                        Hoy todav&#x00ED;a no vendes nada.{% if comparative.previous_sales > 0 %} Ayer vendiste ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }}.{% endif %}
-                    {% else %}
-                        Todav&#x00ED;a no hay ventas registradas
-                    {% endif %}
-                </p>
-            </div>
+  <!-- HERO -->
+  <header class="mb-6 md:mb-8">
+    <div class="flex justify-between items-start gap-3 mb-4 flex-wrap">
+      <div class="flex flex-col">
+        <h1 class="text-xl md:text-2xl lg:text-3xl font-black tracking-[-0.04em] text-white leading-tight">
+          {{ narrative.saludo }}{% if narrative.nombre %}, {{ narrative.nombre }}{% else %}, Bienvenido{% endif %}
+        </h1>
+        <p id="hero-context" class="text-xs md:text-sm text-gray-500 font-medium mt-1.5">
+          {% if comparative.verdict == 'comparativa' %}
+            Ayer vendiste ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }} en {{ comparative.previous_orders }} pedido{{ 's' if comparative.previous_orders != 1 else '' }}
+          {% elif comparative.verdict == 'primeras_ventas' %}
+            &#x1F195; &#x00A1;Ya hiciste tus primeras ventas de hoy!
+          {% elif comparative.verdict == 'sin_ventas_hoy' %}
+            Hoy todav&#x00ED;a no vendes nada.{% if comparative.previous_sales> 0 %} Ayer vendiste ${{ "{:,.0f}".format(comparative.previous_sales).replace(",", ".") }}.{% endif %}
+          {% else %}
+            Todav&#x00ED;a no hay ventas registradas
+          {% endif %}
+        </p>
+      </div>
 
-            <div class="flex items-center gap-4 flex-shrink-0">
-                <div class="flex items-center bg-[#0f0f10] p-1 rounded-xl border border-white/5">
-                    <button id="range-today"
-                        class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black"
-                        onclick="setDashboardRange('today')">Hoy</button>
-                    <button id="range-month"
-                        class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
-                        onclick="setDashboardRange('month')">Este mes</button>
-                </div>
-
-                <!-- Todo el recuadro es tocable, no solo el interruptor -->
-                <label class="flex items-center gap-3 flex-shrink-0 cursor-pointer bg-[#0f0f10] border border-white/5 rounded-2xl pl-3 pr-4 py-2 hover:border-[#f97316]/30 transition-colors">
-                    <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer" aria-label="Abrir el negocio para recibir pedidos, o cerrarlo para dejar de recibirlos">
-                    <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
-                    <div class="flex flex-col leading-tight">
-                        <span id="store-state" class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-600 dark:text-emerald-500' if is_open else 'text-red-600 dark:text-red-500' }}">{{ 'Abierto' if is_open else 'Cerrado' }}</span>
-                        <span id="store-state-hint" class="text-[10px] font-bold text-gray-500">{% if is_open %}Recibiendo pedidos{% else %}No recibes pedidos{% endif %}</span>
-                    </div>
-                </label>
-            </div>
+      <div class="flex items-center gap-4 flex-shrink-0">
+        <div class="flex items-center bg-[#0f0f10] p-1 rounded-xl border border-white/5">
+          <button id="range-today"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black"
+            onclick="setDashboardRange('today')">Hoy</button>
+          <button id="range-month"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
+            onclick="setDashboardRange('month')">Este mes</button>
         </div>
 
-        <!-- Mes + Ventas/Cobrado hoy -->
-        <div class="flex items-center gap-3 flex-wrap mb-2">
-            <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-500" id="hero-label">Has vendido hoy</span>
-            <span id="hero-sales" class="text-3xl md:text-4xl font-black text-white tracking-tight">
-                ${{ "{:,.0f}".format(total_sales).replace(",", ".") }}
-            </span>
-            {% if comparative.delta_pct is not none %}
-            <span id="hero-delta"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider
-                    {% if comparative.delta_pct > 0 %}bg-emerald-500/10 text-emerald-400{% elif comparative.delta_pct < 0 %}bg-rose-500/10 text-rose-400{% else %}bg-gray-500/10 text-gray-400{% endif %}">
-                {% if comparative.delta_pct > 0 %}&#x25B2;{% elif comparative.delta_pct < 0 %}&#x25BC;{% endif %}
-                {{ comparative.delta_pct|abs }}% vs ayer
-            </span>
-            {% endif %}
-        </div>
-        {% if cobrado_hoy > 0 or total_sales > 0 %}
-        {% if cobrado_hoy < total_sales %}
-        <div class="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs font-bold text-gray-500">
-            <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
-            <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
-            <a href="{{ url_for('cash_register.index') }}" class="text-[#f97316] hover:text-[#fb923c] underline decoration-dotted underline-offset-2 transition-colors">&#x26A0; Falta cobrar ${{ "{:,.0f}".format(total_sales - cobrado_hoy).replace(",", ".") }}</a>
-        </div>
-        {% elif cobrado_hoy > total_sales %}
-        <div class="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs font-bold text-gray-500">
-            <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
-            <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
-        </div>
-        {% endif %}
-        {% endif %}
-    </header>
-
-    {% if first_steps and not first_steps.completo %}
-    <!-- PRIMEROS PASOS: solo mientras el negocio no tenga producto ni pedidos -->
-    <section class="mb-6 md:mb-8" aria-label="Tus primeros pasos">
-        <div class="rounded-2xl border border-[#f97316]/25 bg-[#f97316]/[0.06] p-4 md:p-6">
-            <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
-                <h2 class="text-base md:text-lg font-black text-white tracking-tight">Tus primeros pasos</h2>
-                <span class="text-[11px] font-black uppercase tracking-widest text-[#f97316]">Paso {{ first_steps.paso }} de 3</span>
-            </div>
-            <p class="text-sm text-gray-400 mb-4">En 10 minutos tienes tu negocio funcionando. Vamos uno por uno:</p>
-            <div class="h-1.5 rounded-full bg-white/10 overflow-hidden mb-4" role="progressbar" aria-valuenow="{{ first_steps.hechos }}" aria-valuemin="0" aria-valuemax="3">
-                <div class="h-full bg-[#f97316] rounded-full transition-all" style="width: {{ (first_steps.hechos * 100 / 3) | round | int }}%"></div>
-            </div>
-
-            <div class="space-y-2">
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 {{ 'bg-emerald-500/15 text-emerald-400' if first_steps.hay_productos else 'bg-[#f97316] text-[#0a0a0a]' }}">
-                        <span class="material-symbols-outlined text-[16px]">{{ 'check' if first_steps.hay_productos else '1' }}</span>
-                    </span>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold {{ 'text-gray-500 line-through' if first_steps.hay_productos else 'text-white' }}">Crea tu primer producto</p>
-                        <p class="text-[11px] text-gray-500">Con su precio y una foto. Es lo que verán tus clientes.</p>
-                    </div>
-                    {% if not first_steps.hay_productos %}
-                    <a href="{{ url_for('products.create') }}" class="flex-shrink-0 px-3 py-2 rounded-xl bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">Crear</a>
-                    {% endif %}
-                </div>
-
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-[#f97316]/15 text-[#f97316]">
-                        <span class="material-symbols-outlined text-[16px]">2</span>
-                    </span>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-white">Comparte tu menú con tus clientes</p>
-                        <p class="text-[11px] text-gray-500">Copia el enlace de arriba y mándalo por WhatsApp.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 {{ 'bg-emerald-500/15 text-emerald-400' if first_steps.hay_pedidos else 'bg-[#f97316]/15 text-[#f97316]' }}">
-                        <span class="material-symbols-outlined text-[16px]">{{ 'check' if first_steps.hay_pedidos else '3' }}</span>
-                    </span>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold {{ 'text-gray-500 line-through' if first_steps.hay_pedidos else 'text-white' }}">Registra tu primer pedido</p>
-                        <p class="text-[11px] text-gray-500">Cuando llegue un cliente, anótalo aquí para no perder la cuenta.</p>
-                    </div>
-                    {% if not first_steps.hay_pedidos %}
-                    <a href="{{ url_for('orders.create') }}" class="flex-shrink-0 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">Crear</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </section>
-    {% endif %}
-
-    <!-- SECCION: NECESITA ATENCION -->
-    {% if pending_total_count > 0 %}
-    <section id="atencion" class="mb-6 md:mb-8" aria-label="Pedidos pendientes">
-        <div class="bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/[0.04] dark:to-orange-500/[0.03] rounded-2xl border border-amber-200/30 dark:border-amber-500/10 p-4 md:p-5">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-amber-500 text-base">notification_important</span>
-                    <span class="text-xs font-black uppercase tracking-[0.15em] text-amber-500">
-                        {{ pending_total_count }} pedido{{ 's' if pending_total_count != 1 else '' }} {{ 'espera' if pending_total_count == 1 else 'esperan' }} que {{ 'lo' if pending_total_count == 1 else 'los' }} confirmes
-                    </span>
-                </div>
-                <a href="{{ url_for('orders.index') }}"
-                    class="text-[11px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
-                    Confirmar pedidos
-                    <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                </a>
-            </div>
-
-            <div class="space-y-2">
-                {% for order in recent_pending %}
-                <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.03] dark:bg-white/[0.02] border border-white/[0.04]">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <span class="text-xs font-black text-amber-400/80">{{ order.order_number }}</span>
-                        <span class="text-xs font-bold text-white truncate">{{ order.customer_name }}</span>
-                        {% if order.table_name %}
-                        <span class="text-[11px] font-bold text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">{{ order.table_name }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center gap-3 flex-shrink-0">
-                        <span class="text-xs font-black text-gray-300">${{ "{:,.0f}".format(order.total).replace(",", ".") }}</span>
-                        <span class="text-[11px] font-bold text-gray-500">{{ order.elapsed }}</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-    {% endif %}
-
-    <!-- COPILLOT VZ EVENT CARD -->
-    <div id="insights-event-card" class="hidden mb-6 md:mb-8">
-        <div class="bg-gradient-to-br from-orange-500/5 to-orange-600/5 dark:from-orange-500/[0.04] dark:to-orange-600/[0.03] rounded-2xl border border-orange-200/50 dark:border-orange-500/10 p-5 md:p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none"></div>
-            <div class="flex items-start justify-between gap-4 relative">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="material-symbols-outlined text-orange-500 text-lg">auto_awesome</span>
-                        <span class="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">Copilot VZ</span>
-                    </div>
-                    <h4 id="event-card-title" class="text-base font-extrabold text-white tracking-tight mb-1"></h4>
-                    <p id="event-card-preview" class="text-sm text-gray-400 line-clamp-2"></p>
-                </div>
-                <div class="flex-shrink-0 flex flex-col gap-2">
-                    <button id="event-card-analyze"
-                        class="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-500/25">
-                        Ver qué significa
-                    </button>
-                    <button id="event-card-dismiss"
-                        class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
-                        No me interesa
-                    </button>
-                </div>
-            </div>
-        </div>
+        <!-- Todo el recuadro es tocable, no solo el interruptor -->
+        <label class="flex items-center gap-3 flex-shrink-0 cursor-pointer bg-[#0f0f10] border border-white/5 rounded-2xl pl-3 pr-4 py-2 hover:border-white/10 transition-colors">
+          <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer" aria-label="Abrir el negocio para recibir pedidos, o cerrarlo para dejar de recibirlos">
+          <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
+          <div class="flex flex-col leading-tight">
+            <span id="store-state" class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-600 dark:text-emerald-500' if is_open else 'text-red-600 dark:text-red-500' }}">{{ 'Abierto' if is_open else 'Cerrado' }}</span>
+            <span id="store-state-hint" class="text-[10px] font-bold text-gray-500">{% if is_open %}Recibiendo pedidos{% else %}No recibes pedidos{% endif %}</span>
+          </div>
+        </label>
+      </div>
     </div>
 
-    <!-- 3 CONTADORES: los tres llevan a la lista de pedidos -->
-    <section class="mb-6 md:mb-8" aria-label="Cómo van tus pedidos">
-        <div class="grid grid-cols-3 gap-2 md:gap-4">
-            <a href="#atencion"
-                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
-                style="background: rgba(249,115,22,0.12);">
-                <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #f97316;">Por confirmar</span>
-                <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ pending_count }}</span>
-                <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Toca para verlos</span>
-            </a>
-            <a href="{{ url_for('orders.index') }}#confirmados"
-                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
-                style="background: rgba(48,164,108,0.12);">
-                <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #30A46C;">Confirmados</span>
-                <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ confirmed_count }}</span>
-                <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya los aceptaste</span>
-            </a>
-            <a href="{{ url_for('orders.index') }}#entregados"
-                class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
-                style="background: rgba(59,130,246,0.12);">
-                <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #3B82F6;">Entregados</span>
-                <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ delivered_count }}</span>
-                <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya salieron</span>
-            </a>
-        </div>
-    </section>
+    <!-- Mes + Ventas/Cobrado hoy -->
+    <div class="flex items-center gap-3 flex-wrap mb-2">
+      <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-500" id="hero-label">Has vendido hoy</span>
+      <span id="hero-sales" class="text-3xl md:text-4xl font-black text-white tracking-tight">
+        ${{ "{:,.0f}".format(total_sales).replace(",", ".") }}
+      </span>
+      {% if comparative.delta_pct is not none %}
+      <span id="hero-delta"
+        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider
+          {% if comparative.delta_pct> 0 %}bg-emerald-500/10 text-emerald-400{% elif comparative.delta_pct < 0 %}bg-rose-500/10 text-rose-400{% else %}bg-gray-500/10 text-gray-400{% endif %}">
+        {% if comparative.delta_pct> 0 %}&#x25B2;{% elif comparative.delta_pct < 0 %}&#x25BC;{% endif %}
+        {{ comparative.delta_pct|abs }}% vs ayer
+      </span>
+      {% endif %}
+    </div>
+    {% if cobrado_hoy> 0 or total_sales> 0 %}
+    {% if cobrado_hoy < total_sales %}
+    <div class="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs font-bold text-gray-500">
+      <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
+      <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
+      <a href="{{ url_for('cash_register.index') }}" class="text-[#f97316] hover:text-[#fb923c] underline decoration-dotted underline-offset-2 transition-colors">&#x26A0; Falta cobrar ${{ "{:,.0f}".format(total_sales - cobrado_hoy).replace(",", ".") }}</a>
+    </div>
+    {% elif cobrado_hoy> total_sales %}
+    <div class="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs font-bold text-gray-500">
+      <span>Vendido: <span class="text-white">${{ "{:,.0f}".format(total_sales).replace(",", ".") }}</span></span>
+      <span>Cobrado: <span class="text-emerald-400">${{ "{:,.0f}".format(cobrado_hoy).replace(",", ".") }}</span></span>
+    </div>
+    {% endif %}
+    {% endif %}
+  </header>
 
-    <!-- ALERTA: PEDIDOS EXPIRADOS (solo si hay, dismissible por día) -->
-    {% if expired_count > 0 %}
-    <div id="expired-orders-alert" data-count="{{ expired_count }}"
-         class="mb-6 md:mb-8 p-3 md:p-4 rounded-xl flex items-center gap-3"
-         style="background: #2D1A0A; border: 1px solid #f97316;">
-        <span class="text-lg md:text-xl">⚠</span>
-        <span class="text-sm md:text-base font-bold flex-1" style="color: #f97316;">
-            {% if expired_count == 1 %}
-                1 pedido se quedó sin confirmar y ya no se puede cobrar
-            {% else %}
-                {{ expired_count }} pedidos se quedaron sin confirmar y ya no se pueden cobrar
+  {% if first_steps and not first_steps.completo %}
+  <!-- PRIMEROS PASOS: solo mientras el negocio no tenga producto ni pedidos -->
+  <section class="mb-6 md:mb-8" aria-label="Tus primeros pasos">
+    <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-6">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
+        <h2 class="text-base md:text-lg font-black text-white tracking-tight">Tus primeros pasos</h2>
+        <span class="text-[11px] font-black uppercase tracking-widest text-[#f97316]">Paso {{ first_steps.paso }} de 3</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-4">En 10 minutos tienes tu negocio funcionando. Vamos uno por uno:</p>
+      <div class="h-1.5 rounded-full bg-white/10 overflow-hidden mb-4" role="progressbar" aria-valuenow="{{ first_steps.hechos }}" aria-valuemin="0" aria-valuemax="3">
+        <div class="h-full bg-[#f97316] rounded-full transition-all" style="width: {{ (first_steps.hechos * 100 / 3) | round | int }}%"></div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
+          <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 {{ 'bg-emerald-500/15 text-emerald-400' if first_steps.hay_productos else 'bg-white/10 text-gray-300' }}">
+            <span class="material-symbols-outlined text-[16px]">{{ 'check' if first_steps.hay_productos else '1' }}</span>
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold {{ 'text-gray-500 line-through' if first_steps.hay_productos else 'text-white' }}">Crea tu primer producto</p>
+            <p class="text-[11px] text-gray-500">Con su precio y una foto. Es lo que verán tus clientes.</p>
+          </div>
+          {% if not first_steps.hay_productos %}
+          <a href="{{ url_for('products.create') }}" class="flex-shrink-0 px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-white/[0.06] dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/[0.1]">Crear</a>
+          {% endif %}
+        </div>
+
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
+          <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-white/10 text-gray-300">
+            <span class="material-symbols-outlined text-[16px]">2</span>
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-white">Comparte tu menú con tus clientes</p>
+            <p class="text-[11px] text-gray-500">Copia el enlace de arriba y mándalo por WhatsApp.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03]">
+          <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 {{ 'bg-emerald-500/15 text-emerald-400' if first_steps.hay_pedidos else 'bg-white/10 text-gray-300' }}">
+            <span class="material-symbols-outlined text-[16px]">{{ 'check' if first_steps.hay_pedidos else '3' }}</span>
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold {{ 'text-gray-500 line-through' if first_steps.hay_pedidos else 'text-white' }}">Registra tu primer pedido</p>
+            <p class="text-[11px] text-gray-500">Cuando llegue un cliente, anótalo aquí para no perder la cuenta.</p>
+          </div>
+          {% if not first_steps.hay_pedidos %}
+          <a href="{{ url_for('orders.create') }}" class="flex-shrink-0 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">Crear</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- SECCION: NECESITA ATENCION -->
+  {% if pending_total_count> 0 %}
+  <section id="atencion" class="mb-6 md:mb-8" aria-label="Pedidos pendientes">
+    <div class="bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/[0.04] dark:to-orange-500/[0.03] rounded-2xl border border-amber-200/30 dark:border-amber-500/10 p-4 md:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-500 text-base">notification_important</span>
+          <span class="text-xs font-black uppercase tracking-[0.15em] text-amber-500">
+            {{ pending_total_count }} pedido{{ 's' if pending_total_count != 1 else '' }} {{ 'espera' if pending_total_count == 1 else 'esperan' }} que {{ 'lo' if pending_total_count == 1 else 'los' }} confirmes
+          </span>
+        </div>
+        <a href="{{ url_for('orders.index') }}"
+          class="text-[11px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+          Confirmar pedidos
+          <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="space-y-2">
+        {% for order in recent_pending %}
+        <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.03] dark:bg-white/[0.02] border border-white/[0.04]">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="text-xs font-black text-amber-400/80">{{ order.order_number }}</span>
+            <span class="text-xs font-bold text-white truncate">{{ order.customer_name }}</span>
+            {% if order.table_name %}
+            <span class="text-[11px] font-bold text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">{{ order.table_name }}</span>
             {% endif %}
-        </span>
-        <a href="{{ url_for('orders.index') }}#cancelados" class="flex-shrink-0 text-[11px] font-black uppercase tracking-wider text-[#f97316] hover:text-[#fb923c] transition-colors">Ver cuáles</a>
-        <button id="expired-alert-dismiss" type="button" aria-label="Cerrar alerta"
-                class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[#f97316] hover:bg-[#f97316]/10 active:scale-90 transition-all">
-            <span class="material-symbols-outlined text-lg">close</span>
+          </div>
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <span class="text-xs font-black text-gray-300">${{ "{:,.0f}".format(order.total).replace(",", ".") }}</span>
+            <span class="text-[11px] font-bold text-gray-500">{{ order.elapsed }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- COPILLOT VZ EVENT CARD -->
+  <div id="insights-event-card" class="hidden mb-6 md:mb-8">
+    <div class="bg-gradient-to-br from-orange-500/5 to-orange-600/5 dark:from-orange-500/[0.04] dark:to-orange-600/[0.03] rounded-2xl border border-orange-200/50 dark:border-orange-500/10 p-5 md:p-6 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none"></div>
+      <div class="flex items-start justify-between gap-4 relative">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-orange-500 text-lg">auto_awesome</span>
+            <span class="text-[11px] font-black uppercase tracking-[0.2em] text-orange-500">Copilot VZ</span>
+          </div>
+          <h4 id="event-card-title" class="text-base font-extrabold text-white tracking-tight mb-1"></h4>
+          <p id="event-card-preview" class="text-sm text-gray-400 line-clamp-2"></p>
+        </div>
+        <div class="flex-shrink-0 flex flex-col gap-2">
+          <button id="event-card-analyze"
+            class="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg">
+            Ver qué significa
+          </button>
+          <button id="event-card-dismiss"
+            class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
+            No me interesa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 CONTADORES: los tres llevan a la lista de pedidos -->
+  <section class="mb-6 md:mb-8" aria-label="Cómo van tus pedidos">
+    <div class="grid grid-cols-3 gap-2 md:gap-4">
+      <a href="#atencion"
+        class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
+        style="background: rgba(249,115,22,0.12);">
+        <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #f97316;">Por confirmar</span>
+        <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ pending_count }}</span>
+        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Toca para verlos</span>
+      </a>
+      <a href="{{ url_for('orders.index') }}#confirmados"
+        class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
+        style="background: rgba(48,164,108,0.12);">
+        <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #30A46C;">Confirmados</span>
+        <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ confirmed_count }}</span>
+        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya los aceptaste</span>
+      </a>
+      <a href="{{ url_for('orders.index') }}#entregados"
+        class="p-3 md:p-5 rounded-xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] md:min-h-[120px]"
+        style="background: rgba(59,130,246,0.12);">
+        <span class="text-[11px] md:text-xs font-black uppercase tracking-widest text-center" style="color: #3B82F6;">Entregados</span>
+        <span class="text-2xl md:text-3xl font-black mt-1 text-white">{{ delivered_count }}</span>
+        <span class="text-[10px] md:text-[11px] font-bold mt-1 text-gray-500">Ya salieron</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ALERTA: PEDIDOS EXPIRADOS (solo si hay, dismissible por día) -->
+  {% if expired_count> 0 %}
+  <div id="expired-orders-alert" data-count="{{ expired_count }}"
+     class="mb-6 md:mb-8 p-3 md:p-4 rounded-xl flex items-center gap-3"
+     style="background: #2D1A0A; border: 1px solid #f97316;">
+    <span class="text-lg md:text-xl">⚠</span>
+    <span class="text-sm md:text-base font-bold flex-1" style="color: #f97316;">
+      {% if expired_count == 1 %}
+        1 pedido se quedó sin confirmar y ya no se puede cobrar
+      {% else %}
+        {{ expired_count }} pedidos se quedaron sin confirmar y ya no se pueden cobrar
+      {% endif %}
+    </span>
+    <a href="{{ url_for('orders.index') }}#cancelados" class="flex-shrink-0 text-[11px] font-black uppercase tracking-wider text-[#f97316] hover:text-[#fb923c] transition-colors">Ver cuáles</a>
+    <button id="expired-alert-dismiss" type="button" aria-label="Cerrar alerta"
+        class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-white/10 active:scale-90 transition-all">
+      <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- GRAFICAS: BARRAS + DONA (2 columnas desktop) -->
+  <section class="mb-6 md:mb-8" aria-label="Gráficas">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
+      <!-- Ventas semana -->
+      <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Tus ventas de la semana</span>
+          <div id="chart-mode-toggle" class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
+            <button id="chart-mode-money" aria-label="Ver las ventas en dinero"
+              class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black"
+              onclick="setChartMode('money')">Dinero</button>
+            <button id="chart-mode-orders" aria-label="Ver las ventas en número de pedidos"
+              class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
+              onclick="setChartMode('orders')">Pedidos</button>
+          </div>
+        </div>
+        <div class="w-full h-[160px] md:h-[200px]">
+          <canvas id="weekly-bar-chart"></canvas>
+        </div>
+      </div>
+      <!-- Distribución pedidos (dona) -->
+      <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col items-center justify-center overflow-hidden">
+        <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-2">C&#x00F3;mo van tus pedidos</span>
+        {% if pending_count == 0 and confirmed_count == 0 and delivered_count == 0 %}
+          <div class="text-center py-6">
+            <p class="text-sm font-bold text-gray-400">Todav&#x00ED;a no tienes pedidos en curso</p>
+            <a href="{{ url_for('orders.create') }}" class="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              Crear un pedido
+            </a>
+          </div>
+        {% else %}
+          <div class="w-full h-[160px] md:h-[200px] flex items-center justify-center">
+            <canvas id="orders-pie-chart"></canvas>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTOS + PLACEHOLDER (2 columnas desktop) -->
+  <section class="mb-6 md:mb-8" aria-label="Productos y más">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
+      <!-- Productos más vendidos -->
+      <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Productos m&#x00E1;s vendidos</span>
+          <div class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
+            <button id="products-mode-today"
+              class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
+              onclick="setProductsMode('today')">Hoy</button>
+            <button id="products-mode-30d"
+              class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black"
+              onclick="setProductsMode('30d')">30 d&#x00ED;as</button>
+          </div>
+        </div>
+        <div id="top-products-list" class="space-y-2">
+          <p class="text-sm font-bold text-gray-500">Cargando...</p>
+        </div>
+      </div>
+      <!-- Tendencia de ingresos -->
+      <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Lo que has vendido cada día</span>
+          <span class="text-[10px] md:text-[11px] font-bold text-gray-500">Últimos 30 días</span>
+        </div>
+        <div class="w-full h-[160px] md:h-[200px]">
+          <canvas id="revenue-trend-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU DIGITAL - COMPACTO -->
+  <section class="mb-6 md:mb-8" aria-label="Menu Digital">
+    <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="menu-status-badge"
+            class="flex items-center gap-2 px-2.5 py-1 rounded-full border flex-shrink-0
+              {{ 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' if is_open else 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20' }}">
+            <span id="menu-status-dot" class="relative flex h-2 w-2">
+              <span id="menu-status-ping"
+                class="{{ 'animate-ping' if is_open else '' }} absolute inline-flex h-full w-full rounded-full {{ 'bg-emerald-400' if is_open else 'bg-rose-400' }} opacity-75"></span>
+              <span id="menu-status-dot-inner"
+                class="relative inline-flex rounded-full h-2 w-2 {{ 'bg-emerald-500' if is_open else 'bg-rose-500' }}"></span>
+            </span>
+            <span id="menu-status-text"
+              class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-700 dark:text-emerald-400' if is_open else 'text-rose-700 dark:text-rose-400' }}">
+              {{ 'Abierto' if is_open else 'Cerrado' }}
+            </span>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-sm font-extrabold text-white tracking-tight">Tu men&#x00FA; para tus clientes</h3>
+            <span class="text-[11px] font-bold text-[#f97316] dark:text-orange-400 truncate block">{{ menu_url }}</span>
+          </div>
+        </div>
+        <button
+          class="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg"
+          onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('Enlace copiado. Ya puedes pegarlo en tus redes o en WhatsApp.', 'success')">
+          <span class="material-symbols-outlined text-[16px]">link</span>
+          <span class="hidden sm:inline">Copiar enlace</span>
         </button>
+      </div>
     </div>
-    {% endif %}
-
-    <!-- GRAFICAS: BARRAS + DONA (2 columnas desktop) -->
-    <section class="mb-6 md:mb-8" aria-label="Gráficas">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
-            <!-- Ventas semana -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Tus ventas de la semana</span>
-                    <div id="chart-mode-toggle" class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
-                        <button id="chart-mode-money" aria-label="Ver las ventas en dinero"
-                            class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black"
-                            onclick="setChartMode('money')">Dinero</button>
-                        <button id="chart-mode-orders" aria-label="Ver las ventas en número de pedidos"
-                            class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
-                            onclick="setChartMode('orders')">Pedidos</button>
-                    </div>
-                </div>
-                <div class="w-full h-[160px] md:h-[200px]">
-                    <canvas id="weekly-bar-chart"></canvas>
-                </div>
-            </div>
-            <!-- Distribución pedidos (dona) -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm flex flex-col items-center justify-center overflow-hidden">
-                <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-2">C&#x00F3;mo van tus pedidos</span>
-                {% if pending_count == 0 and confirmed_count == 0 and delivered_count == 0 %}
-                    <div class="text-center py-6">
-                        <p class="text-sm font-bold text-gray-400">Todav&#x00ED;a no tienes pedidos en curso</p>
-                        <a href="{{ url_for('orders.create') }}" class="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">
-                            <span class="material-symbols-outlined text-[16px]">add</span>
-                            Crear un pedido
-                        </a>
-                    </div>
-                {% else %}
-                    <div class="w-full h-[160px] md:h-[200px] flex items-center justify-center">
-                        <canvas id="orders-pie-chart"></canvas>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-
-    <!-- PRODUCTOS + PLACEHOLDER (2 columnas desktop) -->
-    <section class="mb-6 md:mb-8" aria-label="Productos y más">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 overflow-hidden">
-            <!-- Productos más vendidos -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Productos m&#x00E1;s vendidos</span>
-                    <div class="flex items-center bg-[#0f0f10] p-0.5 rounded-lg border border-white/5">
-                        <button id="products-mode-today"
-                            class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
-                            onclick="setProductsMode('today')">Hoy</button>
-                        <button id="products-mode-30d"
-                            class="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black"
-                            onclick="setProductsMode('30d')">30 d&#x00ED;as</button>
-                    </div>
-                </div>
-                <div id="top-products-list" class="space-y-2">
-                    <p class="text-sm font-bold text-gray-500">Cargando...</p>
-                </div>
-            </div>
-            <!-- Tendencia de ingresos -->
-            <div class="bg-white dark:bg-[#141414] p-4 md:p-5 rounded-xl border border-gray-100 dark:border-[#262626] shadow-sm overflow-hidden">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[11px] md:text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Lo que has vendido cada día</span>
-                    <span class="text-[10px] md:text-[11px] font-bold text-gray-500">Últimos 30 días</span>
-                </div>
-                <div class="w-full h-[160px] md:h-[200px]">
-                    <canvas id="revenue-trend-chart"></canvas>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- MENU DIGITAL - COMPACTO -->
-    <section class="mb-6 md:mb-8" aria-label="Menu Digital">
-        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-gray-100 dark:border-[#262626] p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div id="menu-status-badge"
-                        class="flex items-center gap-2 px-2.5 py-1 rounded-full border flex-shrink-0
-                            {{ 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' if is_open else 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20' }}">
-                        <span id="menu-status-dot" class="relative flex h-2 w-2">
-                            <span id="menu-status-ping"
-                                class="{{ 'animate-ping' if is_open else '' }} absolute inline-flex h-full w-full rounded-full {{ 'bg-emerald-400' if is_open else 'bg-rose-400' }} opacity-75"></span>
-                            <span id="menu-status-dot-inner"
-                                class="relative inline-flex rounded-full h-2 w-2 {{ 'bg-emerald-500' if is_open else 'bg-rose-500' }}"></span>
-                        </span>
-                        <span id="menu-status-text"
-                            class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-700 dark:text-emerald-400' if is_open else 'text-rose-700 dark:text-rose-400' }}">
-                            {{ 'Abierto' if is_open else 'Cerrado' }}
-                        </span>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-extrabold text-white tracking-tight">Tu men&#x00FA; para tus clientes</h3>
-                        <span class="text-[11px] font-bold text-[#f97316] dark:text-orange-400 truncate block">{{ menu_url }}</span>
-                    </div>
-                </div>
-                <button
-                    class="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-500/20"
-                    onclick="navigator.clipboard.writeText('{{ menu_url }}'); showToast('Enlace copiado. Ya puedes pegarlo en tus redes o en WhatsApp.', 'success')">
-                    <span class="material-symbols-outlined text-[16px]">link</span>
-                    <span class="hidden sm:inline">Copiar enlace</span>
-                </button>
-            </div>
-        </div>
-    </section>
+  </section>
 
 </div>
 {% include 'common/navigation.html' %}
 
 <script>
-    const SCANNER_IA_URL = "{{ SCANNER_IA_URL }}";
+  const SCANNER_IA_URL = "{{ SCANNER_IA_URL }}";
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
 <!-- PIE CHART (rendered from Jinja2 values) -->
-{% if pending_count > 0 or confirmed_count > 0 or delivered_count > 0 %}
+{% if pending_count> 0 or confirmed_count> 0 or delivered_count> 0 %}
 <script>
 (function() {
-    var ctx = document.getElementById('orders-pie-chart');
-    if (!ctx) return;
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Por confirmar', 'Confirmados', 'Entregados'],
-            datasets: [{
-                data: [{{ pending_count }}, {{ confirmed_count }}, {{ delivered_count }}],
-                backgroundColor: ['#f97316', '#30A46C', '#3B82F6'],
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
+  var ctx = document.getElementById('orders-pie-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Por confirmar', 'Confirmados', 'Entregados'],
+      datasets: [{
+        data: [{{ pending_count }}, {{ confirmed_count }}, {{ delivered_count }}],
+        backgroundColor: ['#f97316', '#30A46C', '#3B82F6'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            color: '#9CA3AF',
+            font: { size: 11, weight: 'bold' },
+            boxWidth: 10,
+            boxHeight: 10,
+            borderRadius: 3,
+            useBorderRadius: true,
+            padding: 8
+          }
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        color: '#9CA3AF',
-                        font: { size: 11, weight: 'bold' },
-                        boxWidth: 10,
-                        boxHeight: 10,
-                        borderRadius: 3,
-                        useBorderRadius: true,
-                        padding: 8
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15,15,16,0.9)',
-                    titleFont: { weight: 'bold', size: 11 },
-                    bodyFont: { size: 11 },
-                    padding: 8,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.label + ': ' + ctx.raw + ' pedidos';
-                        }
-                    }
-                }
+        tooltip: {
+          backgroundColor: 'rgba(15,15,16,0.9)',
+          titleFont: { weight: 'bold', size: 11 },
+          bodyFont: { size: 11 },
+          padding: 8,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(ctx) {
+              return ctx.label + ': ' + ctx.raw + ' pedidos';
             }
+          }
         }
-    });
+      }
+    }
+  });
 })();
 </script>
 {% endif %}
@@ -422,80 +422,80 @@
 <!-- INSIGHTS EVENT CARD -->
 <script>
 (function() {
-    var card = document.getElementById('insights-event-card');
-    var title = document.getElementById('event-card-title');
-    var preview = document.getElementById('event-card-preview');
-    var analyzeBtn = document.getElementById('event-card-analyze');
-    var dismissBtn = document.getElementById('event-card-dismiss');
-    var sidebarBadge = document.getElementById('sidebar-insights-badge');
-    var mobileBadge = document.getElementById('mobile-insights-badge');
-    var currentEventId = null;
-    var analyzing = false;
-    function setBadge(show) {
-        if (sidebarBadge) sidebarBadge.classList.toggle('hidden', !show);
-        if (mobileBadge) mobileBadge.classList.toggle('hidden', !show);
-    }
-    function fetchPendingEvent() {
-        fetch('/insights/api/events/pending')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success && data.event) {
-                    var ev = data.event;
-                    currentEventId = ev.id;
-                    title.textContent = ev.title;
-                    preview.textContent = ev.preview;
-                    card.classList.remove('hidden');
-                    setBadge(true);
-                } else {
-                    card.classList.add('hidden');
-                    setBadge(false);
-                    currentEventId = null;
-                }
-            })
-            .catch(function() { card.classList.add('hidden'); setBadge(false); });
-    }
-    function consumeEvent() {
-        if (!currentEventId || analyzing) return;
-        analyzing = true;
-        analyzeBtn.disabled = true;
-        analyzeBtn.textContent = 'Buscando la explicación...';
-        fetch('/insights/api/events/' + currentEventId + '/consume', { method: 'POST' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success && data.redirect) { window.location.href = data.redirect; }
-                else { card.classList.add('hidden'); setBadge(false); currentEventId = null; }
-            })
-            .catch(function() { card.classList.add('hidden'); setBadge(false); })
-            .finally(function() { analyzing = false; analyzeBtn.disabled = false; analyzeBtn.textContent = 'Ver qué significa'; });
-    }
-    function dismissEvent() {
-        if (!currentEventId || analyzing) return;
-        var eid = currentEventId;
-        analyzing = true;
-        dismissBtn.disabled = true;
-        dismissBtn.textContent = 'Quitando...';
-        fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    currentEventId = null;
-                    card.classList.add('hidden');
-                    setBadge(false);
-                } else {
-                    dismissBtn.textContent = 'No me interesa';
-                    dismissBtn.disabled = false;
-                }
-            })
-            .catch(function() {
-                dismissBtn.textContent = 'No me interesa';
-                dismissBtn.disabled = false;
-            })
-            .finally(function() { analyzing = false; });
-    }
-    if (analyzeBtn) analyzeBtn.addEventListener('click', consumeEvent);
-    if (dismissBtn) dismissBtn.addEventListener('click', dismissEvent);
-    fetchPendingEvent();
-    setInterval(fetchPendingEvent, 30000);
+  var card = document.getElementById('insights-event-card');
+  var title = document.getElementById('event-card-title');
+  var preview = document.getElementById('event-card-preview');
+  var analyzeBtn = document.getElementById('event-card-analyze');
+  var dismissBtn = document.getElementById('event-card-dismiss');
+  var sidebarBadge = document.getElementById('sidebar-insights-badge');
+  var mobileBadge = document.getElementById('mobile-insights-badge');
+  var currentEventId = null;
+  var analyzing = false;
+  function setBadge(show) {
+    if (sidebarBadge) sidebarBadge.classList.toggle('hidden', !show);
+    if (mobileBadge) mobileBadge.classList.toggle('hidden', !show);
+  }
+  function fetchPendingEvent() {
+    fetch('/insights/api/events/pending')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.event) {
+          var ev = data.event;
+          currentEventId = ev.id;
+          title.textContent = ev.title;
+          preview.textContent = ev.preview;
+          card.classList.remove('hidden');
+          setBadge(true);
+        } else {
+          card.classList.add('hidden');
+          setBadge(false);
+          currentEventId = null;
+        }
+      })
+      .catch(function() { card.classList.add('hidden'); setBadge(false); });
+  }
+  function consumeEvent() {
+    if (!currentEventId || analyzing) return;
+    analyzing = true;
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = 'Buscando la explicación...';
+    fetch('/insights/api/events/' + currentEventId + '/consume', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.redirect) { window.location.href = data.redirect; }
+        else { card.classList.add('hidden'); setBadge(false); currentEventId = null; }
+      })
+      .catch(function() { card.classList.add('hidden'); setBadge(false); })
+      .finally(function() { analyzing = false; analyzeBtn.disabled = false; analyzeBtn.textContent = 'Ver qué significa'; });
+  }
+  function dismissEvent() {
+    if (!currentEventId || analyzing) return;
+    var eid = currentEventId;
+    analyzing = true;
+    dismissBtn.disabled = true;
+    dismissBtn.textContent = 'Quitando...';
+    fetch('/insights/api/events/' + eid + '/dismiss', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          currentEventId = null;
+          card.classList.add('hidden');
+          setBadge(false);
+        } else {
+          dismissBtn.textContent = 'No me interesa';
+          dismissBtn.disabled = false;
+        }
+      })
+      .catch(function() {
+        dismissBtn.textContent = 'No me interesa';
+        dismissBtn.disabled = false;
+      })
+      .finally(function() { analyzing = false; });
+  }
+  if (analyzeBtn) analyzeBtn.addEventListener('click', consumeEvent);
+  if (dismissBtn) dismissBtn.addEventListener('click', dismissEvent);
+  fetchPendingEvent();
+  setInterval(fetchPendingEvent, 30000);
 })();
 </script>
 {% endblock %}

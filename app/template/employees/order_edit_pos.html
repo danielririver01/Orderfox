@@ -139,7 +139,7 @@
         const initialItems = {{ order_items_json|safe }};
 
         initialItems.forEach(item => {
-            if (item.quantity > 0) {
+            if (item.quantity> 0) {
                 cart[item.product_id] = { name: '', price: 0, qty: item.quantity };
             }
         });
@@ -249,7 +249,7 @@
                 card.style.display = show ? '' : 'none';
                 if (show) visible++;
             });
-            document.getElementById('no-results-message').classList.toggle('hidden', visible > 0);
+            document.getElementById('no-results-message').classList.toggle('hidden', visible> 0);
         });
     </script>
 </body>

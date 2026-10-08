@@ -128,7 +128,7 @@
                 if (!vv) return false;
                 var offset = vv.offsetTop || 0;
                 var diff = ih - vv.height;
-                return offset > 40 || (diff > 120 && vv.height < ih * 0.85);
+                return offset> 40 || (diff> 120 && vv.height < ih * 0.85);
             }
 
             function setAppHeight(h, w) {
@@ -159,7 +159,7 @@
                 var w = vv ? vv.width : window.innerWidth;
                 setAppHeight(currentHeight, w);
                 if (vv) setKeyboard(detectKeyboard(vv, window.innerHeight));
-                if (Math.abs(diff) >= 0.5) schedule();
+                if (Math.abs(diff)>= 0.5) schedule();
             }
 
             function schedule() {
@@ -202,7 +202,7 @@
                     // sincroniza en cuanto el viewport visible sea MÁS ALTO que el último
                     // aplicado (evita el hueco negro bajo el composer).
                     var vv = window.visualViewport;
-                    if (vv && vv.height > targetHeight) {
+                    if (vv && vv.height> targetHeight) {
                         currentHeight = vv.height;
                         targetHeight = vv.height;
                         setAppHeight(vv.height, vv.width);

@@ -2,568 +2,568 @@
 <html lang="en" class="dark overflow-x-hidden">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{% block title %}Velzia{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/toast.css') }}">
-    <script>
-        window.tailwind = window.tailwind || {};
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link crossorigin=" href=" https://fonts.gstatic.com" rel="preconnect" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet" />
-    <!-- Material Symbols -->
-    <link
-        href="{{ url_for('static', filename='CSS/material-symbols.css') }}"
-        rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}Velzia{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/design_tokens.css') }}?v={{ APP_VERSION }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/output.css') }}?v={{ APP_VERSION }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/toast.css') }}">
+  <script>
+    window.tailwind = window.tailwind || {};
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/velzia_robot_chef.png') }}" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link crossorigin=" href=" https://fonts.gstatic.com" rel="preconnect" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <!-- Material Symbols -->
+  <link
+    href="{{ url_for('static', filename='CSS/material-symbols.css') }}"
+    rel="stylesheet" />
 
 
 
-    <style>
-        /* 0. MOBILE VIEWPORT FIX — elimina espacio negro al abrir/cerrar teclado */
-        .min-h-dynamic {
-            min-height: var(--app-height, 100vh);
-        }
-        @supports (height: 100dvh) {
-            .min-h-dynamic {
-                min-height: 100dvh;
-            }
-        }
+  <style>
+    /* 0. MOBILE VIEWPORT FIX — elimina espacio negro al abrir/cerrar teclado */
+    .min-h-dynamic {
+      min-height: var(--app-height, 100vh);
+    }
+    @supports (height: 100dvh) {
+      .min-h-dynamic {
+        min-height: 100dvh;
+      }
+    }
 
-        /* 0b. MOBILE PERFORMANCE — reduce efectos pesados en celulares */
-        @media (max-width: 768px) {
-            .toast {
-                -webkit-backdrop-filter: blur(4px) !important;
-                backdrop-filter: blur(4px) !important;
-            }
-            .lock-overlay {
-                -webkit-backdrop-filter: blur(2px) !important;
-                backdrop-filter: blur(2px) !important;
-            }
-            .animate-pulse {
-                animation-duration: 3s !important;
-            }
-            .shadow-\[0_0_22px_rgba\(255\,122\,26\,0\.45\)\],
-            .shadow-\[0_10px_28px_-10px_rgba\(249\,115\,22\,0\.65\)\] {
-                box-shadow: none !important;
-            }
-        }
+    /* 0b. MOBILE PERFORMANCE — reduce efectos pesados en celulares */
+    @media (max-width: 768px) {
+      .toast {
+        -webkit-backdrop-filter: blur(4px) !important;
+        backdrop-filter: blur(4px) !important;
+      }
+      .lock-overlay {
+        -webkit-backdrop-filter: blur(2px) !important;
+        backdrop-filter: blur(2px) !important;
+      }
+      .animate-pulse {
+        animation-duration: 3s !important;
+      }
+      .shadow-\[0_0_22px_rgba\(255\,122\,26\,0\.45\)\],
+      .shadow-\[0_10px_28px_-10px_rgba\(249\,115\,22\,0\.65\)\] {
+        box-shadow: none !important;
+      }
+    }
 
-        /* 1. DEFINICIÓN DE COLORES (Obsidian Dark Only) */
-        :root {
-            --autofill-bg: #0a0a0a;
-            --autofill-text: #ffffff;
-        }
+    /* 1. DEFINICIÓN DE COLORES (Obsidian Dark Only) */
+    :root {
+      --autofill-bg: #0a0a0a;
+      --autofill-text: #ffffff;
+    }
 
-        /* 2. APLICACIÓN DEL AUTOFILL DINÁMICO */
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-            /* Usamos las variables para que el color cambie solo */
-            -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
-            -webkit-text-fill-color: var(--autofill-text) !important;
-            transition: background-color 5000s ease-in-out 0s;
-            border-radius: inherit;
-            /* Mantiene la estética de tus bordes redondeados */
-        }
+    /* 2. APLICACIÓN DEL AUTOFILL DINÁMICO */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      /* Usamos las variables para que el color cambie solo */
+      -webkit-box-shadow: 0 0 0 30px var(--autofill-bg) inset !important;
+      -webkit-text-fill-color: var(--autofill-text) !important;
+      transition: background-color 5000s ease-in-out 0s;
+      border-radius: inherit;
+      /* Mantiene la estética de tus bordes redondeados */
+    }
 
-        /* 3. LIMPIEZA DE ICONOS NATIVOS (Mantenemos tu lógica) */
-        input::-ms-reveal,
-        input::-ms-clear {
-            display: none;
-        }
+    /* 3. LIMPIEZA DE ICONOS NATIVOS (Mantenemos tu lógica) */
+    input::-ms-reveal,
+    input::-ms-clear {
+      display: none;
+    }
 
-        input::-webkit-contacts-auto-fill-button,
-        input::-webkit-credentials-auto-fill-button {
-            visibility: hidden;
-            display: none !important;
-            pointer-events: none;
-            position: absolute;
-            right: 0;
-        }
-    </style>
-    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/help-tips.js') }}"></script>
+    input::-webkit-contacts-auto-fill-button,
+    input::-webkit-credentials-auto-fill-button {
+      visibility: hidden;
+      display: none !important;
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+    }
+  </style>
+  <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth-common.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui-utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/help-tips.js') }}"></script>
 
-    <!-- Clerk SDK -->
-    {% if config.CLERK_PUBLISHABLE_KEY %}
-    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
-        src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-        type="text/javascript"></script>
-    {% endif %}
+  <!-- Clerk SDK -->
+  {% if config.CLERK_PUBLISHABLE_KEY %}
+  <script async crossorigin="anonymous" data-clerk-publishable-key="{{ config.CLERK_PUBLISHABLE_KEY }}"
+    src="https://oriented-tortoise-50.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"></script>
+  {% endif %}
 </head>
 
 <body class="bg-[#050505] text-white antialiased min-h-dynamic pb-8 md:pb-24 selection:bg-orange-500/30 overflow-x-hidden">
-    <!-- Toast Notifications Container (posicionado 100% por CSS/toast.css) -->
-    <div id="toast-container"></div>
+  <!-- Toast Notifications Container (posicionado 100% por CSS/toast.css) -->
+  <div id="toast-container"></div>
 
-    <!-- Toast de nuevos pedidos (Global) -->
-    <div id="new-orders-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
-        <div
-            class="flex items-center gap-3 bg-[#0a0a0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-bounce-in">
-            <span
-                class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
-            <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
-            <button onclick="refreshOrderList()"
-                class="ml-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
-                Ver ahora
-            </button>
-            <button onclick="dismissNewOrdersToast()"
-                class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
-                <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-        </div>
+  <!-- Toast de nuevos pedidos (Global) -->
+  <div id="new-orders-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
+    <div
+      class="flex items-center gap-3 bg-[#0a0a0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-bounce-in">
+      <span
+        class="material-symbols-outlined text-[20px] text-orange-400 dark:text-orange-600">notifications_active</span>
+      <span class="text-sm font-bold" id="new-orders-toast-msg">¡Nuevo pedido!</span>
+      <button onclick="refreshOrderList()"
+        class="ml-2 bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all active:scale-95">
+        Ver ahora
+      </button>
+      <button onclick="dismissNewOrdersToast()"
+        class="text-gray-400 dark:text-gray-600 hover:text-white dark:hover:text-black ml-1">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
     </div>
+  </div>
 
-    <!-- Dashboard Layout: Sidebar (Desktop) + Content -->
-    <div class="flex min-h-dynamic">
+  <!-- Dashboard Layout: Sidebar (Desktop) + Content -->
+  <div class="flex min-h-dynamic">
 
-        <!-- Sidebar Desktop (hidden on mobile) -->
-        <aside id="desktop-sidebar"
-            class="hidden lg:flex flex-col fixed inset-y-0 left-0 z-50 w-14 sidebar-expanded:w-56 bg-[#0a0a0a] border-r border-white/5 transition-all duration-300 ease-in-out">
-            <!-- Toggle + Logo -->
-            <div class="border-b border-white/5">
-                <button id="sidebar-toggle"
-                    class="w-full flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-white/5 transition-colors">
-                    <span class="material-symbols-outlined text-[20px] text-gray-400 flex-shrink-0">dock_to_left</span>
-                    <span class="hidden sidebar-expanded:inline sidebar-link-text text-sm font-black text-white uppercase tracking-tight truncate transition-all duration-300"
-                        style="font-family: 'Outfit', sans-serif;">Velzia</span>
-                </button>
-                <div class="hidden sidebar-expanded:block sidebar-link-text px-4 pb-4 transition-all duration-300">
-                    <p class="text-[10px] text-gray-500 font-medium">El panel de tu negocio</p>
-                </div>
+    <!-- Sidebar Desktop (hidden on mobile) -->
+    <aside id="desktop-sidebar"
+      class="hidden lg:flex flex-col fixed inset-y-0 left-0 z-50 w-14 sidebar-expanded:w-56 bg-[#0a0a0a] border-r border-white/5 transition-all duration-300 ease-in-out">
+      <!-- Toggle + Logo -->
+      <div class="border-b border-white/5">
+        <button id="sidebar-toggle"
+          class="w-full flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-white/5 transition-colors">
+          <span class="material-symbols-outlined text-[20px] text-gray-400 flex-shrink-0">dock_to_left</span>
+          <span class="hidden sidebar-expanded:inline sidebar-link-text text-sm font-black text-white uppercase tracking-tight truncate transition-all duration-300"
+            style="font-family: 'Outfit', sans-serif;">Velzia</span>
+        </button>
+        <div class="hidden sidebar-expanded:block sidebar-link-text px-4 pb-4 transition-all duration-300">
+          <p class="text-[10px] text-gray-500 font-medium">El panel de tu negocio</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-2 py-4 overflow-y-auto overflow-x-hidden" id="desktop-nav">
+
+        {# ── OPERACIÓN DIARIA ── #}
+        <div class="nav-group" data-group="operacion">
+          <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
+            <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
+            <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+          </button>
+          <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+            <div class="group/tip relative">
+              <a href="{{ url_for('dashboard.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">home</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Inicio</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Inicio</span>
             </div>
-
-            <!-- Navigation -->
-            <nav class="flex-1 px-2 py-4 overflow-y-auto overflow-x-hidden" id="desktop-nav">
-
-                {# ── OPERACIÓN DIARIA ── #}
-                <div class="nav-group" data-group="operacion">
-                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('operacion')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚡ Día a día</p>
-                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
-                    </button>
-                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('dashboard.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">home</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Inicio</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Inicio</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('orders.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">receipt_long</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Pedidos</span>
-                                <span id="sidebar-orders-badge"
-                                    class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Pedidos</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('cash_register.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">account_balance_wallet</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Caja</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Caja</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('reservations.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">event_available</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Reservas</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Reservas</span>
-                        </div>
-                        {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">document_scanner</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Escanear tus compras</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Escanear tus compras</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
-
-                {# ── MENÚ E INVENTARIO ── #}
-                <div class="nav-group" data-group="menu">
-                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
-                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
-                    </button>
-                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('categories.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">category</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Categorías</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Categorías</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('products.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">inventory_2</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Productos</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Productos</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('tables.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">table_restaurant</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Mesas</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Mesas</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
-
-                {# ── INTELIGENCIA ── #}
-                <div class="nav-group" data-group="inteligencia">
-                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
-                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
-                    </button>
-                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('insights.index') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">insights</span>
-                                <span class="hidden sidebar-expanded:flex sidebar-link-text flex flex-col transition-all duration-300">
-                                    Copilot Estratégico
-                                    <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
-                                </span>
-                                <span id="sidebar-insights-badge"
-                                    class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Copilot Estratégico</span>
-                        </div>
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('dashboard.achievements') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">emoji_events</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Logros</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Logros</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
-
-                {# ── CONFIGURACIÓN ── #}
-                <div class="nav-group" data-group="configuracion">
-                    <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
-                        <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
-                        <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
-                    </button>
-                    <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
-                        <div class="group/tip relative">
-                            <a href="{{ url_for('employees.team') }}"
-                                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
-                                <span class="material-symbols-outlined text-[20px] flex-shrink-0">group</span>
-                                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Equipo</span>
-                            </a>
-                            <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Equipo</span>
-                        </div>
-                    </div>
-                </div>
-
-            </nav>
-
-            <!-- Restaurant Info (Bottom) -->
-            <div class="border-t border-white/5">
-                <!-- Avatar + Dropdown -->
-                <div class="relative px-2 py-3">
-                    <button id="sidebar-avatar-btn" class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
-                        <div class="w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-black shadow-lg shadow-orange-500/20 flex-shrink-0">
-                            {{ session.get('restaurant_name', 'R')[0] | upper }}
-                        </div>
-                        <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">
-                            <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
-                            <p class="text-[10px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
-                        </div>
-                    </button>
-                    <div id="sidebar-dropdown" class="hidden absolute bottom-full left-full mb-2 ml-2 w-56 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[60] py-2">
-                        <div class="px-4 py-3 border-b border-white/10">
-                            <p class="text-sm font-bold text-white">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
-                            <p class="text-xs text-gray-400">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ url_for('dashboard.settings') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">settings</span>
-                                Ajustes
-                            </a>
-                            <a href="{{ url_for('dashboard.subscription') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">credit_card</span>
-                                Mi suscripción
-                            </a>
-                            <a href="{{ url_for('dashboard.notifications') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">notifications</span>
-                                Notificaciones
-                            </a>
-                        </div>
-                        <div class="border-t border-white/10 py-1">
-                            <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">logout</span>
-                                Cerrar sesión
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tokens IA -->
-                <div class="px-2 pb-3 sidebar-expanded:px-4 transition-all duration-300">
-                    <button onclick="openTokenModal()" id="sidebar-token-section"
-                        class="w-full px-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3 sidebar-expanded:px-3">
-                        <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                            <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
-                        </div>
-                        <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 transition-all duration-300">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tokens IA</span>
-                                <span id="sidebar-token-count" class="text-xs font-black text-white">--</span>
-                            </div>
-                            <div class="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                                <div id="sidebar-token-bar" class="h-full bg-orange-500 rounded-full transition-all duration-700" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </button>
-                </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('orders.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'orders.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">receipt_long</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Pedidos</span>
+                <span id="sidebar-orders-badge"
+                  class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Pedidos</span>
             </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <div id="main-content" class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-14">
-            {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
-            <div id="status-banner"
-                class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
-                <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center
-                                {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
-                                {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
-                                {% else %} bg-red-900/30 text-red-400
-                                {% endif %}">
-                            <span class="material-symbols-outlined text-[20px]">schedule</span>
-                        </div>
-
-                        <p class="text-sm font-medium text-slate-300">
-                            {{ sub_status.message }}
-                        </p>
-                    </div>
-
-                    <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
-                            {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
-                            {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
-                            {% else %} text-red-400 hover:bg-red-900/20
-                            {% endif %} transition-all">
-                        Renovar
-                    </a>
-                </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('cash_register.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'cash_register.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">account_balance_wallet</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Caja</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Caja</span>
+            </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('reservations.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('reservations.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">event_available</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Reservas</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Reservas</span>
+            </div>
+            {% if config.SCANNER_IA_URL and config.SCANNER_IA_URL != 'http://localhost:3000' %}
+            <div class="group/tip relative">
+              <a href="{{ url_for('dashboard.ai_scan_redirect') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 text-gray-500 hover:text-white hover:bg-white/5">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">document_scanner</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Escanear tus compras</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Escanear tus compras</span>
             </div>
             {% endif %}
-
-            {% if sub_status.status == 'grace_period' %}
-            <div id="status-banner"
-                class="relative w-full z-40 bg-red-950/20 border-b border-red-900/50 transition-transform duration-300">
-                <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
-                            <span class="material-symbols-outlined text-[22px]">error</span>
-                        </div>
-
-                        <div class="flex flex-col">
-                            <span class="text-sm font-semibold text-red-700">
-                                Suscripción vencida
-                            </span>
-                            <span class="text-xs text-red-600">
-                                Te quedan {{ sub_status.days_grace_remaining }} días antes de desactivar tu menú.
-                            </span>
-                        </div>
-                    </div>
-
-                    <a href="{{ url_for('dashboard.subscription') }}"
-                        class="bg-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-red-700 transition">
-                        Reactivar
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if sub_status.status == 'expired' %}
-            <div class="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800">
-                <div class="max-w-3xl mx-auto px-6 py-10 text-center flex flex-col gap-5">
-
-                    <div class="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-red-500 text-[36px]">lock</span>
-                    </div>
-
-                    <h2 class="text-2xl font-bold tracking-tight">
-                        Tu menú está temporalmente inactivo
-                    </h2>
-
-                    <p class="text-sm text-slate-400">
-                        Reactiva tu suscripción para que tus clientes vuelvan a realizar pedidos.
-                    </p>
-
-                    <div class="flex gap-3 justify-center pt-4">
-                        <a href="{{ url_for('auth.plans') }}"
-                            class="bg-[#141414] text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-[#1a1a1a] transition">
-                            Reactivar ahora
-                        </a>
-
-                        <a href="{{ url_for('auth.legal') }}#faq"
-                            class="border border-slate-600 px-6 py-3 rounded-xl text-sm hover:bg-slate-800 transition">
-                            Contactar soporte
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            {% block content %}{% endblock %}
+          </div>
         </div>
 
+        <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
+
+        {# ── MENÚ E INVENTARIO ── #}
+        <div class="nav-group" data-group="menu">
+          <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('menu')">
+            <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">🍽️ Menú y productos</p>
+            <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+          </button>
+          <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+            <div class="group/tip relative">
+              <a href="{{ url_for('categories.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'categories.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">category</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Categorías</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Categorías</span>
+            </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('products.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'products.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">inventory_2</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Productos</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Productos</span>
+            </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('tables.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'tables.index' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">table_restaurant</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Mesas</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Mesas</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
+
+        {# ── INTELIGENCIA ── #}
+        <div class="nav-group" data-group="inteligencia">
+          <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('inteligencia')">
+            <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">📈 Análisis</p>
+            <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+          </button>
+          <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+            <div class="group/tip relative">
+              <a href="{{ url_for('insights.index') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative {{ 'bg-orange-500/10 text-orange-500' if request.endpoint and request.endpoint.startswith('insights.') else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">insights</span>
+                <span class="hidden sidebar-expanded:flex sidebar-link-text flex flex-col transition-all duration-300">
+                  Copilot Estratégico
+                  <span class="text-[10px] text-gray-500">Ventas, rentabilidad y tendencias</span>
+                </span>
+                <span id="sidebar-insights-badge"
+                  class="hidden absolute right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse sidebar-expanded:right-3"></span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Copilot Estratégico</span>
+            </div>
+            <div class="group/tip relative">
+              <a href="{{ url_for('dashboard.achievements') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'dashboard.achievements' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">emoji_events</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Logros</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Logros</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden sidebar-expanded:block h-px bg-white/[0.04] mx-2 my-2"></div>
+
+        {# ── CONFIGURACIÓN ── #}
+        <div class="nav-group" data-group="configuracion">
+          <button class="hidden sidebar-expanded:flex nav-group-toggle w-full items-center justify-between px-3 pt-5 pb-2 cursor-pointer" onclick="toggleNavGroup('configuracion')">
+            <p class="text-[9px] font-black text-gray-600 uppercase tracking-[0.15em]">⚙️ Ajustes del negocio</p>
+            <span class="material-symbols-outlined text-[14px] text-gray-600 transition-transform duration-200 nav-chevron">expand_more</span>
+          </button>
+          <div class="nav-group-items overflow-hidden transition-[max-height] duration-200 ease-in-out" style="max-height: 0px;">
+            <div class="group/tip relative">
+              <a href="{{ url_for('employees.team') }}"
+                class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ 'bg-orange-500/10 text-orange-500' if request.endpoint == 'employees.team' else 'text-gray-500 hover:text-white hover:bg-white/5' }}">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0">group</span>
+                <span class="hidden sidebar-expanded:inline sidebar-link-text transition-all duration-300">Equipo</span>
+              </a>
+              <span class="lg:group-hover/tip:opacity-100 lg:group-hover/tip:translate-x-0 lg:group-hover/tip:pointer-events-auto pointer-events-none opacity-0 translate-x-1 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-[#1a1a1a] text-xs text-white rounded-lg whitespace-nowrap z-50 transition-all duration-150">Equipo</span>
+            </div>
+          </div>
+        </div>
+
+      </nav>
+
+      <!-- Restaurant Info (Bottom) -->
+      <div class="border-t border-white/5">
+        <!-- Avatar + Dropdown -->
+        <div class="relative px-2 py-3">
+          <button id="sidebar-avatar-btn" class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
+            <div class="w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-black shadow-lg flex-shrink-0">
+              {{ session.get('restaurant_name', 'R')[0] | upper }}
+            </div>
+            <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">
+              <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
+              <p class="text-[10px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
+            </div>
+          </button>
+          <div id="sidebar-dropdown" class="hidden absolute bottom-full left-full mb-2 ml-2 w-56 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[60] py-2">
+            <div class="px-4 py-3 border-b border-white/10">
+              <p class="text-sm font-bold text-white">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
+              <p class="text-xs text-gray-400">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
+            </div>
+            <div class="py-1">
+              <a href="{{ url_for('dashboard.settings') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">settings</span>
+                Ajustes
+              </a>
+              <a href="{{ url_for('dashboard.subscription') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">credit_card</span>
+                Mi suscripción
+              </a>
+              <a href="{{ url_for('dashboard.notifications') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">notifications</span>
+                Notificaciones
+              </a>
+            </div>
+            <div class="border-t border-white/10 py-1">
+              <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                Cerrar sesión
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tokens IA -->
+        <div class="px-2 pb-3 sidebar-expanded:px-4 transition-all duration-300">
+          <button onclick="openTokenModal()" id="sidebar-token-section"
+            class="w-full px-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group flex items-center gap-3 sidebar-expanded:px-3">
+            <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-orange-500 text-[16px]">bolt</span>
+            </div>
+            <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 transition-all duration-300">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tokens IA</span>
+                <span id="sidebar-token-count" class="text-xs font-black text-white">--</span>
+              </div>
+              <div class="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                <div id="sidebar-token-bar" class="h-full bg-orange-500 rounded-full transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div id="main-content" class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-14">
+      {% if sub_status.status in ['expiring_soon_neutral','expiring_soon_warning','expiring_soon_urgent'] %}
+      <div id="status-banner"
+        class="relative w-full z-40 bg-[#0a0a0a] border-b border-[#262626] transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center
+                {% if sub_status.status == 'expiring_soon_neutral' %} bg-[#262626] text-slate-400
+                {% elif sub_status.status == 'expiring_soon_warning' %} bg-amber-900/30 text-amber-400
+                {% else %} bg-red-900/30 text-red-400
+                {% endif %}">
+              <span class="material-symbols-outlined text-[20px]">schedule</span>
+            </div>
+
+            <p class="text-sm font-medium text-slate-300">
+              {{ sub_status.message }}
+            </p>
+          </div>
+
+          <a href="{{ url_for('dashboard.subscription') }}" class="text-sm font-semibold px-4 py-2 rounded-xl
+              {% if sub_status.status == 'expiring_soon_neutral' %} text-indigo-400 hover:bg-indigo-900/20
+              {% elif sub_status.status == 'expiring_soon_warning' %} text-amber-400 hover:bg-amber-900/20
+              {% else %} text-red-400 hover:bg-red-900/20
+              {% endif %} transition-all">
+            Renovar
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sub_status.status == 'grace_period' %}
+      <div id="status-banner"
+        class="relative w-full z-40 bg-red-950/20 border-b border-red-900/50 transition-transform duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-[22px]">error</span>
+            </div>
+
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold text-red-700">
+                Suscripción vencida
+              </span>
+              <span class="text-xs text-red-600">
+                Te quedan {{ sub_status.days_grace_remaining }} días antes de desactivar tu menú.
+              </span>
+            </div>
+          </div>
+
+          <a href="{{ url_for('dashboard.subscription') }}"
+            class="bg-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-red-700 transition">
+            Reactivar
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sub_status.status == 'expired' %}
+      <div class="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800">
+        <div class="max-w-3xl mx-auto px-6 py-10 text-center flex flex-col gap-5">
+
+          <div class="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center">
+            <span class="material-symbols-outlined text-red-500 text-[36px]">lock</span>
+          </div>
+
+          <h2 class="text-2xl font-bold tracking-tight">
+            Tu menú está temporalmente inactivo
+          </h2>
+
+          <p class="text-sm text-slate-400">
+            Reactiva tu suscripción para que tus clientes vuelvan a realizar pedidos.
+          </p>
+
+          <div class="flex gap-3 justify-center pt-4">
+            <a href="{{ url_for('auth.plans') }}"
+              class="bg-[#141414] text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-[#1a1a1a] transition">
+              Reactivar ahora
+            </a>
+
+            <a href="{{ url_for('auth.legal') }}#faq"
+              class="border border-slate-600 px-6 py-3 rounded-xl text-sm hover:bg-slate-800 transition">
+              Contactar soporte
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
     </div>
-    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
-    {% include 'components/modal_delete.html' %}
-    <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
-    {% if session.get('user_id') %}
-    {% include 'components/modal_tokens.html' %}
-    <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>
-    {% endif %}
 
-    <!-- Sistema base scripts -->
-    {% block extra_js %}
-    <!-- Sistema de notificaciones toast global -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            {% for category, message in messages %}
-            showToast("{{ message }}", "{{ category }}");
-            {% endfor %}
-        });
-    </script>
-    {% endif %}
-    {% endwith %}
-    {% endblock %}
+  </div>
+  <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  {% include 'components/modal_delete.html' %}
+  <script src="{{ url_for('static', filename='js/modal-delete.js') }}"></script>
+  {% if session.get('user_id') %}
+  {% include 'components/modal_tokens.html' %}
+  <script src="{{ url_for('static', filename='js/token-wheel.js') }}"></script>
+  {% endif %}
 
-    <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
+  <!-- Sistema base scripts -->
+  {% block extra_js %}
+  <!-- Sistema de notificaciones toast global -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      {% for category, message in messages %}
+      showToast("{{ message }}", "{{ category }}");
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+  {% endwith %}
+  {% endblock %}
 
-    <script>
-        /* Mobile viewport fix (suavizado, sin stutter) */
-        (function () {
-            'use strict';
+  <script src="{{ url_for('static', filename='js/orders-realtime.js') }}"></script>
 
-            var root = document.documentElement;
-            var body = document.body;
-            var lastHeight = 0;
-            var lastWidth = 0;
-            var lastKeyboard = null;
-            var rafId = 0;
-            var targetHeight = 0;
-            var currentHeight = 0;
+  <script>
+    /* Mobile viewport fix (suavizado, sin stutter) */
+    (function () {
+      'use strict';
 
-            function detectKeyboard(vvh, ih) {
-                if (!vvh) return false;
-                var diff = ih - vvh;
-                return diff > 120 && vvh < ih * 0.85;
-            }
+      var root = document.documentElement;
+      var body = document.body;
+      var lastHeight = 0;
+      var lastWidth = 0;
+      var lastKeyboard = null;
+      var rafId = 0;
+      var targetHeight = 0;
+      var currentHeight = 0;
 
-            function setAppHeight(h, w) {
-                if (h === lastHeight && w === lastWidth) return;
-                lastHeight = h;
-                lastWidth = w;
-                root.style.setProperty('--app-height', h + 'px');
-                root.style.setProperty('--app-width', w + 'px');
-            }
+      function detectKeyboard(vvh, ih) {
+        if (!vvh) return false;
+        var diff = ih - vvh;
+        return diff> 120 && vvh < ih * 0.85;
+      }
 
-            function setKeyboard(on) {
-                if (on === lastKeyboard) return;
-                lastKeyboard = on;
-                root.classList.toggle('kb-open', on);
-                body.classList.toggle('kb-open', on);
-                body.style.overflow = on ? 'hidden' : '';
-            }
+      function setAppHeight(h, w) {
+        if (h === lastHeight && w === lastWidth) return;
+        lastHeight = h;
+        lastWidth = w;
+        root.style.setProperty('--app-height', h + 'px');
+        root.style.setProperty('--app-width', w + 'px');
+      }
 
-            function tick() {
-                rafId = 0;
-                var diff = targetHeight - currentHeight;
-                if (Math.abs(diff) < 0.5) {
-                    currentHeight = targetHeight;
-                } else {
-                    currentHeight += diff * 0.35;
-                }
-                var vv = window.visualViewport;
-                var w = vv ? vv.width : window.innerWidth;
-                setAppHeight(currentHeight, w);
-                if (vv) setKeyboard(detectKeyboard(vv.height, window.innerHeight));
-                if (Math.abs(diff) >= 0.5) schedule();
-            }
+      function setKeyboard(on) {
+        if (on === lastKeyboard) return;
+        lastKeyboard = on;
+        root.classList.toggle('kb-open', on);
+        body.classList.toggle('kb-open', on);
+        body.style.overflow = on ? 'hidden' : '';
+      }
 
-            function schedule() {
-                if (rafId) return;
-                rafId = requestAnimationFrame(tick);
-            }
+      function tick() {
+        rafId = 0;
+        var diff = targetHeight - currentHeight;
+        if (Math.abs(diff) < 0.5) {
+          currentHeight = targetHeight;
+        } else {
+          currentHeight += diff * 0.35;
+        }
+        var vv = window.visualViewport;
+        var w = vv ? vv.width : window.innerWidth;
+        setAppHeight(currentHeight, w);
+        if (vv) setKeyboard(detectKeyboard(vv.height, window.innerHeight));
+        if (Math.abs(diff)>= 0.5) schedule();
+      }
 
-            function onViewport() {
-                var vv = window.visualViewport;
-                if (!vv) {
-                    setAppHeight(window.innerHeight, window.innerWidth);
-                    return;
-                }
-                targetHeight = vv.height;
-                schedule();
-            }
+      function schedule() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(tick);
+      }
 
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', onViewport, { passive: true });
-                window.visualViewport.addEventListener('scroll', onViewport, { passive: true });
-            }
-            window.addEventListener('resize', onViewport, { passive: true });
-            window.addEventListener('orientationchange', function () {
-                setTimeout(onViewport, 250);
-            }, { passive: true });
+      function onViewport() {
+        var vv = window.visualViewport;
+        if (!vv) {
+          setAppHeight(window.innerHeight, window.innerWidth);
+          return;
+        }
+        targetHeight = vv.height;
+        schedule();
+      }
 
-            document.addEventListener('focusin', function (e) {
-                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-                    setTimeout(onViewport, 350);
-                }
-            });
-            document.addEventListener('focusout', function (e) {
-                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-                    setTimeout(onViewport, 350);
-                }
-            });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onViewport, { passive: true });
+        window.visualViewport.addEventListener('scroll', onViewport, { passive: true });
+      }
+      window.addEventListener('resize', onViewport, { passive: true });
+      window.addEventListener('orientationchange', function () {
+        setTimeout(onViewport, 250);
+      }, { passive: true });
 
-            onViewport();
-        })();
-    </script>
+      document.addEventListener('focusin', function (e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          setTimeout(onViewport, 350);
+        }
+      });
+      document.addEventListener('focusout', function (e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          setTimeout(onViewport, 350);
+        }
+      });
+
+      onViewport();
+    })();
+  </script>
 </body>
 
 </html>

@@ -289,7 +289,7 @@
                 return;
             }
             const diff = amount - orderTotal;
-            if (diff > orderTotal) {
+            if (diff> orderTotal) {
                 // El vuelto supera el valor del pedido: posible error del cajero.
                 value.textContent = '$' + diff.toLocaleString('es-CO');
                 value.className = 'font-display text-lg font-black text-red-400';
@@ -297,7 +297,7 @@
                 preview.style.borderColor = 'rgba(239, 68, 68, 0.3)';
                 preview.style.background = 'rgba(239, 68, 68, 0.04)';
                 if (warn) warn.classList.remove('hidden');
-            } else if (diff > 0) {
+            } else if (diff> 0) {
                 value.textContent = '$' + diff.toLocaleString('es-CO');
                 value.className = 'font-display text-lg font-black text-emerald-400';
                 preview.classList.remove('hidden');
@@ -353,7 +353,7 @@
                 const data = await registerPayment(orderId, 'cash', amount);
                 if (data.success) {
                     const change = data.data?.change_due || 0;
-                    if (change > 0) {
+                    if (change> 0) {
                         showChangeModal(change);  // muestra el vuelto antes de recargar
                     } else {
                         window.location.reload();

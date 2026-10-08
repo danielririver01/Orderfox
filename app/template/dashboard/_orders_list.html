@@ -1,299 +1,299 @@
 {# ───────────────────────────────────────────────────────────────────────────
-   Lista de pedidos (la usa la pantalla de Pedidos y su actualización
-   automática). Las cuatro secciones comparten la misma anatomía:
-     · Arriba: número del pedido, hora, cliente y total.
-     · Abajo:  cuántos productos lleva + los botones de acción, con nombre.
+  Lista de pedidos (la usa la pantalla de Pedidos y su actualización
+  automática). Las cuatro secciones comparten la misma anatomía:
+   · Arriba: número del pedido, hora, cliente y total.
+   · Abajo: cuántos productos lleva + los botones de acción, con nombre.
 
-   Mismo vocabulario que Inicio:
-     "Por confirmar" (Inicio) → "Confirmar" (aquí) → "Entregar" / "Cancelar"
-     / "Devolver". Antes decía "Pendientes" y el usuario tenía que adivinar
-     que era lo mismo que "Por confirmar".
+  Mismo vocabulario que Inicio:
+   "Por confirmar" (Inicio) → "Confirmar" (aquí) → "Entregar" / "Cancelar"
+   / "Devolver". Antes decía "Pendientes" y el usuario tenía que adivinar
+   que era lo mismo que "Por confirmar".
 
-   NO cambiar: #pending-orders-list, .pending-order-item, #load-more-pending,
-   .order-product-count, data-order-id, #deleteOrderFormN, showAllPending(),
-   openOrderDetail(), changeStatus(), openDeleteModal().
-   ─────────────────────────────────────────────────────────────────────── #}
+  NO cambiar: #pending-orders-list, .pending-order-item, #load-more-pending,
+  .order-product-count, data-order-id, #deleteOrderFormN, showAllPending(),
+  openOrderDetail(), changeStatus(), openDeleteModal().
+  ─────────────────────────────────────────────────────────────────────── #}
 
 {# Botones de acción: una sola receta. Alto 44px (cómodo para el dedo) y
-   texto de 11px (antes 9px, que no se leía en una tablet). #}
+  texto de 11px (antes 9px, que no se leía en una tablet). #}
 {% macro accion(extra='') %}class="flex items-center justify-center gap-1.5 min-h-[44px] px-3.5 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 flex-shrink-0 {{ extra }}"{% endmacro %}
 {% macro quitar() %}style="background: rgba(239,68,68,0.10); color: #EF4444; border: 1px solid rgba(239,68,68,0.25);"{% endmacro %}
 
 <!-- ── POR CONFIRMAR ────────────────────────────────────────────────────── -->
 <section id="pendientes">
-  <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-    <div class="flex items-center gap-2 flex-wrap">
-      <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #f97316;">
-        <span class="w-2.5 h-2.5 rounded-full" style="background: #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.4);"></span>
-        Por confirmar
-      </h2>
-      <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Esperan tu respuesta</span>
+ <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+   <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #f97316;">
+    <span class="w-2.5 h-2.5 rounded-full" style="background: #f97316; "></span>
+    Por confirmar
+   </h2>
+   <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Esperan tu respuesta</span>
+  </div>
+  <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(249,115,22,0.12); color: #f97316; border: 1px solid rgba(249,115,22,0.25);">
+   {{ pending|length }}
+  </span>
+ </div>
+
+ {% if pending %}
+ <div class="space-y-3" id="pending-orders-list">
+  {% for order in pending %}
+  <div
+   class="pending-order-item {% if loop.index> 5 %}hidden{% endif %} bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-5 transition-all active:scale-[0.99] cursor-pointer hover:bg-gray-50/50 dark:hover:bg-[#1a1a1a]/50"
+   style="border-left: 4px solid #f97316;"
+   onclick="openOrderDetail({{ order.id }})"
+   data-order-id="{{ order.id }}">
+   <div class="flex justify-between items-start gap-3 mb-3">
+    <div class="min-w-0">
+     <div class="flex items-center gap-2 mb-1 flex-wrap">
+      <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
+      <span class="md:hidden text-[11px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold">
+       {{ order.created_at | local_time }}
+      </span>
+     </div>
+     {% if order.customer_name %}
+     <p class="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
+     {% endif %}
     </div>
-    <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(249,115,22,0.12); color: #f97316; border: 1px solid rgba(249,115,22,0.25);">
-      {{ pending|length }}
+    <span class="text-lg font-black text-gray-900 dark:text-white flex-shrink-0">{{ order.total | currency }}</span>
+   </div>
+
+   <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
+    <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
+     {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
     </span>
-  </div>
-
-  {% if pending %}
-  <div class="space-y-3" id="pending-orders-list">
-    {% for order in pending %}
-    <div
-      class="pending-order-item {% if loop.index > 5 %}hidden{% endif %} bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-5 transition-all active:scale-[0.99] cursor-pointer hover:bg-gray-50/50 dark:hover:bg-[#1a1a1a]/50"
-      style="border-left: 4px solid #f97316;"
-      onclick="openOrderDetail({{ order.id }})"
-      data-order-id="{{ order.id }}">
-      <div class="flex justify-between items-start gap-3 mb-3">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="md:hidden text-[11px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold">
-              {{ order.created_at | local_time }}
-            </span>
-          </div>
-          {% if order.customer_name %}
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
-          {% endif %}
-        </div>
-        <span class="text-lg font-black text-[#f97316] flex-shrink-0">{{ order.total | currency }}</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
-        <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-          {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
-        </span>
-        <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
-          <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-            {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
-            aria-label="Ver el pedido {{ order.order_number }}">
-            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
-            Ver pedido
-          </button>
-          <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
-            {{ accion() }} {{ quitar() }}
-            title="Cancelar este pedido">
-            Cancelar
-          </button>
-          <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'confirmed')"
-            {{ accion('text-white shadow-md') }}
-            style="background: #15803D; box-shadow: 0 4px 12px rgba(21,128,61,0.3);">
-            Confirmar
-          </button>
-        </div>
-      </div>
+    <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
+     <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
+      {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
+      aria-label="Ver el pedido {{ order.order_number }}">
+      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+      Ver pedido
+     </button>
+     <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
+      {{ accion() }} {{ quitar() }}
+      title="Cancelar este pedido">
+      Cancelar
+     </button>
+     <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'confirmed')"
+      {{ accion('text-white shadow-md') }}
+      style="background: #15803D; ">
+      Confirmar
+     </button>
     </div>
-    {% endfor %}
+   </div>
   </div>
+  {% endfor %}
+ </div>
 
-  {% if pending|length > 5 %}
-  <div class="mt-4 text-center" id="load-more-pending">
-    <button type="button" onclick="showAllPending()" class="min-h-[44px] text-xs font-black text-gray-400 dark:text-gray-500 hover:text-orange-600 dark:hover:text-orange-400 uppercase tracking-widest px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#141414] border border-gray-100 dark:border-[#262626] transition-all active:scale-95">
-      Ver los otros {{ pending|length - 5 }} pedidos
-    </button>
-  </div>
-  {% endif %}
-  {% else %}
-  <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
-    <p class="text-xs font-medium text-gray-400 dark:text-gray-500">No hay pedidos esperando confirmaci&#x00F3;n.</p>
-  </div>
-  {% endif %}
+ {% if pending|length> 5 %}
+ <div class="mt-4 text-center" id="load-more-pending">
+  <button type="button" onclick="showAllPending()" class="min-h-[44px] text-xs font-black text-gray-400 dark:text-gray-500 hover:text-orange-600 dark:hover:text-orange-400 uppercase tracking-widest px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#141414] border border-gray-100 dark:border-[#262626] transition-all active:scale-95">
+   Ver los otros {{ pending|length - 5 }} pedidos
+  </button>
+ </div>
+ {% endif %}
+ {% else %}
+ <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
+  <p class="text-xs font-medium text-gray-400 dark:text-gray-500">No hay pedidos esperando confirmaci&#x00F3;n.</p>
+ </div>
+ {% endif %}
 </section>
 
 <!-- ── CONFIRMADOS ──────────────────────────────────────────────────────── -->
 <section id="confirmados">
-  <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-    <div class="flex items-center gap-2 flex-wrap">
-      <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #30A46C;">
-        <span class="w-2.5 h-2.5 rounded-full" style="background: #30A46C; box-shadow: 0 0 8px rgba(48,164,108,0.4);"></span>
-        Confirmados
-      </h2>
-      <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Ya los aceptaste</span>
+ <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+   <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #30A46C;">
+    <span class="w-2.5 h-2.5 rounded-full" style="background: #30A46C; "></span>
+    Confirmados
+   </h2>
+   <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Ya los aceptaste</span>
+  </div>
+  <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(48,164,108,0.12); color: #30A46C; border: 1px solid rgba(48,164,108,0.25);">
+   {{ confirmed|length }}
+  </span>
+ </div>
+
+ {% if confirmed %}
+ <div class="space-y-3">
+  {% for order in confirmed %}
+  <div
+   class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-5 transition-all active:scale-[0.99] cursor-pointer hover:bg-gray-50/50 dark:hover:bg-[#1a1a1a]/50"
+   style="border-left: 4px solid #30A46C;"
+   onclick="openOrderDetail({{ order.id }})"
+   data-order-id="{{ order.id }}">
+   <div class="flex justify-between items-start gap-3 mb-3">
+    <div class="min-w-0">
+     <div class="flex items-center gap-2 mb-1 flex-wrap">
+      <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
+      <span class="md:hidden text-[11px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold">
+       {{ order.created_at | local_time }}
+      </span>
+     </div>
+     {% if order.customer_name %}
+     <p class="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
+     {% endif %}
     </div>
-    <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(48,164,108,0.12); color: #30A46C; border: 1px solid rgba(48,164,108,0.25);">
-      {{ confirmed|length }}
+    <span class="text-lg font-black text-gray-900 dark:text-white flex-shrink-0">{{ order.total | currency }}</span>
+   </div>
+
+   <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
+    <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
+     {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
     </span>
-  </div>
-
-  {% if confirmed %}
-  <div class="space-y-3">
-    {% for order in confirmed %}
-    <div
-      class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-5 transition-all active:scale-[0.99] cursor-pointer hover:bg-gray-50/50 dark:hover:bg-[#1a1a1a]/50"
-      style="border-left: 4px solid #30A46C;"
-      onclick="openOrderDetail({{ order.id }})"
-      data-order-id="{{ order.id }}">
-      <div class="flex justify-between items-start gap-3 mb-3">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 class="font-black text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="md:hidden text-[11px] bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold">
-              {{ order.created_at | local_time }}
-            </span>
-          </div>
-          {% if order.customer_name %}
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
-          {% endif %}
-        </div>
-        <span class="text-lg font-black text-[#f97316] flex-shrink-0">{{ order.total | currency }}</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
-        <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-          {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
-        </span>
-        <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
-          <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-            {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
-            aria-label="Ver el pedido {{ order.order_number }}">
-            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
-            Ver pedido
-          </button>
-          <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'delivered')"
-            {{ accion('text-white shadow-md') }}
-            style="background: #2563EB; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">
-            Entregar
-          </button>
-        </div>
-      </div>
+    <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
+     <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
+      {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
+      aria-label="Ver el pedido {{ order.order_number }}">
+      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+      Ver pedido
+     </button>
+     <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'delivered')"
+      {{ accion('text-white shadow-md') }}
+      style="background: #2563EB; ">
+      Entregar
+     </button>
     </div>
-    {% endfor %}
+   </div>
   </div>
-  {% else %}
-  <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
-    <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Ning&#x00FAn pedido confirmado todav&#x00ED;a.</p>
-  </div>
-  {% endif %}
+  {% endfor %}
+ </div>
+ {% else %}
+ <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
+  <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Ning&#x00FAn pedido confirmado todav&#x00ED;a.</p>
+ </div>
+ {% endif %}
 </section>
 
 <!-- ── ENTREGADOS ───────────────────────────────────────────────────────── -->
 <section id="entregados">
-  <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-    <div class="flex items-center gap-2 flex-wrap">
-      <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #3B82F6;">
-        <span class="w-2.5 h-2.5 rounded-full" style="background: #3B82F6; box-shadow: 0 0 8px rgba(59,130,246,0.4);"></span>
-        Entregados
-      </h2>
-      <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Ya salieron (solo hoy)</span>
-    </div>
-    <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(59,130,246,0.12); color: #3B82F6; border: 1px solid rgba(59,130,246,0.25);">
-      {{ delivered|length }}
-    </span>
+ <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+   <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" style="color: #3B82F6;">
+    <span class="w-2.5 h-2.5 rounded-full" style="background: #3B82F6; "></span>
+    Entregados
+   </h2>
+   <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Ya salieron (solo hoy)</span>
   </div>
+  <span class="text-xs font-black px-2.5 py-1 rounded-lg" style="background: rgba(59,130,246,0.12); color: #3B82F6; border: 1px solid rgba(59,130,246,0.25);">
+   {{ delivered|length }}
+  </span>
+ </div>
 
-  {% if delivered %}
-  <div class="space-y-3 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
-    {% for order in delivered %}
-    <div
-      class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-4 opacity-75 cursor-pointer hover:opacity-100 transition-all"
-      style="border-left: 4px solid #3B82F6;"
-      onclick="openOrderDetail({{ order.id }})"
-      data-order-id="{{ order.id }}">
-      <div class="flex justify-between items-start gap-3">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h3 class="font-bold text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
-            <span class="md:hidden text-[11px] text-gray-400 dark:text-gray-500 font-bold">
-              {{ order.created_at | local_time }}
-            </span>
-          </div>
-          {% if order.customer_name %}
-          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
-          {% endif %}
-        </div>
-        <span class="text-base font-black text-gray-500 dark:text-gray-300 flex-shrink-0">{{ order.total | currency }}</span>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-[#262626]">
-        <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-          {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
-          aria-label="Ver el pedido {{ order.order_number }}">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
-          Ver pedido
-        </button>
-        <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
-          {{ accion('md:hidden') }} {{ quitar() }}
-          title="Cancelar este pedido entregado">
-          Cancelar
-        </button>
-        <form id="deleteOrderForm{{ order.id }}" method="POST" action="{{ url_for('orders.delete', id=order.id) }}" class="hidden">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        </form>
-        <button type="button"
-          onclick="event.stopPropagation(); openDeleteModal(document.getElementById('deleteOrderForm{{ order.id }}'), 'Desaparece del historial para siempre. Si solo quieres anularlo, usa «Cancelar».', '¿Borrar este pedido entregado?')"
-          {{ accion('md:hidden') }} {{ quitar() }}
-          title="Borrar este pedido del historial">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete_forever</span>
-          Borrar
-        </button>
-      </div>
+ {% if delivered %}
+ <div class="space-y-3 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+  {% for order in delivered %}
+  <div
+   class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-4 opacity-75 cursor-pointer hover:opacity-100 transition-all"
+   style="border-left: 4px solid #3B82F6;"
+   onclick="openOrderDetail({{ order.id }})"
+   data-order-id="{{ order.id }}">
+   <div class="flex justify-between items-start gap-3">
+    <div class="min-w-0">
+     <div class="flex items-center gap-2 flex-wrap">
+      <h3 class="font-bold text-gray-900 dark:text-white tracking-tight">{{ order.order_number }}</h3>
+      <span class="md:hidden text-[11px] text-gray-400 dark:text-gray-500 font-bold">
+       {{ order.created_at | local_time }}
+      </span>
+     </div>
+     {% if order.customer_name %}
+     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
+     {% endif %}
     </div>
-    {% endfor %}
+    <span class="text-base font-black text-gray-500 dark:text-gray-300 flex-shrink-0">{{ order.total | currency }}</span>
+   </div>
+
+   <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-[#262626]">
+    <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
+     {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
+     aria-label="Ver el pedido {{ order.order_number }}">
+     <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+     Ver pedido
+    </button>
+    <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
+     {{ accion('md:hidden') }} {{ quitar() }}
+     title="Cancelar este pedido entregado">
+     Cancelar
+    </button>
+    <form id="deleteOrderForm{{ order.id }}" method="POST" action="{{ url_for('orders.delete', id=order.id) }}" class="hidden">
+     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    </form>
+    <button type="button"
+     onclick="event.stopPropagation(); openDeleteModal(document.getElementById('deleteOrderForm{{ order.id }}'), 'Desaparece del historial para siempre. Si solo quieres anularlo, usa «Cancelar».', '¿Borrar este pedido entregado?')"
+     {{ accion('md:hidden') }} {{ quitar() }}
+     title="Borrar este pedido del historial">
+     <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete_forever</span>
+     Borrar
+    </button>
+   </div>
   </div>
-  {% else %}
-  <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
-    <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Todav&#x00ED;a no has entregado pedidos hoy.</p>
-  </div>
-  {% endif %}
+  {% endfor %}
+ </div>
+ {% else %}
+ <div class="text-center py-8 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
+  <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Todav&#x00ED;a no has entregado pedidos hoy.</p>
+ </div>
+ {% endif %}
 </section>
 
 <!-- ── CANCELADOS ───────────────────────────────────────────────────────── -->
 <section id="cancelados">
-  <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-    <div class="flex items-center gap-2 flex-wrap">
-      <h2 class="text-xs font-black text-red-600 dark:text-red-500 uppercase tracking-widest flex items-center gap-2">
-        <span class="w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.4)]"></span>
-        Cancelados
-      </h2>
-      <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Los cancelaste o vencieron sin respuesta</span>
-    </div>
-    <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20">
-      {{ cancelled|length }}
-    </span>
+ <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+   <h2 class="text-xs font-black text-red-600 dark:text-red-500 uppercase tracking-widest flex items-center gap-2">
+    <span class="w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.4)]"></span>
+    Cancelados
+   </h2>
+   <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500">Los cancelaste o vencieron sin respuesta</span>
   </div>
+  <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20">
+   {{ cancelled|length }}
+  </span>
+ </div>
 
-  {% if cancelled %}
-  <div class="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-    {% for order in cancelled %}
-    <div
-      class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-4 opacity-60 cursor-pointer hover:opacity-100 transition-all"
-      style="border-left: 4px solid #ef4444;"
-      onclick="openOrderDetail({{ order.id }})"
-      data-order-id="{{ order.id }}">
-      <div class="flex justify-between items-start gap-3">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h3 class="font-bold text-gray-900 dark:text-white tracking-tight line-through">{{ order.order_number }}</h3>
-            <span class="md:hidden text-[11px] text-gray-400 dark:text-gray-500 font-bold">
-              {{ order.created_at | local_time }}
-            </span>
-          </div>
-          {% if order.customer_name %}
-          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
-          {% endif %}
-        </div>
-        <span class="text-base font-black text-gray-400 dark:text-gray-500 line-through flex-shrink-0">{{ order.total | currency }}</span>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-[#262626]">
-        <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
-          {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
-          aria-label="Ver el pedido {{ order.order_number }}">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
-          Ver pedido
-        </button>
-        <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'pending')"
-          {{ accion() }}
-          style="background: rgba(249,115,22,0.12); color: #c2410c; border: 1px solid rgba(249,115,22,0.3);"
-          title="Devolver este pedido a la lista de por confirmar">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">undo</span>
-          Devolver
-        </button>
-      </div>
+ {% if cancelled %}
+ <div class="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+  {% for order in cancelled %}
+  <div
+   class="bg-white dark:bg-[#141414] rounded-2xl shadow-sm p-4 opacity-60 cursor-pointer hover:opacity-100 transition-all"
+   style="border-left: 4px solid #ef4444;"
+   onclick="openOrderDetail({{ order.id }})"
+   data-order-id="{{ order.id }}">
+   <div class="flex justify-between items-start gap-3">
+    <div class="min-w-0">
+     <div class="flex items-center gap-2 flex-wrap">
+      <h3 class="font-bold text-gray-900 dark:text-white tracking-tight line-through">{{ order.order_number }}</h3>
+      <span class="md:hidden text-[11px] text-gray-400 dark:text-gray-500 font-bold">
+       {{ order.created_at | local_time }}
+      </span>
+     </div>
+     {% if order.customer_name %}
+     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ order.customer_name }}</p>
+     {% endif %}
     </div>
-    {% endfor %}
+    <span class="text-base font-black text-gray-400 dark:text-gray-500 line-through flex-shrink-0">{{ order.total | currency }}</span>
+   </div>
+
+   <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-[#262626]">
+    <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
+     {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
+     aria-label="Ver el pedido {{ order.order_number }}">
+     <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+     Ver pedido
+    </button>
+    <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'pending')"
+     {{ accion() }}
+     style="background: rgba(249,115,22,0.12); color: #c2410c; border: 1px solid rgba(249,115,22,0.3);"
+     title="Devolver este pedido a la lista de por confirmar">
+     <span class="material-symbols-outlined text-[16px]" aria-hidden="true">undo</span>
+     Devolver
+    </button>
+   </div>
   </div>
-  {% else %}
-  <div class="text-center py-6 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
-    <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Ning&#x00FAn pedido cancelado.</p>
-  </div>
-  {% endif %}
+  {% endfor %}
+ </div>
+ {% else %}
+ <div class="text-center py-6 bg-white/50 dark:bg-[#141414]/50 rounded-2xl border border-dashed border-gray-200 dark:border-[#262626]">
+  <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Ning&#x00FAn pedido cancelado.</p>
+ </div>
+ {% endif %}
 </section>

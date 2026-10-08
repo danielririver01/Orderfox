@@ -301,7 +301,9 @@ class TestOrderDetailHistory:
 
         resp = client.get(f'/orders/{order.id}')
         assert resp.status_code == 200
-        assert 'Sin registro previo a la implementación' in resp.get_data(as_text=True)
+        # v2.2 (UX): el aviso decía "Sin registro previo a la implementación",
+        # jerga de programador. Ahora explica lo mismo en lenguaje del dueño.
+        assert 'De antes de que guardáramos cada movimiento' in resp.get_data(as_text=True)
 
 
 # ── Caso 9: CASCADE ────────────────────────────────────────────────────────
