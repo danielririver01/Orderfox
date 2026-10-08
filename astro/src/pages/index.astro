@@ -11,6 +11,16 @@ import PricingSection from '../components/landing/PricingSection.astro';
 import FAQSection from '../components/landing/FAQSection.astro';
 import FloatingWhatsApp from '../components/landing/FloatingWhatsApp.astro';
 
+// Solo en el entorno de prueba: si se define PUBLIC_DEMO_SLUG, la raíz abre
+// ese menú en lugar de la landing, para poder verlo sin saber la ruta.
+// En producción la variable no existe, así que la landing se ve igual.
+const DEMO_SLUG = import.meta.env.PUBLIC_DEMO_SLUG;
+if (DEMO_SLUG) {
+  // Ruta relativa a propósito: Astro.redirect() arma una URL absoluta con la
+  // dirección interna (127.0.0.1), que el navegador de afuera no alcanza.
+  return new Response(null, { status: 302, headers: { Location: `/${DEMO_SLUG}` } });
+}
+
 const TITLE = 'Velzia Colombia — Menú digital e inteligencia para restaurantes';
 const DESCRIPTION =
   'Velzia es el software gastronómico colombiano para restaurantes. Menú digital QR, pedidos por WhatsApp, analytics e IA. Prueba gratis 60 días, sin tarjeta de crédito.';
