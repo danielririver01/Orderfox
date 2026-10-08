@@ -76,12 +76,28 @@ function initStoreToggle() {
             if (!data.success) throw new Error();
 
             updateMenuStatusBadge(isOpen);
+            updateStoreStateLabels(isOpen);
 
         } catch (error) {
             e.target.checked = !isOpen;
-            showToast('Error al cambiar estado', 'error');
+            showToast('No pudimos cambiar el estado. Revisa tu internet e inténtalo otra vez.', 'error');
         }
     });
+}
+
+/* Etiqueta del interruptor: "Abierto · Recibiendo pedidos" /
+   "Cerrado · No recibes pedidos". Debe coincidir con el HTML inicial. */
+function updateStoreStateLabels(isOpen) {
+    const state = document.getElementById('store-state');
+    const hint = document.getElementById('store-state-hint');
+    if (state) {
+        state.textContent = isOpen ? 'Abierto' : 'Cerrado';
+        state.className = 'text-[11px] font-black uppercase tracking-widest ' +
+            (isOpen ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500');
+    }
+    if (hint) {
+        hint.textContent = isOpen ? 'Recibiendo pedidos' : 'No recibes pedidos';
+    }
 }
 
 function updateMenuStatusBadge(isOpen) {
@@ -98,14 +114,14 @@ function updateMenuStatusBadge(isOpen) {
         elements.badge.className = "flex items-center gap-2 px-2.5 py-1 rounded-full border flex-shrink-0 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20";
         elements.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
         elements.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
-        elements.text.className = "text-[9px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400";
-        elements.text.textContent = 'Activo';
+        elements.text.className = "text-[11px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400";
+        elements.text.textContent = 'Abierto';
     } else {
         elements.badge.className = "flex items-center gap-2 px-2.5 py-1 rounded-full border flex-shrink-0 bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20";
         elements.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500";
         elements.ping.className = "absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
-        elements.text.className = "text-[9px] font-black uppercase tracking-widest text-rose-700 dark:text-rose-400";
-        elements.text.textContent = 'Inactivo';
+        elements.text.className = "text-[11px] font-black uppercase tracking-widest text-rose-700 dark:text-rose-400";
+        elements.text.textContent = 'Cerrado';
     }
 }
 
@@ -119,15 +135,15 @@ window.setDashboardRange = function(range) {
     const btnMonth = document.getElementById('range-month');
 
     if (range === 'today') {
-        btnToday.className = "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
-        btnMonth.className = "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
+        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     } else {
-        btnMonth.className = "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
-        btnToday.className = "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
+        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     }
 
     const heroLabel = document.getElementById('hero-label');
-    if (heroLabel) heroLabel.textContent = range === 'today' ? 'HOY LLEVAS' : 'ESTE MES LLEVAS';
+    if (heroLabel) heroLabel.textContent = range === 'today' ? 'Has vendido hoy' : 'Has vendido este mes';
 
     fetchHeroData(range);
 };
@@ -155,7 +171,7 @@ async function fetchHeroData(range) {
             const colorClass = data.delta_pct > 0 ? 'bg-emerald-500/10 text-emerald-400'
                 : data.delta_pct < 0 ? 'bg-rose-500/10 text-rose-400'
                 : 'bg-gray-500/10 text-gray-400';
-            deltaEl.className = `inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colorClass}`;
+            deltaEl.className = `inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${colorClass}`;
             deltaEl.innerHTML = `${arrow} ${Math.abs(data.delta_pct)}% vs ${range === 'today' ? 'ayer' : 'mes anterior'}`;
             deltaEl.style.display = '';
         } else if (deltaEl) {
@@ -164,13 +180,19 @@ async function fetchHeroData(range) {
 
         if (contextEl) {
             if (data.verdict === 'comparativa') {
-                contextEl.textContent = `${range === 'today' ? 'Ayer' : 'Mes anterior'} cerro con ${formatCurrency(data.previous_period_sales)} en pedidos`;
+                const cuando = range === 'today' ? 'Ayer' : 'El mes pasado';
+                const cuantos = data.previous_period_orders
+                    ? ` en ${data.previous_period_orders} pedido${data.previous_period_orders === 1 ? '' : 's'}`
+                    : '';
+                contextEl.textContent = `${cuando} vendiste ${formatCurrency(data.previous_period_sales)}${cuantos}`;
             } else if (data.verdict === 'primeras_ventas') {
-                contextEl.textContent = '\u{1F195} Primeras ventas del dia!';
+                contextEl.textContent = '\u{1F195} \u00A1Ya hiciste tus primeras ventas de hoy!';
             } else if (data.verdict === 'sin_ventas_hoy') {
-                contextEl.textContent = `${range === 'today' ? 'Hoy' : 'Este mes'} sin ventas aun.`;
+                contextEl.textContent = range === 'today'
+                    ? 'Hoy todavía no vendes nada.'
+                    : 'Este mes todavía no vendes nada.';
             } else {
-                contextEl.textContent = 'Sin ventas registradas aun';
+                contextEl.textContent = 'Todavía no hay ventas registradas';
             }
         }
 
@@ -199,7 +221,7 @@ function initWeeklyChart() {
             var d = data.data;
             var values = currentChartMode === 'money' ? d.money : d.orders;
             var label = currentChartMode === 'money' ? 'Ventas ($)' : 'Pedidos (#)';
-            var color = currentChartMode === 'money' ? '#30A46C' : '#FF7A29';
+            var color = currentChartMode === 'money' ? '#30A46C' : '#f97316';
 
             if (weeklyChart) {
                 weeklyChart.data.labels = d.labels;
@@ -275,11 +297,11 @@ window.setChartMode = function(mode) {
     var btnOrders = document.getElementById('chart-mode-orders');
 
     if (mode === 'money') {
-        btnMoney.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black";
-        btnOrders.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btnMoney.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black";
+        btnOrders.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     } else {
-        btnOrders.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black";
-        btnMoney.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btnOrders.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black";
+        btnMoney.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     }
 
     initWeeklyChart();
@@ -296,7 +318,8 @@ function fetchTopProducts(mode) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success || !data.data || data.data.length === 0) {
-                list.innerHTML = '<p class="text-sm font-bold text-gray-500">Sin datos a\u00FAn</p>';
+                list.innerHTML = '<p class="text-sm font-bold text-gray-400">Todavía no has vendido nada' +
+                    (currentProductsMode === 'today' ? ' hoy.' : ' en los últimos 30 días.') + '</p>';
                 return;
             }
             var html = '';
@@ -307,7 +330,8 @@ function fetchTopProducts(mode) {
                 html += '    <span class="text-xs font-bold text-white truncate">' + item.name + '</span>';
                 html += '  </div>';
                 html += '  <div class="flex items-center gap-3 flex-shrink-0">';
-                html += '    <span class="text-[10px] font-bold text-gray-500">' + item.qty + ' uds</span>';
+                html += '    <span class="text-[11px] font-bold text-gray-500">' + item.qty +
+                    (item.qty === 1 ? ' vendido' : ' vendidos') + '</span>';
                 html += '    <span class="text-xs font-black text-gray-300">' + formatCurrency(item.revenue) + '</span>';
                 html += '  </div>';
                 html += '</div>';
@@ -315,7 +339,7 @@ function fetchTopProducts(mode) {
             list.innerHTML = html;
         })
         .catch(function() {
-            list.innerHTML = '<p class="text-sm font-bold text-gray-500">Error al cargar</p>';
+            list.innerHTML = '<p class="text-sm font-bold text-gray-400">No pudimos cargar la lista. Revisa tu internet.</p>';
         });
 }
 
@@ -327,11 +351,11 @@ window.setProductsMode = function(mode) {
     var btn30d = document.getElementById('products-mode-30d');
 
     if (mode === 'today') {
-        btnToday.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black";
-        btn30d.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btnToday.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black";
+        btn30d.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     } else {
-        btn30d.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all bg-white text-black";
-        btnToday.className = "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all text-zinc-500 hover:text-zinc-300";
+        btn30d.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all bg-white text-black";
+        btnToday.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
     }
 
     fetchTopProducts(mode);
@@ -382,11 +406,11 @@ function initRevenueChart() {
                         datasets: [{
                             label: 'Ingresos',
                             data: d.values,
-                            borderColor: '#FF7A29',
+                            borderColor: '#f97316',
                             borderWidth: 2,
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            pointHoverBackgroundColor: '#FF7A29',
+                            pointHoverBackgroundColor: '#f97316',
                             tension: 0.3,
                             fill: false
                         }]

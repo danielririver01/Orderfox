@@ -171,7 +171,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else 'Restaurante' }}</p>
-                <p class="text-[9px] text-gray-600 font-medium">Plan {{ restaurant.plan_type if restaurant else 'emprendedor' }}</p>
+                <p class="text-[10px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else 'emprendedor', restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
             </div>
         </div>
         <a href="{{ url_for('auth.logout') }}" onclick="closeMobileNav()"

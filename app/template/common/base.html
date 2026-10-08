@@ -142,7 +142,7 @@
                         style="font-family: 'Outfit', sans-serif;">Velzia</span>
                 </button>
                 <div class="hidden sidebar-expanded:block sidebar-link-text px-4 pb-4 transition-all duration-300">
-                    <p class="text-[10px] text-gray-500 font-medium">Admin Dashboard</p>
+                    <p class="text-[10px] text-gray-500 font-medium">El panel de tu negocio</p>
                 </div>
             </div>
 
@@ -304,13 +304,13 @@
                         </div>
                         <div class="hidden sidebar-expanded:block sidebar-link-text flex-1 min-w-0 text-left transition-all duration-300">
                             <p class="text-xs font-bold text-white truncate">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
-                            <p class="text-[10px] text-gray-500 font-medium lowercase first-letter:uppercase">Plan {{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                            <p class="text-[10px] text-gray-500 font-medium">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
                         </div>
                     </button>
                     <div id="sidebar-dropdown" class="hidden absolute bottom-full left-full mb-2 ml-2 w-56 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[60] py-2">
                         <div class="px-4 py-3 border-b border-white/10">
                             <p class="text-sm font-bold text-white">{{ restaurant.name if restaurant else session.get('restaurant_name', 'Restaurante') }}</p>
-                            <p class="text-xs text-gray-400">{{ restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor') }}</p>
+                            <p class="text-xs text-gray-400">Plan {{ {'emprendedor': 'Emprendedor', 'crecimiento': 'Crecimiento', 'elite': 'Élite', 'trial': 'Prueba gratis'}.get(restaurant.plan_type if restaurant else session.get('plan_type', 'emprendedor'), restaurant.plan_type if restaurant else 'Emprendedor') }}</p>
                         </div>
                         <div class="py-1">
                             <a href="{{ url_for('dashboard.settings') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
