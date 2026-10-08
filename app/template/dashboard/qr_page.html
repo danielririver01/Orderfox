@@ -34,7 +34,7 @@
 
       <!-- URL Display -->
       <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors w-full overflow-hidden">
-        <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
+        <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">El enlace de tu menú</p>
         <div class="flex items-center gap-2 sm:gap-3 w-full">
           <code class="text-[11px] sm:text-xs text-primary dark:text-orange-400 font-bold flex-1 min-w-0 break-words" style="word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">{{ menu_url }}</code>
           <button onclick="copiarURL()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-white dark:bg-[#141414] text-primary dark:text-orange-400 rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90">
@@ -47,14 +47,14 @@
       <div class="space-y-3">
         {% if is_table_qr %}
           <a href="{{ url_for('tables.download_qr', id=request.view_args.get('id')) }}" 
-            class="w-full bg-primary hover:bg-[#fb923c] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 uppercase tracking-widest text-xs">
+            class="w-full bg-primary hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 uppercase tracking-widest text-xs">
             <span class="material-symbols-outlined">download</span>
             Descargar QR
           </a>
         {% else %}
           <button 
             onclick="descargarQR()"
-            class="w-full bg-primary hover:bg-[#fb923c] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 uppercase tracking-widest text-xs">
+            class="w-full bg-primary hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 uppercase tracking-widest text-xs">
             <span class="material-symbols-outlined">download</span>
             Descargar QR
           </button>
@@ -63,9 +63,9 @@
         {% if not is_table_qr %}
         <button 
           onclick="compartirQR()"
-          class="w-full bg-success hover:bg-green-700 text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg0/20 active:scale-95 uppercase tracking-widest text-xs">
+          class="w-full border border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest text-xs">
           <span class="material-symbols-outlined">share</span>
-          Compartir WhatsApp
+          Compartir por WhatsApp
         </button>
         {% endif %}
       </div>
@@ -80,7 +80,7 @@
       <ul class="text-xs text-blue-800/80 dark:text-blue-400/80 space-y-3 font-medium">
         <li class="flex items-start gap-3">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
-          <span class="break-words"><strong>Tamaño mínimo:</strong> 10x10 cm para un escaneo fluido desde cualquier móvil.</span>
+          <span class="break-words"><strong>Tamaño mínimo:</strong> 10x10 cm para que cualquier celular lo lea fácil.</span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></span>
@@ -110,13 +110,13 @@
       </h3>
       <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
         {% if is_table_qr %}
-          Gestiona pedidos individuales por mesa y automatiza tu operación. Disponible en plan Crecimiento.
+          Con el Plan Crecimiento, el código de cada mesa toma el pedido y llega directo a tu pantalla.
         {% else %}
-          Obtén tu código profesional y mejora la experiencia de tus clientes.
+          Con el Plan Crecimiento tu menú lleva un código propio, listo para imprimir y pegar en tu local.
         {% endif %}
       </p>
-      <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl0/20 hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[11px]">
-        ACTUALIZAR PLAN
+      <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black py-4 rounded-2xl hover:scale-105 transition-all active:scale-95 uppercase tracking-widest text-[11px]">
+        VER EL PLAN CRECIMIENTO
       </a>
     </div>
   </div>

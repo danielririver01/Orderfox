@@ -34,7 +34,7 @@
     <section class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] shadow-sm p-6 space-y-5">
      <div>
       <h3 class="text-base font-black text-gray-900 dark:text-white mb-1">Tiempos de mesa</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-500">Una reserva bloquea la mesa: duración del servicio + buffer de limpieza.</p>
+      <p class="text-xs text-gray-500 dark:text-gray-500">Cada reserva ocupa la mesa el tiempo del servicio y, al terminar, unos minutos para limpiar.</p>
      </div>
      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
@@ -43,7 +43,7 @@
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
       <div>
-       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Buffer de limpieza (min)</label>
+       <label class="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Limpieza entre reservas (min)</label>
        <input type="number" name="cleanup_buffer_min" value="{{ settings.cleanup_buffer_min }}" min="0" max="60" required
            class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl py-3 px-4 text-sm text-gray-900 dark:text-white focus:border-[#f97316] focus:outline-none">
       </div>
@@ -59,7 +59,7 @@
       </div>
      </div>
      <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-      Ej: duración {{ settings.service_duration_min }} min + limpieza {{ settings.cleanup_buffer_min }} min = mesa bloqueada {{ settings.service_duration_min + settings.cleanup_buffer_min }} minutos por reserva
+      Ejemplo: {{ settings.service_duration_min }} min de servicio + {{ settings.cleanup_buffer_min }} min de limpieza = la mesa vuelve a estar libre a los {{ settings.service_duration_min + settings.cleanup_buffer_min }} minutos
      </p>
     </section>
 
@@ -108,7 +108,7 @@
 
     <button type="submit"
         class="w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 uppercase tracking-widest text-xs">
-     GUARDAR CONFIGURACIÓN
+     GUARDAR CAMBIOS
     </button>
    </div>
   </form>
@@ -121,10 +121,10 @@
     </div>
     <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Configura tus reservas</h3>
     <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-     Duración de mesa, buffer de limpieza y recordatorios automáticos, todo configurable.
+     Decide cuánto ocupa cada reserva y cuánto tardas en limpiar la mesa. Y si quieres, te avisamos al celular antes de que llegue el cliente.
     </p>
     <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-xs">
-     MEJORAR MI PLAN
+     VER EL PLAN CRECIMIENTO
     </a>
    </div>
   </div>

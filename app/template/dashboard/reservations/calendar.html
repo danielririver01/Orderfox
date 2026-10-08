@@ -33,7 +33,7 @@
       Ocupación del {{ calendar.date }}
      </p>
      <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-      Bloqueo: {{ calendar.settings.service_duration_min }} min + {{ calendar.settings.cleanup_buffer_min }} min limpieza
+      Cada reserva usa la mesa {{ calendar.settings.service_duration_min }} min y luego {{ calendar.settings.cleanup_buffer_min }} min para limpiar
      </p>
     </div>
     <div class="divide-y divide-gray-50 dark:divide-[#1f1f1f]">
@@ -77,7 +77,7 @@
    {% endif %}
 
    <p class="text-center text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-    🟡 Pendiente de confirmar · 🟢 Confirmada ·    Cada reserva bloquea la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min + buffer de limpieza
+    🟡 Pendiente de confirmar · 🟢 Confirmada ·    Cada reserva usa la mesa {{ calendar.settings.service_duration_min if calendar else 90 }} min y luego hay unos minutos de limpieza
    </p>
   </div>
 
@@ -89,10 +89,10 @@
     </div>
     <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Calendario de ocupación</h3>
     <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-     Visualiza qué mesas están libres y cuáles están reservadas, en tiempo real.
+     Mira qué mesas están libres y cuáles reservadas, al instante.
     </p>
     <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-xs">
-     MEJORAR MI PLAN
+     VER EL PLAN CRECIMIENTO
     </a>
    </div>
   </div>

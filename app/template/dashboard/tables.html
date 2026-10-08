@@ -39,7 +39,7 @@
           Activa
          </span>
         </div>
-        <p class="text-[11px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">ID: {{ table.id }}</p>
+        <p class="text-[11px] font-bold text-gray-600 dark:text-gray-500 uppercase tracking-widest">Mesa nº {{ table.id }}</p>
        </div>
       </div>
 
@@ -55,8 +55,9 @@
 
        <button
         onclick="let f = document.createElement('form'); f.method='POST'; f.action='{{ url_for('tables.delete', id=table.id) }}'; f.innerHTML='<input type=\'hidden\' name=\'csrf_token\' value=\'{{ csrf_token() }}\'>'; document.body.appendChild(f); openDeleteModal(f, 'Esta mesa se eliminará permanentemente. Los códigos QR impresos para esta mesa dejarán de funcionar.', '¿Eliminar «{{ table.name }}»?');"
-        class="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
-        title="Eliminar Mesa">
+        class="h-11 px-3 flex items-center justify-center gap-1.5 shrink-0 text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-[#262626] rounded-xl transition-all active:scale-90"
+        <span class="material-symbols-outlined text-[20px]">delete</span>
+        <span class="text-[11px] font-black uppercase tracking-wider">Eliminar</span>
         <span class="material-symbols-outlined text-[22px]">delete</span>
        </button>
       </div>
@@ -71,7 +72,7 @@
      <button
       {% if has_table_qr_access %}onclick="document.getElementById('createTableModal').classList.remove('hidden')"{% else %}disabled{% endif %}
       class="bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-3.5 px-8 rounded-xl shadow-xl transition-all {% if not has_table_qr_access %}opacity-50 cursor-not-allowed{% endif %}">
-      CREAR PRIMERA MESA
+      CREAR MI PRIMERA MESA
      </button>
     </div>
     {% endif %}
@@ -85,10 +86,10 @@
      </div>
      <h3 class="text-xl font-black text-gray-900 dark:text-white mb-3">Plan Crecimiento</h3>
      <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-      Organiza tu restaurante con códigos QR por mesa para pedidos automáticos y mayor eficiencia.
+      Con el Plan Crecimiento cada mesa tiene su código: el cliente pide desde su celular y el pedido llega a tu pantalla.
      </p>
      <a href="{{ url_for('auth.renew', plan='crecimiento') }}" class="block w-full bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-xs">
-      MEJORAR MI PLAN
+      VER EL PLAN CRECIMIENTO
      </a>
     </div>
    </div>
@@ -104,7 +105,7 @@
      <span class="material-symbols-outlined text-gray-300 dark:text-gray-600 text-4xl">qr_code_scanner</span>
     </div>
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Visor QR</h3>
-    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-[250px] leading-relaxed">Haz clic en el botón "Ver QR" de cualquier mesa para visualizar su código aquí.</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-[250px] leading-relaxed">Toca «Ver QR» en una mesa y su código aparece aquí, listo para imprimir.</p>
    </div>
 
    <!-- Estado Activo (QR Display) -->
@@ -133,7 +134,7 @@
 
     <!-- URL Menú -->
     <div class="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#262626] rounded-2xl p-4 mb-6 transition-colors">
-      <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">URL de tu menú:</p>
+      <p class="text-[11px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest mb-2">El enlace de tu menú</p>
       <div class="flex items-center gap-3">
         <input type="text" id="qr-menu-url" readonly class="bg-transparent border-none text-xs text-[#f97316] font-bold flex-1 truncate p-0 focus:ring-0 cursor-default" value="--">
         <button onclick="copiarURLMenu()" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#141414] text-[#f97316] rounded-xl shadow-sm border border-gray-100 dark:border-[#262626] hover:scale-110 transition-all active:scale-90" title="Copiar URL">
