@@ -738,6 +738,42 @@ class TestShiftRoutes:
                               json={'require_cash_shift': False}, headers=headers)
         assert disabled.get_json()['data']['require_cash_shift'] is False
 
+    def test_settings_cash_page_renders_owner(self, client, db, sample_restaurant, sample_user):
+        """La config de caja se movió a Ajustes → Caja (solo dueño)."""
+        self._login(client, sample_user)
+        resp = client.get('/dashboard/settings/caja')
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert 'Configuración de caja' in body
+        assert 'Control de caja' in body
+
+    def test_centro_caja_no_longer_shows_admin_config(self, client, db, sample_restaurant, sample_user):
+        """El Centro de Caja ya no expone la configuración del admin."""
+        self._login(client, sample_user)
+        body = client.get('/cash-register/').get_data(as_text=True)
+        assert 'Control de caja' not in body
+        assert 'id="cash-config"' not in body
+
+    def test_settings_cash_page_denied_to_cashier(self, client, db, sample_restaurant):
+        """Un cajero no puede abrir la página de configuración de caja."""
+        from werkzeug.security import generate_password_hash
+        from app.models import User
+        cashier = User(
+            restaurant_id=sample_restaurant.id,
+            username='cajero1',
+            email='cajero1@test.com',
+            password=generate_password_hash('1234'),
+            role='cashier',
+            is_active=True,
+        )
+        db.session.add(cashier)
+        db.session.commit()
+        with client.session_transaction() as sess:
+            sess['employee_id'] = cashier.id
+        resp = client.get('/dashboard/settings/caja')
+        assert resp.status_code == 302
+        assert 'Configuración de caja' not in resp.get_data(as_text=True)
+
     def test_cash_payment_blocked_route_in_strict(
             self, client, db, sample_restaurant, sample_user, shift_order):
         self._login(client, sample_user)

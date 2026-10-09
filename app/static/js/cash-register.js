@@ -19,9 +19,6 @@ let crState = {
     shiftExpected: 0,
     cashStrict: false, // flag del admin: apertura + conteo obligatorios
     shiftInFlight: false,
-    drawerEnabled: false, // cajón físico declarado por el admin
-    drawerAuto: false,    // apertura automática al cobrar en efectivo
-    drawerInFlight: false,
 };
 
 const crEl = (id) => document.getElementById(id);
@@ -466,35 +463,9 @@ async function loadShift() {
         crState.shiftExpected = body.data.expected_cash || 0;
         crState.cashStrict = !!body.data.require_cash_shift;
         renderShiftBanner();
-        renderCashConfig();
         renderCloseCounted();
     } catch (err) {
         console.error('loadShift:', err);
-    }
-}
-
-async function loadCashConfig() {
-    // Solo el dueño puede leer el flag (403 para cajero → se oculta la tarjeta).
-    try {
-        const res = await fetch('/cash-register/api/settings');
-        if (!res.ok) {
-            crEl('cash-config').classList.add('hidden');
-            return;
-        }
-        const body = await res.json();
-        if (body.success) {
-            crState.cashStrict = !!body.data.require_cash_shift;
-            crState.drawerEnabled = !!body.data.drawer_enabled;
-            crState.drawerAuto = !!body.data.drawer_auto_open;
-            crEl('cash-config').classList.remove('hidden');
-            crEl('drawer-card').classList.remove('hidden');
-            renderCashConfig();
-            renderCloseCounted();
-            renderDrawerCard();
-            if (typeof Drawer !== 'undefined') Drawer.renderStatus('drawer-status');
-        }
-    } catch (err) {
-        console.error('loadCashConfig:', err);
     }
 }
 
@@ -536,23 +507,6 @@ function renderShiftBanner() {
     }
 }
 
-function renderCashConfig() {
-    const card = crEl('cash-config');
-    const toggle = crEl('cash-config-toggle');
-    if (!card || !toggle) return;
-    // La tarjeta solo se revela si el GET de settings tuvo éxito (dueño).
-    if (card.classList.contains('hidden') && crState.cashStrict !== undefined) {
-        // loadCashConfig ya decidió visibilidad; no forzar aquí.
-    }
-    const on = crState.cashStrict;
-    toggle.textContent = on ? 'Activado' : 'Desactivado';
-    toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
-    toggle.className = 'flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border ' +
-        (on
-            ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20'
-            : 'bg-white/[0.05] text-gray-300 border-white/[0.08] hover:bg-white/[0.1]');
-}
-
 function renderCloseCounted() {
     const wrap = crEl('close-counted-wrap');
     const row = crEl('close-expected-row');
@@ -588,116 +542,6 @@ function updateCloseDiff() {
     diffEl.textContent = diff === 0
         ? 'Cuadre exacto ✓'
         : (diff > 0 ? `Sobrante: ${formatCOP(diff)}` : `Faltante: ${formatCOP(-diff)}`);
-}
-
-async function toggleCashStrict() {
-    const toggle = crEl('cash-config-toggle');
-    toggle.disabled = true;
-    try {
-        await putCashSettings({ require_cash_shift: !crState.cashStrict });
-        loadShift();
-    } catch (err) {
-        console.error('toggleCashStrict:', err);
-    } finally {
-        toggle.disabled = false;
-    }
-}
-
-/* ── Cajón físico (QZ Tray, solo dueño) ───────────────────────────────── */
-
-function crTogglePaint(btn, on, onLabel, offLabel) {
-    btn.textContent = on ? onLabel : offLabel;
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    btn.className = 'flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border ' +
-        (on
-            ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20'
-            : 'bg-white/[0.05] text-gray-300 border-white/[0.08] hover:bg-white/[0.1]');
-}
-
-function renderDrawerCard() {
-    const toggle = crEl('drawer-toggle');
-    const autoToggle = crEl('drawer-auto-toggle');
-    const autoRow = crEl('drawer-auto-row');
-    if (!toggle || !autoToggle || !autoRow) return;
-    crTogglePaint(toggle, crState.drawerEnabled, 'Activado', 'Desactivado');
-    autoRow.classList.toggle('hidden', !crState.drawerEnabled);
-    autoRow.classList.toggle('flex', !!crState.drawerEnabled);
-    crTogglePaint(autoToggle, crState.drawerAuto, 'Sí', 'No');
-}
-
-async function putCashSettings(payload) {
-    const res = await fetch('/cash-register/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': crGetCSRF() },
-        body: JSON.stringify(payload),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok || !body.success) throw new Error(body.error || 'No se pudo guardar');
-    crState.cashStrict = !!body.data.require_cash_shift;
-    crState.drawerEnabled = !!body.data.drawer_enabled;
-    crState.drawerAuto = !!body.data.drawer_auto_open;
-    renderCashConfig();
-    renderDrawerCard();
-    renderCloseCounted();
-    renderShiftBanner();
-}
-
-async function toggleDrawerEnabled() {
-    const btn = crEl('drawer-toggle');
-    btn.disabled = true;
-    try {
-        await putCashSettings({ drawer_enabled: !crState.drawerEnabled });
-        if (typeof Drawer !== 'undefined') Drawer.renderStatus('drawer-status');
-    } catch (err) {
-        console.error('toggleDrawerEnabled:', err);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-async function toggleDrawerAuto() {
-    const btn = crEl('drawer-auto-toggle');
-    btn.disabled = true;
-    try {
-        await putCashSettings({ drawer_auto_open: !crState.drawerAuto });
-    } catch (err) {
-        console.error('toggleDrawerAuto:', err);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-async function testDrawer() {
-    if (crState.drawerInFlight || typeof Drawer === 'undefined') return;
-    const btn = crEl('drawer-test-btn');
-    const result = crEl('drawer-test-result');
-    result.classList.add('hidden');
-    crState.drawerInFlight = true;
-    btn.disabled = true;
-    btn.textContent = 'Enviando…';
-    try {
-        const ok = await Drawer.kick();
-        if (!ok) {
-            result.classList.remove('hidden');
-            result.className = 'text-[11px] font-black px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400';
-            result.textContent = 'No se pudo contactar QZ Tray en este PC. Verifica que esté instalado y abierto.';
-            return;
-        }
-        // El cajón no confirma de vuelta: la prueba la hace el humano.
-        const opened = window.confirm('Se envió la señal al cajón. ¿Se abrió?');
-        result.classList.remove('hidden');
-        if (opened) {
-            result.className = 'text-[11px] font-black px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400';
-            result.textContent = 'Cajón verificado ✓ — el sistema ya puede abrirlo al cobrar.';
-        } else {
-            result.className = 'text-[11px] font-black px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400';
-            result.textContent = 'No se abrió: revisa el cable RJ11 a la impresora (puerto DK) y la impresora por defecto en QZ.';
-        }
-    } finally {
-        crState.drawerInFlight = false;
-        btn.disabled = false;
-        btn.textContent = 'Probar cajón';
-    }
 }
 
 function openShiftModal() {
@@ -792,5 +636,4 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPending();
     loadCloses();
     loadShift();
-    loadCashConfig();
 });

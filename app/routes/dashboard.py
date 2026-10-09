@@ -337,6 +337,27 @@ def settings():
         logger.exception("Unexpected error in settings route")
         abort(500)
 
+@dashboard_bp.route('/settings/caja')
+@require_auth
+@require_active
+@require_role('owner')
+def settings_cash():
+    """Ajustes → Caja: control de caja y cajón físico (solo dueño)."""
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        logger.warning("Cash settings accessed without active restaurant session")
+        abort(404)
+
+    user_id = session.get('user_id')
+    user = DashboardService.get_user(user_id)
+    if not user:
+        logger.error(f"Cash settings accessed by invalid user_id: {user_id}")
+        session.clear()
+        flash("Sesión inválida. Por favor inicia sesión nuevamente.", "error")
+        return redirect(url_for('auth.login'))
+
+    return render_template('dashboard/settings_cash.html', restaurant=restaurant, user=user)
+
 @dashboard_bp.route('/menu/<slug>/qr')
 @require_auth
 @require_active

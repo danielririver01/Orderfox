@@ -30,58 +30,6 @@
         </div>
     </section>
 
-    <!-- Config del admin (solo dueño): exigir apertura + conteo al cerrar -->
-    <section id="cash-config" class="mb-6 hidden" aria-label="Configuración de caja">
-        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between gap-3">
-            <div class="min-w-0">
-                <p class="text-sm font-black text-white tracking-tight">Control de caja</p>
-                <p class="text-[10px] text-gray-500 font-medium mt-0.5 leading-relaxed">Exige turno abierto para cobrar en efectivo y conteo físico obligatorio al cerrar. Apagado = flujo actual sin fricción.</p>
-            </div>
-            <button type="button" id="cash-config-toggle" onclick="toggleCashStrict()"
-                class="flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 bg-white/[0.05] text-gray-300 border border-white/[0.08]"
-                aria-pressed="false">
-                Desactivado
-            </button>
-        </div>
-    </section>
-
-    <!-- Cajón físico (solo dueño): requiere impresora con puerto DK + QZ Tray -->
-    <section id="drawer-card" class="mb-6 hidden" aria-label="Cajón físico">
-        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-3">
-            <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="text-sm font-black text-white tracking-tight">Cajón físico (QZ Tray)</p>
-                    <p class="text-[10px] text-gray-500 font-medium mt-0.5 leading-relaxed">Abre el cajón monedero al cobrar en efectivo. Requiere impresora con puerto DK y QZ Tray instalado en el PC del mostrador.</p>
-                </div>
-                <button type="button" id="drawer-toggle" onclick="toggleDrawerEnabled()"
-                    class="flex-shrink-0 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 bg-white/[0.05] text-gray-300 border border-white/[0.08]"
-                    aria-pressed="false">
-                    Desactivado
-                </button>
-            </div>
-            <div id="drawer-auto-row" class="hidden flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
-                <p class="text-xs font-bold text-gray-300">Abrir automáticamente al cobrar en efectivo</p>
-                <button type="button" id="drawer-auto-toggle" onclick="toggleDrawerAuto()"
-                    class="flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 bg-white/[0.05] text-gray-300 border border-white/[0.08]"
-                    aria-pressed="false">
-                    No
-                </button>
-            </div>
-            <p id="drawer-status" class="text-[11px] font-bold text-gray-500" aria-live="polite">Detectando…</p>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" id="drawer-test-btn" onclick="testDrawer()"
-                    class="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-gray-200 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-white/[0.08]">
-                    Probar cajón
-                </button>
-                <a href="https://qz.io/download/" target="_blank" rel="noopener"
-                    class="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
-                    Cómo instalar QZ ↗
-                </a>
-            </div>
-            <p id="drawer-test-result" class="hidden text-[11px] font-black px-4 py-2.5 rounded-xl" aria-live="polite"></p>
-        </div>
-    </section>
-
     <!-- Selector de rango -->
     <section class="mb-6" aria-label="Filtro de fechas">
         <div class="flex flex-wrap items-center gap-2" id="range-selector">
