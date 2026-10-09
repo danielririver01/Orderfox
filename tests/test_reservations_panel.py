@@ -109,7 +109,7 @@ class TestReservationsWebRoutes:
         resp = auth_client.get('/dashboard/reservations/')
         assert resp.status_code == 200
         html = resp.get_data(as_text=True)
-        assert 'MEJORAR MI PLAN' in html
+        assert 'VER EL PLAN CRECIMIENTO' in html
 
     def test_calendar_renderiza(self, app, db, auth_client, sample_restaurant,
                                 mesa, settings_default, reserva_pendiente):

@@ -2,14 +2,14 @@
 
 @source "../../template/**/*.html";
 @source "../../template/dashboard/_payment_modal.html";
-@source "../../static/JS/**/*.js";
+@source "../../static/js/**/*.js";
 
 /* Forzar dark mode por clase .dark en lugar de prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant sidebar-expanded (&:where(.sidebar-expanded, .sidebar-expanded *));
 
 @theme {
-  --color-primary: #f2460d;
+  --color-primary: #f97316;
   --color-success: #16a34a;
   --color-text-main: #1c110d;
   --color-text-muted: #6b7280;

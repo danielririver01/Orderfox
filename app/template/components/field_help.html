@@ -1,0 +1,25 @@
+{# ==========================================================================
+   field_help.html — Ayuda "[?]" reutilizable para campos de formulario.
+
+   Uso:
+     {% from 'components/field_help.html' import help %}
+     <div class="flex items-center gap-2">
+        <label ...>Nombre del producto</label>
+        {{ help('Así aparecerá en tus ventas y en el menú que ven tus clientes.') }}
+     </div>
+
+   Cómo funciona:
+     - help-tips.js crea la burbuja de texto justo debajo del campo.
+     - Se abre al TOCAR o hacer clic (no depende del hover: en tablet no hay hover).
+     - Se cierra con Escape, con otro clic, o al tocar fuera.
+
+   Dónde aparece la burbuja:
+     - Dentro del primer ancestro con [data-help-slot] si existe.
+     - Si no, después del contenedor del campo (abuelo del botón).
+   ========================================================================== #}
+
+{% macro help(text, label='Qué significa este campo') %}
+<button type="button" class="vz-help" data-help="{{ text|e }}" aria-expanded="false" aria-label="{{ label }}">
+    <span aria-hidden="true">?</span>
+</button>
+{% endmacro %}

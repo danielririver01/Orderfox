@@ -6,7 +6,7 @@
             <span class="font-heading text-sm font-extrabold text-white vz-drawer-header-text">Copilot Estratégico</span>
         </div>
         <div class="flex items-center gap-1">
-            <a href="/legal#copilot" target="_blank" title="About Copilot VZ"
+            <a href="/legal#copilot" target="_blank" title="Acerca de Copilot VZ"
                 class="w-7 h-7 rounded-lg hover:bg-white/5 items-center justify-center text-[var(--text-dim)] vz-drawer-header-text">
                 <span class="material-symbols-outlined text-[16px]">info</span>
             </a>
@@ -31,7 +31,7 @@
     <nav class="px-3 space-y-0.5">
         <button type="button" class="vz-nav-btn" id="btn-new-conv">
             <span class="material-symbols-outlined text-[18px]">chat_bubble</span>
-            <span class="vz-sidebar-label">Nuevo Chat</span>
+            <span class="vz-sidebar-label">Nueva conversación</span>
         </button>
     </nav>
 
@@ -57,8 +57,12 @@
         </div>
         <div id="conv-empty-state" class="flex flex-col items-center justify-center py-8 px-4 text-center" hidden>
             <span class="material-symbols-outlined text-[32px] text-[var(--text-dim)] mb-2">chat_bubble_outline</span>
-            <p class="text-xs font-semibold text-[var(--text-muted)] mb-0.5">No hay chats recientes</p>
-            <p class="text-[11px] text-[var(--text-dim)]">Inicia una nueva conversación</p>
+            <p class="text-xs font-semibold text-[var(--text-muted)] mb-3">Todavía no has hablado con el Copilot</p>
+            <button type="button" onclick="document.getElementById('btn-new-conv').click()"
+                class="px-4 py-2.5 rounded-xl bg-[#f97316] hover:bg-[#fb923c] text-[#0a0a0a] text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">
+                Empezar una conversación
+            </button>
+            <p class="text-[11px] text-[var(--text-dim)] mt-3">Pregúntale por tus ventas o pídele ideas para tu menú</p>
         </div>
     </div>
 

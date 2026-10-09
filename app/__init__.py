@@ -211,9 +211,18 @@ def create_app():
     
     # Servir archivos estáticos en producción con WhiteNoise
     # En desarrollo (debug=True), Flask lo hace automáticamente.
+    #
+    # autorefresh=True es OBLIGATORIO aquí: sin él, WhiteNoise guarda el tamaño
+    # del archivo la primera vez que lo sirve y no lo vuelve a mirar. Como los
+    # archivos se reescriben en el mismo sitio (p. ej. el CSS al recompilar), la
+    # respuesta queda TRUNCADA: el navegador anuncia el tamaño viejo y corta, y
+    # al descartar el CSS la app se ve como HTML pelado. Con autorefresh se
+    # revisa el archivo en cada petición (un stat, coste despreciable) y se
+    # recarga si cambió.
     if not app.debug:
         static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-        app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
+        app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/',
+                                  autorefresh=True)
 
     scheduler.init_app(app)
     scheduler.start()
@@ -363,6 +372,31 @@ def create_app():
             # 02:25 PM -> 2:25 PM (quitar cero inicial de la hora 12h)
             out = re.sub(r'0(\d):', r'\1:', out)
         return out
+
+    @app.template_filter('brand_ink')
+    def brand_ink_filter(value):
+        """Color de texto legible sobre el color de marca del restaurante.
+
+        El color de marca lo elige el dueño (puede ser naranja, azul o verde
+        oscuro), así que el texto no puede ser fijo: con un fondo claro el
+        texto va casi negro, con uno oscuro va blanco. Sin esto, un botón
+        naranja con texto blanco no se alcanza a leer (falla WCAG).
+        """
+        hex_color = (value or '#FF7A29').lstrip('#')
+        if len(hex_color) == 3:
+            hex_color = ''.join(c * 2 for c in hex_color)
+        try:
+            r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (0, 2, 4))
+        except (ValueError, IndexError):
+            return '#0a0a0a'
+
+        def _lin(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+        lum = 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b)
+        contraste_oscuro = (lum + 0.05) / (0.0033 + 0.05)   # texto #0a0a0a
+        contraste_blanco = 1.05 / (lum + 0.05)              # texto blanco
+        return '#0a0a0a' if contraste_oscuro >= contraste_blanco else '#ffffff'
 
     # Inyectar variables de soporte y suscripción globalmente
     @app.context_processor

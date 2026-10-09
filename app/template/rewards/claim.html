@@ -223,7 +223,7 @@
     background: radial-gradient(circle at 50% 50%, #f97316, #ea580c);
     border-radius: 50%;
     z-index: 3;
-    box-shadow: 0 0 16px rgba(249,115,22,0.3);
+    
   }
   .surprise-title {
     font-family: 'Outfit', sans-serif;
@@ -242,9 +242,9 @@
     letter-spacing: 0.05em; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s;
     background: linear-gradient(135deg, #f97316, #ea580c); color: #fff;
-    box-shadow: 0 8px 24px rgba(249,115,22,0.25);
+    
   }
-  .btn-reveal:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(249,115,22,0.35); }
+  .btn-reveal:hover { transform: translateY(-1px);  }
   .btn-reveal:active { transform: scale(0.97); }
   .btn-reveal:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
@@ -302,9 +302,9 @@
     letter-spacing: 0.05em; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s;
     background: linear-gradient(135deg, #f97316, #ea580c); color: #fff;
-    box-shadow: 0 8px 24px rgba(249,115,22,0.25);
+    
   }
-  .btn-claim:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(249,115,22,0.35); }
+  .btn-claim:hover { transform: translateY(-1px);  }
   .btn-claim:active { transform: scale(0.97); }
   .btn-claim:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-claim.claimed { background: linear-gradient(135deg, #22c55e, #16a34a); }
@@ -421,20 +421,20 @@
       <div class="sidebar-streak-tier">{{ streak.icon }} Nivel {{ streak.tier_name }}</div>
       <div class="sidebar-streak-stats">
         {{ streak.renewal_count }} renovaci{{ '&oacute;n' if streak.renewal_count == 1 else 'ones' -}}
-        {% if streak.highest_tier > streak.tier %} <span class="sidebar-streak-record">&#127942; R&eacute;cord: {{ streak.highest_tier_name }}</span>{% endif %}
+        {% if streak.highest_tier> streak.tier %} <span class="sidebar-streak-record">&#127942; R&eacute;cord: {{ streak.highest_tier_name }}</span>{% endif %}
       </div>
-      {% if streak.days_remaining > 0 and streak.days_in_cycle > 0 %}
+      {% if streak.days_remaining> 0 and streak.days_in_cycle> 0 %}
       <div class="sidebar-progress-track">
         <div class="sidebar-progress-fill" style="width:{{ streak.progress_pct }}%"></div>
       </div>
       <div class="sidebar-progress-text">{{ streak.days_remaining }} de {{ streak.days_in_cycle }} d&iacute;as</div>
       {% endif %}
       <div class="sidebar-next-text">
-        {% if streak.days_remaining > 7 %}
+        {% if streak.days_remaining> 7 %}
         Mant&eacute;n tu nivel renovando antes del vencimiento.
-        {% elif streak.days_remaining >= 3 %}
+        {% elif streak.days_remaining>= 3 %}
         Tu nivel est&aacute; cerca de expirar. Renueva y sigue sumando.
-        {% elif streak.days_remaining >= 1 %}
+        {% elif streak.days_remaining>= 1 %}
         &Uacute;ltimos d&iacute;as. Una renovaci&oacute;n mantiene tu nivel.
         {% endif %}
       </div>
@@ -521,20 +521,20 @@
       <div class="sidebar-streak-tier">{{ streak.icon }} Nivel {{ streak.tier_name }}</div>
       <div class="sidebar-streak-stats">
         {{ streak.renewal_count }} renovaci{{ '&oacute;n' if streak.renewal_count == 1 else 'ones' -}}
-        {% if streak.highest_tier > streak.tier %} <span class="sidebar-streak-record">&#127942; R&eacute;cord: {{ streak.highest_tier_name }}</span>{% endif %}
+        {% if streak.highest_tier> streak.tier %} <span class="sidebar-streak-record">&#127942; R&eacute;cord: {{ streak.highest_tier_name }}</span>{% endif %}
       </div>
-      {% if streak.days_remaining > 0 and streak.days_in_cycle > 0 %}
+      {% if streak.days_remaining> 0 and streak.days_in_cycle> 0 %}
       <div class="sidebar-progress-track">
         <div class="sidebar-progress-fill" style="width:{{ streak.progress_pct }}%"></div>
       </div>
       <div class="sidebar-progress-text">{{ streak.days_remaining }} de {{ streak.days_in_cycle }} d&iacute;as</div>
       {% endif %}
       <div class="sidebar-next-text">
-        {% if streak.days_remaining > 7 %}
+        {% if streak.days_remaining> 7 %}
         Mant&eacute;n tu nivel renovando antes del vencimiento.
-        {% elif streak.days_remaining >= 3 %}
+        {% elif streak.days_remaining>= 3 %}
         Tu nivel est&aacute; cerca de expirar. Renueva y sigue sumando.
-        {% elif streak.days_remaining >= 1 %}
+        {% elif streak.days_remaining>= 1 %}
         &Uacute;ltimos d&iacute;as. Una renovaci&oacute;n mantiene tu nivel.
         {% endif %}
       </div>
@@ -702,7 +702,7 @@ function launchConfetti() {
     piece.className = 'confetti-piece';
     piece.style.left = Math.random() * 100 + '%';
     piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.borderRadius = Math.random()> 0.5 ? '50%' : '2px';
     piece.style.width = (4 + Math.random() * 10) + 'px';
     piece.style.height = (4 + Math.random() * 10) + 'px';
     piece.style.animationDuration = (2 + Math.random() * 2.5) + 's';

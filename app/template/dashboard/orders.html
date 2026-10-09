@@ -8,37 +8,34 @@
   }
 </style>
 <header class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] sticky top-0 z-10">
-  <div class="max-w-md md:max-w-none mx-auto px-4 md:px-10 py-4 flex justify-between items-center">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4 pr-16 md:pr-0 flex justify-between items-center gap-3 flex-wrap">
     <div>
       <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Pedidos</h1>
       <p class="text-xs text-gray-500 dark:text-gray-400" id="orders-count">
         {{ (pending|length + confirmed|length + delivered|length) }} pedidos
       </p>
     </div>
-    <div class="flex items-center gap-3">
-      <!-- Botón de orden (Asc/Desc) -->
-      <button id="sort-toggle-btn" title="Alternar orden" onclick="toggleSort()"
-        class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:text-blue-500 transition-all border border-gray-200 dark:border-[#262626]">
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Orden de la lista: dice cuál está aplicado, no un ícono mudo -->
+      <button id="sort-toggle-btn" title="Cambiar el orden de la lista" onclick="toggleSort()"
+        class="flex items-center gap-2 h-11 px-3 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:text-blue-500 transition-all border border-gray-200 dark:border-[#262626] active:scale-95">
         <span class="material-symbols-outlined text-[20px]" id="sort-icon">arrow_upward</span>
+        <span id="sort-label" class="text-[11px] font-black uppercase tracking-wider">M&#x00E1;s antiguos</span>
       </button>
 
-      <!-- Botón de activar/silenciar notificaciones de sonido -->
-      <button id="sound-toggle-btn" title="Activar alertas sonoras" onclick="toggleSound()"
-        class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-orange-100 dark:hover:bg-orange-500/10 hover:text-orange-500 transition-all border border-gray-200 dark:border-[#262626]">
+      <!-- Avisos con sonido: el botón dice si están encendidos o apagados -->
+      <button id="sound-toggle-btn" title="Encender o apagar los avisos con sonido" onclick="toggleSound()" aria-pressed="false"
+        class="flex items-center gap-2 h-11 px-3 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500 hover:bg-orange-100 dark:hover:bg-orange-500/10 hover:text-orange-500 transition-all border border-gray-200 dark:border-[#262626] active:scale-95">
         <span class="material-symbols-outlined text-[20px]" id="sound-icon">notifications_off</span>
+        <span id="sound-label" class="text-[11px] font-black uppercase tracking-wider">Sin sonido</span>
       </button>
-
-      <a href="{{ url_for('dashboard.index') }}"
-        class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <span class="material-symbols-outlined">close</span>
-      </a>
     </div>
   </div>
 </header>
 
 
 <!-- Contenedor principal de pedidos (target del AJAX refresh) -->
-<div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:pb-16" id="orders-container">
+<div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-52 md:pb-16" id="orders-container">
   <!-- Mobile: Lista vertical | Desktop: Kanban 3 columnas + Detail Panel -->
   <div class="md:flex md:gap-6 md:justify-center" id="orders-grid">
     <!-- Orders List -->
@@ -72,10 +69,11 @@
   </div>
 </div>
 
-<!-- FAB Unificado -->
+<!-- Botón flotante con nombre: dice qué crea, sin adivinar -->
 <a href="{{ url_for('orders.create') }}" id="desktop-fab"
-  class="fixed bottom-32 md:bottom-8 right-6 md:right-8 bg-[#f2460d] text-white rounded-2xl w-14 h-14 flex items-center justify-center shadow-2xl shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all z-20">
-  <span class="material-symbols-outlined text-[28px]">add</span>
+  class="vz-fab flex fixed bottom-32 md:bottom-8 right-6 md:right-8 z-20">
+  <span class="material-symbols-outlined" aria-hidden="true">add</span>
+  <span class="vz-fab__label">Crear pedido</span>
 </a>
 
 <!-- Modal de confirmación (reemplaza confirm() nativo) -->
@@ -91,11 +89,11 @@
       </div>
       <p id="order-modal-message" class="text-sm text-gray-500 dark:text-gray-400 mb-6"></p>
       <div class="flex gap-3">
-        <button id="order-modal-cancel" type="button" class="flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333] transition-all active:scale-95">
-          Cancelar
+        <button id="order-modal-cancel" type="button" class="flex-1 min-h-[44px] px-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#262626] hover:bg-gray-200 dark:hover:bg-[#333] transition-all active:scale-95">
+          No, volver
         </button>
-        <button id="order-modal-action" type="button" class="flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95" style="background-color: #ef4444;">
-          Rechazar
+        <button id="order-modal-action" type="button" class="flex-1 min-h-[44px] px-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-white transition-all active:scale-95" style="background-color: #ef4444;">
+          S&#x00ED;, continuar
         </button>
       </div>
     </div>

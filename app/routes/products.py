@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort, current_app
 from app.forms import ProductForm
-from app.models import Product
+from app.models import Category, Product
 from app.utils.auth import require_auth, require_active, require_role_check
 
 from app.utils.restaurant import get_current_restaurant
@@ -92,8 +92,8 @@ def create():
         form.category_id.data = category_id_arg
 
     if not categories:
-        flash('Primero crea una categoría para poder agregar productos '
-              'o activa una categoría existente', 'warning')
+        flash('Antes de crear el producto necesitas una categoría. '
+              'Por ejemplo: Entradas, Bebidas o Postres.', 'info')
         return redirect(url_for('categories.index'))
 
     if form.validate_on_submit():
@@ -108,6 +108,7 @@ def create():
             is_vegetarian=form.is_vegetarian.data,
             is_spicy=form.is_spicy.data,
             is_featured=form.is_featured.data,
+            is_sold_out=form.is_sold_out.data,
         )
         if error:
             flash(error, 'error')
@@ -122,7 +123,7 @@ def create():
                 product.restaurant_id,
             )
 
-        flash('Producto creado exitosamente', 'success')
+        flash(f'Listo: “{product.name}” ya está en tu catálogo.', 'success')
         return redirect(url_for('products.by_category',
                                 category_id=product.category_id))
 
@@ -147,6 +148,17 @@ def edit(id):
 
     categories = CategoryService.get_active_categories(restaurant.id)
     form.category_id.choices = [(c.id, c.name) for c in categories]
+    # Si la categoría actual está oculta, igual debe aparecer en la lista:
+    # si no, el navegador elige la primera opción y al guardar el producto
+    # se muda de categoría sin que el dueño se dé cuenta.
+    if product.category_id not in {c.id for c in categories}:
+        actual = Category.query.filter_by(
+            id=product.category_id, restaurant_id=restaurant.id
+        ).first()
+        if actual:
+            form.category_id.choices.insert(
+                0, (actual.id, f'{actual.name} (oculta en el menú)')
+            )
 
     # Forzar la seleccion correcta con GET
     if request.method == "GET":
@@ -165,12 +177,13 @@ def edit(id):
             is_vegetarian=form.is_vegetarian.data,
             is_spicy=form.is_spicy.data,
             is_featured=form.is_featured.data,
+            is_sold_out=form.is_sold_out.data,
         )
         if error:
             flash(error, 'error')
             return redirect(url_for('products.edit', id=id))
 
-        flash('Producto actualizado exitosamente', 'success')
+        flash('Listo, guardamos los cambios del producto.', 'success')
         return redirect(url_for('products.by_category',
                                 category_id=product.category_id))
 
@@ -231,6 +244,40 @@ def update_status(id):
     # If state didn't change, respond without message
     if product.is_active == original_active:
         return jsonify({'success': True, 'is_active': product.is_active})
+
+
+@products_bp.route('/<int:id>/sold-out', methods=['PATCH', 'POST'])
+@require_auth
+@require_active
+def toggle_sold_out(id):
+    """Marcar/desmarcar "Agotado" (hoy no hay) sin tocar la visibilidad.
+
+    A diferencia de is_active, esto no saca el producto del menú: el
+    cliente lo sigue viendo, tachado, y sabe por qué no puede pedirlo.
+    """
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    product = ProductService.get_product(restaurant.id, id)
+    if not product:
+        return jsonify({'error': 'Producto no encontrado'}), 404
+
+    data = request.get_json(silent=True) or request.form
+    desired_state = data.get('is_sold_out')
+    if desired_state is None:
+        # Sin valor explícito: alternar el estado actual.
+        desired_state = not product.is_sold_out
+    if isinstance(desired_state, str):
+        desired_state = desired_state.lower() in ('true', '1', 'yes')
+
+    product, error = ProductService.update_product(
+        product, is_sold_out=bool(desired_state)
+    )
+    if error:
+        return jsonify({'success': False, 'message': error}), 400
+
+    return jsonify({'success': True, 'is_sold_out': product.is_sold_out})
 
     return jsonify({
         'success': True,
@@ -302,7 +349,7 @@ def delete(id):
 
     category_id = product.category_id
     ProductService.delete_product(product)
-    flash('Producto eliminado exitosamente', 'success')
+    flash('Borramos el producto. Ya no aparece en tu menú.', 'success')
 
     return redirect(url_for('products.by_category', category_id=category_id))
 

@@ -13,7 +13,7 @@ from flask import (
     current_app
 )
 from app.utils.auth import require_auth, require_active, require_role
-from app.models import db, Restaurant, User
+from app.models import db, Restaurant, User, Product, Order
 from datetime import datetime, timezone, timedelta
 import qrcode
 import re
@@ -98,6 +98,20 @@ def index():
     # Plato estrella 30d
     top_product = DashboardService.get_top_product_30d(restaurant.id)
 
+    # Primeros pasos: cuántos pasos completó ya (para la tarjeta de arranque)
+    productos_creados = Product.query.filter_by(restaurant_id=restaurant.id).count()
+    pedidos_creados = db.session.query(Order.id).filter_by(
+        restaurant_id=restaurant.id).first() is not None
+    pasos_hechos = (1 if productos_creados > 0 else 0) + (1 if pedidos_creados else 0)
+    first_steps = {
+        'hay_productos': productos_creados > 0,
+        'hay_pedidos': pedidos_creados,
+        # El "paso actual" es el primero que le falta (máx. 3).
+        'paso': min(pasos_hechos + 1, 3),
+        'hechos': pasos_hechos,
+        'completo': pasos_hechos >= 2,
+    }
+
     return render_template('dashboard/index.html',
                          restaurant=restaurant,
                          pending_count=stats['pending'],
@@ -112,7 +126,8 @@ def index():
                          recent_pending=recent_pending,
                          pending_total_count=pending_total_count,
                          comparative=comparative,
-                         top_product=top_product)
+                         top_product=top_product,
+                         first_steps=first_steps)
 
 @dashboard_bp.route('/toggle-status', methods=['POST'])
 @require_auth
@@ -176,6 +191,7 @@ def api_stats():
             'avg_order_value': data['avg_order_value_cop'],
             'range': range_type,
             'previous_period_sales': comparative['previous_sales'],
+            'previous_period_orders': comparative.get('previous_orders', 0),
             'delta_pct': comparative['delta_pct'],
             'verdict': comparative['verdict'],
         })

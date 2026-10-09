@@ -54,7 +54,7 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
       <p class="text-center text-sm text-ink-muted">Pedido de mesa — solo confirma para enviar</p>
     )}
     <input type="text" name="user_secondary_email" class="absolute -left-[9999px]" tabindex="-1" autocomplete="off" />
-    <button type="submit"
+    <button type="submit" id="checkout-submit"
       class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg disabled:opacity-50"
     >
       Confirmar y pedir
@@ -161,6 +161,37 @@ const isTableOrder = tableId !== null && tableId !== undefined && tableId !== ''
     const form = document.getElementById('checkout-form') as HTMLFormElement | null;
     if (form) setSubmitState(form, false);
   }
+
+  // El cliente confirma sabiendo cuánto paga: el botón lleva el total
+  // ("Confirmar y pedir · $45.000"), igual que el carrito.
+  function calcularTotalCarrito(): number {
+    try {
+      const raw = localStorage.getItem(`velziaCart_${rId}`);
+      if (!raw) return 0;
+      const parsed = JSON.parse(raw);
+      return (parsed.items || []).reduce((suma: number, item: any) => {
+        const extras = item.selectedModifiers?.reduce((m: number, mod: any) => m + mod.extra_price, 0) || 0;
+        return suma + (item.product.price + extras) * item.quantity;
+      }, 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  function pintarTotalEnBoton(): void {
+    const btn = document.getElementById('checkout-submit') as HTMLButtonElement | null;
+    if (!btn || btn.disabled) return;
+    const total = calcularTotalCarrito();
+    btn.dataset.label = total > 0
+      ? `Confirmar y pedir · $${total.toLocaleString('es-CO')}`
+      : 'Confirmar y pedir';
+    btn.textContent = btn.dataset.label;
+  }
+
+  pintarTotalEnBoton();
+  document.addEventListener('open-checkout', pintarTotalEnBoton);
+  document.addEventListener('cart-updated', pintarTotalEnBoton);
+
 
   document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();

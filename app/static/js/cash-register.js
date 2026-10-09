@@ -131,7 +131,7 @@ async function loadOrders() {
 
 function renderOrders(list, orders) {
     if (!orders.length) {
-        list.innerHTML = '<div class="text-center text-gray-600 text-sm py-8">Sin pedidos en este periodo</div>';
+        list.innerHTML = '<div class="text-center text-gray-500 text-sm py-8 px-4">No hay pedidos cobrados en este periodo.<br><span class="text-xs text-gray-600">Prueba con otro rango de fechas, arriba.</span></div>';
         return;
     }
     const actorLine = (actor, prefix) => {
@@ -143,7 +143,7 @@ function renderOrders(list, orders) {
         return `<p class="text-[9px] text-gray-600 font-bold mt-0.5">${prefix}: ${who}${when}</p>`;
     };
     list.innerHTML = orders.map((o) => `
-        <a href="/orders/${o.id}" class="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#141414] border border-[#262626] hover:border-[#f2460d]/40 transition-all">
+        <a href="/orders/${o.id}" class="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#141414] border border-[#262626] hover:border-[#f97316]/40 transition-all">
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-black text-white tracking-tight">${o.order_number}</span>
@@ -154,7 +154,7 @@ function renderOrders(list, orders) {
                 ${actorLine(o.paid_by, 'Cobrado por')}
                 <p class="text-[9px] text-gray-600 font-bold mt-0.5">${o.paid_at ? localTime(o.paid_at) : ''}</p>
             </div>
-            <span class="text-sm font-black text-[#f2460d] tracking-tighter flex-shrink-0">${formatCOP(o.total)}</span>
+            <span class="text-sm font-black text-[#f97316] tracking-tighter flex-shrink-0">${formatCOP(o.total)}</span>
         </a>
     `).join('');
 }
@@ -168,7 +168,7 @@ async function loadPending() {
         if (!res.ok || !body.success) throw new Error(body.error || 'Error');
 
         if (!body.data.length) {
-            list.innerHTML = '<div class="text-center text-gray-600 text-sm py-6">Sin pedidos pendientes de cobro 🎉</div>';
+            list.innerHTML = '<div class="text-center text-gray-500 text-sm py-6 px-4">¡Todo cobrado! No queda nada pendiente 🎉</div>';
             return;
         }
         list.innerHTML = body.data.map((o) => `
@@ -203,7 +203,7 @@ async function loadCloses() {
         if (!res.ok || !body.success) throw new Error(body.error || 'Error');
 
         if (!body.data.length) {
-            list.innerHTML = '<div class="text-center text-gray-600 text-sm py-6">Aún no hay cierres registrados</div>';
+            list.innerHTML = '<div class="text-center text-gray-500 text-sm py-6 px-4">Todavía no has cerrado la caja.<br><span class="text-xs text-gray-600">Cuando lo hagas, cada día queda guardado aquí.</span></div>';
             return;
         }
         list.innerHTML = body.data.map((c) => `
@@ -232,7 +232,7 @@ function setRange(key) {
         const active = btn.dataset.range === key;
         btn.className = 'range-btn flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ' +
             (active
-                ? 'bg-[#f2460d] text-white border-[#f2460d] shadow-lg shadow-orange-500/20'
+                ? 'bg-[#f97316] text-[#0a0a0a] border-[#f97316] shadow-lg shadow-orange-500/20'
                 : 'bg-white/[0.03] text-gray-400 border-white/[0.06] hover:text-white hover:bg-white/[0.06]');
     });
     const customRange = crEl('custom-range');
@@ -277,7 +277,7 @@ function selectMethod(method) {
     document.querySelectorAll('.method-card').forEach((card) => {
         const active = crState.method && card.dataset.method === crState.method;
         card.className = 'method-card text-left p-2.5 md:p-4 rounded-xl bg-[#141414] border transition-all active:scale-[0.98] min-w-0 ' +
-            (active ? 'border-[#f2460d] ring-1 ring-[#f2460d]/30' : 'border-[#262626] hover:border-[#f2460d]/40');
+            (active ? 'border-[#f97316] ring-1 ring-[#f97316]/30' : 'border-[#262626] hover:border-[#f97316]/40');
     });
     const clearBtn = crEl('clear-method-filter');
     if (clearBtn) clearBtn.classList.toggle('hidden', !crState.method);
@@ -287,7 +287,7 @@ function selectMethod(method) {
 function clearMethodFilter() {
     crState.method = null;
     document.querySelectorAll('.method-card').forEach((card) => {
-        card.className = 'method-card text-left p-2.5 md:p-4 rounded-xl bg-[#141414] border border-[#262626] hover:border-[#f2460d]/40 transition-all active:scale-[0.98] min-w-0';
+        card.className = 'method-card text-left p-2.5 md:p-4 rounded-xl bg-[#141414] border border-[#262626] hover:border-[#f97316]/40 transition-all active:scale-[0.98] min-w-0';
     });
     crEl('clear-method-filter').classList.add('hidden');
     refresh();

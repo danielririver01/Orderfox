@@ -4,33 +4,52 @@ from wtforms import StringField, SubmitField, TextAreaField, BooleanField, Selec
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class CategoryForm(FlaskForm):
-    name = StringField('Nombre', validators=[DataRequired(), Length(max=100)])
+    name = StringField('Nombre', validators=[
+        DataRequired(message='Necesitamos un nombre para continuar.'),
+        Length(max=100, message='El nombre es muy largo: usa máximo 100 letras.'),
+    ])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activa', default=True)
     image = FileField('Imagen (Opcional)', validators=[
         Optional(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp'],
+                    'Ese archivo no es una imagen. Sube una foto JPG o PNG.')
     ])
     submit = SubmitField('Guardar')
 
 class ProductForm(FlaskForm):
-    name = StringField('Nombre', validators=[DataRequired(), Length(max=100)])
-    category_id = SelectField('Categoría', coerce=int, validators=[DataRequired()])
-    price = IntegerField('Precio', validators=[DataRequired(), NumberRange(min=1, message='El precio debe ser mayor a 0')])
+    name = StringField('Nombre', validators=[
+        DataRequired(message='Necesitamos un nombre para continuar.'),
+        Length(max=100, message='El nombre es muy largo: usa máximo 100 letras.'),
+    ])
+    category_id = SelectField('Categoría', coerce=int, validators=[
+        DataRequired(message='Elige una categoría para saber dónde aparece este producto.'),
+    ])
+    price = IntegerField('Precio', validators=[
+        DataRequired(message='Falta el precio. Escribe solo números, por ejemplo: 12000.'),
+        NumberRange(min=1, message='El precio debe ser mayor a $0. Por ejemplo: 12000.'),
+    ])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activo', default=True)
+    is_sold_out = BooleanField('Agotado (hoy no hay)', default=False)
     # Badges del menú público (v1.5)
     is_vegetarian = BooleanField('Vegetariano', default=False)
     is_spicy = BooleanField('Picante', default=False)
     is_featured = BooleanField('Destacado (Más pedido)', default=False)
     image = FileField('Imagen (Opcional)', validators=[
         Optional(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo imágenes!')
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp'],
+                    'Ese archivo no es una imagen. Sube una foto JPG o PNG.')
     ])
     submit = SubmitField('Guardar')
 
 class ModifierForm(FlaskForm):
-    name = StringField('Nombre', validators=[DataRequired(), Length(max=50)])
-    extra_price = IntegerField('Precio Extra', validators=[NumberRange(min=0, message='El precio debe ser 0 o positivo')], default=0)
+    name = StringField('Nombre', validators=[
+        DataRequired(message='Ponle un nombre al combo para reconocerlo. Ejemplo: Doble carne.'),
+        Length(max=50, message='El nombre del combo es muy largo: usa máximo 50 letras.'),
+    ])
+    extra_price = IntegerField('Precio Extra', validators=[
+        NumberRange(min=0, message='El precio extra no puede ser negativo. Déjalo en 0 si no cuesta más.'),
+    ], default=0)
     is_active = BooleanField('Activo', default=True)
     submit = SubmitField('Guardar')

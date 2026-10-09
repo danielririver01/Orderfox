@@ -455,7 +455,7 @@ class TestEditOrderRoute:
         resp = client.get(f'/orders/{order_with_items.id}/edit')
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert 'Editar Venta' in body
+        assert 'Editar pedido' in body
         assert 'Guardar Cambios' in body
 
     def test_post_updates_quantity(self, client, db, order_with_items, sample_user, sample_product):

@@ -41,7 +41,7 @@ const { restaurantId, whatsappPhone } = Astro.props;
       id="checkout-btn"
       class="btn-primary w-full rounded-xl py-3 text-sm font-semibold shadow-lg"
     >
-      Comprar ahora
+      Hacer el pedido
     </button>
   </div>
 </div>
@@ -149,7 +149,25 @@ const { restaurantId, whatsappPhone } = Astro.props;
   document.getElementById('cart-close')?.addEventListener('click', closeCart);
   document.getElementById('cart-overlay')?.addEventListener('click', closeCart);
 
-  document.getElementById('clear-cart-btn')?.addEventListener('click', () => {
+  // Vaciar el pedido es un borrado sin vuelta atrás: el primer toque avisa,
+  // el segundo lo hace. Si no confirmas en 4 segundos, el botón vuelve.
+  let clearPendiente = false;
+  let clearTimer: ReturnType<typeof setTimeout> | undefined;
+  document.getElementById('clear-cart-btn')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    if (!clearPendiente) {
+      clearPendiente = true;
+      btn.dataset.texto = btn.textContent ?? '';
+      btn.textContent = '¿Seguro? Se quitan todos los productos';
+      btn.classList.add('border-red-400', 'text-red-500');
+      clearTimer = setTimeout(() => {
+        clearPendiente = false;
+        btn.textContent = btn.dataset.texto ?? 'Vaciar pedido';
+        btn.classList.remove('border-red-400', 'text-red-500');
+      }, 4000);
+      return;
+    }
+    clearTimeout(clearTimer);
     localStorage.removeItem(`velziaCart_${restaurantIdNum}`);
     document.dispatchEvent(new CustomEvent('cart-updated'));
     renderCart();

@@ -404,7 +404,10 @@ class TestCashRegisterRoutes:
         resp = client.get('/cash-register/')
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert 'Centro de Caja' in body
+        # v2.2 (UX): la pantalla se llamaba "Centro de Caja" (jerga corporativa).
+        # Ahora dice "Caja", igual que el menú lateral, y explica su propósito.
+        assert 'Caja' in body
+        assert 'Cuánto entró, con qué te pagaron' in body
 
     def test_api_summary(self, client, db, sample_restaurant, sample_user, paid_order_factory):
         now = datetime.now(timezone.utc)

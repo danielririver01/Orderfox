@@ -68,26 +68,31 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label for="pin"
-                        class="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">PIN de 4
+                        class="block text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">PIN de 4
                         dígitos</label>
                     <input type="password" name="pin" id="pin" inputmode="numeric" pattern="\d{4}" maxlength="4"
                         autofocus required placeholder="••••"
-                        class="pin-input w-full px-4 py-4 bg-[#0a0a0a] border border-[#262626] rounded-xl outline-none transition-all font-black text-white placeholder-gray-700 focus:ring-2 focus:border-[#f2460d]"
+                        class="pin-input w-full px-4 py-4 bg-[#0a0a0a] border border-[#262626] rounded-xl outline-none transition-all font-black text-white placeholder-gray-700 focus:ring-2 focus:border-[#f97316]"
                         style="--tw-ring-color: {{ brand }}33; border-color: {{ brand }}66;">
                 </div>
 
                 <button type="submit"
-                    class="w-full py-4 rounded-xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                    style="background: {{ brand }};">
+                    class="w-full py-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    style="background: {{ brand }}; color: {{ brand|brand_ink }};">
                     <span class="material-symbols-outlined text-[18px]">login</span>
                     Entrar
                 </button>
+
+            <!-- Si se equivoca: que sepa qué hacer sin tener que preguntar -->
+            <p class="text-center text-[11px] text-gray-600 font-bold leading-relaxed">
+                ¿Olvidaste tu PIN?<br>Pídele al dueño que lo cambie.
+            </p>
             </form>
 
 
         </div>
 
-        <p class="mt-6 text-center text-[10px] text-gray-700 font-bold uppercase tracking-[0.2em]">
+        <p class="mt-6 text-center text-[11px] text-gray-700 font-bold uppercase tracking-[0.2em]">
             Velzia · Menú digital para restaurantes
         </p>
     </div>

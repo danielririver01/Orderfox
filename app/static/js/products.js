@@ -64,6 +64,54 @@ async function toggleProduct(id, newState, url = null) {
 }
 
 
+// Toggle "Agotado" (hoy no hay) — no saca el producto del menú,
+// los clientes lo ven tachado. El chip ámbar dice el ESTADO; el botón
+// (gris) dice la ACCIÓN: "Se acabó" o "Ya hay".
+async function toggleSoldOut(id, btn) {
+    const willBeSoldOut = btn.getAttribute('data-sold-out') !== 'true';
+
+    const apply = (soldOut) => {
+        document.querySelectorAll(`.sold-out-btn[data-pid="${id}"]`).forEach((b) => {
+            b.setAttribute('data-sold-out', soldOut ? 'true' : 'false');
+            const label = b.querySelector('.sold-out-label');
+            const icon = b.querySelector('.sold-out-icon');
+            if (label) label.textContent = soldOut ? 'Ya hay' : 'Se acabó';
+            if (icon) icon.textContent = soldOut ? 'check_circle' : 'no_meals';
+            b.title = soldOut
+                ? 'Volvió a haber: tus clientes podrán pedirlo otra vez'
+                : 'Hoy no hay: tus clientes lo verán tachado en el menú';
+        });
+        document.querySelectorAll(`[data-sold-out-chip="${id}"]`).forEach((c) => {
+            c.classList.toggle('hidden', !soldOut);
+        });
+    };
+
+    apply(willBeSoldOut);
+
+    try {
+        const response = await fetch(`/products/${id}/sold-out`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_sold_out: willBeSoldOut })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || 'Error al actualizar');
+        }
+        if (window.showToast) {
+            window.showToast(willBeSoldOut
+                ? 'Listo: tus clientes lo verán como agotado.'
+                : 'Listo: ya se puede pedir otra vez.', 'success');
+        }
+    } catch (error) {
+        apply(!willBeSoldOut); // revertir
+        if (window.showToast) {
+            window.showToast(error.message || 'No se pudo cambiar. Revisa tu conexión e intenta de nuevo.', 'error');
+        }
+    }
+}
+
+
 // Close Delete Modal
 function closeDeleteModal() {
     const modal = document.getElementById('deleteModal');
