@@ -139,8 +139,8 @@
         </form>
         {% elif order.status == 'confirmed' and can_deliver %}
         <button onclick="changeStatus({{ order.id }}, 'delivered')"
-            class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg"
-            style="background: {{ brand }}; box-shadow: 0 10px 28px -10px {{ brand }}66;">
+            class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg"
+            style="background: {{ brand }}; color: {{ brand|brand_ink }}; box-shadow: 0 10px 28px -10px {{ brand }}66;">
             <span class="material-symbols-outlined text-[18px]">task_alt</span>
             Entregado
         </button>

@@ -77,11 +77,16 @@
                 </div>
 
                 <button type="submit"
-                    class="w-full py-4 rounded-xl text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                    style="background: {{ brand }};">
+                    class="w-full py-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    style="background: {{ brand }}; color: {{ brand|brand_ink }};">
                     <span class="material-symbols-outlined text-[18px]">login</span>
                     Entrar
                 </button>
+
+            <!-- Si se equivoca: que sepa qué hacer sin tener que preguntar -->
+            <p class="text-center text-[11px] text-gray-600 font-bold leading-relaxed">
+                ¿Olvidaste tu PIN?<br>Pídele al dueño que lo cambie.
+            </p>
             </form>
 
 

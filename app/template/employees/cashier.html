@@ -84,7 +84,7 @@
             <div>
                 <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Total del día</p>
                 <p class="font-display text-4xl font-black text-white mt-1 tracking-tighter">{{ day_total|currency }}</p>
-                <p class="text-[11px] text-gray-600 font-bold mt-1">{{ day_orders }} pedido(s) cobrado(s)</p>
+                <p class="text-[11px] text-gray-600 font-bold mt-1">{% set cuenta = day_orders %}{{ cuenta }} {% if cuenta == 1 %}pedido cobrado{% else %}pedidos cobrados{% endif %}</p>
             </div>
             <span class="material-symbols-outlined text-[40px] text-gray-700">payments</span>
         </div>
@@ -95,7 +95,7 @@
         <div class="flex items-center justify-between">
             <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Por cobrar</h2>
             <span class="text-[11px] font-black text-gray-600 uppercase tracking-widest">{{ orders|length }}
-                pendiente(s)</span>
+                {% if orders|length == 1 %}pendiente{% else %}pendientes{% endif %}</span>
         </div>
 
         {% if orders %}
@@ -127,10 +127,10 @@
                 <!-- Fila 2: acciones (envuelven en pantallas angostas, nunca desbordan) -->
                 <div class="flex items-center justify-end gap-2 flex-wrap pt-3 mt-3 border-t border-white/5">
                     <button onclick="togglePayPanel({{ order.id }})"
-                        class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 text-white"
-                        style="background: {{ brand }};">
+                        class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+                        style="background: {{ brand }}; color: {{ brand|brand_ink }};">
                         <span class="material-symbols-outlined text-[16px]">point_of_sale</span>
-                        Cobrar
+                        Cobrar {{ order.total|currency }}
                     </button>
                     {% if order.status == 'pending' %}
                     <form method="POST" id="cancel-form-{{ order.id }}"
@@ -220,8 +220,8 @@
             <p id="change-amount" class="font-display text-4xl font-black text-white mt-1">$0</p>
             <p class="text-[11px] text-gray-600 font-bold mt-1">Vuelto en efectivo</p>
             <button onclick="closeChangeModal()"
-                class="w-full mt-5 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-white transition-all active:scale-95"
-                style="background: {{ brand }};">
+                class="w-full mt-5 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+                style="background: {{ brand }}; color: {{ brand|brand_ink }};">
                 Listo, ya devolví
             </button>
         </div>
