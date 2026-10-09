@@ -107,7 +107,7 @@
             <div class="bg-[#141414] rounded-2xl border border-[#262626] p-4 lg:sticky lg:top-20 space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Pedido</h2>
-                    <span class="text-[11px] font-black text-gray-600 uppercase tracking-widest" id="cart-count">0 items</span>
+                    <span class="text-[11px] font-black text-gray-600 uppercase tracking-widest" id="cart-count">Sin productos</span>
                 </div>
 
                 <div id="cart-items" class="space-y-2 max-h-[38vh] overflow-y-auto custom-scrollbar">
@@ -171,7 +171,7 @@
 
             if (ids.length === 0) {
                 container.innerHTML = '<p class="text-xs text-gray-600 font-medium text-center py-6">Toca los productos del menú para agregarlos</p>';
-                countSpan.textContent = '0 items';
+                countSpan.textContent = 'Sin productos';
                 totalSpan.textContent = '$0';
                 itemsInput.value = '[]';
                 return;
@@ -209,7 +209,7 @@
                 container.appendChild(row);
             });
 
-            countSpan.textContent = ids.length + ' item(s)';
+            countSpan.textContent = ids.length === 1 ? '1 producto' : ids.length + ' productos';
             totalSpan.textContent = formatMoney(total);
             itemsInput.value = JSON.stringify(items);
         }
