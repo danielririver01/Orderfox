@@ -50,6 +50,13 @@
             <span class="material-symbols-outlined text-[20px]">lock_person</span>
           </div>
         </div>
+
+        <!-- Si no puede editarlo aquí, que sepa dónde sí -->
+        <p class="text-[11px] text-gray-500 dark:text-gray-600 mt-2 ml-1 leading-relaxed">
+          Es el correo con el que entras. Para cambiarlo,
+          <a href="{{ url_for('dashboard.change_email') }}"
+            class="font-bold text-[#f97316] hover:underline">pide el cambio aquí</a>.
+        </p>
       </div>
     </div>
 
@@ -121,27 +128,48 @@
     </div>
   </div>
 
-  <!-- Sistema (Mobile) -->
-  <div class="px-4">
-    <h3 class="text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Sistema y Soporte</h3>
-    <div class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] overflow-hidden">
-      <a href="{{ url_for('dashboard.subscription') }}" class="flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
-            <span class="material-symbols-outlined text-[20px]">loyalty</span>
+    <!-- Sistema y Soporte (Mobile) -->
+    <div class="px-4">
+      <h3 class="text-[11px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-[0.2em] mb-4 ml-1">Sistema y Soporte</h3>
+      <div class="bg-white dark:bg-[#141414] rounded-3xl border border-gray-100 dark:border-[#262626] overflow-hidden">
+        <a href="{{ url_for('dashboard.subscription') }}" class="flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">loyalty</span>
+            </div>
+            <span class="font-bold text-sm dark:text-white">Suscripción</span>
           </div>
-          <span class="font-bold text-sm dark:text-white">Suscripción</span>
-        </div>
-        <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+          <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+        </a>
+        <a href="{{ url_for('dashboard.change_email') }}" class="flex items-center justify-between p-5 border-b border-gray-50 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">mail</span>
+            </div>
+            <span class="font-bold text-sm dark:text-white">Cambiar tu correo</span>
+          </div>
+          <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+        </a>
+        <a href="https://api.whatsapp.com/send?phone={{ SUPPORT_PHONE }}&text=Hola,%20necesito%20ayuda%20con%20Velzia"
+            target="_blank" class="flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">headset_mic</span>
+            </div>
+            <span class="font-bold text-sm dark:text-white">Contáctanos</span>
+          </div>
+          <span class="material-symbols-outlined text-gray-500 dark:text-gray-600 text-[18px]">chevron_right</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Salir (Mobile): no es destructivo, va atenuado -->
+    <div class="px-4">
+      <a href="{{ url_for('auth.logout') }}" class="w-full text-gray-500 dark:text-gray-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 border border-gray-200 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] text-sm">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+        Cerrar sesión
       </a>
-      
-  <!-- Logout (Mobile) -->
-  <div class="px-4">
-    <a href="{{ url_for('auth.logout') }}" class="w-full bg-red-500/10 text-red-500 font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-red-500/20 uppercase tracking-widest text-xs">
-      <span class="material-symbols-outlined text-[20px]">logout</span>
-      Cerrar Sesión
-    </a>
+    </div>
   </div>
-</div>
 {% endblock %}
 

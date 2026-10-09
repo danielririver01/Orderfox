@@ -12,7 +12,7 @@
       {{ restaurant.name[:1] | upper }}
     </div>
     <div class="px-4 py-1.5 bg-orange-50 dark:bg-orange-500/10 rounded-full border border-orange-100 dark:border-orange-500/20">
-      <span class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.25em]">ID DE CLIENTE: #{{ restaurant.id + 1000 }}</span>
+      <span class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.25em]">Nº de cliente: #{{ restaurant.id + 1000 }}</span>
     </div>
   </div>
 
@@ -260,7 +260,10 @@
 </script>
 
 <p class="text-[11px] text-center text-gray-300 dark:text-gray-700 mt-10 font-black uppercase tracking-[0.3em] cursor-default">
-  VELZIA CLOUD SYSTEM v{{ restaurant.id + 2000 }}
+  <p class="text-[11px] text-center text-gray-400 dark:text-gray-600 mt-10 font-bold leading-relaxed">
+    ¿Algo no sale como esperabas? <a href="https://api.whatsapp.com/send?phone={{ SUPPORT_PHONE }}&text=Hola,%20necesito%20ayuda%20con%20Velzia"
+      target="_blank" class="font-black text-[#f97316] hover:underline">Escríbenos por WhatsApp</a>
+  </p>
 </p>
 
 {% endblock %}
