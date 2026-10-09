@@ -27,6 +27,7 @@ export interface Product {
   is_vegetarian?: boolean;
   is_spicy?: boolean;
   is_featured?: boolean;
+  is_sold_out?: boolean;
 }
 
 export interface Category {

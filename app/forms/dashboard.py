@@ -31,6 +31,7 @@ class ProductForm(FlaskForm):
     ])
     description = TextAreaField('Descripción')
     is_active = BooleanField('Activo', default=True)
+    is_sold_out = BooleanField('Agotado (hoy no hay)', default=False)
     # Badges del menú público (v1.5)
     is_vegetarian = BooleanField('Vegetariano', default=False)
     is_spicy = BooleanField('Picante', default=False)

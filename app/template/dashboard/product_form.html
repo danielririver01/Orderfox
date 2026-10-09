@@ -237,6 +237,19 @@ block content %}
     {{ help('Si lo apagas, el producto queda guardado pero tus clientes no lo ven en el menú.') }}
    </div>
 
+   <!-- Agotado (hoy no hay) -->
+   <div class="flex items-center gap-3 px-1">
+    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"
+     style="flex-shrink: 0; min-width: 48px;">
+     {{ form.is_sold_out(class="sr-only peer") }}
+     <div
+      class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:shadow-[0_0_15px_rgba(245,158,11,0.4)] shadow-inner"
+      style="flex-shrink: 0; min-width: 48px;"></div>
+    </label>
+    <span class="ml-5 text-xs font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">AGOTADO (HOY NO HAY)</span>
+    {{ help('Márcalo cuando se te acabe hoy. Tus clientes lo seguirán viendo en el menú, tachado con la palabra «Agotado», en vez de desaparecer sin explicación. Quítalo cuando vuelva a haber.') }}
+   </div>
+
    <!-- Badges menú público -->
    <div class="flex items-center gap-3 px-1">
     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0"

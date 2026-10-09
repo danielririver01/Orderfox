@@ -64,6 +64,50 @@ async function toggleProduct(id, newState, url = null) {
 }
 
 
+// Toggle "Agotado" (hoy no hay) — no saca el producto del menú,
+// los clientes lo ven tachado con la palabra "Agotado".
+async function toggleSoldOut(id, btn) {
+    const willBeSoldOut = btn.getAttribute('data-sold-out') !== 'true';
+    const label = btn.querySelector('.sold-out-label');
+
+    // Clases de estado (optimista)
+    const offClasses = ['text-gray-500', 'hover:text-amber-600', 'hover:bg-amber-50', 'dark:hover:bg-amber-500/10'];
+    const onClasses = ['bg-amber-100', 'text-amber-700', 'dark:bg-amber-500/15', 'dark:text-amber-400'];
+
+    const apply = (soldOut) => {
+        btn.setAttribute('data-sold-out', soldOut ? 'true' : 'false');
+        btn.classList.toggle('bg-amber-100', soldOut);
+        btn.classList.toggle('text-amber-700', soldOut);
+        btn.classList.toggle('dark:bg-amber-500/15', soldOut);
+        btn.classList.toggle('dark:text-amber-400', soldOut);
+        offClasses.forEach(c => btn.classList.toggle(c, !soldOut));
+        if (label) label.textContent = soldOut ? 'Agotado' : 'Marcar agotado';
+        btn.title = soldOut
+            ? 'Quitar «Agotado»: el producto vuelve a poder pedirse'
+            : 'Marcar «Agotado»: hoy no hay y los clientes lo verán tachado';
+    };
+
+    apply(willBeSoldOut);
+
+    try {
+        const response = await fetch(`/products/${id}/sold-out`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_sold_out: willBeSoldOut })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || 'Error al actualizar');
+        }
+    } catch (error) {
+        apply(!willBeSoldOut); // revertir
+        if (window.showToast) {
+            window.showToast(error.message || 'No se pudo cambiar el estado. Intenta de nuevo.', 'error');
+        }
+    }
+}
+
+
 // Close Delete Modal
 function closeDeleteModal() {
     const modal = document.getElementById('deleteModal');

@@ -99,6 +99,12 @@
                     <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else 'Inactivo'
                       }}</span>
                   </div>
+                  {% if product.is_sold_out %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">
+                    <span class="material-symbols-outlined text-[12px]">no_meals</span>
+                    Agotado
+                  </span>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -112,6 +118,14 @@
                   class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#10b981]">
                 </div>
               </label>
+              <button type="button"
+                onclick="toggleSoldOut({{ product.id }}, this)"
+                data-sold-out="{{ 'true' if product.is_sold_out else 'false' }}"
+                class="sold-out-btn flex items-center gap-1 px-2 h-8 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all {% if product.is_sold_out %}bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400{% else %}text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10{% endif %}"
+                title="{% if product.is_sold_out %}Quitar «Agotado»: el producto vuelve a poder pedirse{% else %}Marcar «Agotado»: hoy no hay y los clientes lo verán tachado{% endif %}">
+                <span class="material-symbols-outlined text-[16px]">no_meals</span>
+                <span class="sold-out-label">{% if product.is_sold_out %}Agotado{% else %}Marcar agotado{% endif %}</span>
+              </button>
               <a href="{{ url_for('products.edit', id=product.id) }}"
                 class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#f97316] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
                 <span class="material-symbols-outlined text-[18px]">edit</span>
@@ -243,6 +257,12 @@
                 {% endif %}
                 <span class="text-sm md:text-base font-black text-gray-900 dark:text-white block">${{
                   '{:,}'.format(product.price) }}</span>
+                {% if product.is_sold_out %}
+                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">
+                  <span class="material-symbols-outlined text-[12px]">no_meals</span>
+                  Agotado
+                </span>
+                {% endif %}
               </div>
 
               <div class="flex items-center gap-2 flex-shrink-0">
@@ -254,6 +274,14 @@
                     class="w-9 h-5 md:w-11 md:h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 md:peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 md:after:h-5 after:w-4 md:after:w-5 after:transition-all peer-checked:bg-[#10b981]">
                   </div>
                 </label>
+                <button type="button"
+                  onclick="toggleSoldOut({{ product.id }}, this)"
+                  data-sold-out="{{ 'true' if product.is_sold_out else 'false' }}"
+                  class="sold-out-btn flex items-center gap-1 px-2 h-8 md:h-10 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all {% if product.is_sold_out %}bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400{% else %}text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10{% endif %}"
+                  title="{% if product.is_sold_out %}Quitar «Agotado»: el producto vuelve a poder pedirse{% else %}Marcar «Agotado»: hoy no hay y los clientes lo verán tachado{% endif %}">
+                  <span class="material-symbols-outlined text-[16px] md:text-[20px]">no_meals</span>
+                  <span class="sold-out-label">{% if product.is_sold_out %}Agotado{% else %}Marcar agotado{% endif %}</span>
+                </button>
                 <a href="{{ url_for('products.edit', id=product.id) }}"
                   class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-500 hover:text-[#f97316] hover:bg-orange-100 dark:hover:bg-orange-500/10 rounded-lg transition-all">
                   <span class="material-symbols-outlined text-[18px] md:text-[22px]">edit</span>

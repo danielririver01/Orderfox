@@ -108,6 +108,7 @@ def create():
             is_vegetarian=form.is_vegetarian.data,
             is_spicy=form.is_spicy.data,
             is_featured=form.is_featured.data,
+            is_sold_out=form.is_sold_out.data,
         )
         if error:
             flash(error, 'error')
@@ -165,6 +166,7 @@ def edit(id):
             is_vegetarian=form.is_vegetarian.data,
             is_spicy=form.is_spicy.data,
             is_featured=form.is_featured.data,
+            is_sold_out=form.is_sold_out.data,
         )
         if error:
             flash(error, 'error')
@@ -231,6 +233,40 @@ def update_status(id):
     # If state didn't change, respond without message
     if product.is_active == original_active:
         return jsonify({'success': True, 'is_active': product.is_active})
+
+
+@products_bp.route('/<int:id>/sold-out', methods=['PATCH', 'POST'])
+@require_auth
+@require_active
+def toggle_sold_out(id):
+    """Marcar/desmarcar "Agotado" (hoy no hay) sin tocar la visibilidad.
+
+    A diferencia de is_active, esto no saca el producto del menú: el
+    cliente lo sigue viendo, tachado, y sabe por qué no puede pedirlo.
+    """
+    restaurant = get_current_restaurant()
+    if not restaurant:
+        return jsonify({'error': 'Restaurante no encontrado'}), 404
+
+    product = ProductService.get_product(restaurant.id, id)
+    if not product:
+        return jsonify({'error': 'Producto no encontrado'}), 404
+
+    data = request.get_json(silent=True) or request.form
+    desired_state = data.get('is_sold_out')
+    if desired_state is None:
+        # Sin valor explícito: alternar el estado actual.
+        desired_state = not product.is_sold_out
+    if isinstance(desired_state, str):
+        desired_state = desired_state.lower() in ('true', '1', 'yes')
+
+    product, error = ProductService.update_product(
+        product, is_sold_out=bool(desired_state)
+    )
+    if error:
+        return jsonify({'success': False, 'message': error}), 400
+
+    return jsonify({'success': True, 'is_sold_out': product.is_sold_out})
 
     return jsonify({
         'success': True,

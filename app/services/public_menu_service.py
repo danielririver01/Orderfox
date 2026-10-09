@@ -375,6 +375,7 @@ class PublicMenuService:
                         'is_vegetarian': bool(p.is_vegetarian),
                         'is_spicy': bool(p.is_spicy),
                         'is_featured': bool(p.is_featured),
+                        'is_sold_out': bool(p.is_sold_out),
                     })
 
                 categories_data.append({
@@ -446,6 +447,7 @@ class PublicMenuService:
                     'is_vegetarian': bool(p.is_vegetarian),
                     'is_spicy': bool(p.is_spicy),
                     'is_featured': bool(p.is_featured),
+                    'is_sold_out': bool(p.is_sold_out),
                 })
 
             category_data = {
@@ -493,6 +495,7 @@ class PublicMenuService:
                     'is_vegetarian': bool(p.is_vegetarian),
                     'is_spicy': bool(p.is_spicy),
                     'is_featured': bool(p.is_featured),
+                    'is_sold_out': bool(p.is_sold_out),
                 })
 
             pagination = {

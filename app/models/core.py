@@ -176,6 +176,10 @@ class Product(db.Model):
     is_vegetarian = db.Column(db.Boolean, nullable=False, default=False)
     is_spicy = db.Column(db.Boolean, nullable=False, default=False)
     is_featured = db.Column(db.Boolean, nullable=False, default=False)  # "Más pedido"
+    # "Agotado": el producto sigue en el menú pero hoy no se puede pedir.
+    # No es lo mismo que is_active: inactivo = lo quitaste del menú y el
+    # cliente no lo ve; agotado = el cliente lo ve tachado y sabe por qué.
+    is_sold_out = db.Column(db.Boolean, nullable=False, default=False)
     image_url = db.Column(db.String(255), nullable=True)
     # AutoPhoto metadata
     image_source = db.Column(db.String(30), nullable=True)  # 'user_upload' | 'unsplash' | 'pexels' | 'local_library'

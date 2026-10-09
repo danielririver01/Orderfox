@@ -33,10 +33,12 @@ export function initMenuPage(data: PageData): void {
 
   const detailPanel = document.getElementById('product-detail');
   const closeBtn = document.getElementById('close-detail');
-  const addBtn = document.getElementById('add-to-cart');
+  const addBtn = document.getElementById('add-to-cart') as HTMLButtonElement | null;
   const detailName = document.getElementById('detail-name');
   const detailDesc = document.getElementById('detail-description');
   const detailPrice = document.getElementById('detail-price');
+  const detailSoldOut = document.getElementById('detail-sold-out');
+  const detailQtySection = document.getElementById('detail-qty-section');
   const detailImg = document.getElementById('detail-image') as HTMLImageElement | null;
   const detailImgPlaceholder = document.getElementById('detail-image-placeholder');
   const detailModSection = document.getElementById('detail-modifiers-section');
@@ -121,8 +123,33 @@ export function initMenuPage(data: PageData): void {
 
     if (addBtn) addBtn.setAttribute('data-product-id', String(product.id));
 
+    const soldOut = !!product.is_sold_out;
+
+    // Agotado: se muestra el aviso, se ocultan cantidad y variantes,
+    // y el botón queda desactivado con texto claro (sin jerga).
+    if (detailSoldOut) {
+      detailSoldOut.textContent = soldOut
+        ? `Agotado hoy. ${product.name} no se puede pedir por ahora.`
+        : '';
+      detailSoldOut.classList.toggle('hidden', !soldOut);
+    }
+    if (detailQtySection) detailQtySection.style.display = soldOut ? 'none' : '';
+    if (detailName) detailName.classList.toggle('line-through', soldOut);
+    if (detailName) detailName.classList.toggle('text-ink-muted', soldOut);
+    if (detailPrice) detailPrice.classList.toggle('line-through', soldOut);
+    if (detailPrice) detailPrice.classList.toggle('text-ink-muted', soldOut);
+    if (detailPrice) detailPrice.classList.toggle('text-price', !soldOut);
+    if (addBtn) {
+      addBtn.disabled = soldOut || !data.ordering;
+      addBtn.textContent = soldOut
+        ? 'Agotado hoy'
+        : (data.ordering ? 'Agregar al pedido' : 'Pedidos desactivados');
+      addBtn.classList.toggle('opacity-60', soldOut);
+      addBtn.classList.toggle('cursor-not-allowed', soldOut);
+    }
+
     if (detailModSection && modifiersList) {
-      if (product.modifiers && product.modifiers.length > 0) {
+      if (!soldOut && product.modifiers && product.modifiers.length > 0) {
         detailModSection.style.display = '';
         modifiersList.innerHTML = product.modifiers.map((mod) => `
           <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-border-subtle bg-card-hover p-3 transition hover:bg-card">
@@ -197,6 +224,7 @@ export function initMenuPage(data: PageData): void {
 
     const product = PRODUCTS_MAP[pid];
     if (!product) return;
+    if (product.is_sold_out) return; // Agotado: no se puede agregar.
 
     const modifierCheckboxes = modifiersList ? modifiersList.querySelectorAll('input[type="checkbox"]:checked') : [];
     const selectedModifiers = Array.from(modifierCheckboxes).map((cb) => {
