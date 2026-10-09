@@ -65,26 +65,25 @@ async function toggleProduct(id, newState, url = null) {
 
 
 // Toggle "Agotado" (hoy no hay) — no saca el producto del menú,
-// los clientes lo ven tachado con la palabra "Agotado".
+// los clientes lo ven tachado. El chip ámbar dice el ESTADO; el botón
+// (gris) dice la ACCIÓN: "Se acabó" o "Ya hay".
 async function toggleSoldOut(id, btn) {
     const willBeSoldOut = btn.getAttribute('data-sold-out') !== 'true';
-    const label = btn.querySelector('.sold-out-label');
-
-    // Clases de estado (optimista)
-    const offClasses = ['text-gray-500', 'hover:text-amber-600', 'hover:bg-amber-50', 'dark:hover:bg-amber-500/10'];
-    const onClasses = ['bg-amber-100', 'text-amber-700', 'dark:bg-amber-500/15', 'dark:text-amber-400'];
 
     const apply = (soldOut) => {
-        btn.setAttribute('data-sold-out', soldOut ? 'true' : 'false');
-        btn.classList.toggle('bg-amber-100', soldOut);
-        btn.classList.toggle('text-amber-700', soldOut);
-        btn.classList.toggle('dark:bg-amber-500/15', soldOut);
-        btn.classList.toggle('dark:text-amber-400', soldOut);
-        offClasses.forEach(c => btn.classList.toggle(c, !soldOut));
-        if (label) label.textContent = soldOut ? 'Agotado' : 'Marcar agotado';
-        btn.title = soldOut
-            ? 'Quitar «Agotado»: el producto vuelve a poder pedirse'
-            : 'Marcar «Agotado»: hoy no hay y los clientes lo verán tachado';
+        document.querySelectorAll(`.sold-out-btn[data-pid="${id}"]`).forEach((b) => {
+            b.setAttribute('data-sold-out', soldOut ? 'true' : 'false');
+            const label = b.querySelector('.sold-out-label');
+            const icon = b.querySelector('.sold-out-icon');
+            if (label) label.textContent = soldOut ? 'Ya hay' : 'Se acabó';
+            if (icon) icon.textContent = soldOut ? 'check_circle' : 'no_meals';
+            b.title = soldOut
+                ? 'Volvió a haber: tus clientes podrán pedirlo otra vez'
+                : 'Hoy no hay: tus clientes lo verán tachado en el menú';
+        });
+        document.querySelectorAll(`[data-sold-out-chip="${id}"]`).forEach((c) => {
+            c.classList.toggle('hidden', !soldOut);
+        });
     };
 
     apply(willBeSoldOut);
@@ -99,10 +98,15 @@ async function toggleSoldOut(id, btn) {
         if (!response.ok || !data.success) {
             throw new Error(data.message || data.error || 'Error al actualizar');
         }
+        if (window.showToast) {
+            window.showToast(willBeSoldOut
+                ? 'Listo: tus clientes lo verán como agotado.'
+                : 'Listo: ya se puede pedir otra vez.', 'success');
+        }
     } catch (error) {
         apply(!willBeSoldOut); // revertir
         if (window.showToast) {
-            window.showToast(error.message || 'No se pudo cambiar el estado. Intenta de nuevo.', 'error');
+            window.showToast(error.message || 'No se pudo cambiar. Revisa tu conexión e intenta de nuevo.', 'error');
         }
     }
 }

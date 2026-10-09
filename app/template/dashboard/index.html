@@ -32,17 +32,17 @@
       <div class="flex items-center gap-4 flex-shrink-0">
         <div class="flex items-center bg-[#0f0f10] p-1 rounded-xl border border-white/5">
           <button id="range-today"
-            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white text-[#0a0a0a] shadow-lg"
             onclick="setDashboardRange('today')">Hoy</button>
           <button id="range-month"
-            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-400 hover:text-white"
             onclick="setDashboardRange('month')">Este mes</button>
         </div>
 
         <!-- Todo el recuadro es tocable, no solo el interruptor -->
         <label class="flex items-center gap-3 flex-shrink-0 cursor-pointer bg-[#0f0f10] border border-white/5 rounded-2xl pl-3 pr-4 py-2 hover:border-white/10 transition-colors">
           <input type="checkbox" id="store-toggle" {% if is_open %}checked{% endif %} class="sr-only peer" aria-label="Abrir el negocio para recibir pedidos, o cerrarlo para dejar de recibirlos">
-          <div class="w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
+          <div class="relative w-12 h-6 bg-red-500/10 dark:bg-red-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:shadow-[0_0_15px_rgba(5,150,105,0.4)] shadow-inner flex-shrink-0" style="min-width: 48px;"></div>
           <div class="flex flex-col leading-tight">
             <span id="store-state" class="text-[11px] font-black uppercase tracking-widest {{ 'text-emerald-600 dark:text-emerald-500' if is_open else 'text-red-600 dark:text-red-500' }}">{{ 'Abierto' if is_open else 'Cerrado' }}</span>
             <span id="store-state-hint" class="text-[11px] font-bold text-gray-500">{% if is_open %}Recibiendo pedidos{% else %}No recibes pedidos{% endif %}</span>

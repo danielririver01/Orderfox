@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort, current_app
 from app.forms import ProductForm
-from app.models import Product
+from app.models import Category, Product
 from app.utils.auth import require_auth, require_active, require_role_check
 
 from app.utils.restaurant import get_current_restaurant
@@ -148,6 +148,17 @@ def edit(id):
 
     categories = CategoryService.get_active_categories(restaurant.id)
     form.category_id.choices = [(c.id, c.name) for c in categories]
+    # Si la categoría actual está oculta, igual debe aparecer en la lista:
+    # si no, el navegador elige la primera opción y al guardar el producto
+    # se muda de categoría sin que el dueño se dé cuenta.
+    if product.category_id not in {c.id for c in categories}:
+        actual = Category.query.filter_by(
+            id=product.category_id, restaurant_id=restaurant.id
+        ).first()
+        if actual:
+            form.category_id.choices.insert(
+                0, (actual.id, f'{actual.name} (oculta en el menú)')
+            )
 
     # Forzar la seleccion correcta con GET
     if request.method == "GET":

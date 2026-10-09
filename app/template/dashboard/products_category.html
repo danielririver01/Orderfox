@@ -81,6 +81,10 @@
                     <span id="status-text-{{ product.id }}">{{ 'Activo' if product.is_active else
                       'Inactivo' }}</span>
                   </div>
+                  <span data-sold-out-chip="{{ product.id }}" class="{% if not product.is_sold_out %}hidden {% endif %}inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md text-[8px] md:text-[11px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span class="material-symbols-outlined text-[12px]">no_meals</span>
+                    Agotado
+                  </span>
                 </div>
               </div>
             </div>
@@ -96,6 +100,15 @@
                   class="w-9 h-5 md:w-11 md:h-6 bg-[#262626] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 md:peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 md:after:h-5 after:w-4 md:after:w-5 after:transition-all peer-checked:bg-[#10b981]">
                 </div>
               </label>
+              <button type="button"
+                onclick="toggleSoldOut({{ product.id }}, this)"
+                data-sold-out="{{ 'true' if product.is_sold_out else 'false' }}"
+                data-pid="{{ product.id }}"
+                class="sold-out-btn flex items-center gap-1 px-2.5 h-8 md:h-10 rounded-lg text-[11px] font-bold uppercase tracking-wide border border-gray-200 dark:border-[#262626] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#262626] transition-all"
+                title="{% if product.is_sold_out %}Volvió a haber: tus clientes podrán pedirlo otra vez{% else %}Hoy no hay: tus clientes lo verán tachado en el menú{% endif %}">
+                <span class="sold-out-icon material-symbols-outlined text-[16px] md:text-[20px]">{% if product.is_sold_out %}check_circle{% else %}no_meals{% endif %}</span>
+                <span class="sold-out-label">{% if product.is_sold_out %}Ya hay{% else %}Se acabó{% endif %}</span>
+              </button>
               <a href="{{ url_for('products.edit', id=product.id) }}"
                 class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-500 hover:text-[#f97316] hover:bg-orange-500/10 rounded-lg transition-all">
                 <span class="material-symbols-outlined text-[18px] md:text-[22px]">edit</span>

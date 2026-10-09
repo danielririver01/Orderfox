@@ -135,11 +135,11 @@ window.setDashboardRange = function(range) {
     const btnMonth = document.getElementById('range-month');
 
     if (range === 'today') {
-        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
-        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
+        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white text-[#0a0a0a] shadow-lg";
+        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-400 hover:text-white";
     } else {
-        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white dark:bg-[#262626] shadow-lg text-black";
-        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-500 hover:text-zinc-300";
+        btnMonth.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all bg-white text-[#0a0a0a] shadow-lg";
+        btnToday.className = "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight transition-all text-zinc-400 hover:text-white";
     }
 
     const heroLabel = document.getElementById('hero-label');

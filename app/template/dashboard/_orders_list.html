@@ -57,24 +57,28 @@
     <span class="text-lg font-black text-gray-900 dark:text-white flex-shrink-0">{{ order.total | currency }}</span>
    </div>
 
-   <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
-    <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-     {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
-    </span>
-    <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
+   {# Dos renglones fijos (antes los botones se envolvían en "escalera"):
+      1) cuántos productos + Ver pedido   2) la acción principal, ancha. #}
+   <div class="mt-4 pt-3 border-t border-gray-100 dark:border-[#262626] space-y-2">
+    <div class="flex items-center justify-between gap-2">
+     <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500">
+      {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
+     </span>
      <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
       {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
       aria-label="Ver el pedido {{ order.order_number }}">
       <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
       Ver pedido
      </button>
+    </div>
+    <div class="flex items-center gap-2">
      <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'cancelled')"
       {{ accion() }} {{ quitar() }}
       title="Cancelar este pedido">
       Cancelar
      </button>
      <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'confirmed')"
-      {{ accion('text-white shadow-md') }}
+      {{ accion('flex-1 text-white shadow-md') }}
       style="background: #15803D; ">
       Confirmar
      </button>
@@ -136,19 +140,23 @@
     <span class="text-lg font-black text-gray-900 dark:text-white flex-shrink-0">{{ order.total | currency }}</span>
    </div>
 
-   <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-[#262626]">
-    <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-     {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
-    </span>
-    <div class="flex flex-wrap items-center justify-end gap-2 flex-1 min-w-0">
+   {# Dos renglones fijos (antes los botones se envolvían en "escalera"):
+      1) cuántos productos + Ver pedido   2) la acción principal, ancha. #}
+   <div class="mt-4 pt-3 border-t border-gray-100 dark:border-[#262626] space-y-2">
+    <div class="flex items-center justify-between gap-2">
+     <span class="order-product-count text-[11px] font-bold text-gray-400 dark:text-gray-500">
+      {{ order.items|length }} producto{{ 's' if order.items|length != 1 else '' }}
+     </span>
      <button type="button" onclick="event.stopPropagation(); openOrderDetail({{ order.id }})"
       {{ accion('bg-gray-100 dark:bg-[#262626] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]') }}
       aria-label="Ver el pedido {{ order.order_number }}">
       <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
       Ver pedido
      </button>
+    </div>
+    <div class="flex items-center gap-2">
      <button type="button" onclick="event.stopPropagation(); changeStatus({{ order.id }}, 'delivered')"
-      {{ accion('text-white shadow-md') }}
+      {{ accion('flex-1 text-white shadow-md') }}
       style="background: #2563EB; ">
       Entregar
      </button>

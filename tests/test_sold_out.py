@@ -105,3 +105,32 @@ class TestSoldOutPublicMenu:
             p for cat in data['categories'] for p in cat['products']
         ]
         assert all(p['id'] != sample_product.id for p in productos)
+
+
+class TestEditProductHiddenCategory:
+    def test_edit_keeps_hidden_category(self, client, db, sample_restaurant,
+                                        sample_category, sample_product, sample_user):
+        """Producto en categoría oculta: al editar no debe mudarse de categoría."""
+        from app.models import Category
+        otra = Category(restaurant_id=sample_restaurant.id, name='Postres',
+                        sort_order=2, is_active=True)
+        db.session.add(otra)
+        sample_category.is_active = False
+        db.session.commit()
+
+        client.application.before_request_funcs[None] = [
+            f for f in client.application.before_request_funcs.get(None, [])
+            if f.__name__ != '_csrf_protect_nonapi'
+        ]
+        with client.session_transaction() as sess:
+            sess['user_id'] = sample_user.id
+
+        html = client.get(f'/products/{sample_product.id}/edit').get_data(as_text=True)
+        assert '(oculta en el menú)' in html
+
+        r = client.post(f'/products/{sample_product.id}/edit', data={
+            'name': 'Coca Cola', 'category_id': str(sample_category.id),
+            'price': '5000', 'is_active': 'y', 'submit': 'Guardar',
+        })
+        assert r.status_code == 302
+        assert Product.query.get(sample_product.id).category_id == sample_category.id
